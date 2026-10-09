@@ -10,10 +10,13 @@
 #   3. Check /api/health reports the version in package.json
 #   4. Publish firestore.rules (the previous ruleset name is printed for rollback)
 #
-# Optional overrides: SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com bash scripts/deploy.sh
+# Optional overrides:
+#   RUN_PROJECT=<project hosting the Cloud Run service, if not the Firebase project>
+#   SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com
 set -euo pipefail
 
-PROJECT="${PROJECT:-frilensa-f530d}"
+PROJECT="${PROJECT:-frilensa-f530d}"          # Firebase project: Firestore database and rules
+RUN_PROJECT="${RUN_PROJECT:-$PROJECT}"        # project that hosts the Cloud Run service"
 DATABASE="${DATABASE:-ai-studio-fijifreelancercr-488dac79-8760-4f11-adaa-51019cc03ebb}"
 VERSION="$(node -p "require('./package.json').version")"
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
@@ -22,17 +25,23 @@ say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 confirm() { read -r -p "$1 [y/N] " reply; [[ "$reply" =~ ^[Yy]$ ]] || { echo "Stopped."; exit 1; }; }
 
 gcloud config set project "$PROJECT" >/dev/null
-say "Deploying Frilensa v$VERSION to project $PROJECT"
+say "Deploying Frilensa v$VERSION (app in $RUN_PROJECT, database in $PROJECT)"
 
 # --- Find the Cloud Run service that serves frilensa.com ---
 if [[ -z "${SERVICE:-}" || -z "${REGION:-}" ]]; then
-  echo "Cloud Run services in $PROJECT:"
-  gcloud run services list --format="table(metadata.name,region,status.url)"
+  SERVICES="$(gcloud run services list --project "$RUN_PROJECT" --quiet --format='value(metadata.name)' 2>/dev/null || true)"
+  if [[ -z "$SERVICES" ]]; then
+    echo "No Cloud Run services found in project $RUN_PROJECT."
+    echo "If frilensa.com runs in another project, rerun with RUN_PROJECT=<that project id>."
+    exit 1
+  fi
+  echo "Cloud Run services in $RUN_PROJECT:"
+  gcloud run services list --project "$RUN_PROJECT" --format="table(metadata.name,region,status.url)"
   read -r -p "Service name to update: " SERVICE
-  REGION="$(gcloud run services list --filter="metadata.name=$SERVICE" --format='value(region)' | head -n1)"
+  REGION="$(gcloud run services list --project "$RUN_PROJECT" --filter="metadata.name=$SERVICE" --format='value(region)' | head -n1)"
   [[ -n "$REGION" ]] || { echo "Service '$SERVICE' not found."; exit 1; }
 fi
-URL="$(gcloud run services describe "$SERVICE" --region "$REGION" --format='value(status.url)')"
+URL="$(gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format='value(status.url)')"
 echo "Service: $SERVICE ($REGION) at $URL"
 echo "Currently live: $(curl -fsS "$URL/api/health" 2>/dev/null || echo 'unknown (older version without a version number)')"
 
@@ -49,7 +58,7 @@ echo "  gcloud firestore import $BUCKET/$STAMP --database=$DATABASE"
 # --- 2. Deploy app ---
 say "2/4 Deploying app v$VERSION to Cloud Run (existing env vars are kept)"
 ENV_UPDATES=()
-EXISTING_ENV="$(gcloud run services describe "$SERVICE" --region "$REGION" --format=json)"
+EXISTING_ENV="$(gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format=json)"
 if ! grep -q '"PORTAL_SESSION_SECRET"' <<<"$EXISTING_ENV"; then
   ENV_UPDATES+=("PORTAL_SESSION_SECRET=$(openssl rand -hex 32)")
   echo "Adding a new PORTAL_SESSION_SECRET."
@@ -60,9 +69,21 @@ fi
 if [[ -n "${ADMIN_EMAILS:-}" ]]; then
   echo "VITE_ADMIN_EMAILS=$ADMIN_EMAILS" > .env.production
 fi
-DEPLOY_ARGS=(run deploy "$SERVICE" --source . --region "$REGION" --quiet)
+DEPLOY_ARGS=(run deploy "$SERVICE" --project "$RUN_PROJECT" --source . --region "$REGION" --quiet)
 if (( ${#ENV_UPDATES[@]} )); then
   DEPLOY_ARGS+=(--update-env-vars "$(IFS=,; echo "${ENV_UPDATES[*]}")")
+fi
+# The new server reads Firestore directly (client portal, directory, document links), so the
+# service's identity needs access to the database project. This only adds a permission.
+SA="$(gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format='value(spec.template.spec.serviceAccountName)')"
+if [[ -z "$SA" ]]; then
+  SA="$(gcloud projects describe "$RUN_PROJECT" --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
+fi
+echo "Service runs as: $SA"
+if ! gcloud projects get-iam-policy "$PROJECT" --flatten='bindings[].members' \
+     --filter="bindings.role=roles/datastore.user AND bindings.members=serviceAccount:$SA" --format='value(bindings.role)' | grep -q datastore; then
+  echo "Granting it Cloud Datastore User on $PROJECT so it can read and write Firestore."
+  gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/datastore.user --condition=None >/dev/null
 fi
 confirm "Deploy now? (A new Cloud Run revision is created; the previous one stays available for rollback.)"
 gcloud "${DEPLOY_ARGS[@]}"
@@ -78,7 +99,7 @@ done
 echo "Health: ${HEALTH:-no response}"
 if ! grep -q "\"version\":\"$VERSION\"" <<<"${HEALTH:-}"; then
   echo "The new version did not report healthy. Rules were NOT changed."
-  echo "Roll back with: gcloud run services update-traffic $SERVICE --region $REGION --to-revisions=PREVIOUS_REVISION=100"
+  echo "Roll back with: gcloud run services update-traffic $SERVICE --project $RUN_PROJECT --region $REGION --to-revisions=PREVIOUS_REVISION=100"
   exit 1
 fi
 

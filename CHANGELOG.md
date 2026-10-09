@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-10-09
+
+### Fixed
+- Deploy script: supports a Cloud Run service in a different project from the Firebase database (`RUN_PROJECT=…`), grants the service access to Firestore (needed by the new server), and stops cleanly when no service is found.
+
 ## [3.1.0] - 2026-10-09
 
 ### Added
