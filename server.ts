@@ -8,6 +8,8 @@ import { parseBankStatement } from "./src/lib/bankStatementParser";
 import { generateDocumentEmailHtml, sendViaSendGrid, SendDocumentEmailPayload } from "./src/lib/transactionalEmailServer";
 import { requireUser, rateLimit, escapeHtml, isEmail } from "./server/security";
 import { createPortalRouter } from "./server/portal";
+import { createDirectoryRouter } from "./server/directory";
+import { createPublicDocumentsRouter } from "./server/publicDocuments";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -195,6 +197,8 @@ async function startServer() {
 
   // Client portal: its own small JSON limit and session scheme.
   app.use("/api/portal", express.json({ limit: "100kb" }), createPortalRouter());
+  app.use("/api/directory", express.json({ limit: "100kb" }), createDirectoryRouter());
+  app.use("/api/public/documents", express.json({ limit: "20kb" }), createPublicDocumentsRouter());
 
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));

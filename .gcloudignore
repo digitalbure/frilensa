@@ -1,0 +1,10 @@
+# Files not uploaded by `gcloud run deploy --source .`
+.git
+node_modules
+dist
+coverage
+*.log
+.env
+.env.local
+tests
+docs

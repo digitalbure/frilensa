@@ -133,10 +133,7 @@ export async function sendDocumentEmail(options: SendDocumentEmailOptions): Prom
         ccConsultant,
         consultantEmail,
         attachPdfBase64,
-        pdfFilename,
-        onlinePortalUrl: typeof window !== 'undefined'
-          ? `${window.location.origin}/?viewDoc=${document.id}&num=${document.documentNumber}`
-          : undefined
+        pdfFilename
       })
     });
 

@@ -53,9 +53,12 @@ export function generateDocumentEmailHtml(payload: SendDocumentEmailPayload): { 
   const issueDateFormatted = document.issueDate || new Date().toISOString().split('T')[0];
   const dueDateFormatted = document.dueDate || 'Upon Receipt';
   
-  const portalUrl = onlinePortalUrl || (typeof process !== 'undefined' && process.env.APP_URL 
-    ? `${process.env.APP_URL}/?viewDoc=${document.id}&num=${document.documentNumber}`
-    : `https://frilensa.com/?viewDoc=${document.id}&num=${document.documentNumber}`);
+  // The "view online" link is always built here from the document's share token; a URL supplied
+  // by the browser (onlinePortalUrl) is ignored so emails can't be made to link elsewhere.
+  void onlinePortalUrl;
+  const appUrl = ((typeof process !== 'undefined' && process.env.APP_URL) || 'https://frilensa.com').replace(/\/$/, '');
+  const shareToken = /^[A-Za-z0-9_-]{16,64}$/.test(document.shareToken || '') ? document.shareToken : '';
+  const portalUrl = shareToken ? `${appUrl}/?doc=${shareToken}` : appUrl;
 
   const verificationHash = `FRCS-FJ-${document.documentNumber}-${(business.tin || 'TAX').replace(/[^0-9]/g, '').slice(0, 6)}`;
 

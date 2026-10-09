@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Search, Filter, ShieldCheck, Star, MapPin, Phone, Mail, Sparkles,
@@ -7,7 +7,13 @@ import {
   Lock, Eye, EyeOff, Layers, Briefcase, ChevronRight, FileText,
   Smartphone, Wallet, ArrowUpRight, HelpCircle, RefreshCw
 } from 'lucide-react';
-import { CRMData, Business, DirectoryBooking, PlanTier } from '../types';
+import { CRMData, Business, DirectoryBooking, DirectoryListing, PlanTier } from '../types';
+import { auth } from '../lib/firebase';
+import { suggestDocumentNumber } from '../lib/documentNumbers';
+import {
+  fetchDirectoryListings, fetchDirectoryBookings, publishDirectoryListing, unpublishDirectoryListing,
+  requestDirectoryBooking, updateDirectoryBookingStatus
+} from '../lib/api';
 import DateInput from './DateInput';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 
@@ -27,8 +33,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
   const [selectedCity, setSelectedCity] = useState<string>('All');
-  const [verifiedOnly, setVerifiedOnly] = useState(false);
-  const [sortBy, setSortBy] = useState<'rating' | 'rate_low' | 'rate_high' | 'name'>('rating');
+  const [sortBy, setSortBy] = useState<'rating' | 'rate_low' | 'rate_high' | 'name'>('name');
 
   // Modals state
   const [selectedBusinessForProfile, setSelectedBusinessForProfile] = useState<Business | null>(null);
@@ -38,19 +43,19 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
   // Booking Form State
   const [bookingClientName, setBookingClientName] = useState(data.userProfile.name || '');
   const [bookingClientEmail, setBookingClientEmail] = useState(data.userProfile.email || '');
-  const [bookingClientPhone, setBookingClientPhone] = useState(data.userProfile.phone || '+679 991 2345');
+  const [bookingClientPhone, setBookingClientPhone] = useState(data.userProfile.phone || '');
   const [bookingDate, setBookingDate] = useState(() => {
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 2);
-    return tomorrow.toISOString().split('T')[0];
+    const soon = new Date();
+    soon.setDate(soon.getDate() + 2);
+    return soon.toISOString().split('T')[0];
   });
   const [bookingTime, setBookingTime] = useState('10:00 AM');
   const [bookingMeetingType, setBookingMeetingType] = useState<'zoom_video' | 'in_person' | 'phone_call'>('zoom_video');
   const [bookingServiceName, setBookingServiceName] = useState('');
   const [bookingScope, setBookingScope] = useState('');
   const [bookingBudget, setBookingBudget] = useState<number | ''>('');
-  const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'mpaisa' | 'mycash' | 'bank_transfer' | 'escrow'>('mpaisa');
-  const [bookingLocation, setBookingLocation] = useState('Suva / Online');
+  const [bookingPaymentMethod, setBookingPaymentMethod] = useState<'mpaisa' | 'mycash' | 'bank_transfer'>('mpaisa');
+  const [bookingLocation, setBookingLocation] = useState('');
   
   // Status message state
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'info' | 'error' } | null>(null);
@@ -60,15 +65,39 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
     setTimeout(() => setToastMessage(null), 4000);
   };
 
+  // Shared directory data from the server
+  const myUid = auth.currentUser?.uid || '';
+  const [listings, setListings] = useState<DirectoryListing[]>([]);
+  const [sentBookings, setSentBookings] = useState<DirectoryBooking[]>([]);
+  const [receivedBookingsList, setReceivedBookingsList] = useState<DirectoryBooking[]>([]);
+  const [loadingDirectory, setLoadingDirectory] = useState(true);
+  const [directoryError, setDirectoryError] = useState<string | null>(null);
+  const [savingListing, setSavingListing] = useState(false);
+
+  const refreshDirectory = useCallback(async () => {
+    try {
+      const [l, b] = await Promise.all([fetchDirectoryListings(), fetchDirectoryBookings()]);
+      setListings(l);
+      setSentBookings(b.sent);
+      setReceivedBookingsList(b.received);
+      setDirectoryError(null);
+    } catch (err: any) {
+      setDirectoryError(err?.message || 'Could not load the directory.');
+    } finally {
+      setLoadingDirectory(false);
+    }
+  }, []);
+
+  useEffect(() => { refreshDirectory(); }, [refreshDirectory]);
+
   // Active user plan
   const activePlan: PlanTier = data.platformSettings?.activePlan || 'free';
   const isPayingUser = activePlan === 'pro' || activePlan === 'premium';
-  const enforcePaidForDirectory = data.platformSettings?.enforcePaidForDirectory !== false;
-  const isDirectoryGlobalEnabled = data.platformSettings?.directoryEnabled !== false;
 
-  // Active user's primary business
+  // Active user's primary business and its published listing (if any)
   const userPrimaryBiz = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
-  const isUserBizPublic = userPrimaryBiz ? (userPrimaryBiz.isPublicDirectoryListed !== false && isPayingUser) : false;
+  const myListing = listings.find(l => l.uid === myUid);
+  const isUserBizPublic = Boolean(myListing);
 
   // Categories list
   const categories = useMemo(() => [
@@ -89,163 +118,138 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
   // Cities list for Fiji
   const cities = ['All', 'Suva', 'Nadi', 'Lautoka', 'Pacific Harbour', 'Savusavu', 'Denarau Island', 'Labasa', 'Coral Coast'];
 
-  // All directory businesses combining platform registry and user's business if public
-  const allBusinesses = useMemo(() => {
-    const list: Business[] = [];
-    const seenIds = new Set<string>();
+  // Listings shown as Business cards. `id` is the listing owner's uid (used for bookings).
+  const allBusinesses = useMemo<Business[]>(() => listings.map(l => ({
+    id: l.uid,
+    name: l.name,
+    brandSlogan: l.brandSlogan,
+    category: l.category,
+    city: l.city,
+    address: l.city || '',
+    directoryBio: l.directoryBio,
+    directorySpecialties: l.directorySpecialties,
+    startingRate: l.startingRate ?? undefined,
+    rateUnit: l.rateUnit,
+    currency: l.currency,
+    email: l.email || '',
+    phone: l.phone || '',
+    colorTheme: l.colorTheme || '#0284c7',
+    logoType: l.logoType,
+    logoSymbol: l.logoSymbol,
+    logoText: l.logoText,
+    logoUrl: l.logoUrl,
+    tin: '',
+    bankDetails: '',
+    type: 'studio',
+    isPublicDirectoryListed: true
+  } as Business)), [listings]);
 
-    // Add user's business if user is public (or if paying and opted in)
-    if (userPrimaryBiz) {
-      const userBizFormatted: Business = {
-        ...userPrimaryBiz,
-        isFrcsVerified: !!userPrimaryBiz.tin,
-        ownerPlan: activePlan,
-        ownerEmail: data.userProfile.email,
-        city: userPrimaryBiz.address?.includes('Nadi') ? 'Nadi, Viti Levu' : 
-              userPrimaryBiz.address?.includes('Lautoka') ? 'Lautoka' : 'Suva, Viti Levu',
-        startingRate: userPrimaryBiz.startingRate || 85.00,
-        rateUnit: userPrimaryBiz.rateUnit || 'Hour',
-        directoryBio: userPrimaryBiz.directoryBio || `${userPrimaryBiz.name} provides expert consulting and services across Fiji and the Pacific.`,
-        rating: userPrimaryBiz.rating || 5.0,
-        reviewCount: userPrimaryBiz.reviewCount || 12,
-        isPublicDirectoryListed: userPrimaryBiz.isPublicDirectoryListed !== false
-      };
-      list.push(userBizFormatted);
-      seenIds.add(userPrimaryBiz.id);
-    }
-
-    // Add registered directory businesses from state or fallback
-    const registered = data.directoryBusinesses || [];
-    for (const b of registered) {
-      if (!seenIds.has(b.id)) {
-        list.push(b);
-        seenIds.add(b.id);
-      }
-    }
-
-    return list;
-  }, [userPrimaryBiz, activePlan, data.userProfile.email, data.directoryBusinesses]);
-
-  // Filtered businesses according to search, category, city, and paying requirement
+  // Filtered businesses according to search, category and city
   const visibleBusinesses = useMemo(() => {
     return allBusinesses.filter(biz => {
-      // Rule: Non-paying users will NOT be displayed if enforcePaidForDirectory is true
-      const bizPlan = biz.ownerPlan || 'free';
-      const isPaid = bizPlan === 'pro' || bizPlan === 'premium';
-      if (enforcePaidForDirectory && !isPaid) {
-        return false;
-      }
-
-      // Rule: Business must be public
-      if (biz.isPublicDirectoryListed === false) {
-        return false;
-      }
-
-      // Category filter
       if (selectedCategory !== 'All' && biz.category !== selectedCategory) {
         return false;
       }
 
-      // City filter
       if (selectedCity !== 'All') {
-        const matchesCity = biz.city?.toLowerCase().includes(selectedCity.toLowerCase()) ||
-                            biz.address?.toLowerCase().includes(selectedCity.toLowerCase());
+        const matchesCity = biz.city?.toLowerCase().includes(selectedCity.toLowerCase());
         if (!matchesCity) return false;
       }
 
-      // Verified filter
-      if (verifiedOnly && !biz.isFrcsVerified) {
-        return false;
-      }
-
-      // Search query filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesName = biz.name?.toLowerCase().includes(q);
-        const matchesSlogan = biz.brandSlogan?.toLowerCase().includes(q);
-        const matchesBio = biz.directoryBio?.toLowerCase().includes(q);
-        const matchesSpecialties = biz.directorySpecialties?.some(s => s.toLowerCase().includes(q));
-        const matchesTin = biz.tin?.toLowerCase().includes(q);
-        const matchesCategory = biz.category?.toLowerCase().includes(q);
-
-        if (!matchesName && !matchesSlogan && !matchesBio && !matchesSpecialties && !matchesTin && !matchesCategory) {
-          return false;
-        }
+        const haystack = [biz.name, biz.brandSlogan, biz.directoryBio, biz.category, ...(biz.directorySpecialties || [])]
+          .filter(Boolean).join(' ').toLowerCase();
+        if (!haystack.includes(q)) return false;
       }
 
       return true;
     }).sort((a, b) => {
-      if (sortBy === 'rating') {
-        return (b.rating || 0) - (a.rating || 0);
-      }
       if (sortBy === 'rate_low') {
-        return (a.startingRate || 0) - (b.startingRate || 0);
+        return (a.startingRate ?? Infinity) - (b.startingRate ?? Infinity);
       }
       if (sortBy === 'rate_high') {
-        return (b.startingRate || 0) - (a.startingRate || 0);
+        return (b.startingRate ?? -1) - (a.startingRate ?? -1);
       }
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [allBusinesses, enforcePaidForDirectory, selectedCategory, selectedCity, verifiedOnly, searchQuery, sortBy]);
+  }, [allBusinesses, selectedCategory, selectedCity, searchQuery, sortBy]);
 
-  // Directory Bookings list
-  const directoryBookings = data.directoryBookings || [];
-  
-  // Received bookings for user's business
-  const receivedBookings = useMemo(() => {
-    const myBizIds = data.businesses.map(b => b.id);
-    return directoryBookings.filter(b => myBizIds.includes(b.businessId) || b.businessEmail === data.userProfile.email || b.businessName === userPrimaryBiz?.name);
-  }, [directoryBookings, data.businesses, data.userProfile.email, userPrimaryBiz]);
+  const receivedBookings = receivedBookingsList;
+  const outboundBookings = sentBookings;
 
-  // Outbound bookings made by user
-  const outboundBookings = useMemo(() => {
-    return directoryBookings.filter(b => b.clientEmail === data.userProfile.email || b.clientName === data.userProfile.name);
-  }, [directoryBookings, data.userProfile.email, data.userProfile.name]);
+  // Publish, update or hide the user's business in the shared directory
+  const listingPayload = (biz: Business): Partial<DirectoryListing> => ({
+    businessId: biz.id,
+    name: biz.name,
+    brandSlogan: biz.brandSlogan,
+    category: biz.category,
+    city: biz.city || biz.address?.split(',').slice(-2).join(',').trim() || '',
+    directoryBio: biz.directoryBio,
+    directorySpecialties: biz.directorySpecialties,
+    startingRate: biz.startingRate ?? null,
+    rateUnit: biz.rateUnit,
+    currency: biz.currency,
+    email: biz.email,
+    phone: biz.phone,
+    colorTheme: biz.colorTheme,
+    logoType: biz.logoType,
+    logoSymbol: biz.logoSymbol,
+    logoText: biz.logoText,
+    logoUrl: biz.logoUrl
+  });
 
-  // Toggle user's business public/private status
-  const handleToggleUserPublicStatus = () => {
+  const handleToggleUserPublicStatus = async () => {
     if (!isPayingUser) {
-      showToast('Public Directory Listing requires an active Pro or Premium subscription.', 'error');
+      showToast('A directory listing needs a Pro or Premium plan (free during early access).', 'error');
       return;
     }
-
     if (!userPrimaryBiz) return;
-
-    const newPublicStatus = userPrimaryBiz.isPublicDirectoryListed === false ? true : false;
-    
-    const updatedBusinesses = data.businesses.map(b => {
-      if (b.id === userPrimaryBiz.id) {
-        return {
-          ...b,
-          isPublicDirectoryListed: newPublicStatus
-        };
+    setSavingListing(true);
+    try {
+      if (isUserBizPublic) {
+        await unpublishDirectoryListing();
+        showToast(`"${userPrimaryBiz.name}" is hidden from the directory.`, 'success');
+      } else {
+        await publishDirectoryListing(listingPayload(userPrimaryBiz));
+        showToast(`"${userPrimaryBiz.name}" is now listed in the directory.`, 'success');
       }
-      return b;
-    });
+      await refreshDirectory();
+    } catch (err: any) {
+      showToast(err?.message || 'Could not update your listing.', 'error');
+    } finally {
+      setSavingListing(false);
+    }
+  };
 
-    onUpdateData({
-      ...data,
-      businesses: updatedBusinesses
-    });
-
-    showToast(
-      newPublicStatus 
-        ? `"${userPrimaryBiz.name}" is now PUBLIC in the Fiji Business Directory!` 
-        : `"${userPrimaryBiz.name}" is now PRIVATE and hidden from search.`,
-      'success'
-    );
+  const handleRefreshMyListing = async () => {
+    if (!userPrimaryBiz) return;
+    setSavingListing(true);
+    try {
+      await publishDirectoryListing(listingPayload(userPrimaryBiz));
+      await refreshDirectory();
+      showToast('Your listing now matches your business profile.', 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not update your listing.', 'error');
+    } finally {
+      setSavingListing(false);
+    }
   };
 
   // Open booking modal for a business
   const handleOpenBookingModal = (biz: Business, serviceName: string = '') => {
+    if (biz.id === myUid) {
+      showToast("That's your own listing.", 'info');
+      return;
+    }
     setSelectedBusinessForBooking(biz);
-    setBookingServiceName(serviceName || biz.directorySpecialties?.[0] || 'General Consultation & Strategy');
-    setBookingBudget(biz.startingRate || 100);
+    setBookingServiceName(serviceName || biz.directorySpecialties?.[0] || '');
+    setBookingBudget(biz.startingRate ?? '');
     setBookingScope('');
   };
 
-  // Submit a booking request
-  const handleSubmitBooking = (e: React.FormEvent) => {
+  // Submit a booking request to the listing owner
+  const handleSubmitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedBusinessForBooking) return;
     if (!bookingClientName || !bookingClientEmail) {
@@ -253,64 +257,48 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
       return;
     }
 
-    const newBooking: DirectoryBooking = {
-      id: `bk-${Date.now()}`,
-      bookingRef: `BK-${Math.floor(1000 + Math.random() * 9000)}`,
-      businessId: selectedBusinessForBooking.id,
-      businessName: selectedBusinessForBooking.name,
-      businessEmail: selectedBusinessForBooking.email,
-      businessPhone: selectedBusinessForBooking.phone,
-      serviceName: bookingServiceName || 'General Service Booking',
-      clientName: bookingClientName,
-      clientEmail: bookingClientEmail,
-      clientPhone: bookingClientPhone,
-      bookingDate,
-      preferredTime: bookingTime,
-      projectScope: bookingScope || 'Service inquiry and consultation booking requested via Fiji Directory.',
-      budgetEstimate: Number(bookingBudget) || selectedBusinessForBooking.startingRate || 0,
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      meetingType: bookingMeetingType,
-      paymentMethod: bookingPaymentMethod,
-      location: bookingLocation,
-      notes: `Requested via Directory on ${new Date().toLocaleDateString()}`
-    };
-
-    const updatedBookings = [newBooking, ...(data.directoryBookings || [])];
-
-    onUpdateData({
-      ...data,
-      directoryBookings: updatedBookings
-    });
-
-    setSelectedBusinessForBooking(null);
-    showToast(`Booking request ${newBooking.bookingRef} sent to ${selectedBusinessForBooking.name}!`, 'success');
+    try {
+      const booking = await requestDirectoryBooking({
+        providerUid: selectedBusinessForBooking.id,
+        serviceName: bookingServiceName,
+        clientName: bookingClientName,
+        clientEmail: bookingClientEmail,
+        clientPhone: bookingClientPhone,
+        bookingDate,
+        preferredTime: bookingTime,
+        projectScope: bookingScope,
+        budgetEstimate: bookingBudget === '' ? undefined : Number(bookingBudget),
+        meetingType: bookingMeetingType,
+        paymentMethod: bookingPaymentMethod,
+        location: bookingLocation
+      });
+      setSentBookings(prev => [booking, ...prev]);
+      setSelectedBusinessForBooking(null);
+      showToast(`Booking request ${booking.bookingRef} sent to ${selectedBusinessForBooking.name}.`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not send the booking request.', 'error');
+    }
   };
 
-  // Update booking status
-  const handleUpdateBookingStatus = (bookingId: string, newStatus: 'accepted' | 'declined' | 'completed') => {
-    const updatedBookings = (data.directoryBookings || []).map(b => {
-      if (b.id === bookingId) {
-        return { ...b, status: newStatus };
-      }
-      return b;
-    });
-
-    onUpdateData({
-      ...data,
-      directoryBookings: updatedBookings
-    });
-
-    showToast(`Booking status updated to ${newStatus.toUpperCase()}`, 'success');
+  // Update booking status (provider: accept/decline/complete, requester: cancel)
+  const handleUpdateBookingStatus = async (bookingId: string, newStatus: DirectoryBooking['status']) => {
+    try {
+      await updateDirectoryBookingStatus(bookingId, newStatus);
+      const apply = (list: DirectoryBooking[]) => list.map(b => b.id === bookingId ? { ...b, status: newStatus } : b);
+      setReceivedBookingsList(apply);
+      setSentBookings(apply);
+      showToast(`Booking ${newStatus}.`, 'success');
+    } catch (err: any) {
+      showToast(err?.message || 'Could not update the booking.', 'error');
+    }
   };
 
-  // Convert booking to Invoice
+  // Convert an accepted booking into a draft invoice for review
   const handleConvertBookingToInvoice = (booking: DirectoryBooking) => {
     if (!onNavigateToTab) return;
 
-    // Check if client exists or create one
-    let client = data.clients.find(c => c.email.toLowerCase() === booking.clientEmail.toLowerCase());
-    let updatedClients = [...data.clients];
+    let client = data.clients.find(c => c.email && c.email.toLowerCase() === booking.clientEmail.toLowerCase());
+    const updatedClients = [...data.clients];
 
     if (!client) {
       client = {
@@ -318,23 +306,23 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
         name: booking.clientName,
         email: booking.clientEmail,
         phone: booking.clientPhone,
-        address: booking.location || 'Suva, Fiji',
-        tin: '10-00000-0-0'
+        address: booking.location || '',
+        tin: ''
       };
       updatedClients.push(client);
     }
 
-    // Create Invoice Document
-    const subtotal = booking.budgetEstimate || 150;
-    const vatRate = data.userProfile.defaultVatRate || 12.5;
-    const vatAmount = (subtotal * vatRate) / 100;
+    const subtotal = booking.budgetEstimate || 0;
+    const vatRate = data.userProfile.defaultVatRate ?? 12.5;
+    const vatAmount = Number(((subtotal * vatRate) / 100).toFixed(2));
     const total = subtotal + vatAmount;
 
     const newDocId = `doc-${Date.now()}`;
+    const documentNumber = suggestDocumentNumber(data, 'invoice', data.activeBusinessId) || `INV-${booking.bookingRef}`;
     const newInvoice = {
       id: newDocId,
       type: 'invoice' as const,
-      documentNumber: `INV-${Math.floor(1000 + Math.random() * 9000)}`,
+      documentNumber,
       businessId: data.activeBusinessId,
       clientId: client.id,
       issueDate: new Date().toISOString().split('T')[0],
@@ -353,17 +341,19 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
       vatRate,
       vatAmount,
       total,
-      status: 'sent' as const,
-      notes: `Generated from Directory Booking ${booking.bookingRef}. Payment method requested: ${booking.paymentMethod?.toUpperCase() || 'M-PAISA'}.`
+      // Draft so the amounts can be checked before it goes to the client.
+      status: 'draft' as const,
+      notes: `From directory booking ${booking.bookingRef}.`,
+      updatedAt: new Date().toISOString()
     };
 
     onUpdateData({
       ...data,
       clients: updatedClients,
-      documents: [newInvoice, ...data.documents]
+      documents: [newInvoice as any, ...data.documents]
     });
 
-    showToast(`Invoice ${newInvoice.documentNumber} created from booking!`, 'success');
+    showToast(`Draft invoice ${documentNumber} created. Review it before sending.`, 'success');
     onNavigateToTab('billing', newDocId);
   };
 
@@ -397,10 +387,10 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
         <div className="relative z-10 space-y-3 max-w-3xl">
           <div className="flex flex-wrap items-center gap-2">
             <span className="bg-sky-500/20 text-sky-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full border border-sky-400/30 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> FRCS Verified Marketplace
+              <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> Frilensa Directory
             </span>
             <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full border border-emerald-400/30">
-              M-Paisa & Direct Bookings Active
+              Direct Booking Requests
             </span>
           </div>
 
@@ -408,7 +398,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
             Fiji Business & Service Directory
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-            Discover registered, tax-verified Fijian freelancers, tech studios, chartered accountants, and creative agencies. Book services directly with transparent rates and instant mobile wallet settlement.
+            Find Fijian freelancers, studios and service businesses that use Frilensa, and send them a booking request. They reply from their own Frilensa workspace.
           </p>
 
           {/* Navigation View Switcher */}
@@ -480,19 +470,31 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               <p className="text-xs text-zinc-500 leading-normal">
                 {isPayingUser
                   ? isUserBizPublic
-                    ? 'Your business profile is PUBLIC. Clients in Fiji can search your services and submit direct booking inquiries.'
-                    : 'Your business profile is PRIVATE and hidden from the Fiji public directory.'
-                  : 'Public Directory Listing is locked to Pro and Premium subscribers. Non-paying accounts are not displayed in the public search.'}
+                    ? 'Your business is listed. Other Frilensa users can find it and send you booking requests. Use "Update listing" after changing your business profile.'
+                    : 'Your business is not listed in the directory.'
+                  : 'Directory listings are part of the Pro and Premium plans (free to switch to during early access).'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
             {isPayingUser ? (
+              <>
+              {isUserBizPublic && (
+                <button
+                  type="button"
+                  onClick={handleRefreshMyListing}
+                  disabled={savingListing}
+                  className="px-3 py-2 rounded-xl text-xs font-bold border border-zinc-200 text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 cursor-pointer"
+                >
+                  Update listing
+                </button>
+              )}
               <button
                 type="button"
                 onClick={handleToggleUserPublicStatus}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
+                disabled={savingListing}
+                className={`disabled:opacity-50 px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-xs ${
                   isUserBizPublic
                     ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
                     : 'bg-zinc-800 hover:bg-zinc-900 text-white'
@@ -510,6 +512,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   </>
                 )}
               </button>
+              </>
             ) : (
               <button
                 type="button"
@@ -573,7 +576,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-800 font-medium focus:outline-none focus:border-sky-600"
                 >
-                  <option value="rating">⭐ Highest Rated</option>
+                  <option value="name">A–Z</option>
                   <option value="rate_low">💲 Rate: Low to High</option>
                   <option value="rate_high">💲 Rate: High to Low</option>
                   <option value="name">🔤 Name (A-Z)</option>
@@ -601,23 +604,10 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               </div>
             </div>
 
-            {/* Quick Filters row */}
-            <div className="flex items-center justify-between pt-2 border-t border-zinc-100 text-xs">
-              <label className="flex items-center gap-2 cursor-pointer text-zinc-700 font-medium select-none">
-                <input
-                  type="checkbox"
-                  checked={verifiedOnly}
-                  onChange={(e) => setVerifiedOnly(e.target.checked)}
-                  className="rounded border-zinc-300 text-sky-600 focus:ring-sky-500"
-                />
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-                  <span>Show FRCS Verified businesses only</span>
-                </span>
-              </label>
-
+            {/* Result count */}
+            <div className="flex items-center justify-end pt-2 border-t border-zinc-100 text-xs">
               <span className="text-zinc-400 text-[11px]">
-                Showing <strong>{visibleBusinesses.length}</strong> verified provider{visibleBusinesses.length === 1 ? '' : 's'}
+                Showing <strong>{visibleBusinesses.length}</strong> listed business{visibleBusinesses.length === 1 ? '' : 'es'}
               </span>
             </div>
           </div>
@@ -628,16 +618,22 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               <div className="w-12 h-12 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto">
                 <Search className="w-6 h-6" />
               </div>
-              <h3 className="text-base font-bold text-zinc-800">No Service Providers Found</h3>
+              <h3 className="text-base font-bold text-zinc-800">
+                {loadingDirectory ? 'Loading the directory…' : directoryError ? 'Directory unavailable' : allBusinesses.length === 0 ? 'No businesses listed yet' : 'No matches'}
+              </h3>
               <p className="text-xs text-zinc-500 max-w-md mx-auto">
-                No verified businesses matched your filters. Try clearing your search keyword or switching category/location filters.
+                {directoryError
+                  ? directoryError
+                  : allBusinesses.length === 0
+                    ? 'The directory is new. List your business above to be one of the first that clients can find and book.'
+                    : 'No listed businesses matched your filters. Try clearing your search or changing the category or location.'}
               </p>
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('All');
                   setSelectedCity('All');
-                  setVerifiedOnly(false);
+                  refreshDirectory();
                 }}
                 className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-semibold hover:bg-zinc-800 transition-all inline-flex items-center gap-1.5"
               >
@@ -647,7 +643,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {visibleBusinesses.map((biz) => {
-                const isUserOwnBiz = biz.id === userPrimaryBiz?.id;
+                const isUserOwnBiz = biz.id === myUid;
                 return (
                   <motion.div
                     key={biz.id}
@@ -691,11 +687,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                           </div>
                         </div>
 
-                        {biz.isFrcsVerified && (
-                          <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-extrabold px-2 py-0.5 rounded-full flex items-center gap-1 shrink-0" title={`FRCS TIN: ${biz.tin}`}>
-                            <ShieldCheck className="w-3 h-3 text-emerald-600" /> Verified
-                          </span>
-                        )}
+
                       </div>
 
                       {/* Brand Slogan */}
@@ -707,12 +699,12 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                       {/* Bio Summary */}
                       <p className="text-xs text-zinc-500 leading-relaxed line-clamp-2">
-                        {biz.directoryBio || 'Experienced Fiji service provider providing verified consulting and execution.'}
+                        {biz.directoryBio || ''}
                       </p>
 
                       {/* Specialty Tags */}
                       <div className="flex flex-wrap gap-1.5 pt-1">
-                        {(biz.directorySpecialties || [biz.category || 'Consulting']).slice(0, 3).map((tag, idx) => (
+                        {(biz.directorySpecialties || []).slice(0, 3).map((tag, idx) => (
                           <span
                             key={idx}
                             className="bg-zinc-100 text-zinc-700 text-[10px] font-medium px-2 py-0.5 rounded-md"
@@ -724,21 +716,14 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                       {/* Rating & Rates Row */}
                       <div className="pt-3 border-t border-zinc-100 flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                          <span className="text-xs font-bold text-zinc-900">
-                            {biz.rating ? biz.rating.toFixed(1) : '5.0'}
-                          </span>
-                          <span className="text-[10px] text-zinc-400">
-                            ({biz.reviewCount || 10})
-                          </span>
-                        </div>
+                        <span className="text-[10px] text-zinc-400">{biz.category || 'Services'}</span>
 
                         <div className="text-right">
                           <span className="text-[10px] text-zinc-400 block font-medium">Starting from</span>
                           <span className="text-xs font-bold text-zinc-900 font-mono">
-                            FJD ${biz.startingRate ? biz.startingRate.toFixed(2) : '85.00'}
-                            <span className="text-[10px] text-zinc-400 font-normal">/{biz.rateUnit || 'Hour'}</span>
+                            {biz.startingRate != null
+                              ? <>{biz.currency || 'FJD'} ${biz.startingRate.toFixed(2)}<span className="text-[10px] text-zinc-400 font-normal">/{biz.rateUnit || 'Hour'}</span></>
+                              : 'Ask for a quote'}
                           </span>
                         </div>
                       </div>
@@ -829,7 +814,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     <div className="flex items-center gap-2">
                       <span className={`text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full border ${
                         booking.status === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                        booking.status === 'declined' ? 'bg-red-50 text-red-700 border-red-200' :
+                        booking.status === 'declined' || booking.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
                         booking.status === 'completed' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                         'bg-amber-50 text-amber-700 border-amber-200'
                       }`}>
@@ -955,7 +940,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     </div>
                     <span className={`text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full border ${
                       booking.status === 'accepted' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
-                      booking.status === 'declined' ? 'bg-red-50 text-red-700 border-red-200' :
+                      booking.status === 'declined' || booking.status === 'cancelled' ? 'bg-red-50 text-red-700 border-red-200' :
                       'bg-amber-50 text-amber-700 border-amber-200'
                     }`}>
                       {booking.status}
@@ -967,6 +952,17 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     <p><strong>Scheduled Date:</strong> {booking.bookingDate} at {booking.preferredTime}</p>
                     <p><strong>Project Scope:</strong> {booking.projectScope}</p>
                   </div>
+                  {(booking.status === 'pending' || booking.status === 'accepted') && (
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdateBookingStatus(booking.id, 'cancelled')}
+                        className="text-[11px] font-bold text-red-600 hover:text-red-800 cursor-pointer"
+                      >
+                        Cancel request
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -1014,11 +1010,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {selectedBusinessForProfile.isFrcsVerified && (
-                      <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full border border-emerald-200 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> FRCS Verified
-                      </span>
-                    )}
+
                   </div>
                 </div>
 
@@ -1048,12 +1040,12 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   </div>
                 </div>
 
-                {/* Verification & Payment Channels */}
+                {/* Contact & Payment Channels */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase">FRCS Tax Compliance</span>
-                    <p className="font-mono text-zinc-800 font-bold">TIN: {selectedBusinessForProfile.tin || 'Verified on File'}</p>
-                    <p className="text-zinc-500 text-[11px]">Lawful VAT Tax Invoicing Enabled</p>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">Contact</span>
+                    {selectedBusinessForProfile.email && <p className="text-zinc-800 font-semibold break-all">{selectedBusinessForProfile.email}</p>}
+                    {selectedBusinessForProfile.phone && <p className="text-zinc-500 text-[11px]">{selectedBusinessForProfile.phone}</p>}
                   </div>
                   <div className="space-y-1">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase">Payment Methods</span>
@@ -1268,7 +1260,6 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       <option value="mpaisa">M-Paisa Instant Mobile Wallet</option>
                       <option value="mycash">Digicel MyCash</option>
                       <option value="bank_transfer">BSP / Westpac Wire Transfer</option>
-                      <option value="escrow">Frilensa Escrow Milestone Protection</option>
                     </select>
                   </div>
 

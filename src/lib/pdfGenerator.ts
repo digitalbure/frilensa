@@ -1,5 +1,6 @@
 import { jsPDF } from 'jspdf';
 import QRCode from 'qrcode';
+import { documentPublicUrl } from './documentLinks';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { getCurrencyConfig } from './currencies';
 
@@ -199,9 +200,7 @@ export function generateDocumentPdf(
   doc.roundedRect(qrCardX, qrCardY, qrCardW, qrCardH, 2.5, 2.5, 'D');
 
   // Online document URL
-  const qrUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/?viewDoc=${document.id}&num=${document.documentNumber}`
-    : `https://frilensa.com/docs/${document.documentNumber}`;
+  const qrUrl = documentPublicUrl(document) || 'https://frilensa.com';
 
   // Render Crisp Vector QR Code
   const qrCodeSize = 16.5;

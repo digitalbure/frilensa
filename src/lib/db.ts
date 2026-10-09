@@ -380,8 +380,17 @@ export async function saveConsultantData(data: CRMData) {
 
   try {
     const existing = await getDocs(query(collection(db, 'documents'), where('consultantId', '==', uid)));
+    const liveDocIds = new Set(documents.filter(d => d?.id).map(d => d.id));
     existing.forEach(snap => {
-      if (!keepIds.has(snap.id)) ops.push(batch => batch.delete(snap.ref));
+      if (keepIds.has(snap.id)) return;
+      const docId = snap.data().id || snap.id;
+      const isNamespaced = snap.id === flatDocumentId(uid, docId);
+      // Remove a namespaced copy only when the user deleted that document. Remove an older
+      // un-namespaced copy only once it has been rewritten under the new id in this same batch.
+      // Anything else is left untouched.
+      if (isNamespaced ? !liveDocIds.has(docId) : liveDocIds.has(docId)) {
+        ops.push(batch => batch.delete(snap.ref));
+      }
     });
   } catch (err) {
     console.warn('Could not list flat documents for cleanup:', err);

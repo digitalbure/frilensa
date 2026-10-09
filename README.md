@@ -34,13 +34,20 @@ Sign up with email and password (a verification email is sent) or with Google.
 | `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` | Emailing documents to clients (optional; without it, download the PDF and send it yourself) |
 | `VITE_ADMIN_EMAILS` | Who can open the platform admin panel (build time) |
 
+### Deploying to frilensa.com
+
+Open **Cloud Shell** in the Google Cloud console (project `frilensa-f530d`), clone this repo, then run:
+
+```bash
+bash scripts/deploy.sh                 # or: ADMIN_EMAILS=you@example.com bash scripts/deploy.sh
+```
+
+The script backs up Firestore, deploys the app to the existing Cloud Run service (keeping its env vars), checks `/api/health` reports the new version, and only then publishes `firestore.rules`. It changes no data. Update `CHANGELOG.md` and the version before deploying (see the top of that file).
+
 ### Firebase setup
 
 1. The Firebase web config lives in `firebase-applet-config.json`. It is public by design; access is controlled by the security rules.
-2. **Deploy the Firestore rules** whenever `firestore.rules` changes:
-   ```bash
-   npx firebase-tools deploy --only firestore:rules --project frilensa-f530d
-   ```
+2. **Deploy the Firestore rules** whenever `firestore.rules` changes. `scripts/deploy.sh` does this after the app deploy; always deploy the app first.
 3. In Firebase Auth, enable Email/Password and Google, and add your app's domain to **Authorized domains**.
 4. The server's service account needs the **Cloud Datastore User** role.
 
@@ -61,6 +68,7 @@ Sign up with email and password (a verification email is sent) or with Google.
 | `npm start` | Run the production build |
 | `npm run lint` / `npm run typecheck` | TypeScript type check |
 | `npm run test:rules` | Run the Firestore security rule tests in the emulator (needs Java) |
+| `npm run test:e2e` | Run the server end to end against the Auth + Firestore emulators (needs Java) |
 
 ## Versioning
 

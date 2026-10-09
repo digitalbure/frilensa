@@ -63,8 +63,8 @@ function sessionResponse(claims: Omit<PortalClaims, "exp">) {
 }
 
 /** Updates a document both in the flat collection and inside the consultant's workspace. */
-async function updateClientDocument(
-  claims: PortalClaims,
+export async function updateClientDocument(
+  claims: Pick<PortalClaims, "consultantId" | "clientId">,
   documentId: string,
   check: (current: any) => string | null,
   patch: (current: any) => Record<string, any>
@@ -96,6 +96,33 @@ async function updateClientDocument(
 }
 
 // Express 4 does not catch rejected promises from async handlers; forward them to the error handler.
+type DocumentOwner = Pick<PortalClaims, "consultantId" | "clientId">;
+
+/** Accepts a sent quote on behalf of its client. */
+export function acceptQuote(owner: DocumentOwner, documentId: string) {
+  return updateClientDocument(
+    owner, documentId,
+    d => d.type !== "quote" ? "Only quotes can be accepted." : d.status === "accepted" ? "This quote is already accepted." : d.status !== "sent" ? "This quote can no longer be accepted." : null,
+    () => ({ status: "accepted", acceptedAt: new Date().toISOString() })
+  );
+}
+
+/** Records a payment the client says they made; the consultant confirms it. Status is unchanged. */
+export async function reportPayment(owner: DocumentOwner, documentId: string, rawMethod: unknown, rawReference: unknown) {
+  const method = String(rawMethod || "").slice(0, 60).trim();
+  const reference = String(rawReference || "").slice(0, 120).trim();
+  if (!method || !reference) return { status: 400, error: "Enter the payment method and transaction reference." };
+  const reportedAt = new Date().toISOString();
+  return updateClientDocument(
+    owner, documentId,
+    d => d.type !== "invoice" ? "Payments can only be reported against invoices." : d.status === "paid" ? "This invoice is already marked as paid." : null,
+    d => ({
+      clientPaymentReport: { method, reference, reportedAt },
+      notes: `${d.notes || ""}\n[Client reported payment on ${reportedAt.slice(0, 10)}: ${method}, ref ${reference}. Awaiting confirmation.]`.trim()
+    })
+  );
+}
+
 function asyncRouter() {
   const router = express.Router();
   for (const method of ["get", "post"] as const) {
@@ -272,29 +299,13 @@ export function createPortalRouter() {
   });
 
   router.post("/documents/:id/accept", requirePortal, rateLimit({ name: "portal-action", max: 30, windowMs: 60_000, key: r => (r as PortalRequest).portal!.email }), async (req: PortalRequest, res) => {
-    const result = await updateClientDocument(
-      req.portal!, req.params.id,
-      d => d.type !== "quote" ? "Only quotes can be accepted." : d.status === "accepted" ? "This quote is already accepted." : d.status !== "sent" ? "This quote can no longer be accepted." : null,
-      () => ({ status: "accepted", acceptedAt: new Date().toISOString() })
-    );
+    const result = await acceptQuote(req.portal!, req.params.id);
     if (result.error) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   });
 
   router.post("/documents/:id/report-payment", requirePortal, rateLimit({ name: "portal-action", max: 30, windowMs: 60_000, key: r => (r as PortalRequest).portal!.email }), async (req: PortalRequest, res) => {
-    const method = String(req.body?.method || "").slice(0, 60).trim();
-    const reference = String(req.body?.reference || "").slice(0, 120).trim();
-    if (!method || !reference) return res.status(400).json({ error: "Enter the payment method and transaction reference." });
-    const reportedAt = new Date().toISOString();
-    const result = await updateClientDocument(
-      req.portal!, req.params.id,
-      d => d.type !== "invoice" ? "Payments can only be reported against invoices." : d.status === "paid" ? "This invoice is already marked as paid." : null,
-      d => ({
-        // Status stays as-is: the consultant confirms the payment after checking their account.
-        clientPaymentReport: { method, reference, reportedAt },
-        notes: `${d.notes || ""}\n[Client reported payment on ${reportedAt.slice(0, 10)}: ${method}, ref ${reference}. Awaiting confirmation.]`.trim()
-      })
-    );
+    const result = await reportPayment(req.portal!, req.params.id, req.body?.method, req.body?.reference);
     if (result.error) return res.status(result.status).json({ error: result.error });
     res.json({ ok: true });
   });

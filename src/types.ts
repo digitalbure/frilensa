@@ -286,6 +286,8 @@ export interface Business {
 
 export interface DirectoryBooking {
   id: string;
+  providerUid?: string; // Listing owner who receives the booking
+  requesterUid?: string; // Signed-in user who requested it
   bookingRef: string; // e.g. "BK-8821"
   businessId: string;
   businessName: string;
@@ -300,12 +302,36 @@ export interface DirectoryBooking {
   preferredTime?: string; // e.g. "10:00 AM" or "02:00 PM"
   projectScope: string;
   budgetEstimate?: number;
-  status: 'pending' | 'accepted' | 'declined' | 'completed';
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'cancelled';
   createdAt: string; // ISO string
   meetingType?: 'in_person' | 'zoom_video' | 'phone_call';
-  paymentMethod?: 'mpaisa' | 'mycash' | 'bank_transfer' | 'escrow';
+  paymentMethod?: 'mpaisa' | 'mycash' | 'bank_transfer';
   notes?: string;
   location?: string;
+}
+
+/** A business published to the shared directory (see server/directory.ts). */
+export interface DirectoryListing {
+  uid: string;
+  businessId: string;
+  name: string;
+  brandSlogan?: string;
+  category?: string;
+  city?: string;
+  directoryBio?: string;
+  directorySpecialties?: string[];
+  startingRate?: number | null;
+  rateUnit?: string;
+  currency?: string;
+  email?: string;
+  phone?: string;
+  colorTheme?: string;
+  logoType?: 'text' | 'symbol' | 'image';
+  logoSymbol?: string;
+  logoText?: string;
+  logoUrl?: string;
+  listed: boolean;
+  updatedAt: string;
 }
 
 export interface ClientSubscription {
@@ -471,6 +497,8 @@ export interface CRMDocument {
   creditNoteNumber?: string; // Optional linked Credit Note (e.g. CN-2026-1001)
   originalInvoiceId?: string; // For credit notes referencing an original invoice
   updatedAt?: string; // Last edit timestamp
+  // Random token for the public "view online" link (/?doc=<token>); see lib/documentLinks.ts
+  shareToken?: string;
   // Payment the client reported from the portal; awaits the consultant's confirmation
   clientPaymentReport?: { method: string; reference: string; reportedAt: string };
   // Transactional Email Dispatch Audit

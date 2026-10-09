@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { documentPublicUrl } from '../lib/documentLinks';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -48,9 +49,7 @@ export default function OnlineDocumentModal({
   };
 
   // Verification URL encoded in QR Code
-  const documentUrl = typeof window !== 'undefined' 
-    ? `${window.location.origin}/?viewDoc=${document.id}&num=${document.documentNumber}` 
-    : `https://frilensa.com/docs/${document.documentNumber}`;
+  const documentUrl = documentPublicUrl(document) || '';
 
   const verificationHash = `FRCS-FJ-${document.documentNumber}-${(business.tin || 'TAX').replace(/[^0-9]/g, '').slice(0, 6)}`;
 
@@ -128,7 +127,7 @@ export default function OnlineDocumentModal({
                 ) : (
                   <span className="bg-emerald-500/20 text-emerald-300 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    FRCS VERIFIED
+                    ISSUED
                   </span>
                 )}
               </div>

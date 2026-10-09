@@ -12,6 +12,8 @@ import { CRMData, CRMDocument, Client, ProductService, DocumentItem, Business, R
 import DateInput from './DateInput';
 import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
+import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
+import { documentPublicUrl } from '../lib/documentLinks';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
 import PdfExportModal from './PdfExportModal';
@@ -168,47 +170,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   }, [selectedDocId]);
 
   // Handle document auto-number helper
-  const suggestDocumentNumber = (type: 'quote' | 'invoice' | 'receipt', targetBusinessId?: string) => {
-    const biz = data.businesses.find(b => b.id === (targetBusinessId || data.activeBusinessId)) || activeBusiness;
-    const mode = biz?.docNumberMode || 'auto';
-    
-    if (mode === 'manual') {
-      return '';
-    }
-
-    let prefix = '';
-    let startNum = 1000;
-    
-    if (type === 'invoice') {
-      prefix = biz?.invoicePrefix || 'INV';
-      startNum = biz?.invoiceStartNumber ?? 1000;
-    } else if (type === 'receipt') {
-      prefix = biz?.receiptPrefix || 'REC';
-      startNum = biz?.receiptStartNumber ?? 1000;
-    } else {
-      prefix = biz?.quotePrefix || 'QT';
-      startNum = biz?.quoteStartNumber ?? 1000;
-    }
-
-    const typeDocs = data.documents.filter(d => d.type === type && d.businessId === (biz?.id || data.activeBusinessId));
-    const currentYear = new Date().getFullYear();
-    
-    // Find highest serial
-    let maxSerial = startNum;
-    typeDocs.forEach(d => {
-      const parts = d.documentNumber.split('-');
-      const lastPart = parts[parts.length - 1];
-      const serial = parseInt(lastPart, 10);
-      if (!isNaN(serial) && serial >= maxSerial) {
-        maxSerial = serial;
-      }
-    });
-
-    const hasMatchingDoc = typeDocs.some(d => d.documentNumber.endsWith(`-${startNum}`));
-    const nextNum = hasMatchingDoc || maxSerial > startNum ? maxSerial + 1 : startNum;
-
-    return `${prefix}-${currentYear}-${nextNum}`;
-  };
+  const suggestDocumentNumber = (type: 'quote' | 'invoice' | 'receipt', targetBusinessId?: string) =>
+    suggestNextDocumentNumber(data, type, targetBusinessId || activeBusiness?.id);
 
   const handleNewDocument = (type: 'quote' | 'invoice' | 'receipt' | 'credit_note', forcedClientId: string = '', forcedProjectId: string = '') => {
     setEditingDoc(null);
@@ -515,9 +478,16 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Share Document via Web Share API or Clipboard Fallback
   const handleShareDoc = async (doc: CRMDocument) => {
     const docBiz = data.businesses.find(b => b.id === doc.businessId) || activeBusiness;
-    const shareUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/?viewDoc=${doc.id}&num=${doc.documentNumber}`
-      : `https://frilensa.com/docs/${doc.documentNumber}`;
+    const shareUrl = documentPublicUrl(doc);
+    if (!shareUrl) {
+      setShareToast('Save the document first to get its online link.');
+      setTimeout(() => setShareToast(null), 3500);
+      return;
+    }
+    if (doc.status === 'draft') {
+      setShareToast('Heads up: drafts are hidden from clients. Mark it as sent so the link shows the document.');
+      setTimeout(() => setShareToast(null), 5000);
+    }
     
     const docTitle = doc.type === 'invoice' ? 'Tax Invoice' : 
                      doc.type === 'receipt' ? 'Receipt' :
@@ -3350,7 +3320,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             title="Click to open official online portal"
                           >
                             <QRCodeSVG
-                              value={typeof window !== 'undefined' ? `${window.location.origin}/?viewDoc=${selectedDoc.id}&num=${selectedDoc.documentNumber}` : `https://frilensa.com/docs/${selectedDoc.documentNumber}`}
+                              value={documentPublicUrl(selectedDoc) || 'Save the document to get its link'}
                               size={52}
                               level="M"
                             />

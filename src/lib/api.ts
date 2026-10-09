@@ -1,5 +1,5 @@
 import { auth } from './firebase';
-import type { Business, Client, CRMDocument, Project, ProductService, SupportMessage } from '../types';
+import type { Business, Client, CRMDocument, DirectoryBooking, DirectoryListing, Project, ProductService, SupportMessage } from '../types';
 
 /**
  * Patches window.fetch so every same-origin `/api/` call (except the client portal, which
@@ -10,7 +10,7 @@ export function installAuthenticatedFetch() {
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const path = url.startsWith(window.location.origin) ? url.slice(window.location.origin.length) : url;
-    const needsAuth = path.startsWith('/api/') && !path.startsWith('/api/portal/') && path !== '/api/health';
+    const needsAuth = path.startsWith('/api/') && !path.startsWith('/api/portal/') && !path.startsWith('/api/public/') && path !== '/api/health';
     const user = auth.currentUser;
     if (!needsAuth || !user) return originalFetch(input, init);
 
@@ -179,4 +179,70 @@ export async function sendPortalMessage(
     body: JSON.stringify(message)
   });
   return (await readJson(res)).message;
+}
+
+// ---------- Shared business directory ----------
+// (The ID token is attached automatically by installAuthenticatedFetch.)
+
+export async function fetchDirectoryListings(): Promise<DirectoryListing[]> {
+  return (await readJson(await fetch('/api/directory'))).listings;
+}
+
+export async function publishDirectoryListing(listing: Partial<DirectoryListing>): Promise<DirectoryListing> {
+  const res = await fetch('/api/directory/listing', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(listing)
+  });
+  return (await readJson(res)).listing;
+}
+
+export async function unpublishDirectoryListing(): Promise<void> {
+  await readJson(await fetch('/api/directory/listing', { method: 'DELETE' }));
+}
+
+export async function fetchDirectoryBookings(): Promise<{ sent: DirectoryBooking[]; received: DirectoryBooking[] }> {
+  return readJson(await fetch('/api/directory/bookings'));
+}
+
+export async function requestDirectoryBooking(booking: Partial<DirectoryBooking>): Promise<DirectoryBooking> {
+  const res = await fetch('/api/directory/bookings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(booking)
+  });
+  return (await readJson(res)).booking;
+}
+
+export async function updateDirectoryBookingStatus(id: string, status: DirectoryBooking['status']): Promise<void> {
+  const res = await fetch(`/api/directory/bookings/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  await readJson(res);
+}
+
+// ---------- Public document links (/?doc=<shareToken>) ----------
+
+export interface PublicDocumentData {
+  document: CRMDocument & Record<string, any>;
+  client: { name: string };
+  business: Partial<Business>;
+}
+
+export async function fetchPublicDocument(token: string): Promise<PublicDocumentData> {
+  return readJson(await fetch(`/api/public/documents/${encodeURIComponent(token)}`));
+}
+
+export async function acceptPublicQuote(token: string): Promise<void> {
+  await readJson(await fetch(`/api/public/documents/${encodeURIComponent(token)}/accept`, { method: 'POST' }));
+}
+
+export async function reportPublicPayment(token: string, payment: { method: string; reference: string }): Promise<void> {
+  await readJson(await fetch(`/api/public/documents/${encodeURIComponent(token)}/report-payment`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payment)
+  }));
 }

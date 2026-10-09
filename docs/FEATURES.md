@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.0.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.1.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -26,7 +26,7 @@ Status as of v3.0.0 (October 2026). Each feature is marked by whether it actuall
 - ✅ Partial payments and payment logging with FX and bank-fee deductions, plus payment attachments.
 - ✅ PDF export and print, with branding, bank details and a QR code.
 - ⚠️ Email to client via SendGrid: works once `SENDGRID_API_KEY` is set; otherwise it says it can't send.
-- ⛔ "View online" links and invoice QR codes (`?viewDoc=…`, `frilensa.com/docs/…`) aren't handled by the app; they land on the login page.
+- ✅ "View online" links, share links and PDF QR codes open a public page for that one document (`/?doc=…`): view, download the PDF, accept a quote or report a payment. *(3.1.0)*
 - ⚠️ Retainers and recurring invoices: invoices are generated only when you press the run button in the app. Nothing runs on a schedule, and nothing is sent automatically.
 
 ### Clients (CRM)
@@ -58,8 +58,9 @@ Status as of v3.0.0 (October 2026). Each feature is marked by whether it actuall
 - ⚠️ Not in the mobile bottom navigation; only reachable on desktop.
 
 ### Directory and bookings
-- ⛔ The directory every user sees is seeded with **made-up businesses badged "FRCS Verified"**, and sample bookings are seeded into each new account. Listings and bookings are stored per user, so a booking never reaches the business you booked.
-- ⛔ The booking form offers "escrow" payment, but the escrow feature isn't reachable.
+- ✅ Shared directory: list your business, browse other Frilensa businesses, and send booking requests that reach the provider. Providers accept, decline or complete; requesters can cancel. Accepted bookings convert to a draft invoice. *(3.1.0)*
+- ⚠️ No reviews or verification yet (the made-up ratings and "FRCS Verified" badges were removed in 3.1.0), and no notification when a booking arrives.
+- ⚠️ The admin panel's directory tab still shows each admin's old local list, not the shared directory.
 
 ### Escrow and wallet
 - ⛔ A milestone escrow and wallet module exists in code (`WalletEscrowView`) but isn't linked anywhere, and there's no real money movement behind it.
@@ -86,9 +87,9 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | # | Improvement | Why | Effort |
 | --- | --- | --- | --- |
 | 1 | **Deploy v3.0.0 and its Firestore rules** | The live database is open to anyone until the new rules are deployed. | S |
-| 2 | **Remove the fabricated directory listings and seeded bookings** (or hide the directory until it's real) | Real users see invented "FRCS Verified" businesses and can "book" them. That's a trust and legal risk. | S |
-| 3 | **Make "View online" links and QR codes work**: send the client to their portal via a signed link | Every emailed invoice and printed QR code currently leads to a login page. | M |
-| 4 | **Decide on the hidden features**: link up or delete the Rates Catalogue and Escrow screens, and drop the escrow payment option | 2,700 lines of unreachable code, and the changelog advertises features users can't reach. | S–M |
+| 2 | ~~Remove the fabricated directory listings and seeded bookings~~ | Done in 3.1.0. | — |
+| 3 | ~~Make "View online" links and QR codes work~~ | Done in 3.1.0. Links on invoices sent before 3.1.0 still can't open directly; resend important ones. | — |
+| 4 | **Decide on the hidden features**: link up or delete the Rates Catalogue and Escrow screens (the escrow payment option was dropped in 3.1.0) | 2,700 lines of unreachable code, and the changelog advertises features users can't reach. | S–M |
 | 5 | **Add AI Copilot to mobile navigation** | Most Fiji users will be on phones. | S |
 
 ### P1: core value for Fiji freelancers
@@ -96,7 +97,7 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | # | Improvement | Why | Effort |
 | --- | --- | --- | --- |
 | 6 | **Payments inbox**: list client-reported payments with Confirm / Reject, auto-create the receipt, and notify the client | Closes the loop the portal starts. | M |
-| 7 | **Notifications**: email (and optionally WhatsApp) the consultant when a client accepts a quote, reports a payment or sends a message | At the moment you'd only notice by opening the app. | M |
+| 7 | **Notifications**: email (and optionally WhatsApp) the consultant when a client accepts a quote, reports a payment, sends a message or makes a directory booking | At the moment you'd only notice by opening the app. | M |
 | 8 | **Scheduled jobs on the server**: generate retainer invoices on their due date, and send overdue reminders (gentle, then firm) | Getting paid on time is the main job of the product; today it depends on you remembering to press a button. | M |
 | 9 | **Online payment collection**: card payments (e.g. Stripe or Windcave), then M-PAiSA / MyCash merchant APIs where available; webhooks mark invoices paid | "Pay now" on an invoice is the biggest conversion lever. | L |
 | 10 | **Real subscription billing** using the same payment provider, enforced server-side | Plans are currently free and changeable by any user. | M |
@@ -118,3 +119,4 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | 21 | **Real offline support**: cache the app shell in the service worker and queue writes | The PWA currently needs a connection to start. | M |
 | 22 | **Server-side invite codes and registration modes** | Today they're enforced only in the browser. | S |
 | 23 | **Fijian and Hindi copy** for client-facing pages (portal, invoice emails) | Broadens reach with clients. | M |
+| 24 | **Replace the "FRCS-FJ-…" verification hash** on PDFs and emails with a plain document reference | It looks like an FRCS-issued code, but nothing verifies it. | S |

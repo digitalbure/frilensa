@@ -27,6 +27,7 @@ interface AuthViewProps {
   onUpdatePlatformSettings?: (newSettings: PlatformSettings) => void;
   logoutReason?: string | null;
   onClearLogoutReason?: () => void;
+  initialMode?: 'signin' | 'signup' | 'client';
 }
 
 type AuthMode = 'signin' | 'signup' | 'client';
@@ -38,14 +39,15 @@ export default function AuthView({
   platformSettings = DEFAULT_PLATFORM_SETTINGS, 
   onUpdatePlatformSettings,
   logoutReason,
-  onClearLogoutReason
+  onClearLogoutReason,
+  initialMode = 'signin'
 }: AuthViewProps) {
   const currentSettings = platformSettings || DEFAULT_PLATFORM_SETTINGS;
   const registrationMode = currentSettings.registrationMode || 'open';
   const enableEmailOtp = currentSettings.enableEmailOtp !== false;
 
   // Navigation & Mode - strictly signin or signup for workspace users
-  const [authMode, setAuthMode] = useState<AuthMode>('signin');
+  const [authMode, setAuthMode] = useState<AuthMode>(initialMode);
   const [stage, setStage] = useState<VerificationStage>('form');
   const [showPassword, setShowPassword] = useState(false);
 

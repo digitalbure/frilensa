@@ -17,6 +17,7 @@ import AiAssistantView from './components/AiAssistantView';
 import DirectoryView from './components/DirectoryView';
 import OnboardingWizard from './components/OnboardingWizard';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
+import PublicDocumentView from './components/PublicDocumentView';
 import { CRMData, UserProfile } from './types';
 import { INITIAL_CRM_DATA } from './data/mockData';
 import { auth, onAuthStateChanged, signOut, type User } from './lib/firebase';
@@ -36,6 +37,7 @@ import {
   startPortalSessionWithToken
 } from './lib/api';
 import { isPlatformAdmin } from './lib/admin';
+import { ensureShareTokens } from './lib/documentLinks';
 
 type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
 const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'services', 'settings', 'projects', 'assistant'];
@@ -64,6 +66,17 @@ export default function App() {
   // Client portal session (issued and verified by the server)
   const [portalSession, setPortalSession] = useState<PortalSession | null>(() => loadPortalSession());
   const [portalLinkError, setPortalLinkError] = useState<string | null>(null);
+  const [authInitialMode, setAuthInitialMode] = useState<'signin' | 'client'>('signin');
+
+  // "View online" document links: /?doc=<token>. Links from older versions (?viewDoc=…, /docs/…)
+  // can't be opened securely, so they get an explanation instead.
+  const [publicDocLink, setPublicDocLink] = useState<{ token: string | null } | null>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('doc');
+    if (token) return { token };
+    if (params.get('viewDoc') || window.location.pathname.startsWith('/docs/')) return { token: null };
+    return null;
+  });
 
   // CRM workspace for the signed-in user
   const [crmData, setCrmData] = useState<CRMData>(INITIAL_CRM_DATA);
@@ -98,9 +111,12 @@ export default function App() {
     crmData.platformSettings?.defaultInactivityTimeoutMinutes ??
     15;
 
-  const applyData = useCallback((data: CRMData) => {
+  const applyData = useCallback((incoming: CRMData) => {
+    // Every document gets a share token so its "view online" link and QR code work.
+    const data = ensureShareTokens(incoming);
     crmDataRef.current = data;
     setCrmData(data);
+    return data;
   }, []);
 
   const flushCloudSave = useCallback(async () => {
@@ -164,7 +180,9 @@ export default function App() {
         }
         cloudReadyRef.current = true;
         setCloudReady(true);
-        if (!remote || remote.migratedFromLegacy || local) {
+        // Documents that just received a share token must be saved so their links keep working.
+        const tokensAdded = (remote?.data.documents || []).some(d => d && !d.shareToken);
+        if (!remote || remote.migratedFromLegacy || local || tokensAdded) {
           await flushCloudSave();
         }
         unsubSnapshot = subscribeToConsultantData((liveData) => {
@@ -231,8 +249,7 @@ export default function App() {
       setCrmData(newData);
       return;
     }
-    applyData(newData);
-    saveLocalBackup(newData);
+    saveLocalBackup(applyData(newData));
     scheduleCloudSave();
   };
 
@@ -391,6 +408,19 @@ export default function App() {
     setPortalSession(session);
   };
 
+  if (publicDocLink) {
+    return (
+      <PublicDocumentView
+        token={publicDocLink.token}
+        onOpenClientSignIn={() => {
+          window.history.replaceState({}, '', '/');
+          setAuthInitialMode('client');
+          setPublicDocLink(null);
+        }}
+      />
+    );
+  }
+
   if (portalSession) {
     return (
       <div className="min-h-screen bg-slate-900 flex justify-center items-start sm:p-4 font-sans antialiased">
@@ -426,6 +456,7 @@ export default function App() {
           platformSettings={crmData.platformSettings}
           logoutReason={logoutReason}
           onClearLogoutReason={() => setLogoutReason(null)}
+          initialMode={authInitialMode}
         />
         <PwaInstallPrompt />
       </>

@@ -1586,7 +1586,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </span>
             </div>
             <p className="text-[11px] text-slate-300 mt-0.5 line-clamp-1">
-              Search verified Fiji service providers, receive direct client bookings & toggle public profile.
+              Find Fiji service providers on Frilensa, list your business and receive booking requests.
             </p>
           </div>
         </div>

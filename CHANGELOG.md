@@ -18,13 +18,34 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-10-09
+
+### Added
+- **Shared business directory.** Listings and booking requests now go through the server, so other Frilensa users see your listing and your bookings reach the business you booked. Providers accept, decline or complete requests; requesters can cancel. An "Update listing" button republishes your business details.
+- **"View online" links that work.** Every document gets a private link (`/?doc=…`) used in emails, the share button and the QR code on PDFs. Clients see the document, can download the PDF, accept a quote or report a payment, with no sign-in.
+- Links from older invoices (`?viewDoc=…`, `/docs/…`) show an explanation and a client portal sign-in instead of the login page.
+- End-to-end server tests against the Firebase emulators (`npm run test:e2e`), and a deploy script for Cloud Shell (`scripts/deploy.sh`).
+
+### Changed
+- Converting a booking to an invoice creates a **draft** using your invoice numbering series, ready to review before sending.
+- Document copies used by the portal and links are cleaned up more conservatively: only copies of documents you deleted, or older copies already rewritten, are removed.
+
+### Removed
+- Made-up directory businesses with "FRCS Verified" badges, sample bookings, invented ratings and review counts, and the "FRCS Verified" filter.
+- The "escrow" payment option on bookings (there is no escrow service behind it).
+- "FRCS VERIFIED" badge on documents, now shown as "Issued"; Frilensa doesn't verify documents with FRCS.
+
+### Fixed
+- Booking-to-invoice no longer uses a random invoice number, a placeholder TIN or a placeholder phone number.
+- On phones, the online document page no longer wraps amounts or runs quantities into item names.
+
 ## [3.0.0] - 2026-10-09
 
 Security and reliability overhaul after a full audit (see `AUDIT.md`). **Major** because deploying it requires operator action and changes how sign-in, the client portal and data access work.
 
 ### Before deploying
-- Deploy the new Firestore rules: `npx firebase-tools deploy --only firestore:rules --project frilensa-f530d`.
-- Set `PORTAL_SESSION_SECRET` on the server. Set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` to send email, and `VITE_ADMIN_EMAILS` for admin access.
+- Deploy the app first, then the new Firestore rules: the new app works under the old rules, but the old app breaks under the new ones. `scripts/deploy.sh` does both, in order, after backing up Firestore.
+- Set `PORTAL_SESSION_SECRET` on the server (the deploy script does this if missing). Set `SENDGRID_API_KEY` and `SENDGRID_FROM_EMAIL` to send email, and `VITE_ADMIN_EMAILS` for admin access.
 
 ### Security
 - Firestore rules now limit each workspace to its owner. Client PINs, portal tokens and mail queues are server-only.
