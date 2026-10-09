@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Frilensa — CRM, Invoicing & Tax Compliance Suite (frilensa.com)</title>
+    <meta name="description" content="Frilensa (frilensa.com) — CRM, invoicing, project escrow, expense logging, P&L analytics, and Fiji tax compliance platform for freelancers and businesses." />
+    <meta property="og:title" content="Frilensa — CRM, Invoicing & Tax Compliance Suite (frilensa.com)" />
+    <meta property="og:description" content="Frilensa (frilensa.com) — CRM, invoicing, project escrow, expense logging, P&L analytics, and Fiji tax compliance platform for freelancers and businesses." />
+    
+    <!-- PWA Manifest & Meta Tags -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" href="/pwa-icon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/pwa-icon.svg" />
+    <link rel="mask-icon" href="/pwa-icon.svg" color="#0284c7" />
+    
+    <!-- Native iOS & Android PWA Presentation -->
+    <meta name="theme-color" content="#f8fafc" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Frilensa" />
+    <meta name="application-name" content="Frilensa" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+    
+    <!-- Handle Service Worker: unregister in dev/preview to prevent stale module chunk caching, register in production PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        const isPreviewOrDev = 
+          window.location.hostname === 'localhost' || 
+          window.location.hostname === '127.0.0.1' || 
+          window.location.port !== '' ||
+          window.location.hostname.includes('run.app') ||
+          window.location.hostname.includes('aistudio') ||
+          window.self !== window.top;
+
+        if (isPreviewOrDev) {
+          navigator.serviceWorker.getRegistrations().then((registrations) => {
+            for (const registration of registrations) {
+              registration.unregister();
+            }
+          });
+          if ('caches' in window) {
+            caches.keys().then((names) => {
+              for (const name of names) {
+                caches.delete(name);
+              }
+            });
+          }
+        } else {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js')
+              .then((reg) => {
+                console.log('[PWA] Service Worker registered successfully with scope:', reg.scope);
+              })
+              .catch((err) => {
+                console.error('[PWA] Service Worker registration failed:', err);
+              });
+          });
+        }
+      }
+    </script>
+  </body>
+</html>
+

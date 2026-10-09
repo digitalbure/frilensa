@@ -1,0 +1,6 @@
+{
+  "name": "Frilensa",
+  "description": "Frilensa (frilensa.com) — CRM, invoicing, project escrow, expense logging, P&L analytics, and Fiji tax compliance platform for freelancers and businesses.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,112 @@
+{
+  "entities": {
+    "consultant": {
+      "title": "Consultant Profile and Data",
+      "description": "Stores user CRM profile, businesses, services, clients and projects",
+      "type": "object",
+      "properties": {
+        "userProfile": { "type": "object", "description": "Consultant profile information" },
+        "businesses": { "type": "array", "description": "List of businesses" },
+        "clients": { "type": "array", "description": "List of clients" },
+        "services": { "type": "array", "description": "List of products and services" },
+        "projects": { "type": "array", "description": "List of projects" },
+        "activeBusinessId": { "type": "string", "description": "Currently active business ID" },
+        "aiConversations": { "type": "array", "description": "AI consultation sessions and transcripts" },
+        "aiMemories": { "type": "array", "description": "Persistent long-term AI memory facts" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp of last update" }
+      },
+      "required": ["businesses", "clients", "services"]
+    },
+    "document": {
+      "title": "CRM Document",
+      "description": "Invoice, Quote, Receipt or Contract record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique document ID" },
+        "consultantId": { "type": "string", "description": "Owner consultant UID" },
+        "clientEmail": { "type": "string", "description": "Client email address" },
+        "clientName": { "type": "string", "description": "Client name" },
+        "businessId": { "type": "string", "description": "Issuing business ID" },
+        "businessName": { "type": "string", "description": "Issuing business name" },
+        "type": { "type": "string", "description": "Document type" },
+        "number": { "type": "string", "description": "Invoice or quote number" },
+        "status": { "type": "string", "description": "Status of document" },
+        "total": { "type": "number", "description": "Total amount" },
+        "currency": { "type": "string", "description": "ISO currency code" }
+      },
+      "required": ["id", "consultantId", "type", "number", "total"]
+    },
+    "clientAuth": {
+      "title": "Client Portal Authentication",
+      "description": "Client portal passcode and token credentials",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string", "description": "Client email" },
+        "passcode": { "type": "string", "description": "Client security PIN/passcode" },
+        "clientId": { "type": "string", "description": "Client record ID" },
+        "consultantId": { "type": "string", "description": "Consultant UID" },
+        "clientName": { "type": "string", "description": "Client name" },
+        "accessToken": { "type": "string", "description": "Direct portal access token" },
+        "updatedAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["email", "passcode", "clientId", "consultantId"]
+    },
+    "clientToken": {
+      "title": "Client Direct Access Token",
+      "description": "Index of secure direct access tokens for client portal",
+      "type": "object",
+      "properties": {
+        "accessToken": { "type": "string", "description": "Token string" },
+        "email": { "type": "string", "description": "Client email" },
+        "clientId": { "type": "string", "description": "Client ID" },
+        "consultantId": { "type": "string", "description": "Consultant UID" },
+        "clientName": { "type": "string", "description": "Client name" },
+        "createdAt": { "type": "string", "description": "Token creation timestamp" }
+      },
+      "required": ["accessToken", "email", "clientId", "consultantId"]
+    },
+    "supportMessage": {
+      "title": "Support Message",
+      "description": "Inquiry or support communication between client and consultant",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Message ID" },
+        "consultantId": { "type": "string", "description": "Consultant UID" },
+        "clientEmail": { "type": "string", "description": "Client email" },
+        "clientName": { "type": "string", "description": "Client name" },
+        "businessName": { "type": "string", "description": "Business name" },
+        "subject": { "type": "string", "description": "Message subject" },
+        "message": { "type": "string", "description": "Message body" },
+        "status": { "type": "string", "description": "Message resolution status" },
+        "createdAt": { "type": "string", "description": "ISO timestamp" }
+      },
+      "required": ["id", "consultantId", "clientEmail", "message", "status"]
+    }
+  },
+  "firestore": {
+    "/consultants/{uid}": {
+      "schema": "consultant",
+      "description": "Consultant workspaces and data"
+    },
+    "/consultants_by_email/{emailKey}": {
+      "schema": "consultant",
+      "description": "Consultant workspaces and data indexed by email address"
+    },
+    "/documents/{documentId}": {
+      "schema": "document",
+      "description": "Invoices and client documents"
+    },
+    "/clients_auth/{clientEmail}": {
+      "schema": "clientAuth",
+      "description": "Client authentication credentials"
+    },
+    "/client_tokens/{token}": {
+      "schema": "clientToken",
+      "description": "Direct portal access tokens"
+    },
+    "/support_messages/{messageId}": {
+      "schema": "supportMessage",
+      "description": "Client inquiry and support messages"
+    }
+  }
+}

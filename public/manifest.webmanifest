@@ -1,0 +1,59 @@
+{
+  "name": "Frilensa — Fiji & Pacific CRM & Invoicing",
+  "short_name": "Frilensa",
+  "id": "/?source=pwa",
+  "description": "Frilensa (frilensa.com): Smart invoicing, M-Paisa payments, receipt OCR, dynamic bookkeeping and Fiji tax compliance advisor for freelancers and agencies.",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
+  "background_color": "#0f172a",
+  "theme_color": "#0284c7",
+  "orientation": "portrait-primary",
+  "lang": "en",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard Hub",
+      "short_name": "Dashboard",
+      "url": "/?tab=dashboard",
+      "description": "Overview of income, pending VAT invoices and tax estimates",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Billing & Invoicing",
+      "short_name": "Invoices",
+      "url": "/?tab=billing",
+      "description": "Create compliant Fiji invoices with QR codes & M-Paisa links",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Clients & CRM",
+      "short_name": "Clients",
+      "url": "/?tab=clients",
+      "description": "Manage local clients, contracts and payment portal PINs",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    },
+    {
+      "name": "Frilensa AI Advisor",
+      "short_name": "AI Advisor",
+      "url": "/?tab=assistant",
+      "description": "Ask questions about Fiji VAT, FRCS tax brackets and business tips",
+      "icons": [{ "src": "/pwa-icon.svg", "sizes": "192x192" }]
+    }
+  ]
+}

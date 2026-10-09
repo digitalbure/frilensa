@@ -1,0 +1,66 @@
+rules_version = '2';
+
+// Access model
+// - A consultant's workspace lives at /consultants/{uid} and only that signed-in user can touch it.
+// - Older builds also wrote copies keyed by email (/consultants/{email}, /consultants_by_email/{email}).
+//   Those are readable (never writable) by the owner of that verified email so the app can import them once.
+// - Flat /documents and /support_messages rows carry consultantId and are scoped to it.
+// - Client portal credentials, tokens and mail queues are server-only (Firebase Admin SDK bypasses rules).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUid(id) {
+      return signedIn() && request.auth.uid == id;
+    }
+
+    function isVerifiedEmail(email) {
+      return signedIn()
+        && request.auth.token.email != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == email.lower();
+    }
+
+    function ownsId(id) {
+      return isUid(id) || isVerifiedEmail(id);
+    }
+
+    match /consultants/{docId} {
+      allow read: if ownsId(docId);
+      allow write: if isUid(docId);
+    }
+
+    match /consultants_by_email/{email} {
+      allow read: if isVerifiedEmail(email);
+      allow write: if false;
+    }
+
+    match /documents/{documentId} {
+      allow read: if signedIn() && ownsId(resource.data.consultantId);
+      allow create: if signedIn() && request.resource.data.consultantId == request.auth.uid;
+      allow update: if signedIn()
+        && ownsId(resource.data.consultantId)
+        && request.resource.data.consultantId == request.auth.uid;
+      allow delete: if signedIn() && ownsId(resource.data.consultantId);
+    }
+
+    match /support_messages/{messageId} {
+      allow read: if signedIn() && ownsId(resource.data.consultantId);
+      allow create: if signedIn()
+        && request.resource.data.consultantId == request.auth.uid
+        && request.resource.data.sender == 'consultant';
+      allow update: if signedIn()
+        && ownsId(resource.data.consultantId)
+        && request.resource.data.consultantId == resource.data.consultantId;
+    }
+
+    // Everything else (clients_auth, client_tokens, mail, email_logs, test, legacy flat
+    // collections) is only reachable from the server.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
