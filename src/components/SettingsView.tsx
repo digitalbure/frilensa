@@ -805,6 +805,25 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           </div>
         </div>
 
+        {/* Email notifications */}
+        <div className="p-3.5 rounded-xl border border-zinc-200/90 bg-zinc-50/70 flex items-center justify-between gap-3">
+          <div>
+            <span className="block text-[11px] font-bold text-zinc-900">Email notifications</span>
+            <span className="text-[9px] text-zinc-500">
+              Email me at {data.userProfile.email || 'my account email'} when a client reports a payment, accepts a quote, sends a message or books me.
+            </span>
+          </div>
+          <label className="flex items-center gap-2 text-[11px] font-semibold text-zinc-700 cursor-pointer shrink-0">
+            <input
+              type="checkbox"
+              checked={data.userProfile.emailNotifications !== false}
+              onChange={(e) => onUpdateData({ ...data, userProfile: { ...data.userProfile, emailNotifications: e.target.checked } })}
+              className="rounded border-zinc-300 text-sky-600 focus:ring-sky-500"
+            />
+            On
+          </label>
+        </div>
+
         {/* Inactivity Auto-Logout Security Configuration */}
         <div className="p-3.5 rounded-xl border border-zinc-200/90 bg-zinc-50/70 space-y-2.5">
           <div className="flex items-center justify-between">

@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.1.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.2.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -37,7 +37,7 @@ Status as of v3.1.0 (October 2026). Each feature is marked by whether it actuall
 ### Client portal
 - ✅ Client sees their sent quotes, invoices and receipts, plus projects and messages.
 - ✅ Accept quotes, report a payment, message the consultant.
-- ⚠️ Consultants see a reported payment only as a note on the invoice. There's no "confirm payment" inbox, and no notification when a client acts.
+- ✅ Payments inbox on the dashboard: confirm (records the payment) or reject client-reported payments; accepted quotes, unread messages and booking requests listed alongside. Email notifications when clients act. *(3.2.0)*
 
 ### Projects
 - ✅ Kanban board and grid, with statuses, tasks, deliverables, time tracking and "bill hours" to an invoice.
@@ -59,7 +59,7 @@ Status as of v3.1.0 (October 2026). Each feature is marked by whether it actuall
 
 ### Directory and bookings
 - ✅ Shared directory: list your business, browse other Frilensa businesses, and send booking requests that reach the provider. Providers accept, decline or complete; requesters can cancel. Accepted bookings convert to a draft invoice. *(3.1.0)*
-- ⚠️ No reviews or verification yet (the made-up ratings and "FRCS Verified" badges were removed in 3.1.0), and no notification when a booking arrives.
+- ⚠️ No reviews or verification yet (the made-up ratings and "FRCS Verified" badges were removed in 3.1.0). Booking emails need SendGrid configured.
 - ⚠️ The admin panel's directory tab still shows each admin's old local list, not the shared directory.
 
 ### Escrow and wallet
@@ -96,8 +96,8 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 
 | # | Improvement | Why | Effort |
 | --- | --- | --- | --- |
-| 6 | **Payments inbox**: list client-reported payments with Confirm / Reject, auto-create the receipt, and notify the client | Closes the loop the portal starts. | M |
-| 7 | **Notifications**: email (and optionally WhatsApp) the consultant when a client accepts a quote, reports a payment, sends a message or makes a directory booking | At the moment you'd only notice by opening the app. | M |
+| 6 | ~~Payments inbox~~ | Done in 3.2.0. Still to do: generate a receipt document automatically on confirm. | — |
+| 7 | ~~Email notifications~~ | Done in 3.2.0. Still to do: WhatsApp/SMS, and push notifications for the installed app. | — |
 | 8 | **Scheduled jobs on the server**: generate retainer invoices on their due date, and send overdue reminders (gentle, then firm) | Getting paid on time is the main job of the product; today it depends on you remembering to press a button. | M |
 | 9 | **Online payment collection**: card payments (e.g. Stripe or Windcave), then M-PAiSA / MyCash merchant APIs where available; webhooks mark invoices paid | "Pay now" on an invoice is the biggest conversion lever. | L |
 | 10 | **Real subscription billing** using the same payment provider, enforced server-side | Plans are currently free and changeable by any user. | M |

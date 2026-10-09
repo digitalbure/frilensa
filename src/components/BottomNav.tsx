@@ -5,9 +5,11 @@ import { LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Glob
 interface BottomNavProps {
   activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
   onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant') => void;
+  /** Items waiting on the user, shown as a badge on the Hub tab. */
+  dashboardBadge?: number;
 }
 
-export default function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
+export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }: BottomNavProps) {
   const navItems = [
     { id: 'dashboard' as const, label: 'Hub', icon: LayoutDashboard },
     { id: 'directory' as const, label: 'Directory', icon: Globe },
@@ -44,6 +46,11 @@ export default function BottomNav({ activeTab, onChangeTab }: BottomNavProps) {
               onClick={() => handleTabClick(item.id)}
               className="flex flex-col items-center justify-center relative py-1 transition-all active:scale-95 group flex-1 touch-manipulation min-h-[44px]"
             >
+              {item.id === 'dashboard' && dashboardBadge > 0 && (
+                <span className="absolute top-0 right-1/4 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9px] font-extrabold flex items-center justify-center" aria-label={`${dashboardBadge} items need attention`}>
+                  {dashboardBadge}
+                </span>
+              )}
               <div className="relative p-1.5 rounded-xl transition-all flex items-center justify-center">
                 {isActive && (
                   <motion.div

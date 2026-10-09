@@ -1,6 +1,7 @@
 // End-to-end test of the server against the Firebase Auth + Firestore emulators.
 // Run with: npm run test:e2e (needs Java). Starts server.ts on port 3300.
 import { spawn } from 'node:child_process';
+import http from 'node:http';
 import assert from 'node:assert/strict';
 const P = 'frilensa-e2e', AUTH = 'http://127.0.0.1:9099', FS = 'http://127.0.0.1:8085', API = 'http://127.0.0.1:3300';
 const results = [];
@@ -27,6 +28,18 @@ async function get(path) {
   return r.fields ? un({ mapValue: { fields: r.fields } }) : null;
 }
 
+// Fake SendGrid: records every email the server sends.
+const emails = [];
+const fakeSendGrid = http.createServer((req, res) => {
+  let body = ''; req.on('data', c => body += c);
+  req.on('end', () => { try { const m = JSON.parse(body); emails.push({ to: m.personalizations[0].to[0].email, subject: m.subject, html: (m.content || []).find(c => c.type === 'text/html')?.value || '' }); } catch {} res.writeHead(202, { 'x-message-id': 'fake' }); res.end(); });
+}).listen(3399);
+const emailTo = async (to, match, ms = 4000) => {
+  const end = Date.now() + ms;
+  while (Date.now() < end) { const e = emails.find(x => x.to === to && match.test(x.subject)); if (e) return e; await new Promise(r => setTimeout(r, 100)); }
+  throw new Error(`no email to ${to} matching ${match}; got ${JSON.stringify(emails)}`);
+};
+
 const A = await user('alice@studio.fj'), B = await user('bob@agency.fj');
 const auth = u => ({ Authorization: `Bearer ${u.token}`, 'Content-Type': 'application/json' });
 const TOK_INV = 'invTokenAAAAAAAAAAAAAAAA', TOK_DRAFT = 'draftTokenBBBBBBBBBBBBBB', TOK_QUOTE = 'quoteTokenCCCCCCCCCCCCCC';
@@ -35,12 +48,12 @@ const docs = [
   { id: 'd2', type: 'invoice', status: 'draft', documentNumber: 'INV-2026-1002', total: 50, subtotal: 50, vatRate: 0, vatAmount: 0, shareToken: TOK_DRAFT, clientId: 'c1', businessId: 'b1', items: [] },
   { id: 'd3', type: 'quote', status: 'sent', documentNumber: 'QT-2026-1000', total: 200, subtotal: 200, vatRate: 0, vatAmount: 0, shareToken: TOK_QUOTE, clientId: 'c1', businessId: 'b1', items: [] }
 ];
-await put(`consultants/${A.uid}`, { clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
+await put(`consultants/${A.uid}`, { consultantEmail: A.email, userProfile: { email: A.email }, clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
 for (const d of docs) await put(`documents/${A.uid}_${d.id}`, { ...d, consultantId: A.uid, clientEmail: 'client@one.fj', clientName: 'Client One', businessName: 'Alice Studio', businessBankDetails: 'BSP 123' });
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -63,6 +76,9 @@ try {
     assert.equal(r.status, 200);
     const d = await get(`documents/${A.uid}_d1`); assert.equal(d.status, 'sent'); assert.equal(d.clientPaymentReport.reference, 'MP12345');
   });
+  await check('consultant is emailed about the accepted quote', async () => { await emailTo(A.email, /Quote QT-2026-1000 accepted/); });
+  await check('consultant is emailed about the reported payment', async () => { await emailTo(A.email, /Payment reported for INV-2026-1001/); });
+  await check('reported payment is marked pending for the inbox', async () => { assert.equal((await get(`documents/${A.uid}_d1`)).clientPaymentReport.status, 'pending'); });
   await check('report payment needs a reference', async () => { assert.equal((await fetch(`${API}/api/public/documents/${TOK_INV}/report-payment`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 400); });
 
   // Directory
@@ -72,12 +88,14 @@ try {
   await check('cannot book yourself', async () => { assert.equal((await fetch(`${API}/api/directory/bookings`, { method: 'POST', headers: auth(A), body: JSON.stringify({ providerUid: A.uid, clientName: 'A', bookingDate: '2026-11-01' }) })).status, 400); });
   let bookingId;
   await check('Bob books Alice', async () => { const r = await j(await fetch(`${API}/api/directory/bookings`, { method: 'POST', headers: auth(B), body: JSON.stringify({ providerUid: A.uid, clientName: 'Bob', clientEmail: 'bob@agency.fj', bookingDate: '2026-11-01', serviceName: 'Logo', paymentMethod: 'escrow' }) })); assert.equal(r.status, 200); assert.equal(r.body.booking.paymentMethod, 'bank_transfer'); bookingId = r.body.booking.id; });
+  await check('provider is emailed about the new booking', async () => { await emailTo(A.email, /New booking request BK-/); });
   await check('Alice receives the booking, Bob sees it as sent', async () => {
     const a = await j(await fetch(`${API}/api/directory/bookings`, { headers: auth(A) })); assert.equal(a.body.received.length, 1); assert.equal(a.body.sent.length, 0);
     const b = await j(await fetch(`${API}/api/directory/bookings`, { headers: auth(B) })); assert.equal(b.body.sent.length, 1); assert.equal(b.body.received.length, 0);
   });
   await check('Bob cannot accept his own request', async () => { assert.equal((await fetch(`${API}/api/directory/bookings/${bookingId}`, { method: 'PATCH', headers: auth(B), body: JSON.stringify({ status: 'accepted' }) })).status, 403); });
   await check('Alice accepts', async () => { assert.equal((await fetch(`${API}/api/directory/bookings/${bookingId}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ status: 'accepted' }) })).status, 200); });
+  await check('requester is emailed when the booking is accepted', async () => { await emailTo('bob@agency.fj', /accepted your booking/); });
   await check('Bob cancels', async () => { assert.equal((await fetch(`${API}/api/directory/bookings/${bookingId}`, { method: 'PATCH', headers: auth(B), body: JSON.stringify({ status: 'cancelled' }) })).status, 200); });
   await check('closed booking cannot be reopened', async () => { assert.equal((await fetch(`${API}/api/directory/bookings/${bookingId}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ status: 'accepted' }) })).status, 409); });
   await check('Alice unlists', async () => { await fetch(`${API}/api/directory/listing`, { method: 'DELETE', headers: auth(A) }); const r = await j(await fetch(`${API}/api/directory`, { headers: auth(B) })); assert.equal(r.body.listings.length, 0); });
@@ -90,10 +108,31 @@ try {
   await check('portal shows only issued documents', async () => { const r = await j(await fetch(`${API}/api/portal/data`, { headers: { Authorization: `Portal ${session}` } })); assert.equal(r.status, 200); assert.deepEqual(r.body.documents.map(d => d.id).sort(), ['d1', 'd3']); });
   await check('Bob cannot create a link for Alice\'s client data', async () => { const r = await j(await fetch(`${API}/api/portal/admin/link`, { method: 'POST', headers: auth(B), body: JSON.stringify({ clientId: 'c1', email: 'client@one.fj' }) })); const s = await j(await fetch(`${API}/api/portal/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: r.body.token }) })); assert.equal(s.status, 401); });
   await check('Alice sets a PIN and the client signs in with it', async () => { assert.equal((await fetch(`${API}/api/portal/admin/pin`, { method: 'POST', headers: auth(A), body: JSON.stringify({ clientId: 'c1', email: 'client@one.fj', pin: '482913' }) })).status, 200); assert.equal((await fetch(`${API}/api/portal/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'client@one.fj', pin: '482913' }) })).status, 200); assert.equal((await fetch(`${API}/api/portal/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: 'client@one.fj', pin: '000000' }) })).status, 401); });
+  await check('client message reaches the consultant by email', async () => {
+    const r = await fetch(`${API}/api/portal/messages`, { method: 'POST', headers: { Authorization: `Portal ${session}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ subject: 'Question', message: 'When is the next milestone?' }) });
+    assert.equal(r.status, 200);
+    await emailTo(A.email, /New message from Client One/);
+  });
+  await check('client-entered text is escaped in notification emails', async () => {
+    await fetch(`${API}/api/portal/messages`, { method: 'POST', headers: { Authorization: `Portal ${session}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ subject: 'Hi', message: '<img src=x onerror=alert(1)>' }) });
+    let latest;
+    for (let i = 0; i < 40 && !latest; i++) { latest = emails.find(x => x.to === A.email && /onerror/.test(x.html)); if (!latest) await new Promise(r => setTimeout(r, 100)); }
+    assert.ok(latest, 'notification email for the message never arrived');
+    assert.ok(latest.html.includes('&lt;img src=x onerror=alert(1)&gt;'), 'expected escaped markup');
+    assert.ok(!latest.html.includes('<img src=x'), 'raw markup must not appear');
+  });
+  await check('turning notifications off stops the emails', async () => {
+    await put(`consultants/${A.uid}`, { consultantEmail: A.email, userProfile: { email: A.email, emailNotifications: false }, clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
+    const before = emails.length;
+    await fetch(`${API}/api/portal/messages`, { method: 'POST', headers: { Authorization: `Portal ${session}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ message: 'Another question' }) });
+    await new Promise(r => setTimeout(r, 1500));
+    assert.equal(emails.length, before);
+  });
   await check('revoking ends the open session', async () => { await fetch(`${API}/api/portal/admin/revoke`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'client@one.fj' }) }); assert.equal((await fetch(`${API}/api/portal/data`, { headers: { Authorization: `Portal ${session}` } })).status, 401); });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.
   try { process.kill(-server.pid, 'SIGTERM'); } catch {}
+  fakeSendGrid.close();
 }
 for (const r of results) console.log(r.join('  '));
 const failed = results.filter(r => r[0] === 'FAIL').length;

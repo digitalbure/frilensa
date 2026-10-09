@@ -20,6 +20,7 @@ export interface UserProfile {
   onboardingCompleted?: boolean;
   accountType?: 'free' | 'business';
   inactivityTimeoutMinutes?: number; // Minutes of inactivity before auto-logout (e.g. 5, 15, 30, 60, or 0 for disabled)
+  emailNotifications?: boolean; // Email me when clients act (payments, quotes, messages, bookings). Default on.
 }
 
 export type PlanTier = 'free' | 'pro' | 'premium';
@@ -500,7 +501,16 @@ export interface CRMDocument {
   // Random token for the public "view online" link (/?doc=<token>); see lib/documentLinks.ts
   shareToken?: string;
   // Payment the client reported from the portal; awaits the consultant's confirmation
-  clientPaymentReport?: { method: string; reference: string; reportedAt: string };
+  clientPaymentReport?: {
+    method: string;
+    reference: string;
+    reportedAt: string;
+    status?: 'pending' | 'confirmed' | 'rejected'; // missing = pending (reports made before 3.2.0)
+    resolvedAt?: string;
+    rejectionReason?: string;
+  };
+  acceptedAt?: string; // When the client accepted a quote
+  acceptanceSeenAt?: string; // When the consultant dismissed the "quote accepted" inbox item
   // Transactional Email Dispatch Audit
   lastSentAt?: string; // Last timestamp email was sent
   sentToEmail?: string; // Last recipient email address

@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
+import { notifyConsultant, notifyEmail, later } from "./notify";
 
 // Shared marketplace data. Both collections are server-only (Firestore rules deny browser access);
 // every read and write goes through these routes so users only change their own listing and bookings.
@@ -146,6 +147,17 @@ export function createDirectoryRouter() {
       updatedAt: new Date().toISOString()
     };
     await ref.set(booking);
+    later(notifyConsultant(providerUid, {
+      subject: `New booking request ${booking.bookingRef} from ${clientName}`,
+      heading: "You have a new booking request",
+      lines: [
+        `${clientName} would like to book "${booking.serviceName}" on ${bookingDate}${booking.preferredTime ? ` at ${booking.preferredTime}` : ""}.`,
+        booking.projectScope ? `Details: ${booking.projectScope.slice(0, 500)}` : "",
+        `Reply to ${clientEmail} or accept it in Frilensa.`
+      ].filter(Boolean),
+      actionLabel: "View booking",
+      actionPath: "/?tab=directory"
+    }));
     res.json({ booking });
   });
 
@@ -167,6 +179,25 @@ export function createDirectoryRouter() {
       return res.status(409).json({ error: `This booking is already ${booking.status}.` });
     }
     await ref.update({ status, updatedAt: new Date().toISOString() });
+    if (isProvider) {
+      const verb = status === "accepted" ? "accepted" : status === "declined" ? "declined" : "marked as completed";
+      later(notifyEmail(booking.clientEmail || booking.requesterAccountEmail, {
+        subject: `${booking.businessName} ${verb} your booking ${booking.bookingRef}`,
+        heading: `Your booking was ${verb}`,
+        lines: [`${booking.businessName} ${verb} your request for "${booking.serviceName}" on ${booking.bookingDate}.`,
+          booking.businessEmail ? `Contact them at ${booking.businessEmail}${booking.businessPhone ? ` or ${booking.businessPhone}` : ""}.` : ""].filter(Boolean),
+        actionLabel: "Open Frilensa",
+        actionPath: "/?tab=directory"
+      }));
+    } else {
+      later(notifyConsultant(booking.providerUid, {
+        subject: `Booking ${booking.bookingRef} cancelled by ${booking.clientName}`,
+        heading: "A booking was cancelled",
+        lines: [`${booking.clientName} cancelled their request for "${booking.serviceName}" on ${booking.bookingDate}.`],
+        actionLabel: "Open Frilensa",
+        actionPath: "/?tab=directory"
+      }));
+    }
     res.json({ ok: true });
   });
 

@@ -98,7 +98,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
     setBusy(true);
     try {
       await reportPublicPayment(token!, { method: payMethod, reference: payRef });
-      setData({ ...data, document: { ...d, clientPaymentReport: { method: payMethod, reference: payRef, reportedAt: new Date().toISOString() } } });
+      setData({ ...data, document: { ...d, clientPaymentReport: { method: payMethod, reference: payRef, reportedAt: new Date().toISOString(), status: 'pending' } } });
       setShowPayForm(false);
       setNotice({ text: 'Thanks! Your payment was reported and will be confirmed once received.', ok: true });
     } catch (err: any) {
@@ -131,7 +131,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: brand }}>{TYPE_LABEL[d.type] || 'Document'}</p>
             <p className="text-base font-mono font-bold text-slate-900">#{d.documentNumber}</p>
             <p className="text-xs text-slate-500">Issued {d.issueDate}{d.dueDate ? ` · Due ${d.dueDate}` : ''}</p>
-            <StatusBadge status={d.status} reported={Boolean(d.clientPaymentReport)} />
+            <StatusBadge status={d.status} reported={Boolean(d.clientPaymentReport) && d.clientPaymentReport?.status !== 'rejected'} />
           </div>
         </div>
 
@@ -192,6 +192,12 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
 
         {clientNotes && <p className="text-xs text-slate-500 whitespace-pre-line">{clientNotes}</p>}
 
+        {d.type === 'invoice' && d.status !== 'paid' && d.clientPaymentReport?.status === 'rejected' && !notice && (
+          <div className="rounded-xl px-4 py-3 text-xs font-semibold bg-rose-50 text-rose-700">
+            Your reported payment (ref {d.clientPaymentReport.reference}) couldn't be matched.{d.clientPaymentReport.rejectionReason ? ` ${d.clientPaymentReport.rejectionReason}` : ''} Please check the details and report it again.
+          </div>
+        )}
+
         {notice && (
           <div className={`rounded-xl px-4 py-3 text-xs font-semibold ${notice.ok ? 'bg-emerald-50 text-emerald-800' : 'bg-rose-50 text-rose-700'}`}>
             {notice.text}
@@ -206,7 +212,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
               <CheckCircle2 className="w-4 h-4 inline -mt-0.5 mr-1" /> Accept quote
             </button>
           )}
-          {d.type === 'invoice' && (d.status === 'sent' || d.status === 'partial') && !d.clientPaymentReport && !showPayForm && (
+          {d.type === 'invoice' && (d.status === 'sent' || d.status === 'partial') && (!d.clientPaymentReport || d.clientPaymentReport.status === 'rejected') && !showPayForm && (
             <button type="button" onClick={() => setShowPayForm(true)}
               className="px-4 py-2.5 rounded-xl text-white text-xs font-bold cursor-pointer" style={{ backgroundColor: brand }}>
               I've paid this invoice

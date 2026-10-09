@@ -1,3 +1,4 @@
+import { notifyConsultant, later } from "./notify";
 import express, { type Response, type NextFunction } from "express";
 import {
   getAdminDb, requireUser, rateLimit, isEmail, sha256, randomToken, hashPin, verifyPin,
@@ -68,7 +69,7 @@ export async function updateClientDocument(
   documentId: string,
   check: (current: any) => string | null,
   patch: (current: any) => Record<string, any>
-): Promise<{ status: number; error?: string }> {
+): Promise<{ status: number; error?: string; doc?: any }> {
   const db = getAdminDb();
   // Flat copies are keyed "{consultantId}_{documentId}"; older builds used the bare id.
   const namespacedRef = db.collection("documents").doc(`${claims.consultantId}_${documentId}`);
@@ -91,8 +92,12 @@ export async function updateClientDocument(
       const documents = (ws.documents || []).map((d: any) => d.id === documentId ? { ...d, ...changes } : d);
       tx.update(workspaceRef, { documents, updatedAt: changes.updatedAt });
     }
-    return { status: 200 };
+    return { status: 200, doc: { ...flat, ...changes } };
   });
+}
+
+function money(d: any) {
+  return `${d.currency || "FJD"} $${Number(d.total || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // Express 4 does not catch rejected promises from async handlers; forward them to the error handler.
@@ -104,7 +109,16 @@ export function acceptQuote(owner: DocumentOwner, documentId: string) {
     owner, documentId,
     d => d.type !== "quote" ? "Only quotes can be accepted." : d.status === "accepted" ? "This quote is already accepted." : d.status !== "sent" ? "This quote can no longer be accepted." : null,
     () => ({ status: "accepted", acceptedAt: new Date().toISOString() })
-  );
+  ).then(result => {
+    if (result.doc) later(notifyConsultant(owner.consultantId, {
+      subject: `Quote ${result.doc.documentNumber} accepted by ${result.doc.clientName || "your client"}`,
+      heading: "A client accepted your quote",
+      lines: [`${result.doc.clientName || "Your client"} accepted quote ${result.doc.documentNumber} (${money(result.doc)}).`, "You can now turn it into an invoice."],
+      actionLabel: "Open Frilensa",
+      actionPath: "/?tab=dashboard"
+    }));
+    return result;
+  });
 }
 
 /** Records a payment the client says they made; the consultant confirms it. Status is unchanged. */
@@ -117,10 +131,23 @@ export async function reportPayment(owner: DocumentOwner, documentId: string, ra
     owner, documentId,
     d => d.type !== "invoice" ? "Payments can only be reported against invoices." : d.status === "paid" ? "This invoice is already marked as paid." : null,
     d => ({
-      clientPaymentReport: { method, reference, reportedAt },
+      clientPaymentReport: { method, reference, reportedAt, status: "pending" },
       notes: `${d.notes || ""}\n[Client reported payment on ${reportedAt.slice(0, 10)}: ${method}, ref ${reference}. Awaiting confirmation.]`.trim()
     })
-  );
+  ).then(result => {
+    if (result.doc) later(notifyConsultant(owner.consultantId, {
+      subject: `Payment reported for ${result.doc.documentNumber}: please confirm`,
+      heading: "A client reported a payment",
+      lines: [
+        `${result.doc.clientName || "Your client"} says they paid invoice ${result.doc.documentNumber} (${money(result.doc)}).`,
+        `Method: ${method}. Reference: ${reference}.`,
+        "Check your account, then confirm or reject it in your payments inbox."
+      ],
+      actionLabel: "Review payment",
+      actionPath: "/?tab=dashboard"
+    }));
+    return result;
+  });
 }
 
 function asyncRouter() {
@@ -333,6 +360,13 @@ export function createPortalRouter() {
       updatedAt: new Date().toISOString()
     };
     await ref.set(message);
+    later(notifyConsultant(claims.consultantId, {
+      subject: `New message from ${claims.clientName || claims.email}`,
+      heading: "You have a new client message",
+      lines: [`${claims.clientName || claims.email}: ${message.subject}`, message.message.slice(0, 500)],
+      actionLabel: "Reply in Frilensa",
+      actionPath: "/?tab=dashboard"
+    }));
     res.json({ message });
   });
 

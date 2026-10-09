@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { inboxDocumentCount } from '../lib/inbox';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles,
@@ -67,6 +68,8 @@ export default function DesktopSidebar({
   const activeBusiness = crmData.businesses?.find(b => b.id === crmData.activeBusinessId) || crmData.businesses?.[0];
   const activeVentureConfig = getVentureConfig(activeBusiness?.type);
 
+  const attentionCount = inboxDocumentCount(crmData);
+
   const pendingInvoicesCount = crmData.documents?.filter(
     d => d.type === 'invoice' && (d.status === 'sent' || d.status === 'partial') && d.businessId === crmData.activeBusinessId
   ).length || 0;
@@ -76,7 +79,7 @@ export default function DesktopSidebar({
   ).length || 0;
 
   const navItems = [
-    { id: 'dashboard' as const, label: 'Dashboard Hub', icon: LayoutDashboard, badge: undefined },
+    { id: 'dashboard' as const, label: 'Dashboard Hub', icon: LayoutDashboard, badge: attentionCount > 0 ? `${attentionCount} new` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'billing' as const, label: 'Invoices & Billing', icon: Layers, badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} due` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'clients' as const, label: 'Clients CRM', icon: Users, badge: crmData.clients?.length ? `${crmData.clients.length}` : undefined, badgeColor: 'bg-slate-800 text-slate-300 border-slate-700' },
     { id: 'projects' as const, label: 'Projects & Tasks', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },

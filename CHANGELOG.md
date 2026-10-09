@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-10-09
+
+### Added
+- **Payments inbox.** A "Needs your attention" panel at the top of the dashboard lists payments clients have reported. **Confirm** opens the usual Record Payment form (pre-filled with the client's method) and marks the invoice paid; **Reject** lets the client know it couldn't be matched so they can report it again. Optionally emails the client either way.
+- The same panel shows quotes clients accepted, unread client messages and pending directory booking requests, with a count badge on the Dashboard tab (desktop and phone).
+- **Email notifications** to you when a client reports a payment, accepts a quote or sends a portal message, and when someone books you through the directory. People who book you are emailed when you accept, decline or complete the booking. Turn it off in Settings → Email notifications. Needs SendGrid configured; limited to 20 emails per hour per recipient.
+
+### Changed
+- Client-reported payments now have a status (pending, confirmed, rejected). The client portal and online document page show a rejected report and let the client report the payment again.
+
 ## [3.1.1] - 2026-10-09
 
 ### Fixed

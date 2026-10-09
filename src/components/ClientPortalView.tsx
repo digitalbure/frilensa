@@ -137,7 +137,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
     try {
       await reportPortalPayment(session, selectedDoc.id, { method: paymentMethod, reference: paymentTx.trim() });
-      const report = { method: paymentMethod, reference: paymentTx.trim(), reportedAt: new Date().toISOString() };
+      const report = { method: paymentMethod, reference: paymentTx.trim(), reportedAt: new Date().toISOString(), status: 'pending' as const };
       setDocuments(prev => prev.map(d => d.id === selectedDoc.id ? { ...d, clientPaymentReport: report } : d));
       setSelectedDoc((prev: any) => ({ ...prev, clientPaymentReport: report }));
       setShowPaymentModal(false);
@@ -993,12 +993,17 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         <CheckCircle2 className="w-4 h-4" /> Accept Project Quote
                       </button>
                     )}
-                    {selectedDoc.type === 'invoice' && selectedDoc.status !== 'paid' && selectedDoc.clientPaymentReport && (
+                    {selectedDoc.type === 'invoice' && selectedDoc.status !== 'paid' && selectedDoc.clientPaymentReport?.status === 'rejected' && (
+                      <div className="w-full py-2 px-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-[11px] font-semibold">
+                        Your reported payment (ref {selectedDoc.clientPaymentReport.reference}) couldn't be matched.{selectedDoc.clientPaymentReport.rejectionReason ? ` ${selectedDoc.clientPaymentReport.rejectionReason}` : ''} Please check the details and report it again.
+                      </div>
+                    )}
+                    {selectedDoc.type === 'invoice' && selectedDoc.status !== 'paid' && selectedDoc.clientPaymentReport && selectedDoc.clientPaymentReport.status !== 'rejected' && (
                       <div className="flex-1 py-2.5 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5">
                         <Clock className="w-4 h-4 text-amber-600" /> Payment reported — awaiting confirmation
                       </div>
                     )}
-                    {selectedDoc.type === 'invoice' && (selectedDoc.status === 'sent' || selectedDoc.status === 'partial') && !selectedDoc.clientPaymentReport && (
+                    {selectedDoc.type === 'invoice' && (selectedDoc.status === 'sent' || selectedDoc.status === 'partial') && (!selectedDoc.clientPaymentReport || selectedDoc.clientPaymentReport.status === 'rejected') && (
                       <button
                         onClick={() => setShowPaymentModal(true)}
                         className="flex-1 text-white font-bold py-2.5 rounded-xl text-xs text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"

@@ -38,6 +38,7 @@ import {
 } from './lib/api';
 import { isPlatformAdmin } from './lib/admin';
 import { ensureShareTokens } from './lib/documentLinks';
+import { inboxDocumentCount } from './lib/inbox';
 
 type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
 const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'services', 'settings', 'projects', 'assistant'];
@@ -624,7 +625,7 @@ export default function App() {
         </main>
 
         {/* Fixed Mobile Bottom Tab Bar (hidden on md+) */}
-        <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} />
+        <BottomNav activeTab={activeTab} onChangeTab={setActiveTab} dashboardBadge={inboxDocumentCount(crmData)} />
       </div>
 
       {/* Install PWA Prompt Banner & Offline Status */}

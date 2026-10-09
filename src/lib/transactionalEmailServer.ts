@@ -533,7 +533,8 @@ export async function sendViaSendGrid(options: {
   }
 
   try {
-    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+    // SENDGRID_API_URL lets tests point at a local fake; production uses SendGrid.
+    const response = await fetch(process.env.SENDGRID_API_URL || 'https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
