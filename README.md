@@ -2,6 +2,8 @@
 
 CRM, quotes and invoicing, bookkeeping, project tracking and a client portal for freelancers and small businesses in Fiji and the Pacific. React 19 + Vite on the front end, an Express server for AI, email and the client portal, and Firebase Auth + Firestore for data.
 
+See [`docs/FEATURES.md`](docs/FEATURES.md) for the full feature inventory and improvement plan, [`CHANGELOG.md`](CHANGELOG.md) for versions, and [`AUDIT.md`](AUDIT.md) for the October 2026 security audit.
+
 ## What it does
 
 - **Clients and projects**: client directory, project workspaces, milestones and tasks.
@@ -59,6 +61,10 @@ Sign up with email and password (a verification email is sent) or with Google.
 | `npm start` | Run the production build |
 | `npm run lint` / `npm run typecheck` | TypeScript type check |
 | `npm run test:rules` | Run the Firestore security rule tests in the emulator (needs Java) |
+
+## Versioning
+
+Semantic versioning: major = needs operator or user action, minor = new feature, patch = fix. Log every change under `[Unreleased]` in `CHANGELOG.md`; release steps are at the top of that file. The running version is shown in Settings and at `/api/health`.
 
 ## Known limitations
 

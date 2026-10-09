@@ -8,6 +8,7 @@ import { parseBankStatement } from "./src/lib/bankStatementParser";
 import { generateDocumentEmailHtml, sendViaSendGrid, SendDocumentEmailPayload } from "./src/lib/transactionalEmailServer";
 import { requireUser, rateLimit, escapeHtml, isEmail } from "./server/security";
 import { createPortalRouter } from "./server/portal";
+import pkg from "./package.json";
 
 dotenv.config();
 
@@ -205,7 +206,7 @@ async function startServer() {
 
   // API health check
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: "ok", version: pkg.version });
   });
 
   // API endpoint for AI bookkeeping categorization
