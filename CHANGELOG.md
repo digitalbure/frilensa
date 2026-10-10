@@ -18,6 +18,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.3.1] - 2026-10-10
+
+### Fixed
+- Opening an invoice or quote from a project, or from the dashboard's recent invoices and quotes, no longer shows a blank page. Documents with missing amounts or fields (for example a scope of work exported with an empty cost) are repaired when your workspace loads: missing line totals, subtotals and totals are rebuilt from what the document has.
+- If a screen does hit an error, it now shows a message with "Try again" and "Go to dashboard" instead of a blank page.
+- Exporting a project's scope of work treats an empty section cost as 0 instead of saving a broken document.
+- "New invoice" for a project now picks up the project and its client.
+
 ## [3.3.0] - 2026-10-10
 
 ### Added

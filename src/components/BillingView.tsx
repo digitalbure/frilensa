@@ -143,15 +143,16 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         setBillingSubTab('retainers');
       } else if (selectedDocId === 'FX_CALCULATOR' || selectedDocId === 'EXCHANGE_CALCULATOR') {
         setShowFxCalculator(true);
-      } else if (selectedDocId.startsWith('NEW_INVOICE_FOR_')) {
-        const targetClientId = selectedDocId.replace('NEW_INVOICE_FOR_', '');
-        handleNewDocument('invoice', targetClientId);
       } else if (selectedDocId.startsWith('NEW_INVOICE_FOR_PROJECT_')) {
+        // Checked before NEW_INVOICE_FOR_, which would otherwise read the project id as a client id.
         const targetProjId = selectedDocId.replace('NEW_INVOICE_FOR_PROJECT_', '');
         const proj = (data.projects || []).find(p => p.id === targetProjId);
         if (proj) {
           handleNewDocument('invoice', proj.clientId || '', proj.id);
         }
+      } else if (selectedDocId.startsWith('NEW_INVOICE_FOR_')) {
+        const targetClientId = selectedDocId.replace('NEW_INVOICE_FOR_', '');
+        handleNewDocument('invoice', targetClientId);
       } else if (selectedDocId.startsWith('NEW_QUOTE_FOR_PROJECT_')) {
         const targetProjId = selectedDocId.replace('NEW_QUOTE_FOR_PROJECT_', '');
         const proj = (data.projects || []).find(p => p.id === targetProjId);

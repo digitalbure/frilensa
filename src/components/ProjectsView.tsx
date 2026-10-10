@@ -461,7 +461,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       return;
     }
 
-    const subtotal = sections.reduce((sum, s) => sum + s.cost, 0);
+    const costOf = (s: { cost?: unknown }) => Number(s.cost) || 0;
+    const subtotal = sections.reduce((sum, s) => sum + costOf(s), 0);
     const vatRate = data.userProfile.defaultVatRate ?? 12.5;
     const vatAmount = Number((subtotal * (vatRate / 100)).toFixed(2));
     const total = subtotal + vatAmount;
@@ -472,8 +473,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       name: s.title,
       description: s.description + (s.deliverables?.length ? `\nDeliverables:\n` + s.deliverables.map(d => `• ${d}`).join('\n') : ''),
       quantity: 1,
-      rate: s.cost,
-      total: s.cost
+      rate: costOf(s),
+      total: costOf(s)
     }));
 
     // Create unique invoice/quote number
