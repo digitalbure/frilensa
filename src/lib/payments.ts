@@ -1,4 +1,6 @@
-import type { CRMData, PaymentAttachment, Transaction } from '../types';
+import type { CRMData, CRMDocument, PaymentAttachment, Transaction } from '../types';
+import { suggestDocumentNumber } from './documentNumbers';
+import { generateShareToken } from './documentLinks';
 
 export interface ConfirmedPaymentDetails {
   paymentMethod: string;
@@ -86,4 +88,70 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
 
 
   return { ...data, documents: updatedDocs, transactions: newTransactions };
+}
+
+/**
+ * Builds a receipt for a paid invoice: same items, totals, client and business, its own number from
+ * the venture's receipt series, and its own share link. Invoice-only state such
+ * as the invoice's share token, email history and payment report is not copied.
+ */
+export function buildReceiptFor(
+  data: CRMData,
+  invoice: CRMDocument,
+  payment: { paymentMethod?: string; paymentDate?: string } = {}
+): CRMDocument {
+  const paymentDate = payment.paymentDate || invoice.paymentDate || new Date().toISOString().split('T')[0];
+  const now = new Date().toISOString();
+  return {
+    id: `doc-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    type: 'receipt',
+    documentNumber: suggestDocumentNumber(data, 'receipt', invoice.businessId) || `REC-${invoice.documentNumber}`,
+    businessId: invoice.businessId,
+    clientId: invoice.clientId,
+    projectId: invoice.projectId,
+    currency: invoice.currency,
+    issueDate: paymentDate,
+    items: invoice.items,
+    subtotal: invoice.subtotal,
+    vatRate: invoice.vatRate,
+    vatAmount: invoice.vatAmount,
+    isTaxExempt: invoice.isTaxExempt,
+    appliedTaxes: invoice.appliedTaxes,
+    taxBreakdown: invoice.taxBreakdown,
+    appliedFees: invoice.appliedFees,
+    taxTotal: invoice.taxTotal,
+    feeTotal: invoice.feeTotal,
+    total: invoice.total,
+    status: 'paid',
+    paymentMethod: payment.paymentMethod || invoice.paymentMethod,
+    paymentDate,
+    originalInvoiceId: invoice.id,
+    shareToken: generateShareToken(),
+    notes: `Receipt of payment for invoice #${invoice.documentNumber}. Vinaka!`,
+    updatedAt: now
+  };
+}
+
+/** Adds a receipt for an invoice unless it already has one; returns the new data and the receipt. */
+export function addReceiptForInvoice(
+  data: CRMData,
+  invoiceId: string,
+  payment: { paymentMethod?: string; paymentDate?: string } = {}
+): { data: CRMData; receipt: CRMDocument | null } {
+  const invoice = data.documents.find(d => d.id === invoiceId);
+  if (!invoice || invoice.type !== 'invoice') return { data, receipt: null };
+  if (invoice.receiptId && data.documents.some(d => d.id === invoice.receiptId)) {
+    return { data, receipt: data.documents.find(d => d.id === invoice.receiptId) || null };
+  }
+  const receipt = buildReceiptFor(data, invoice, payment);
+  return {
+    receipt,
+    data: {
+      ...data,
+      documents: [
+        receipt,
+        ...data.documents.map(d => d.id === invoiceId ? { ...d, receiptId: receipt.id, updatedAt: receipt.updatedAt } : d)
+      ]
+    }
+  };
 }

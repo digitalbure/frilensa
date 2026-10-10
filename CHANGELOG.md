@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-10-10
+
+### Added
+- **Automatic receipts.** Confirming a client's payment in the "Needs your attention" inbox now issues a receipt (next number in your receipt series, linked to the invoice) and emails the client the receipt instead of the invoice. Confirming twice never creates a second receipt.
+- **AI Copilot on phones.** New "AI" tab in the bottom bar; the chat screen now fits the visible screen on phones, so the message box isn't hidden behind the bar or browser toolbars.
+- Automatic checks on GitHub for every push and pull request: typecheck, build, unit tests, Firestore rule tests and server end-to-end tests.
+
+### Fixed
+- "Convert to receipt" in Billing no longer copies the invoice's private online link (the receipt and invoice could open each other), its email history or a hard-coded "Bank Transfer" payment method.
+
 ## [3.2.5] - 2026-10-10
 
 ### Changed

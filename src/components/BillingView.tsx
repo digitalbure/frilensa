@@ -14,7 +14,7 @@ import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
 import { documentPublicUrl } from '../lib/documentLinks';
-import { applyConfirmedPayment } from '../lib/payments';
+import { applyConfirmedPayment, addReceiptForInvoice } from '../lib/payments';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
 import PdfExportModal from './PdfExportModal';
@@ -295,26 +295,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       });
       setSelectedDoc(newInv);
     } else if (doc.type === 'invoice') {
-      // Convert to Receipt
-      const newRec: CRMDocument = {
-        ...doc,
-        id: `doc-${Date.now()}`,
-        type: 'receipt',
-        documentNumber: suggestDocumentNumber('receipt', doc.businessId),
-        issueDate: new Date().toISOString().split('T')[0],
-        status: 'paid',
-        paymentMethod: 'Bank Transfer',
-        notes: 'Receipt of payment for Invoice #' + doc.documentNumber + '. Vinaka!'
-      };
-
-      // Also mark current invoice as PAID
-      const updatedDocs = data.documents.map(d => d.id === doc.id ? { ...d, status: 'paid' as const } : d);
-
-      onUpdateData({
+      // Convert to Receipt (shared builder: own number, own share link, linked to this invoice)
+      const paidInvoiceData: CRMData = {
         ...data,
-        documents: [newRec, ...updatedDocs]
-      });
-      setSelectedDoc(newRec);
+        documents: data.documents.map(d => d.id === doc.id ? { ...d, status: 'paid' as const, updatedAt: new Date().toISOString() } : d)
+      };
+      const { data: next, receipt } = addReceiptForInvoice(paidInvoiceData, doc.id, { paymentMethod: doc.paymentMethod });
+      onUpdateData(next);
+      if (receipt) setSelectedDoc(receipt);
     }
   };
 

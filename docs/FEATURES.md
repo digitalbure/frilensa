@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.2.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.3.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -55,7 +55,7 @@ Status as of v3.2.0 (October 2026). Each feature is marked by whether it actuall
 ### AI Copilot
 - ✅ Chat advisor with your business context, document and image attachments, a long-term memory bank, and saved conversations.
 - ⚠️ Email transcript works only with SendGrid configured.
-- ⚠️ Not in the mobile bottom navigation; only reachable on desktop.
+- ✅ Reachable on phones from the "AI" tab. *(3.3.0)*
 
 ### Directory and bookings
 - ✅ Shared directory: list your business, browse other Frilensa businesses, and send booking requests that reach the provider. Providers accept, decline or complete; requesters can cancel. Accepted bookings convert to a draft invoice. *(3.1.0)*
@@ -90,13 +90,13 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | 2 | ~~Remove the fabricated directory listings and seeded bookings~~ | Done in 3.1.0. | — |
 | 3 | ~~Make "View online" links and QR codes work~~ | Done in 3.1.0. Links on invoices sent before 3.1.0 still can't open directly; resend important ones. | — |
 | 4 | **Decide on the hidden features**: link up or delete the Rates Catalogue and Escrow screens (the escrow payment option was dropped in 3.1.0) | 2,700 lines of unreachable code, and the changelog advertises features users can't reach. | S–M |
-| 5 | **Add AI Copilot to mobile navigation** | Most Fiji users will be on phones. | S |
+| 5 | ~~Add AI Copilot to mobile navigation~~ | Done in 3.3.0. | — |
 
 ### P1: core value for Fiji freelancers
 
 | # | Improvement | Why | Effort |
 | --- | --- | --- | --- |
-| 6 | ~~Payments inbox~~ | Done in 3.2.0. Still to do: generate a receipt document automatically on confirm. | — |
+| 6 | ~~Payments inbox~~ | Done in 3.2.0; automatic receipts in 3.3.0. | — |
 | 7 | ~~Email notifications~~ | Done in 3.2.0. Still to do: WhatsApp/SMS, and push notifications for the installed app. | — |
 | 8 | **Scheduled jobs on the server**: generate retainer invoices on their due date, and send overdue reminders (gentle, then firm) | Getting paid on time is the main job of the product; today it depends on you remembering to press a button. | M |
 | 9 | **Online payment collection**: card payments (e.g. Stripe or Windcave), then M-PAiSA / MyCash merchant APIs where available; webhooks mark invoices paid | "Pay now" on an invoice is the biggest conversion lever. | L |
@@ -111,7 +111,7 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | --- | --- | --- | --- |
 | 14 | **Split the workspace into Firestore collections** (clients, documents, expenses, etc.) | One document per user has a 1 MB cap. Active users will hit it, and receipts are already dropped to fit. | L |
 | 15 | **Code-split the front end** (lazy-load each tab, PDF and chart libraries) | The main bundle is 3.3 MB (850 KB gzipped), which is slow on mobile data. | S–M |
-| 16 | **Continuous integration**: GitHub Actions running typecheck, build and the Firestore rules tests on every push | Catches regressions before they reach frilensa.com. | S |
+| 16 | ~~Continuous integration~~ | Done in 3.3.0 (`.github/workflows/ci.yml`). | — |
 | 17 | **Automated tests** for VAT, fee and FX calculations, the statement parser and the portal API | Money maths with no tests is the riskiest code in the app. | M |
 | 18 | **Error monitoring and uptime checks** (e.g. Sentry; ping `/api/health`, which now reports the live version) | You currently find out about failures from users. | S |
 | 19 | **Break up the very large screens** (Billing 4,000 lines; Bookkeeping, Projects and Settings ~3,000 each) | Hard to change safely; every edit risks side effects. | L |

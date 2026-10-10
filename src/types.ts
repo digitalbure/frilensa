@@ -496,7 +496,8 @@ export interface CRMDocument {
   cancellationReason?: string; // Reason for invoice cancellation
   cancelledBy?: string; // User who cancelled the invoice
   creditNoteNumber?: string; // Optional linked Credit Note (e.g. CN-2026-1001)
-  originalInvoiceId?: string; // For credit notes referencing an original invoice
+  originalInvoiceId?: string; // For credit notes and receipts: the invoice they relate to
+  receiptId?: string; // On a paid invoice: the receipt issued for it
   updatedAt?: string; // Last edit timestamp
   // Random token for the public "view online" link (/?doc=<token>); see lib/documentLinks.ts
   shareToken?: string;

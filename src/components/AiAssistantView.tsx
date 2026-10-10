@@ -670,7 +670,7 @@ Please try resending your message or question.`,
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className="relative flex flex-col md:flex-row h-[calc(100vh-140px)] md:h-[calc(100vh-120px)] max-w-6xl w-full mx-auto bg-slate-50 font-sans md:rounded-2xl md:border md:border-slate-200/80 md:shadow-xs md:my-4 overflow-hidden"
+      className="relative flex flex-col md:flex-row h-[calc(100dvh-140px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] md:h-[calc(100vh-120px)] max-w-6xl w-full mx-auto bg-slate-50 font-sans md:rounded-2xl md:border md:border-slate-200/80 md:shadow-xs md:my-4 overflow-hidden"
     >
       {/* Drag & drop overlay indicator */}
       {isDraggingOver && (

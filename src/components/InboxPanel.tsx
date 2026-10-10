@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { BellRing, CheckCircle2, XCircle, FileCheck2, MessageSquare, CalendarClock, ChevronRight } from 'lucide-react';
 import type { CRMData, CRMDocument, DirectoryBooking, SupportMessage } from '../types';
 import { paymentsToConfirm, newlyAcceptedQuotes } from '../lib/inbox';
-import { applyConfirmedPayment, type ConfirmedPaymentDetails } from '../lib/payments';
+import { applyConfirmedPayment, addReceiptForInvoice, type ConfirmedPaymentDetails } from '../lib/payments';
 import { loadSupportMessagesForConsultant, updateSupportMessageStatus } from '../lib/db';
 import { fetchDirectoryBookings } from '../lib/api';
 import { sendDocumentEmail } from '../lib/emailService';
@@ -95,21 +95,24 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
   const handleConfirm = async (docId: string, details: ConfirmedPaymentDetails) => {
     const now = new Date().toISOString();
     const paid = applyConfirmedPayment(data, docId, details);
-    const next: CRMData = {
+    const confirmed: CRMData = {
       ...paid,
       documents: paid.documents.map(d => d.id === docId && d.clientPaymentReport
         ? { ...d, clientPaymentReport: { ...d.clientPaymentReport, status: 'confirmed' as const, resolvedAt: now }, updatedAt: now }
         : d)
     };
+    // Issue the receipt automatically.
+    const { data: next, receipt } = addReceiptForInvoice(confirmed, docId, { paymentMethod: details.paymentMethod, paymentDate: details.paymentDate });
     onUpdateData(next);
     setConfirming(null);
-    const doc = next.documents.find(d => d.id === docId)!;
+    const invoice = next.documents.find(d => d.id === docId)!;
+    const receiptNote = receipt ? ` Receipt ${receipt.documentNumber} was created.` : '';
     if (emailClient) {
-      const problem = await emailClientAbout(doc, `Payment received for ${doc.documentNumber}`,
-        `Thank you. We've received your payment for ${doc.documentNumber}. This invoice is now marked as paid.`);
-      flash(problem ? `Payment confirmed. The client wasn't emailed (${problem}).` : 'Payment confirmed and the client was emailed.', !problem);
+      const problem = await emailClientAbout(receipt || invoice, `Payment received: receipt for ${invoice.documentNumber}`,
+        `Thank you. We've received your payment for invoice ${invoice.documentNumber}.${receipt ? ` Your receipt ${receipt.documentNumber} is attached.` : ''}`);
+      flash(problem ? `Payment confirmed.${receiptNote} The client wasn't emailed (${problem}).` : `Payment confirmed.${receiptNote} The client was emailed the receipt.`, !problem);
     } else {
-      flash('Payment confirmed. The invoice is marked as paid.');
+      flash(`Payment confirmed. The invoice is marked as paid.${receiptNote}`);
     }
   };
 
@@ -162,7 +165,7 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
         </h2>
         <label className="text-[11px] text-amber-900 flex items-center gap-1.5 cursor-pointer">
           <input type="checkbox" checked={emailClient} onChange={e => setEmailClient(e.target.checked)} className="rounded border-amber-300" />
-          Email the client when I confirm or reject
+          Email the client (receipt on confirm, note on reject)
         </label>
       </div>
 

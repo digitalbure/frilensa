@@ -17,6 +17,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
     { id: 'billing' as const, label: 'Billing', icon: Layers },
     { id: 'clients' as const, label: 'Clients', icon: Users },
     { id: 'services' as const, label: 'Finance', icon: Briefcase },
+    { id: 'assistant' as const, label: 'AI', icon: Sparkles },
     { id: 'settings' as const, label: 'Setup', icon: Settings },
   ];
 
@@ -31,12 +32,12 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
   return (
     <nav 
       aria-label="Bottom Navigation Bar"
-      className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-2 pt-1.5 shadow-2xl shadow-slate-900/15 z-30 max-w-md mx-auto"
+      className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-1 pt-1.5 shadow-2xl shadow-slate-900/15 z-30 max-w-md mx-auto"
       style={{
         paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))'
       }}
     >
-      <div className="flex justify-between items-center gap-0.5">
+      <div className="flex justify-between items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -44,7 +45,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
             <button
               key={item.id}
               onClick={() => handleTabClick(item.id)}
-              className="flex flex-col items-center justify-center relative py-1 transition-all active:scale-95 group flex-1 touch-manipulation min-h-[44px]"
+              className="flex flex-col items-center justify-center relative py-1 transition-all active:scale-95 group flex-1 min-w-[44px] touch-manipulation min-h-[44px]"
             >
               {item.id === 'dashboard' && dashboardBadge > 0 && (
                 <span className="absolute top-0 right-1/4 min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9px] font-extrabold flex items-center justify-center" aria-label={`${dashboardBadge} items need attention`}>
