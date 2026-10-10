@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.4] - 2026-10-10
+
+### Fixed
+- Deploy script also removes the automatic base-image runtime that AI Studio enables, which Cloud Run rejects once the service runs a prebuilt image.
+- `IMAGE=…` reuses an image built by an earlier run instead of building again.
+
 ## [3.2.3] - 2026-10-10
 
 ### Fixed

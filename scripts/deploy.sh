@@ -13,6 +13,7 @@
 # Optional overrides:
 #   RUN_PROJECT=<project hosting the Cloud Run service, if not the Firebase project>
 #   SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com
+#   IMAGE=<image already built by an earlier run>   (skips the Cloud Build step)
 set -euo pipefail
 
 PROJECT="${PROJECT:-frilensa-f530d}"          # Firebase project: Firestore database and rules
@@ -111,8 +112,14 @@ if ! gcloud artifacts repositories describe frilensa --project "$RUN_PROJECT" --
   gcloud artifacts repositories create frilensa --project "$RUN_PROJECT" --location "$REGION" \
     --repository-format=docker --description="Frilensa app images"
 fi
-IMAGE="$REGION-docker.pkg.dev/$RUN_PROJECT/frilensa/app:$VERSION-$STAMP"
-gcloud builds submit --project "$RUN_PROJECT" --tag "$IMAGE" .
+if [[ -n "${IMAGE:-}" ]]; then
+  echo "Using the already built image $IMAGE (skipping the build)."
+  # Tags look like <version>-<timestamp>; the health check should expect that image's version.
+  TAG="${IMAGE##*:}"; VERSION="${TAG%%-*}"
+else
+  IMAGE="$REGION-docker.pkg.dev/$RUN_PROJECT/frilensa/app:$VERSION-$STAMP"
+  gcloud builds submit --project "$RUN_PROJECT" --tag "$IMAGE" .
+fi
 rm -f .env.production
 
 # Update the service from its own current configuration with only the image (and missing env vars) changed.

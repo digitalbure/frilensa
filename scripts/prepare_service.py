@@ -3,7 +3,8 @@
 
 Keeps every existing setting (env vars, secrets, scaling, service account, domains) and only:
   - points the main container at the newly built image,
-  - removes annotations left by AI Studio's source deploys (they make gcloud reject a plain image),
+  - removes annotations and the base-image runtime left by AI Studio's source deploys
+    (they make gcloud reject a plain image),
   - removes read-only fields that `replace` doesn't accept,
   - adds env vars passed as NAME=VALUE arguments when they aren't already set.
 
@@ -48,6 +49,11 @@ def main() -> None:
     tmeta = template.setdefault("metadata", {})
     tmeta.pop("name", None)  # let Cloud Run name the new revision
     tmeta["annotations"] = clean_annotations(tmeta.get("annotations"))
+
+    # AI Studio turns on automatic base-image updates, which only works for source deploys
+    # (it requires the base-images annotation removed above).
+    if template["spec"].get("runtimeClassName") == "run.googleapis.com/linux-base-image-update":
+        template["spec"].pop("runtimeClassName")
 
     containers = template["spec"]["containers"]
     main_container = containers[0]
