@@ -18,6 +18,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.5] - 2026-10-10
+
+### Changed
+- Deploy script refuses to deploy unless the folder matches GitHub exactly: no uncommitted or untracked changes, not behind `origin/main`, no unpushed commits (override with `ALLOW_LOCAL_CHANGES=1`). It prints the commit being deployed and adds it to the image tag.
+
+### Fixed
+- A build-settings file left behind by an interrupted deploy can no longer be picked up by a later build.
+
 ## [3.2.4] - 2026-10-10
 
 ### Fixed

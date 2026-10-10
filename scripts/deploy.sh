@@ -14,6 +14,7 @@
 #   RUN_PROJECT=<project hosting the Cloud Run service, if not the Firebase project>
 #   SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com
 #   IMAGE=<image already built by an earlier run>   (skips the Cloud Build step)
+#   ALLOW_LOCAL_CHANGES=1   deploy this folder even if it differs from GitHub (not recommended)
 set -euo pipefail
 
 PROJECT="${PROJECT:-frilensa-f530d}"          # Firebase project: Firestore database and rules
@@ -51,6 +52,35 @@ RUN_PROJECT="${RUN_PROJECT:-$PROJECT}"
 gcloud config set project "$PROJECT" >/dev/null
 say "Deploying Frilensa v$VERSION (app in $RUN_PROJECT, database in $PROJECT)"
 
+# --- Safety check: deploy exactly what is on GitHub ---
+# The build uploads this folder as-is, so refuse to continue if it differs from origin/main.
+if [[ "${ALLOW_LOCAL_CHANGES:-}" == "1" ]]; then
+  echo "WARNING: ALLOW_LOCAL_CHANGES=1 set; deploying this folder even if it differs from GitHub."
+else
+  if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    echo "This folder isn't a git clone of the Frilensa repo. Clone it from GitHub and run the script there."; exit 1
+  fi
+  DIRTY="$(git status --porcelain)"
+  if [[ -n "$DIRTY" ]]; then
+    echo "This folder has changes that aren't on GitHub:"
+    echo "$DIRTY"
+    echo "Commit and push them (or discard them with: git checkout -- . && git clean -fd), then run again."
+    exit 1
+  fi
+  git fetch --quiet origin main
+  LOCAL_SHA="$(git rev-parse HEAD)"; REMOTE_SHA="$(git rev-parse origin/main)"
+  if [[ "$LOCAL_SHA" != "$REMOTE_SHA" ]]; then
+    if git merge-base --is-ancestor HEAD origin/main; then
+      echo "This folder is behind GitHub. Run: git pull   then run the script again."
+    else
+      echo "This folder has commits that aren't on GitHub ($(git rev-parse --short HEAD) vs $(git rev-parse --short origin/main)). Push them first."
+    fi
+    exit 1
+  fi
+fi
+COMMIT="$(git rev-parse --short HEAD 2>/dev/null || echo unknown)"
+echo "Deploying commit $COMMIT: $(git log -1 --format=%s 2>/dev/null || true)"
+
 # --- Find the Cloud Run service that serves frilensa.com ---
 if [[ -z "${SERVICE:-}" || -z "${REGION:-}" ]]; then
   SERVICES="$(gcloud run services list --project "$RUN_PROJECT" --quiet --format='value(metadata.name)' 2>/dev/null || true)"
@@ -86,6 +116,8 @@ gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGI
 PREVIOUS_REVISION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",{}).get("latestReadyRevisionName",""))' "$WORK/current.json")"
 echo "Current revision (for rollback): ${PREVIOUS_REVISION:-unknown}"
 
+# Always rewrite (or remove) the build-time settings file so a leftover from an earlier run can't leak in.
+rm -f .env.production
 if [[ -n "${ADMIN_EMAILS:-}" ]]; then
   echo "VITE_ADMIN_EMAILS=$ADMIN_EMAILS" > .env.production
 fi
@@ -117,7 +149,7 @@ if [[ -n "${IMAGE:-}" ]]; then
   # Tags look like <version>-<timestamp>; the health check should expect that image's version.
   TAG="${IMAGE##*:}"; VERSION="${TAG%%-*}"
 else
-  IMAGE="$REGION-docker.pkg.dev/$RUN_PROJECT/frilensa/app:$VERSION-$STAMP"
+  IMAGE="$REGION-docker.pkg.dev/$RUN_PROJECT/frilensa/app:$VERSION-$STAMP-$COMMIT"
   gcloud builds submit --project "$RUN_PROJECT" --tag "$IMAGE" .
 fi
 rm -f .env.production
