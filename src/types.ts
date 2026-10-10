@@ -21,6 +21,13 @@ export interface UserProfile {
   accountType?: 'free' | 'business';
   inactivityTimeoutMinutes?: number; // Minutes of inactivity before auto-logout (e.g. 5, 15, 30, 60, or 0 for disabled)
   emailNotifications?: boolean; // Email me when clients act (payments, quotes, messages, bookings). Default on.
+  automation?: AutomationSettings; // Daily server job: retainer emails and overdue reminders (both off by default)
+}
+
+export interface AutomationSettings {
+  emailRetainerInvoices?: boolean; // Email retainer invoices to the client when the daily job creates them
+  overdueReminders?: boolean; // Email clients about overdue invoices at 3, 10 and 21 days
+  ccMeOnReminders?: boolean; // Copy me on reminder emails
 }
 
 export type PlanTier = 'free' | 'pro' | 'premium';
@@ -498,6 +505,7 @@ export interface CRMDocument {
   creditNoteNumber?: string; // Optional linked Credit Note (e.g. CN-2026-1001)
   originalInvoiceId?: string; // For credit notes and receipts: the invoice they relate to
   receiptId?: string; // On a paid invoice: the receipt issued for it
+  remindersSent?: { level: 1 | 2 | 3; sentAt: string; to: string }[]; // Overdue reminders already emailed
   updatedAt?: string; // Last edit timestamp
   // Random token for the public "view online" link (/?doc=<token>); see lib/documentLinks.ts
   shareToken?: string;
