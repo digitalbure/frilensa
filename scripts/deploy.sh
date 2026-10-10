@@ -69,6 +69,8 @@ fi
 if [[ -n "${ADMIN_EMAILS:-}" ]]; then
   echo "VITE_ADMIN_EMAILS=$ADMIN_EMAILS" > .env.production
 fi
+# Building from source uses Cloud Build and Artifact Registry in the service's project.
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$RUN_PROJECT"
 DEPLOY_ARGS=(run deploy "$SERVICE" --project "$RUN_PROJECT" --source . --region "$REGION" --quiet)
 if (( ${#ENV_UPDATES[@]} )); then
   DEPLOY_ARGS+=(--update-env-vars "$(IFS=,; echo "${ENV_UPDATES[*]}")")

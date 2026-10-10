@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.1] - 2026-10-10
+
+### Fixed
+- Deploy script switches on Cloud Build and Artifact Registry in the Cloud Run project before building, so a first deploy from Cloud Shell doesn't stop on an "enable API?" prompt.
+
 ## [3.2.0] - 2026-10-09
 
 ### Added
