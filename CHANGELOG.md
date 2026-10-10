@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.2] - 2026-10-10
+
+### Fixed
+- Deploy script finds the project hosting the Cloud Run service on its own (given `SERVICE=…`) and rejects a `RUN_PROJECT` that isn't a single project ID.
+
 ## [3.2.1] - 2026-10-10
 
 ### Fixed

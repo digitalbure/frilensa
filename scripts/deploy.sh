@@ -16,7 +16,7 @@
 set -euo pipefail
 
 PROJECT="${PROJECT:-frilensa-f530d}"          # Firebase project: Firestore database and rules
-RUN_PROJECT="${RUN_PROJECT:-$PROJECT}"        # project that hosts the Cloud Run service"
+RUN_PROJECT="${RUN_PROJECT:-}"                # project that hosts the Cloud Run service (found automatically from SERVICE)"
 DATABASE="${DATABASE:-ai-studio-fijifreelancercr-488dac79-8760-4f11-adaa-51019cc03ebb}"
 VERSION="$(node -p "require('./package.json').version")"
 STAMP="$(date -u +%Y%m%d-%H%M%S)"
@@ -24,6 +24,29 @@ STAMP="$(date -u +%Y%m%d-%H%M%S)"
 say() { printf '\n\033[1m==> %s\033[0m\n' "$*"; }
 confirm() { read -r -p "$1 [y/N] " reply; [[ "$reply" =~ ^[Yy]$ ]] || { echo "Stopped."; exit 1; }; }
 
+if [[ "$RUN_PROJECT" =~ [[:space:]] ]]; then
+  echo "RUN_PROJECT must be a single project ID, got: $RUN_PROJECT"; exit 1
+fi
+# Find which project hosts the service (AI Studio deploys into its own project, e.g. gen-lang-client-…).
+if [[ -z "$RUN_PROJECT" && -n "${SERVICE:-}" ]]; then
+  echo "Looking for Cloud Run service '$SERVICE' in your projects…"
+  FOUND=()
+  for p in $(gcloud projects list --format='value(projectId)'); do
+    if gcloud run services list --project "$p" --quiet --format='value(metadata.name)' 2>/dev/null | grep -qx "$SERVICE"; then
+      FOUND+=("$p")
+    fi
+  done
+  if (( ${#FOUND[@]} == 1 )); then
+    RUN_PROJECT="${FOUND[0]}"
+    echo "Found it in project $RUN_PROJECT."
+  elif (( ${#FOUND[@]} == 0 )); then
+    echo "No Cloud Run service named '$SERVICE' in any of your projects."; exit 1
+  else
+    echo "'$SERVICE' exists in several projects: ${FOUND[*]}"
+    echo "Rerun with RUN_PROJECT=<the one serving frilensa.com>."; exit 1
+  fi
+fi
+RUN_PROJECT="${RUN_PROJECT:-$PROJECT}"
 gcloud config set project "$PROJECT" >/dev/null
 say "Deploying Frilensa v$VERSION (app in $RUN_PROJECT, database in $PROJECT)"
 
