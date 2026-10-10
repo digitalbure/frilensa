@@ -15,6 +15,7 @@ import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
 import { documentPublicUrl } from '../lib/documentLinks';
 import { applyConfirmedPayment, addReceiptForInvoice } from '../lib/payments';
+import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
 import PdfExportModal from './PdfExportModal';
@@ -944,141 +945,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     };
   };
 
-  // Automated Retainer Billing Processor
+  // Automated Retainer Billing Processor (same engine as the daily server job; see lib/retainers.ts)
   const processAutoRetainerBilling = (silent: boolean = false) => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const currentYear = today.getFullYear();
-    const currentMonth = today.getMonth() + 1; // 1-12
-    const currentDay = today.getDate();
-
-    const retainers = data.recurringInvoices || [];
-    let spawnedCount = 0;
-    let totalSpawnedValue = 0;
-    let updatedRetainers = [...retainers];
-    let updatedDocs = [...data.documents];
-
-    retainers.forEach((ret, index) => {
-      if (ret.status !== 'active') return;
-      if (!ret.autoGenerate && silent) return; // Only process autoGenerate if running silent/automated run
-
-      // Check if start date is in the future
-      if (ret.startDate && new Date(ret.startDate) > today) return;
-
-      // Check if end date has passed
-      if (ret.endDate && new Date(ret.endDate) < today) return;
-
-      const interval = ret.interval || 'monthly';
-      let isDueToGenerate = false;
-
-      if (interval === 'monthly') {
-        const billingDay = ret.billingDay || 1;
-        if (currentDay >= billingDay) {
-          if (!ret.lastGeneratedDate) {
-            isDueToGenerate = true;
-          } else {
-            const lastGen = new Date(ret.lastGeneratedDate);
-            if (lastGen.getFullYear() < currentYear || (lastGen.getFullYear() === currentYear && (lastGen.getMonth() + 1) < currentMonth)) {
-              isDueToGenerate = true;
-            }
-          }
-        }
-      } else if (interval === 'quarterly') {
-        if (!ret.lastGeneratedDate) {
-          isDueToGenerate = true;
-        } else {
-          const lastGen = new Date(ret.lastGeneratedDate);
-          const diffDays = Math.floor((today.getTime() - lastGen.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays >= 90) isDueToGenerate = true;
-        }
-      } else if (interval === 'bi-weekly') {
-        if (!ret.lastGeneratedDate) {
-          isDueToGenerate = true;
-        } else {
-          const lastGen = new Date(ret.lastGeneratedDate);
-          const diffDays = Math.floor((today.getTime() - lastGen.getTime()) / (1000 * 60 * 60 * 24));
-          if (diffDays >= 14) isDueToGenerate = true;
-        }
-      } else if (interval === 'annual') {
-        if (!ret.lastGeneratedDate) {
-          isDueToGenerate = true;
-        } else {
-          const lastGen = new Date(ret.lastGeneratedDate);
-          if (lastGen.getFullYear() < currentYear) isDueToGenerate = true;
-        }
-      }
-
-      if (!isDueToGenerate) return;
-
-      // Spawn invoice
-      spawnedCount++;
-      const targetBiz = data.businesses.find(b => b.id === ret.businessId) || activeBusiness;
-      const termsDays = ret.paymentTermsDays || 14;
-      const dueDate = new Date(today.getTime() + termsDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-      // Calculate totals
-      let lineItems: DocumentItem[] = [];
-      if (ret.items && ret.items.length > 0) {
-        lineItems = ret.items;
-      } else {
-        lineItems = [{
-          id: `item-auto-${Date.now()}-${ret.id}`,
-          name: `${ret.projectName || 'Monthly Retainer'} Service Plan`,
-          quantity: 1,
-          rate: ret.amount,
-          total: ret.amount
-        }];
-      }
-
-      const subtotal = lineItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0);
-      const vatRate = data.userProfile.defaultVatRate || 15;
-      const vatAmount = subtotal * (vatRate / 100);
-      const total = subtotal + vatAmount;
-      totalSpawnedValue += total;
-
-      const invoiceNumber = suggestDocumentNumber('invoice', targetBiz.id);
-      const newDocId = `doc-auto-${Date.now()}-${ret.id}-${index}`;
-
-      const invoicePayload: CRMDocument = {
-        id: newDocId,
-        type: 'invoice',
-        documentNumber: invoiceNumber,
-        businessId: targetBiz.id,
-        clientId: ret.clientId,
-        projectId: ret.projectId || undefined,
-        currency: ret.currency || (data.clients.find(c => c.id === ret.clientId)?.currency) || data.userProfile.defaultCurrency || 'FJD',
-        issueDate: todayStr,
-        dueDate,
-        items: lineItems,
-        subtotal,
-        vatRate,
-        vatAmount,
-        total,
-        status: ret.autoSendMode || 'sent',
-        notes: ret.notes || `Scheduled ${interval} retainer invoice. Net ${termsDays} payment terms.`
-      };
-
-      updatedDocs = [invoicePayload, ...updatedDocs];
-
-      const pastDocs = ret.generatedDocIds || [];
-      updatedRetainers = updatedRetainers.map(r => 
-        r.id === ret.id 
-          ? { 
-              ...r, 
-              lastGeneratedDate: todayStr,
-              generatedDocIds: [newDocId, ...pastDocs]
-            } 
-          : r
-      );
-    });
-
-    if (spawnedCount > 0) {
-      onUpdateData({
-        ...data,
-        documents: updatedDocs,
-        recurringInvoices: updatedRetainers
-      });
-      setAutoGenNotification(`Bula! Monthly auto-billing run generated ${spawnedCount} retainer invoice(s) totaling ${data.userProfile.defaultCurrency} $${totalSpawnedValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}.`);
+    const { data: next, created } = runDueRetainers(data, todayIn(), { onlyAutoGenerate: silent });
+    if (created.length > 0) {
+      const totalSpawnedValue = created.reduce((sum, d) => sum + d.total, 0);
+      onUpdateData(next);
+      setAutoGenNotification(`Bula! Auto-billing generated ${created.length} retainer invoice(s) totaling ${data.userProfile.defaultCurrency} $${totalSpawnedValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}.`);
       setTimeout(() => setAutoGenNotification(null), 9000);
     } else if (!silent) {
       setAutoGenNotification("Bula! All retainer schedules are currently up-to-date. No invoices due for generation today.");
@@ -1088,70 +961,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   // Generate an immediate invoice for a specific retainer schedule on demand
   const handleTriggerRetainerInvoice = (ret: RecurringInvoice) => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const targetBiz = data.businesses.find(b => b.id === ret.businessId) || activeBusiness;
-    const termsDays = ret.paymentTermsDays || 14;
-    const dueDate = new Date(today.getTime() + termsDays * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-    let lineItems: DocumentItem[] = [];
-    if (ret.items && ret.items.length > 0) {
-      lineItems = ret.items;
-    } else {
-      lineItems = [{
-        id: `item-manual-${Date.now()}-${ret.id}`,
-        name: `${ret.projectName || 'Monthly Retainer'} Service Plan`,
-        quantity: 1,
-        rate: ret.amount,
-        total: ret.amount
-      }];
-    }
-
-    const subtotal = lineItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0);
-    const vatRate = data.userProfile.defaultVatRate || 15;
-    const vatAmount = subtotal * (vatRate / 100);
-    const total = subtotal + vatAmount;
-
-    const invoiceNumber = suggestDocumentNumber('invoice', targetBiz.id);
-    const newDocId = `doc-ret-${Date.now()}-${ret.id}`;
-
-    const invoicePayload: CRMDocument = {
-      id: newDocId,
-      type: 'invoice',
-      documentNumber: invoiceNumber,
-      businessId: targetBiz.id,
-      clientId: ret.clientId,
-      projectId: ret.projectId || undefined,
-      currency: ret.currency || (data.clients.find(c => c.id === ret.clientId)?.currency) || data.userProfile.defaultCurrency || 'FJD',
-      issueDate: todayStr,
-      dueDate,
-      items: lineItems,
-      subtotal,
-      vatRate,
-      vatAmount,
-      total,
-      status: ret.autoSendMode || 'sent',
-      notes: ret.notes || `Scheduled ${ret.interval || 'monthly'} retainer invoice. Net ${termsDays} payment terms.`
-    };
-
-    const pastDocs = ret.generatedDocIds || [];
-    const updatedRetainers = (data.recurringInvoices || []).map(r => 
-      r.id === ret.id 
-        ? { 
-            ...r, 
-            lastGeneratedDate: todayStr,
-            generatedDocIds: [newDocId, ...pastDocs]
-          } 
-        : r
-    );
-
-    onUpdateData({
-      ...data,
-      documents: [invoicePayload, ...data.documents],
-      recurringInvoices: updatedRetainers
-    });
-
-    setAutoGenNotification(`Successfully generated tax invoice ${invoiceNumber} (${ret.currency || data.userProfile.defaultCurrency} $${total.toLocaleString(undefined, { minimumFractionDigits: 2 })}) for ${ret.projectName}.`);
+    const { data: next, invoice } = generateRetainerNow(data, ret, todayIn());
+    onUpdateData(next);
+    setAutoGenNotification(`Successfully generated tax invoice ${invoice.documentNumber} (${invoice.currency} $${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}) for ${ret.projectName || 'this retainer'}.`);
     setTimeout(() => setAutoGenNotification(null), 6000);
   };
 
@@ -1464,7 +1276,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           ? ret.items.reduce((sum, it) => sum + (it.total || it.quantity * it.rate), 0)
           : ret.amount;
         
-        const vatRate = data.userProfile.defaultVatRate || 15;
+        const vatRate = retainerVatRate(data);
         const total = subtotal * (1 + vatRate / 100);
 
         if (ret.interval === 'quarterly') {
@@ -2095,7 +1907,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   ? ret.items 
                   : [{ id: 'item-def', name: ret.projectName || 'Monthly Retainer', quantity: 1, rate: ret.amount, total: ret.amount }];
                 const subtotal = lineItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0);
-                const vatRate = data.userProfile.defaultVatRate || 15;
+                const vatRate = retainerVatRate(data);
                 const vatAmount = subtotal * (vatRate / 100);
                 const totalWithVat = subtotal + vatAmount;
 
@@ -3023,6 +2835,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         <span className="text-[10px] text-rose-600">
                           Due date was {selectedDoc.dueDate}. Please follow up or record payment.
                         </span>
+                        {(selectedDoc.remindersSent || []).length > 0 && (
+                          <span className="text-[10px] text-rose-700 font-semibold block">
+                            Reminders sent: {(selectedDoc.remindersSent || []).map(r => `${r.level === 1 ? 'friendly' : r.level === 2 ? 'second' : 'final'} on ${r.sentAt.slice(0, 10)}`).join(', ')}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <button

@@ -8,12 +8,14 @@
 #   1. Export a full Firestore backup to gs://<project>-backups/<timestamp>
 #   2. Build the image with Cloud Build and update the existing Cloud Run service, keeping its settings
 #   3. Check /api/health reports the version in package.json
-#   4. Publish firestore.rules (the previous ruleset name is printed for rollback)
+#   4. Schedule the daily automation job (Cloud Scheduler: retainer invoices and overdue reminders)
+#   5. Publish firestore.rules (the previous ruleset name is printed for rollback)
 #
 # Optional overrides:
 #   RUN_PROJECT=<project hosting the Cloud Run service, if not the Firebase project>
 #   SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com
 #   IMAGE=<image already built by an earlier run>   (skips the Cloud Build step)
+#   SCHEDULER_REGION=<Cloud Scheduler location>     (defaults to REGION)
 #   ALLOW_LOCAL_CHANGES=1   deploy this folder even if it differs from GitHub (not recommended)
 set -euo pipefail
 
@@ -101,7 +103,7 @@ echo "Currently live: $(curl -fsS "$URL/api/health" 2>/dev/null || echo 'unknown
 
 # --- 1. Backup ---
 BUCKET="gs://${PROJECT}-backups"
-say "1/4 Backing up Firestore database $DATABASE to $BUCKET/$STAMP"
+say "1/5 Backing up Firestore database $DATABASE to $BUCKET/$STAMP"
 if ! gcloud storage buckets describe "$BUCKET" >/dev/null 2>&1; then
   gcloud storage buckets create "$BUCKET" --location="$REGION" --uniform-bucket-level-access
 fi
@@ -110,7 +112,7 @@ echo "Backup written. Restore if ever needed with:"
 echo "  gcloud firestore import $BUCKET/$STAMP --database=$DATABASE"
 
 # --- 2. Deploy app ---
-say "2/4 Deploying app v$VERSION to Cloud Run (existing settings are kept)"
+say "2/5 Deploying app v$VERSION to Cloud Run (existing settings are kept)"
 WORK="$(mktemp -d)"
 gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format=json > "$WORK/current.json"
 PREVIOUS_REVISION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",{}).get("latestReadyRevisionName",""))' "$WORK/current.json")"
@@ -154,13 +156,20 @@ else
 fi
 rm -f .env.production
 
+# The daily job is called with a shared secret. Keep the service's existing one; create it the first time.
+JOBS_SECRET="$(python3 -c '
+import json, sys
+env = json.load(open(sys.argv[1]))["spec"]["template"]["spec"]["containers"][0].get("env", [])
+print(next((e.get("value", "") for e in env if e.get("name") == "JOBS_SECRET"), ""))' "$WORK/current.json")"
+JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
+
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL=https://frilensa.com"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL=https://frilensa.com" "JOBS_SECRET=$JOBS_SECRET"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---
-say "3/4 Checking the new version is live"
+say "3/5 Checking the new version is live"
 for _ in $(seq 1 20); do
   HEALTH="$(curl -fsS "$URL/api/health" 2>/dev/null || true)"
   grep -q "\"version\":\"$VERSION\"" <<<"$HEALTH" && break
@@ -173,8 +182,28 @@ if ! grep -q "\"version\":\"$VERSION\"" <<<"${HEALTH:-}"; then
   exit 1
 fi
 
-# --- 4. Firestore rules ---
-say "4/4 Publishing firestore.rules for database $DATABASE"
+# --- 4. Daily automation schedule ---
+SCHEDULER_REGION="${SCHEDULER_REGION:-$REGION}"
+say "4/5 Scheduling the daily automation job (8:00 am Fiji time, $SCHEDULER_REGION)"
+echo "It creates retainer invoices that are due and, for users who switch them on, emails invoices and overdue reminders."
+gcloud services enable cloudscheduler.googleapis.com --project "$RUN_PROJECT" || true
+JOB_FLAGS=(--project "$RUN_PROJECT" --location "$SCHEDULER_REGION" --schedule "0 8 * * *" --time-zone "Pacific/Fiji"
+  --uri "$URL/api/jobs/daily" --http-method POST --attempt-deadline 600s)
+if gcloud scheduler jobs describe frilensa-daily --project "$RUN_PROJECT" --location "$SCHEDULER_REGION" >/dev/null 2>&1; then
+  JOB_OK=0; gcloud scheduler jobs update http frilensa-daily "${JOB_FLAGS[@]}" --update-headers "X-Job-Secret=$JOBS_SECRET" >/dev/null || JOB_OK=$?
+else
+  JOB_OK=0; gcloud scheduler jobs create http frilensa-daily "${JOB_FLAGS[@]}" --headers "X-Job-Secret=$JOBS_SECRET" >/dev/null || JOB_OK=$?
+fi
+if [[ "$JOB_OK" == "0" ]]; then
+  echo "Scheduled job frilensa-daily is set. Test it any time with:"
+  echo "  gcloud scheduler jobs run frilensa-daily --project $RUN_PROJECT --location $SCHEDULER_REGION"
+else
+  echo "WARNING: could not set up the scheduled job (the app is deployed and working)."
+  echo "Rerun with SCHEDULER_REGION=<a Cloud Scheduler location, e.g. asia-northeast1> to try another region."
+fi
+
+# --- 5. Firestore rules ---
+say "5/5 Publishing firestore.rules for database $DATABASE"
 TOKEN="$(gcloud auth print-access-token)"
 API="https://firebaserules.googleapis.com/v1/projects/$PROJECT"
 RELEASE="projects/$PROJECT/releases/cloud.firestore/$DATABASE"
@@ -196,4 +225,4 @@ fi
 
 say "Done: v$VERSION is live and the database is locked down."
 echo "Backup:   $BUCKET/$STAMP"
-if [[ -n "$PREVIOUS" ]]; then echo "Rules rollback: re-run step 4 with rulesetName=$PREVIOUS"; fi
+if [[ -n "$PREVIOUS" ]]; then echo "Rules rollback: re-run step 5 with rulesetName=$PREVIOUS"; fi

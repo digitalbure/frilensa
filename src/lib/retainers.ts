@@ -102,8 +102,9 @@ export function buildRetainerInvoice(data: CRMData, ret: RecurringInvoice, today
     total: Number((subtotal + vatAmount).toFixed(2)),
     status: ret.autoSendMode || 'sent',
     notes: ret.notes || `Scheduled ${ret.interval || 'monthly'} retainer invoice. Net ${termsDays} payment terms.`,
-    shareToken: generateShareToken(),
-    updatedAt: new Date().toISOString()
+    shareToken: generateShareToken()
+    // No updatedAt: if the app and the daily job both create this period's invoice, the saved
+    // (timestamped) copy wins the merge, so a link already emailed to the client keeps working.
   };
 }
 

@@ -246,3 +246,28 @@ export async function reportPublicPayment(token: string, payment: { method: stri
     body: JSON.stringify(payment)
   }));
 }
+
+// ---------- Automatic billing and reminders ----------
+
+export interface AutomationRun {
+  ranAt: string;
+  trigger: 'schedule' | 'manual';
+  today: string;
+  invoicesCreated: { id: string; documentNumber: string; total: number; currency: string; emailedTo?: string }[];
+  remindersSent: { documentNumber: string; level: number; to: string }[];
+  problems: string[];
+}
+
+export interface AutomationStatus {
+  lastRun: AutomationRun | null;
+  emailConfigured: boolean;
+  scheduleConfigured: boolean;
+}
+
+export async function fetchAutomationStatus(): Promise<AutomationStatus> {
+  return readJson(await fetch('/api/automation/status'));
+}
+
+export async function runAutomationNow(): Promise<AutomationRun> {
+  return (await readJson(await fetch('/api/automation/run-now', { method: 'POST' }))).lastRun;
+}

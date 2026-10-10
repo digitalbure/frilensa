@@ -14,6 +14,9 @@ import {
   onSnapshot
 } from './firebase';
 import { CRMData, CRMDocument, SupportMessage } from '../types';
+import { sanitizeForFirestore, flatDocumentId, buildFlatDocumentRow } from './flatDocuments';
+
+export { sanitizeForFirestore, flatDocumentId };
 
 const BACKUP_STORAGE_PREFIX = 'fiji_freelancer_crm_backup';
 const LEGACY_STORAGE_KEYS = ['fiji_freelancer_crm_backup', 'fiji_freelancer_crm_data', 'fiji_freelancer_auth_session', 'fiji_crm_support_messages', 'client_auth_session'];
@@ -193,29 +196,6 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
   };
 }
 
-/**
- * Deeply sanitizes any object or array to remove undefined fields recursively,
- * ensuring complete compatibility with Google Cloud Firestore.
- */
-export function sanitizeForFirestore<T>(val: T): T {
-  if (val === undefined) {
-    return null as any;
-  }
-  if (val === null || typeof val !== 'object') {
-    return val;
-  }
-  if (Array.isArray(val)) {
-    return val.map(item => sanitizeForFirestore(item)) as any;
-  }
-  const clean: Record<string, any> = {};
-  for (const [k, v] of Object.entries(val)) {
-    if (v !== undefined) {
-      clean[k] = sanitizeForFirestore(v);
-    }
-  }
-  return clean as T;
-}
-
 function currentIdentity(): { uid: string; email: string } | null {
   const user = auth.currentUser;
   if (!user) return null;
@@ -228,10 +208,6 @@ const FLAT_DOC_META_KEYS = [
   'businessLogoUrl', 'businessBrandSlogan', 'businessAddress', 'businessEmail',
   'businessPhone', 'businessTin', 'businessBankDetails', 'businessMPaisaId', 'businessMyCashId'
 ];
-
-export function flatDocumentId(uid: string, documentId: string) {
-  return `${uid}_${documentId}`;
-}
 
 function stripFlatDocMeta(raw: Record<string, any>): CRMDocument {
   const copy = { ...raw };
@@ -351,30 +327,7 @@ export async function saveConsultantData(data: CRMData) {
 
   documents.forEach(crmDoc => {
     if (!crmDoc?.id) return;
-    const client = clientsById.get(crmDoc.clientId);
-    const business = businessesById.get(crmDoc.businessId);
-    const row = sanitizeForFirestore({
-      ...crmDoc,
-      consultantId: uid,
-      consultantEmail: email,
-      clientEmail: (client?.email || '').trim().toLowerCase(),
-      clientName: client?.name || '',
-      businessName: business?.name || '',
-      businessColorTheme: business?.colorTheme || '#0284c7',
-      businessLogoType: business?.logoType || 'symbol',
-      businessLogoSymbol: business?.logoSymbol || 'Waves',
-      businessLogoText: business?.logoText || '',
-      businessLogoUrl: business?.logoUrl || '',
-      businessBrandSlogan: business?.brandSlogan || '',
-      businessAddress: business?.address || '',
-      businessEmail: business?.email || '',
-      businessPhone: business?.phone || '',
-      businessTin: business?.tin || '',
-      businessBankDetails: business?.bankDetails || '',
-      businessMPaisaId: (business as any)?.mPaisaId || '',
-      businessMyCashId: (business as any)?.myCashId || '',
-      updatedAt: crmDoc.updatedAt || new Date().toISOString()
-    });
+    const row = buildFlatDocumentRow(uid, email, crmDoc, businessesById.get(crmDoc.businessId), clientsById.get(crmDoc.clientId));
     ops.push(batch => batch.set(doc(db, 'documents', flatDocumentId(uid, crmDoc.id)), row));
   });
 

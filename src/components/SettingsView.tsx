@@ -15,6 +15,7 @@ import { mergeCRMData, loadLocalBackup, saveLocalBackup } from '../lib/db';
 import BrandDesignerModal from './BrandDesignerModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import ReleaseNotes from './ReleaseNotes';
+import AutomationSettingsCard from './AutomationSettingsCard';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount } from '../lib/currencies';
 import { getEmailServiceConfig, sendTestEmail, EmailServiceConfig } from '../lib/emailService';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -823,6 +824,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             On
           </label>
         </div>
+
+        <AutomationSettingsCard data={data} onUpdateData={onUpdateData} onManualCloudSync={onManualCloudSync} />
 
         {/* Inactivity Auto-Logout Security Configuration */}
         <div className="p-3.5 rounded-xl border border-zinc-200/90 bg-zinc-50/70 space-y-2.5">

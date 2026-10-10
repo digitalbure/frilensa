@@ -5,11 +5,13 @@ import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
 import zlib from "zlib";
 import { parseBankStatement } from "./src/lib/bankStatementParser";
-import { generateDocumentEmailHtml, sendViaSendGrid, SendDocumentEmailPayload } from "./src/lib/transactionalEmailServer";
+import { sendViaSendGrid, SendDocumentEmailPayload } from "./src/lib/transactionalEmailServer";
+import { sendDocumentEmail } from "./server/documentEmail";
 import { requireUser, rateLimit, escapeHtml, isEmail } from "./server/security";
 import { createPortalRouter } from "./server/portal";
 import { createDirectoryRouter } from "./server/directory";
 import { createPublicDocumentsRouter } from "./server/publicDocuments";
+import { createJobsRouter, createAutomationRouter } from "./server/jobs";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -199,6 +201,8 @@ async function startServer() {
   app.use("/api/portal", express.json({ limit: "100kb" }), createPortalRouter());
   app.use("/api/directory", express.json({ limit: "100kb" }), createDirectoryRouter());
   app.use("/api/public/documents", express.json({ limit: "20kb" }), createPublicDocumentsRouter());
+  app.use("/api/jobs", express.json({ limit: "10kb" }), createJobsRouter());
+  app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
 
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));
@@ -1355,87 +1359,20 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
   app.post("/api/email/send-document", async (req, res) => {
     try {
       const payload: SendDocumentEmailPayload = req.body;
-      const {
-        document,
-        business,
-        client,
-        recipientEmail,
-        customSubject,
-        customMessage,
-        ccConsultant,
-        consultantEmail,
-        attachPdfBase64,
-        pdfFilename
-      } = payload;
-
-      if (!document || !business || !isEmail(recipientEmail)) {
-        return res.status(400).json({ error: "A document, business and valid recipient email are required." });
-      }
-      if (!process.env.SENDGRID_API_KEY?.trim()) {
-        return res.status(503).json({ error: "Email delivery isn't set up yet. Add SENDGRID_API_KEY and SENDGRID_FROM_EMAIL to the server environment, or download the PDF and send it yourself." });
-      }
-
-      // Generate HTML, plain-text and subject
-      // HTML is rendered from an escaped copy so user-entered text can't inject markup.
-      const { subject, text } = generateDocumentEmailHtml(payload);
-      const escapeDeep = (v: any): any => typeof v === 'string' ? escapeHtml(v)
-        : Array.isArray(v) ? v.map(escapeDeep)
-        : v && typeof v === 'object' ? Object.fromEntries(Object.entries(v).map(([k, x]) => [k, escapeDeep(x)]))
-        : v;
-      const { attachPdfBase64: _pdf, ...htmlFields } = payload as any;
-      const { html } = generateDocumentEmailHtml({ ...escapeDeep(htmlFields), onlinePortalUrl: undefined } as SendDocumentEmailPayload);
-
-      const timestamp = new Date().toISOString();
-      const sendgridApiKey = process.env.SENDGRID_API_KEY?.trim();
-      // The From address must be a SendGrid-verified sender; replies go to the business.
-      const sendgridFromEmail = process.env.SENDGRID_FROM_EMAIL?.trim() || 'invoices@frilensa.com';
-      const sendgridFromName = process.env.SENDGRID_FROM_NAME?.trim() || business.name || 'Frilensa Invoicing';
-
-      let providerUsed: 'sendgrid' | 'simulated' = 'simulated';
-      let messageId: string = `msg-${Date.now()}`;
-      let deliveryNote: string = '';
-
-      if (sendgridApiKey) {
-        // SendGrid is configured: attempt live dispatch
-        console.log(`[SendGrid] Dispatching ${document.type} #${document.documentNumber} to ${recipientEmail}...`);
-        const sgResult = await sendViaSendGrid({
-          apiKey: sendgridApiKey,
-          fromEmail: sendgridFromEmail,
-          fromName: sendgridFromName,
-          toEmail: recipientEmail,
-          toName: client?.name,
-          replyToEmail: isEmail(consultantEmail) ? consultantEmail : (isEmail(business.email) ? business.email : undefined),
-          replyToName: business.name,
-          ccEmail: ccConsultant && isEmail(consultantEmail) ? consultantEmail : undefined,
-          subject,
-          htmlContent: html,
-          textContent: text,
-          pdfAttachmentBase64: attachPdfBase64,
-          pdfFilename: pdfFilename || `${document.type}-${document.documentNumber}.pdf`
-        });
-
-        if (sgResult.success) {
-          providerUsed = 'sendgrid';
-          messageId = sgResult.messageId || messageId;
-          deliveryNote = `Successfully delivered via Twilio SendGrid to ${recipientEmail}`;
-        } else {
-          console.warn(`[SendGrid] Dispatch failed: ${sgResult.error}`);
-          return res.status(502).json({ error: `Email could not be delivered: ${sgResult.error}` });
-        }
-      }
-
+      const result = await sendDocumentEmail(payload);
+      if (!result.ok) return res.status(result.status).json({ error: result.error });
+      const { document, recipientEmail } = payload;
       return res.json({
         success: true,
-        provider: providerUsed,
-        messageId,
+        provider: 'sendgrid',
+        messageId: result.messageId,
         recipient: recipientEmail,
-        subject,
-        timestamp,
-        deliveryNote,
-        previewHtml: html,
+        subject: result.subject,
+        timestamp: result.timestamp,
+        deliveryNote: `Successfully delivered via Twilio SendGrid to ${recipientEmail}`,
+        previewHtml: result.html,
         message: `${document.type.toUpperCase()} #${document.documentNumber} sent to ${recipientEmail}`
       });
-
     } catch (error: any) {
       console.error("Failed to send document email:", error);
       return res.status(500).json({ error: error.message || "Failed to dispatch transactional document email." });

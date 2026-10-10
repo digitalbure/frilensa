@@ -51,9 +51,30 @@ const docs = [
 await put(`consultants/${A.uid}`, { consultantEmail: A.email, userProfile: { email: A.email }, clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
 for (const d of docs) await put(`documents/${A.uid}_${d.id}`, { ...d, consultantId: A.uid, clientEmail: 'client@one.fj', clientName: 'Client One', businessName: 'Alice Studio', businessBankDetails: 'BSP 123' });
 
+
+// Bob's workspace for the daily automation job: one auto-generate retainer, one that isn't, two overdue invoices.
+const fijiToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Fiji', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+const daysAgo = n => { const d = new Date(`${fijiToday}T00:00:00Z`); d.setUTCDate(d.getUTCDate() - n); return d.toISOString().slice(0, 10); };
+const TOK_LATE = 'lateTokenDDDDDDDDDDDDDDDD';
+const bobDocs = [
+  { id: 'late1', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-2001', issueDate: daysAgo(20), dueDate: daysAgo(5), total: 300, subtotal: 300, vatRate: 0, vatAmount: 0, shareToken: TOK_LATE, clientId: 'bc1', businessId: 'bb1', items: [] },
+  { id: 'late2', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-2002', issueDate: daysAgo(30), dueDate: daysAgo(12), total: 80, subtotal: 80, vatRate: 0, vatAmount: 0, shareToken: 'late2TokenEEEEEEEEEEEEEEE', clientId: 'bc1', businessId: 'bb1', items: [] }
+];
+const bobRetainer = { id: 'ret1', clientId: 'bc1', businessId: 'bb1', projectName: 'Website care', amount: 500, billingDay: 1, status: 'active', autoGenerate: true, startDate: '2026-01-01', interval: 'monthly', paymentTermsDays: 7, autoSendMode: 'sent', items: [] };
+await put(`consultants/${B.uid}`, {
+  consultantEmail: B.email,
+  userProfile: { email: B.email, defaultVatRate: 12.5, automation: { emailRetainerInvoices: true, overdueReminders: true } },
+  clients: [{ id: 'bc1', name: 'Payer Ltd', email: 'payer@client.fj' }],
+  businesses: [{ id: 'bb1', name: 'Bob Agency', email: 'hello@agency.fj', isPrimary: true, invoicePrefix: 'INV', invoiceStartNumber: 3000 }],
+  documents: bobDocs,
+  recurringInvoices: [bobRetainer, { ...bobRetainer, id: 'ret2', autoGenerate: false }],
+  projects: []
+});
+await put(`documents/${B.uid}_late1`, { ...bobDocs[0], consultantId: B.uid, clientEmail: 'payer@client.fj', clientName: 'Payer Ltd', businessName: 'Bob Agency' });
+
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -129,6 +150,69 @@ try {
     assert.equal(emails.length, before);
   });
   await check('revoking ends the open session', async () => { await fetch(`${API}/api/portal/admin/revoke`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'client@one.fj' }) }); assert.equal((await fetch(`${API}/api/portal/data`, { headers: { Authorization: `Portal ${session}` } })).status, 401); });
+
+  // Daily automation job
+  const jobs = (secret) => fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: secret ? { 'X-Job-Secret': secret } : {} });
+  const retInvoiceId = `doc-ret-ret1-${fijiToday.slice(0, 7)}`;
+  await check('daily job refuses a missing or wrong secret', async () => { assert.equal((await jobs()).status, 401); assert.equal((await jobs('wrong')).status, 401); });
+  await check('daily job runs with the secret', async () => { const r = await j(await jobs('e2e-jobs-secret')); assert.equal(r.status, 200); assert.equal(r.body.invoicesCreated, 1); assert.equal(r.body.remindersSent, 2); });
+  await check('retainer invoice is created in the workspace', async () => {
+    const ws = await get(`consultants/${B.uid}`);
+    const inv = ws.documents.find(d => d.id === retInvoiceId);
+    assert.ok(inv, 'invoice missing');
+    assert.equal(inv.documentNumber, `INV-${new Date().getFullYear()}-3000`);
+    assert.equal(inv.total, 562.5);
+    assert.equal(inv.status, 'sent');
+    assert.equal(ws.recurringInvoices.find(r => r.id === 'ret1').lastGeneratedDate, fijiToday);
+    assert.equal(ws.recurringInvoices.find(r => r.id === 'ret2').lastGeneratedDate, undefined, 'manual retainer left alone');
+    assert.equal(ws.documents.length, 3, 'existing documents kept');
+  });
+  await check('retainer invoice has an online copy and link', async () => {
+    const flat = await get(`documents/${B.uid}_${retInvoiceId}`);
+    assert.equal(flat.consultantId, B.uid); assert.equal(flat.clientEmail, 'payer@client.fj');
+    const r = await j(await fetch(`${API}/api/public/documents/${flat.shareToken}`)); assert.equal(r.status, 200); assert.equal(r.body.business.name, 'Bob Agency');
+  });
+  await check('retainer invoice is emailed to the client and logged', async () => {
+    await emailTo('payer@client.fj', /Invoice #INV-\d{4}-3000 from Bob Agency/);
+    const inv = (await get(`consultants/${B.uid}`)).documents.find(d => d.id === retInvoiceId);
+    assert.equal(inv.emailHistory.length, 1); assert.equal(inv.emailHistory[0].recipientEmail, 'payer@client.fj');
+  });
+  await check('overdue invoices get the right reminder with a link', async () => {
+    const gentle = await emailTo('payer@client.fj', /Friendly reminder: invoice INV-2026-2001/);
+    assert.ok(gentle.html.includes(`https://frilensa.example/?doc=${TOK_LATE}`), 'link to the invoice');
+    await emailTo('payer@client.fj', /Second reminder: invoice INV-2026-2002 is 12 days overdue/);
+  });
+  await check('reminders are recorded on the workspace and online copy', async () => {
+    const ws = await get(`consultants/${B.uid}`);
+    assert.deepEqual(ws.documents.find(d => d.id === 'late1').remindersSent.map(r => r.level), [1]);
+    assert.deepEqual(ws.documents.find(d => d.id === 'late2').remindersSent.map(r => r.level), [2]);
+    assert.deepEqual((await get(`documents/${B.uid}_late1`)).remindersSent.map(r => r.level), [1]);
+    assert.equal(await get(`documents/${B.uid}_late2`), null, 'no partial online copy created');
+  });
+  await check('running again the same day sends and creates nothing', async () => {
+    const before = emails.filter(e => e.to === 'payer@client.fj').length;
+    const r = await j(await jobs('e2e-jobs-secret'));
+    assert.equal(r.body.invoicesCreated, 0); assert.equal(r.body.remindersSent, 0);
+    await new Promise(r => setTimeout(r, 500));
+    assert.equal(emails.filter(e => e.to === 'payer@client.fj').length, before);
+    assert.equal((await get(`consultants/${B.uid}`)).documents.length, 3);
+  });
+  await check('automation status needs sign-in and shows the last run', async () => {
+    assert.equal((await fetch(`${API}/api/automation/status`)).status, 401);
+    const r = await j(await fetch(`${API}/api/automation/status`, { headers: auth(B) }));
+    assert.equal(r.status, 200); assert.equal(r.body.emailConfigured, true); assert.equal(r.body.scheduleConfigured, true);
+    assert.equal(r.body.lastRun.trigger, 'schedule');
+  });
+  await check('run now works for the signed-in consultant only', async () => {
+    const r = await j(await fetch(`${API}/api/automation/run-now`, { method: 'POST', headers: auth(B) }));
+    assert.equal(r.status, 200); assert.equal(r.body.lastRun.trigger, 'manual'); assert.equal(r.body.lastRun.invoicesCreated.length, 0);
+    const a = await j(await fetch(`${API}/api/automation/status`, { headers: auth(A) }));
+    assert.equal(a.body.lastRun, null, "Alice has no runs and can't see Bob's");
+  });
+  await check('automation run records are not readable from the browser', async () => {
+    const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/automation_runs/${B.uid}`, { headers: { Authorization: `Bearer ${B.token}` } });
+    assert.equal(r.status, 403);
+  });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.
   try { process.kill(-server.pid, 'SIGTERM'); } catch {}

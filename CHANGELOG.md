@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-10-10
+
+### Added
+- **Automatic retainer billing.** Retainers set to "auto-generate" now get their invoice every morning on the due date (8:00 am Fiji time), even when nobody has Frilensa open. A retainer can never be invoiced twice for the same period, whether the invoice comes from the morning run, the app or "Run now".
+- **Overdue reminders.** Optionally email clients about unpaid invoices 3, 10 and 21 days after the due date: friendly, then firm, then final, each with a link to view the invoice and payment details. An invoice gets at most one reminder per stage, invoices the client has reported paying are skipped, and invoices more than 120 days late are left for you to follow up personally. The invoice screen shows which reminders were sent.
+- **Settings → Automatic billing & reminders**: switch on emailing retainer invoices to clients, overdue reminders, and a copy of each reminder to you (all off until you turn them on); see what the last run did, and run it now. Emails need SendGrid configured on the server.
+
+### Changed
+- Retainer invoices use your VAT setting (no VAT when tax is turned off, 12.5% by default) instead of falling back to 15%, and each gets its own online link. The retainers screen's monthly totals use the same rate.
+
+### Operator notes
+- `scripts/deploy.sh` now sets a `JOBS_SECRET` on the service (kept across deploys) and creates or updates a Cloud Scheduler job, `frilensa-daily`, that calls `POST /api/jobs/daily` at 8:00 am Fiji time. If Cloud Scheduler isn't available in the service's region, rerun with `SCHEDULER_REGION=<location>`.
+
 ## [3.3.1] - 2026-10-10
 
 ### Fixed

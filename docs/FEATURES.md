@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.3.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.4.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -27,7 +27,8 @@ Status as of v3.3.0 (October 2026). Each feature is marked by whether it actuall
 - ✅ PDF export and print, with branding, bank details and a QR code.
 - ⚠️ Email to client via SendGrid: works once `SENDGRID_API_KEY` is set; otherwise it says it can't send.
 - ✅ "View online" links, share links and PDF QR codes open a public page for that one document (`/?doc=…`): view, download the PDF, accept a quote or report a payment. *(3.1.0)*
-- ⚠️ Retainers and recurring invoices: invoices are generated only when you press the run button in the app. Nothing runs on a schedule, and nothing is sent automatically.
+- ✅ Retainers and recurring invoices: auto-generate retainers are invoiced every morning on their due date; optionally emailed to the client. *(3.4.0)*
+- ✅ Overdue reminders (3, 10 and 21 days after the due date), switched on in Settings. *(3.4.0)*
 
 ### Clients (CRM)
 - ✅ Client directory (table/grid), TIN, currency, contacts, subscriptions, outstanding-balance filter.
@@ -98,7 +99,7 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | --- | --- | --- | --- |
 | 6 | ~~Payments inbox~~ | Done in 3.2.0; automatic receipts in 3.3.0. | — |
 | 7 | ~~Email notifications~~ | Done in 3.2.0. Still to do: WhatsApp/SMS, and push notifications for the installed app. | — |
-| 8 | **Scheduled jobs on the server**: generate retainer invoices on their due date, and send overdue reminders (gentle, then firm) | Getting paid on time is the main job of the product; today it depends on you remembering to press a button. | M |
+| 8 | ~~Scheduled jobs on the server~~ | Done in 3.4.0: daily retainer invoices and overdue reminders. | — |
 | 9 | **Online payment collection**: card payments (e.g. Stripe or Windcave), then M-PAiSA / MyCash merchant APIs where available; webhooks mark invoices paid | "Pay now" on an invoice is the biggest conversion lever. | L |
 | 10 | **Real subscription billing** using the same payment provider, enforced server-side | Plans are currently free and changeable by any user. | M |
 | 11 | **FRCS VAT return report**: output and input VAT by period, exportable for filing | Completes the "tax compliance" promise. | M |

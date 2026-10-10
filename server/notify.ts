@@ -18,25 +18,26 @@ function allowSend(key: string): boolean {
   return true;
 }
 
-function appUrl(path = "") {
+export function appUrl(path = "") {
   return `${(process.env.APP_URL || "https://frilensa.com").replace(/\/$/, "")}${path}`;
 }
 
-interface Notice {
+export interface Notice {
   subject: string;
   heading: string;
   lines: string[];      // plain text; escaped for HTML here
   actionLabel: string;
   actionPath: string;   // e.g. "/?tab=dashboard"
+  footer?: string;      // replaces the "turn these emails off" line (e.g. for emails to clients)
 }
 
-function render(n: Notice) {
+export function render(n: Notice) {
   const lines = n.lines.map(l => `<p style="margin:0 0 10px;font-size:14px;line-height:1.5;color:#334155">${escapeHtml(l)}</p>`).join("");
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
 <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px">
 <h1 style="margin:0 0 14px;font-size:18px;color:#0f172a">${escapeHtml(n.heading)}</h1>${lines}
 <p style="margin:20px 0 0"><a href="${escapeHtml(appUrl(n.actionPath))}" style="background:#0284c7;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600">${escapeHtml(n.actionLabel)}</a></p>
-<p style="margin:22px 0 0;font-size:11px;color:#94a3b8">You can turn these emails off in Frilensa under Settings → Notifications.</p>
+<p style="margin:22px 0 0;font-size:11px;color:#94a3b8">${escapeHtml(n.footer ?? "You can turn these emails off in Frilensa under Settings → Notifications.")}</p>
 </div></body></html>`;
   const text = `${n.heading}\n\n${n.lines.join("\n")}\n\n${n.actionLabel}: ${appUrl(n.actionPath)}`;
   return { html, text };
