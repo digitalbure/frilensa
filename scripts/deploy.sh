@@ -6,7 +6,7 @@
 #
 # Steps, in this order (the new app works with the old rules, but not the other way round):
 #   1. Export a full Firestore backup to gs://<project>-backups/<timestamp>
-#   2. Deploy the app to the existing Cloud Run service, keeping its env vars and secrets
+#   2. Build the image with Cloud Build and update the existing Cloud Run service, keeping its settings
 #   3. Check /api/health reports the version in package.json
 #   4. Publish firestore.rules (the previous ruleset name is printed for rollback)
 #
@@ -79,28 +79,19 @@ echo "Backup written. Restore if ever needed with:"
 echo "  gcloud firestore import $BUCKET/$STAMP --database=$DATABASE"
 
 # --- 2. Deploy app ---
-say "2/4 Deploying app v$VERSION to Cloud Run (existing env vars are kept)"
-ENV_UPDATES=()
-EXISTING_ENV="$(gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format=json)"
-if ! grep -q '"PORTAL_SESSION_SECRET"' <<<"$EXISTING_ENV"; then
-  ENV_UPDATES+=("PORTAL_SESSION_SECRET=$(openssl rand -hex 32)")
-  echo "Adding a new PORTAL_SESSION_SECRET."
-fi
-if ! grep -q '"APP_URL"' <<<"$EXISTING_ENV"; then
-  ENV_UPDATES+=("APP_URL=https://frilensa.com")
-fi
+say "2/4 Deploying app v$VERSION to Cloud Run (existing settings are kept)"
+WORK="$(mktemp -d)"
+gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format=json > "$WORK/current.json"
+PREVIOUS_REVISION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1])).get("status",{}).get("latestReadyRevisionName",""))' "$WORK/current.json")"
+echo "Current revision (for rollback): ${PREVIOUS_REVISION:-unknown}"
+
 if [[ -n "${ADMIN_EMAILS:-}" ]]; then
   echo "VITE_ADMIN_EMAILS=$ADMIN_EMAILS" > .env.production
 fi
-# Building from source uses Cloud Build and Artifact Registry in the service's project.
-gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$RUN_PROJECT"
-DEPLOY_ARGS=(run deploy "$SERVICE" --project "$RUN_PROJECT" --source . --region "$REGION" --quiet)
-if (( ${#ENV_UPDATES[@]} )); then
-  DEPLOY_ARGS+=(--update-env-vars "$(IFS=,; echo "${ENV_UPDATES[*]}")")
-fi
+
 # The new server reads Firestore directly (client portal, directory, document links), so the
 # service's identity needs access to the database project. This only adds a permission.
-SA="$(gcloud run services describe "$SERVICE" --project "$RUN_PROJECT" --region "$REGION" --format='value(spec.template.spec.serviceAccountName)')"
+SA="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["spec"]["template"]["spec"].get("serviceAccountName",""))' "$WORK/current.json")"
 if [[ -z "$SA" ]]; then
   SA="$(gcloud projects describe "$RUN_PROJECT" --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
 fi
@@ -110,9 +101,24 @@ if ! gcloud projects get-iam-policy "$PROJECT" --flatten='bindings[].members' \
   echo "Granting it Cloud Datastore User on $PROJECT so it can read and write Firestore."
   gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/datastore.user --condition=None >/dev/null
 fi
-confirm "Deploy now? (A new Cloud Run revision is created; the previous one stays available for rollback.)"
-gcloud "${DEPLOY_ARGS[@]}"
+
+confirm "Build v$VERSION and deploy it? (A new Cloud Run revision is created; the current one stays available for rollback.)"
+
+# Build the container with Cloud Build into Artifact Registry. (AI Studio's source-deploy
+# annotations make `gcloud run deploy --source` fail, so the image is built separately.)
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com --project "$RUN_PROJECT"
+if ! gcloud artifacts repositories describe frilensa --project "$RUN_PROJECT" --location "$REGION" >/dev/null 2>&1; then
+  gcloud artifacts repositories create frilensa --project "$RUN_PROJECT" --location "$REGION" \
+    --repository-format=docker --description="Frilensa app images"
+fi
+IMAGE="$REGION-docker.pkg.dev/$RUN_PROJECT/frilensa/app:$VERSION-$STAMP"
+gcloud builds submit --project "$RUN_PROJECT" --tag "$IMAGE" .
 rm -f .env.production
+
+# Update the service from its own current configuration with only the image (and missing env vars) changed.
+python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL=https://frilensa.com"
+gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---
 say "3/4 Checking the new version is live"
@@ -124,7 +130,7 @@ done
 echo "Health: ${HEALTH:-no response}"
 if ! grep -q "\"version\":\"$VERSION\"" <<<"${HEALTH:-}"; then
   echo "The new version did not report healthy. Rules were NOT changed."
-  echo "Roll back with: gcloud run services update-traffic $SERVICE --project $RUN_PROJECT --region $REGION --to-revisions=PREVIOUS_REVISION=100"
+  echo "Roll back with: gcloud run services update-traffic $SERVICE --project $RUN_PROJECT --region $REGION --to-revisions=${PREVIOUS_REVISION:-PREVIOUS_REVISION}=100"
   exit 1
 fi
 

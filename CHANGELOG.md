@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.2.3] - 2026-10-10
+
+### Fixed
+- Deploy script works with services created by AI Studio: it builds the image with Cloud Build and updates the service from its existing configuration (keeping env vars, secrets, scaling and domains), instead of `gcloud run deploy --source`, which AI Studio's source annotations made fail. Prints the current revision for one-command rollback.
+
 ## [3.2.2] - 2026-10-10
 
 ### Fixed
