@@ -19,6 +19,7 @@ import OnboardingWizard from './components/OnboardingWizard';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import PublicDocumentView from './components/PublicDocumentView';
 import RateCardPublicView from './components/RateCardPublicView';
+import BookingPageView from './components/BookingPageView';
 import { CRMData, UserProfile } from './types';
 import { INITIAL_CRM_DATA } from './data/mockData';
 import { auth, onAuthStateChanged, signOut, type User } from './lib/firebase';
@@ -83,6 +84,14 @@ export default function App() {
     if (token) return { token };
     if (params.get('viewDoc') || window.location.pathname.startsWith('/docs/')) return { token: null };
     return null;
+  });
+
+  // Hosted booking pages: /book/<slug> (?embed=1 inside the website widget)
+  const [bookingPage] = useState(() => {
+    const m = window.location.pathname.match(/^\/book\/([a-z0-9-]{3,40})\/?$/);
+    if (!m) return null;
+    const q = new URLSearchParams(window.location.search);
+    return { slug: m[1], embed: q.get('embed') === '1', service: q.get('service'), host: q.get('host') };
   });
 
   // Shareable rate cards: /?rates=<token>
@@ -418,6 +427,10 @@ export default function App() {
     setPortalLinkError(null);
     setPortalSession(session);
   };
+
+  if (bookingPage) {
+    return <BookingPageView slug={bookingPage.slug} embed={bookingPage.embed} service={bookingPage.service} host={bookingPage.host} />;
+  }
 
   if (rateCardToken) {
     return <RateCardPublicView token={rateCardToken} />;

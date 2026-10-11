@@ -281,7 +281,7 @@ Reimbursed costs are left out of profit and loss and listed separately in the VA
     id: 'services-rate-card',
     title: 'Services, rate card and default terms',
     summary: 'Keep a catalogue of services and rates, share a rate card, take booking requests from your rate card, apps and websites, choose what can be booked and what to ask, and set default terms for each business.',
-    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
+    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'booking page', 'widget', 'embed', 'website', 'book now', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
     body: `Everything here is in **Finance → Services**, for the active business.
 
 ### Your catalogue
@@ -302,6 +302,13 @@ Under **Bookings for** your business:
 - **Booking questions**: switch on the event or job date, start time and location, and add your own questions (short or long text, number, date, time, single or multiple choice, yes or no). Each can be required, have help text, and be asked only when certain services are chosen. Use the arrows to order them.
 - **Intro text** and **After-booking message**, shown to customers by apps that use them.
 - The **Business id** is what an app or website developer needs, with an API key, to show your booking form.
+
+### Booking page and website widget
+No developer? Under **Booking page and website widget**, choose an address (for example frilensa.com/book/your-business) and press **Turn on booking page**. Share the link anywhere. Customers pick services, answer your questions, see an estimate and send a booking request.
+
+To put a **Book now** button on your own website, press **Copy code** and paste it into your site where you want the button (most website builders have an "embed" or "HTML" block). The booking page opens over your site. You can preselect a service or change the button's words and colour; the settings show how.
+
+Tick **Email the customer a copy of their request** to send them a short "We've got your booking request" email with their answers and your after-booking message, in your business's name. **Turn off** stops the page and the button working. When the page is on, your rate card shows a **Book now** button too.
 
 ### Default terms
 Under **Terms for** your business, set **Invoices due after (days)**, **Quotes valid for (days)**, **Invoice terms and notes** and **Quote terms and conditions**, then press **Save terms**. New quotes and invoices fill these in (you can still change them on each one), including drafts made by the assistant or the API, and retainers with no terms of their own.`

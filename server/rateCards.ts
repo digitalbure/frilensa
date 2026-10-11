@@ -96,7 +96,8 @@ export function createPublicRateCardsRouter() {
     const found = await loadCard(req.params.token);
     if (!found) return res.status(404).json({ error: "This rate card link isn't valid. Ask the business for a new link." });
     res.setHeader("Cache-Control", "no-store");
-    res.json(publicCard(found.data, found.business));
+    const p = found.business.booking?.page;
+    res.json({ ...publicCard(found.data, found.business), bookingUrl: p?.enabled && p.slug ? `/book/${p.slug}` : null });
   });
 
   router.post("/:token/request",

@@ -7,6 +7,7 @@ export interface PublicRateCard {
     email: string; phone: string; address: string;
   };
   intro: string;
+  bookingUrl?: string | null;
   currency: string;
   vatRate: number;
   terms: { text: string; paymentTermsDays: number; quoteValidDays: number };

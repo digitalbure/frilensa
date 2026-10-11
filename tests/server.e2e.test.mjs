@@ -153,7 +153,7 @@ const fakePaypal = http.createServer((req, res) => {
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -871,6 +871,79 @@ try {
     const d = r.find(x => x.channel === 'directory');
     assert.ok(d, 'directory booking in the inbox'); assert.ok(d.directoryBookingId);
     assert.equal(d.eventDate, '2026-11-01'); assert.ok(d.details.some(x => x.label === 'Service' && x.value === 'Logo'));
+  });
+
+  // --- Hosted booking page and website widget ---
+  const BOOK = `${API}/api/public/book`;
+  const withPage = page => { const ws = carolWs(''); ws.businesses[0].booking = { ...carolBooking, page }; return put(`consultants/${C.uid}`, ws); };
+  const pageBody = (extra = {}) => ({
+    name: 'Seini', email: 'seini@client.fj', items: [{ serviceId: 's1', quantity: 1, rate: 1 }],
+    answers: [{ questionId: 'q_date', value: '2027-05-01' }, { questionId: 'q_aud', value: 40 }], ...extra
+  });
+  const sendPage = body => fetch(`${BOOK}/carol-photo/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const myRequests = async () => (await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests;
+  let pageToken;
+  await check('claiming a booking page address: sign-in, format, reserved words, taken', async () => {
+    assert.equal((await fetch(`${API}/api/booking-page`, { method: 'PUT' })).status, 401);
+    const put1 = body => fetch(`${API}/api/booking-page`, { method: 'PUT', headers: auth(C), body: JSON.stringify(body) });
+    assert.equal((await put1({ businessId: 'cb1', slug: 'admin' })).status, 400);
+    assert.equal((await put1({ businessId: 'cb1', slug: 'No Spaces!' })).status, 400);
+    assert.equal((await put1({ businessId: 'bb1', slug: 'carol-photo' })).status, 404, "someone else's business");
+    const ok = await j(await put1({ businessId: 'cb1', slug: 'carol-photo' }));
+    assert.equal(ok.status, 200); assert.equal(ok.body.slug, 'carol-photo');
+    const taken = await fetch(`${API}/api/booking-page`, { method: 'PUT', headers: auth(B), body: JSON.stringify({ businessId: 'bb1', slug: 'carol-photo' }) });
+    assert.equal(taken.status, 409);
+  });
+  await check('the booking page is off until the business turns it on', async () => {
+    await withPage({ enabled: false, slug: 'carol-photo' });
+    assert.equal((await fetch(`${BOOK}/carol-photo`)).status, 404);
+    await withPage({ enabled: true, slug: 'carol-photo' });
+    const r = await j(await fetch(`${BOOK}/carol-photo`));
+    assert.equal(r.status, 200); assert.deepEqual(r.body.form.services.map(s => s.id), ['s1', 's5']); assert.ok(r.body.formToken);
+    pageToken = r.body.formToken;
+    assert.equal((await fetch(`${BOOK}/nobody-here`)).status, 404);
+  });
+  await check('the booking page needs a valid form token and a human fill time', async () => {
+    assert.equal((await sendPage(pageBody())).status, 400, 'no token');
+    assert.equal((await sendPage(pageBody({ formToken: pageToken.replace(/.$/, c => c === 'a' ? 'b' : 'a') }))).status, 400, 'tampered token');
+    const fresh = (await j(await fetch(`${BOOK}/carol-photo`))).body.formToken;
+    const quick = await j(await sendPage(pageBody({ formToken: fresh })));
+    assert.equal(quick.status, 400); assert.match(quick.body.error, /quick/);
+  });
+  await check('a filled honeypot looks accepted but nothing is saved', async () => {
+    const before = (await myRequests()).length;
+    const r = await j(await sendPage(pageBody({ formToken: pageToken, website: 'http://spam.example' })));
+    assert.equal(r.status, 200); assert.match(r.body.ref, /^QR-/);
+    assert.equal((await myRequests()).length, before);
+  });
+  await check('a booking from the page arrives with checked answers and no customer email when off', async () => {
+    await new Promise(r => setTimeout(r, 350));
+    const bad = await j(await sendPage(pageBody({ formToken: pageToken, answers: [{ questionId: 'q_date', value: '2027-05-01' }] })));
+    assert.equal(bad.status, 400); assert.match(bad.body.error, /Expected audience/);
+    const r = await j(await sendPage(pageBody({ formToken: pageToken })));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.afterMessage, "We'll reply within one working day.");
+    const req = (await myRequests()).find(x => x.ref === r.body.ref);
+    assert.equal(req.channel, 'booking_page'); assert.equal(req.eventDate, '2027-05-01'); assert.deepEqual(req.items.map(i => i.rate), [150]);
+    await new Promise(r => setTimeout(r, 400));
+    assert.equal(emails.filter(e => e.to === 'seini@client.fj').length, 0);
+  });
+  await check('a widget booking records the website and, when on, emails the customer an acknowledgement', async () => {
+    await withPage({ enabled: true, slug: 'carol-photo', ackEmail: true });
+    const r = await j(await sendPage(pageBody({ formToken: pageToken, email: 'tui@client.fj', embed: true, hostUrl: 'https://church.example/events?x=1' })));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const req = (await myRequests()).find(x => x.ref === r.body.ref);
+    assert.equal(req.channel, 'widget'); assert.equal(req.source.url, 'https://church.example/events?x=1'); assert.equal(req.source.app, 'church.example');
+    await emailTo('tui@client.fj', /We've got your booking request QR-/);
+    const ack = emails.find(e => e.to === 'tui@client.fj');
+    assert.ok(ack.html.includes('Expected audience: 40')); assert.ok(!/invoice|paid|payment/i.test(ack.html), 'nothing about documents or payments');
+  });
+  await check('the booking page has a daily cap per business', async () => {
+    assert.equal((await sendPage(pageBody({ formToken: pageToken, email: 'third@client.fj' }))).status, 200);
+    assert.equal((await sendPage(pageBody({ formToken: pageToken, email: 'fourth@client.fj' }))).status, 429);
+  });
+  await check('the widget script is served', async () => {
+    const r = await fetch(`${API}/embed/booking.js`);
+    assert.equal(r.status, 200); assert.match(await r.text(), /data-frilensa-booking/);
   });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.

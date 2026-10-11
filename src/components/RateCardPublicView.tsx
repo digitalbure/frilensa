@@ -96,6 +96,9 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
           </div>
           <div className="sm:text-right space-y-2">
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: brand }}>Services and rates</p>
+            {card.bookingUrl && (
+              <a href={card.bookingUrl} className="print:hidden inline-flex items-center gap-1.5 px-3 py-1.5 mr-2 rounded-lg text-white text-xs font-bold" style={{ backgroundColor: brand }}>Book now</a>
+            )}
             <button type="button" onClick={() => window.print()} className="print:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-xs font-bold cursor-pointer hover:bg-slate-50">
               <Printer className="w-3.5 h-3.5" /> Print or save as PDF
             </button>

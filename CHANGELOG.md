@@ -18,6 +18,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.13.0] - 2026-10-11
+
+### Added
+- **Booking page.** Turn on a booking page for each business at frilensa.com/book/your-address, with your colours and logo. Customers choose services and quantities, answer your booking questions, see an estimate and send a booking request. It arrives in your inbox like any other booking. Choose the address in **Finance → Services → Bookings**.
+- **Book now button for your website.** Copy a two-line snippet into any website and it shows a **Book now** button that opens your booking page over the site. No developer or keys needed. You can preselect a service and change the button's words and colour. Bookings made this way show which website they came from.
+- **Optional acknowledgement email:** tick a box to email customers who book on your page or website a copy of their request, with your after-booking message, in your business's name.
+- Your rate card shows a **Book now** button when your booking page is on.
+
+### Security
+- The booking page is protected against spam: a hidden field that only bots fill in, a check that the form wasn't sent instantly, limits per visitor, and a daily limit per business (50). Cloudflare Turnstile can be switched on for the server.
+
 ## [3.12.0] - 2026-10-11
 
 ### Added

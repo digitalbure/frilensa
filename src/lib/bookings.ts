@@ -30,6 +30,8 @@ export interface BookingSettings {
   questions?: BookingQuestion[];
   intro?: string;
   afterMessage?: string;
+  /** Hosted booking page at /book/<slug> (and the website widget that opens it). */
+  page?: { enabled?: boolean; slug?: string; ackEmail?: boolean };
 }
 
 export const BUILT_IN_IDS = { date: 'q_date', time: 'q_time', location: 'q_location' } as const;

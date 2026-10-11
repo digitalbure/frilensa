@@ -29,6 +29,8 @@ export interface Notice {
   actionLabel: string;
   actionPath: string;   // e.g. "/?tab=dashboard"
   footer?: string;      // replaces the "turn these emails off" line (e.g. for emails to clients)
+  fromName?: string;    // sender name shown to the recipient (default "Frilensa")
+  replyTo?: string;     // replies go here (e.g. the business's email)
 }
 
 export function render(n: Notice) {
@@ -36,10 +38,10 @@ export function render(n: Notice) {
   const html = `<!doctype html><html><body style="margin:0;background:#f1f5f9;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
 <div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:24px">
 <h1 style="margin:0 0 14px;font-size:18px;color:#0f172a">${escapeHtml(n.heading)}</h1>${lines}
-<p style="margin:20px 0 0"><a href="${escapeHtml(appUrl(n.actionPath))}" style="background:#0284c7;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600">${escapeHtml(n.actionLabel)}</a></p>
+${n.actionLabel ? `<p style="margin:20px 0 0"><a href="${escapeHtml(appUrl(n.actionPath))}" style="background:#0284c7;color:#fff;text-decoration:none;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600">${escapeHtml(n.actionLabel)}</a></p>` : ""}
 <p style="margin:22px 0 0;font-size:11px;color:#94a3b8">${escapeHtml(n.footer ?? "You can turn these emails off in Frilensa under Settings → Notifications.")}</p>
 </div></body></html>`;
-  const text = `${n.heading}\n\n${n.lines.join("\n")}\n\n${n.actionLabel}: ${appUrl(n.actionPath)}`;
+  const text = `${n.heading}\n\n${n.lines.join("\n")}${n.actionLabel ? `\n\n${n.actionLabel}: ${appUrl(n.actionPath)}` : ""}`;
   return { html, text };
 }
 
@@ -50,7 +52,8 @@ async function deliver(key: string, to: string, n: Notice) {
   const result = await sendViaSendGrid({
     apiKey,
     fromEmail: process.env.SENDGRID_FROM_EMAIL?.trim() || "noreply@frilensa.com",
-    fromName: process.env.SENDGRID_FROM_NAME?.trim() || "Frilensa",
+    fromName: (n.fromName || "").replace(/[\r\n<>"]/g, "").slice(0, 80) || process.env.SENDGRID_FROM_NAME?.trim() || "Frilensa",
+    ...(n.replyTo && isEmail(n.replyTo) ? { replyToEmail: n.replyTo.trim(), replyToName: n.fromName } : {}),
     toEmail: to,
     subject: n.subject.slice(0, 200),
     htmlContent: html,

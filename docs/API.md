@@ -225,11 +225,48 @@ invoice (Pay now). `updatedAt` is the latest change to the request, its quote or
 
 `channel` is where the request came from: `rate_card`, `directory`, `api`, `booking_page`, `widget`.
 
+### Without writing code: booking page and widget
+
+A business can turn on a hosted booking page at `https://frilensa.com/book/<slug>` (Finance → Services →
+Bookings → Booking page). It shows the same form (services, prices, questions) with the business's
+colours and logo. To add it to any website, paste:
+
+```html
+<div data-frilensa-booking="<slug>"></div>
+<script src="https://frilensa.com/embed/booking.js" async></script>
+```
+
+The script shows a **Book now** button that opens the booking page in an overlay (an iframe of
+`/book/<slug>?embed=1`). No keys or server are needed. Optional attributes: `data-service="<serviceId>"`
+(preselect a service), `data-label="Book a stream"`, `data-colour="#7c3aed"`. When a booking is sent,
+the element fires a `frilensa:booking` DOM event with `{ ref, slug }` in `event.detail`, so the site
+can show its own thank-you:
+
+```js
+document.querySelector('[data-frilensa-booking]').addEventListener('frilensa:booking', e => console.log(e.detail.ref));
+```
+
+The page sends `postMessage` only to the host page's origin, and the script only accepts messages from
+Frilensa's origin. Widget bookings arrive with `channel: "widget"` and the host page in `source.url`.
+
+Routes behind the page (public, no key):
+
+| Method and path | Notes |
+| --- | --- |
+| `GET /api/public/book/{slug}` | The booking form, a signed `formToken`, and `turnstileSiteKey` when Turnstile is on. 404 when the page is off |
+| `POST /api/public/book/{slug}/request` | `{ name, email, phone?, company?, message?, items, answers, formToken, turnstileToken?, embed?, hostUrl? }`. Checked like `POST /api/v1/booking-requests` |
+| `PUT /api/booking-page` | Signed-in user: `{ businessId, slug }` claims an address (409 if taken, 400 if reserved) |
+
+Spam guards: IP limits, a hidden honeypot field, a form token that must be at least a few seconds old
+(and under a day), a daily cap per business (50), and Cloudflare Turnstile when the server has
+`TURNSTILE_SECRET` and `TURNSTILE_SITE_KEY` set. The business can choose to email the customer a copy of
+their request ("We've got your booking request"); API requests never do.
+
 ## For developers
 
 - Keys: `server/apiKeys.ts` (collection `api_keys`, server-only; document id is the SHA-256 of the key).
 - OAuth: `server/oauth.ts` (collections `oauth_clients`, `oauth_codes`, `oauth_grants`, `oauth_tokens`, server-only) and the consent page `src/components/OAuthConsent.tsx`.
-- Bookings: `server/bookings.ts` (requests in the server-only `quote_requests` collection) and `src/lib/bookings.ts` (questions, checking, stages).
+- Bookings: `server/bookings.ts` (requests in the server-only `quote_requests` collection), `server/bookingPage.ts` (hosted page, slugs in `booking_slugs`), `public/embed/booking.js` (widget) and `src/lib/bookings.ts` (questions, checking, stages).
 - Operations: `server/apiService.ts`, shared by `server/apiV1.ts` (REST) and `server/mcp.ts` (MCP).
 - Workspace reads and transactional writes: `server/workspace.ts`.
 - Tests: `tests/server.e2e.test.mjs` (keys, REST, MCP, scopes, isolation between users, revocation).
