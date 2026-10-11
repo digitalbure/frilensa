@@ -127,7 +127,7 @@ Press **PDF** to choose what to include (bank details, terms and notes, a tax re
 A client can press **Accept quote** on the online quote or in the client portal. This works once the quote is sent. You then see "Quote accepted" under **Needs your attention** on **Home**, with **Open quote** and **Dismiss**, and you're emailed if email notifications are on.
 
 ### Turn a quote into an invoice
-Open the quote and press **Convert to invoice**. Frilensa creates an invoice with the same lines and the next invoice number, marked as sent. Check the due date and details, then email or share it.
+Open the quote and press **Convert to invoice**. Frilensa creates a draft invoice with the same lines, the next invoice number, its own online link, and your business's payment terms. Check the details, then email or share it. The quote no longer offers **Convert to invoice** once it has been converted.
 
 ### Turn an invoice into a receipt
 On an unpaid invoice, **Convert to receipt** marks the invoice paid and creates a receipt with the next receipt number, linked to the invoice.
@@ -157,10 +157,10 @@ On the online invoice or in the client portal, the client presses **I've paid th
 If you can't find the payment, press **Reject** and add an optional note. The client sees that it couldn't be matched and can report it again. Tick **Email the client** at the top of the panel to email them the receipt on confirm, or your note on reject.
 
 ### Record a payment yourself
-Open the invoice in **Billing** and press **Record payment**. Choose the method, date and reference, and attach proof of payment if you have it. For a foreign-currency invoice, enter the exchange rate and any bank fees to see the net amount received. Leave **Add to bookkeeping** ticked to add the payment to your ledger. This marks the invoice paid but doesn't create a receipt. To issue a receipt for an unpaid invoice, use **Convert to receipt** instead, or create one with **+ New receipt**.
+Open the invoice in **Billing** and press **Record payment**. Choose the method, date and reference, and attach proof of payment if you have it. For a foreign-currency invoice, enter the exchange rate and any bank fees to see the net amount received. Leave **Add to bookkeeping** ticked to add the payment to your ledger. This marks the invoice paid and creates its receipt. Choosing **Paid** in the invoice's status buttons opens the same form.
 
 ### Part payments
-Press **Partial** on the invoice's status buttons. Enter the **Amount received** so far (or pick 25%, 33%, 50% or 75%), the method, date and reference, then **Save payment**. The invoice shows the amount received and balance due, and the client sees the balance on the online invoice. Use **Edit payment** to update it, and **Record payment** when the rest arrives.`
+Press **Partial** on the invoice's status buttons. Enter the **Amount received** so far (or pick 25%, 33%, 50% or 75%), the method, date and reference, then **Save payment**. The invoice shows the amount received and balance due, and the client sees the balance on the online invoice. Each part payment is added to your ledger as it comes in. Use **Edit payment** to update it, and **Record payment** when the rest arrives: the ledger then gets only the remaining balance, and a receipt is created.`
   },
   {
     id: 'retainers-reminders',
@@ -333,7 +333,7 @@ Press **Add entry** and enter the date, description, amount, category (press **S
 - Filter the ledger by type, category and account, or search it.
 
 ### Reconcile
-**Finance → Reconcile** lists transactions still marked pending and suggests matching invoices and subscriptions, with a match score. Press **Reconcile** on a match to mark the transaction reconciled; when the match is an invoice, the invoice is marked paid. **Find matches** checks all pending transactions at once. If nothing matches, use **Categorise it yourself**. In the ledger, the tick on each entry switches it between pending and reconciled.
+Rows you add from a bank statement start as pending. **Finance → Reconcile** lists pending transactions and suggests matching invoices and subscriptions, with a match score. Press **Reconcile** on a match to mark the transaction reconciled; when the match is an invoice, the invoice is marked paid. **Find matches** checks all pending transactions at once. If nothing matches, use **Categorise it yourself**. In the ledger, the tick on each entry switches it between pending and reconciled.
 
 Payments you record in **Billing** with **Add to bookkeeping** ticked are added to the ledger automatically.`
   },

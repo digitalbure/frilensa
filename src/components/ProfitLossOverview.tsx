@@ -441,7 +441,7 @@ export default function ProfitLossOverview({
         {(['all', 'ytd', 'quarter', 'this_month', 'last_month'] as const).map(period => {
           const labels = {
             all: 'All time',
-            ytd: '2026 YTD',
+            ytd: `${new Date().getFullYear()} to date`,
             quarter: 'This quarter',
             this_month: 'This month',
             last_month: 'Last month'

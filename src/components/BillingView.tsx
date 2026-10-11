@@ -14,7 +14,7 @@ import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
 import { documentPublicUrl, generateShareToken } from '../lib/documentLinks';
-import { applyConfirmedPayment, addReceiptForInvoice } from '../lib/payments';
+import { applyConfirmedPayment, addReceiptForInvoice, applyPartialPayment } from '../lib/payments';
 import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
 import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses } from '../lib/invoiceTotals';
 import { openOwnFile } from '../lib/files';
@@ -375,6 +375,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       }
       return;
     }
+    if (newStatus === 'paid' && doc.type === 'invoice' && doc.status !== 'paid') {
+      // Record the payment properly: ledger entry and receipt.
+      setPaymentModalDoc(doc);
+      return;
+    }
     const todayDate = new Date().toISOString().split('T')[0];
     const updated: CRMDocument = {
       ...doc,
@@ -408,27 +413,12 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const target = data.documents.find(d => d.id === docId);
     if (!target) return;
 
-    const mergedAttachments = attachments !== undefined 
-      ? attachments 
-      : (target.paymentAttachments || []);
-
-    const updated: CRMDocument = {
-      ...target,
-      status: 'partial',
-      partiallyPaidAmount: partialAmount,
-      paidAmountForeign: partialAmount,
-      paymentMethod: pmMethod,
-      paymentDate: pmDate,
-      paymentExchangeNotes: notes,
-      paymentAttachments: mergedAttachments,
-      updatedAt: new Date().toISOString()
-    };
-
-    const updatedDocs = data.documents.map(d => d.id === docId ? updated : d);
-    onUpdateData({
-      ...data,
-      documents: updatedDocs
+    const next = applyPartialPayment(data, docId, {
+      amountSoFar: partialAmount, paymentMethod: pmMethod, paymentDate: pmDate, notes,
+      paymentAttachments: attachments !== undefined ? attachments : target.paymentAttachments
     });
+    onUpdateData(next);
+    const updated = next.documents.find(d => d.id === docId)!;
     if (selectedDoc && selectedDoc.id === docId) {
       setSelectedDoc(updated);
     }
@@ -621,7 +611,16 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const docCur = targetDoc.currency || data.userProfile.defaultCurrency || 'FJD';
     const finalPaymentDate = paymentDetails.paymentDate || new Date().toISOString().split('T')[0];
     const finalAttachments = paymentDetails.paymentAttachments || targetDoc.paymentAttachments || [];
-    onUpdateData(applyConfirmedPayment(data, docId, paymentDetails));
+    // Paying an invoice also issues its receipt (as confirming a client's payment report does).
+    const paid = applyConfirmedPayment(data, docId, paymentDetails);
+    const { data: withReceipt, receipt } = targetDoc.type === 'invoice'
+      ? addReceiptForInvoice(paid, docId, { paymentMethod: paymentDetails.paymentMethod, paymentDate: finalPaymentDate })
+      : { data: paid, receipt: null };
+    onUpdateData(withReceipt);
+    if (receipt) {
+      setShareToast(`Payment recorded. Receipt ${receipt.documentNumber} was created.`);
+      setTimeout(() => setShareToast(null), 4000);
+    }
 
     setPaymentModalDoc(null);
     setSelectedDoc(prev => prev && prev.id === targetDoc.id ? {
@@ -2475,7 +2474,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       >
                         <option value="">Choose an item</option>
                         <option value="custom">Custom item</option>
-                        {data.services.filter(s => !s.businessId || s.businessId === data.activeBusinessId).map(s => (
+                        {data.services.filter(s => s.isActive !== false && (!s.businessId || s.businessId === data.activeBusinessId)).map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
                         ))}
                       </select>
@@ -3602,7 +3601,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       >
                         <option value="">Choose a service</option>
                         <option value="custom">Custom item</option>
-                        {data.services.map(s => (
+                        {data.services.filter(s => s.isActive !== false && (!s.businessId || s.businessId === (retBusinessId || data.activeBusinessId))).map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
                         ))}
                       </select>

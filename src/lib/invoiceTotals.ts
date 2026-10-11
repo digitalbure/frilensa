@@ -1,4 +1,4 @@
-import type { DocumentItem } from '../types';
+import type { CRMDocument, DocumentItem } from '../types';
 
 // Reimbursable expenses on invoices. A reimbursement line passes a cost on to the client; by
 // default no VAT, taxes or percentage fees are charged on it, unless the line is marked taxable.
@@ -64,4 +64,30 @@ export function linkBilledExpenses<E extends { id: string; billedDocumentId?: st
     return e;
   });
   return changed ? next : expenses;
+}
+
+/**
+ * Recomputes a document's totals after its lines change, keeping its taxes and fees: percentage
+ * charges are re-applied to the taxable base, flat ones stay as they are. Tax-exempt documents
+ * (or `taxOff`) get no VAT.
+ */
+export function recalcDocumentTotals<D extends Pick<CRMDocument, 'items' | 'vatRate' | 'appliedTaxes' | 'appliedFees' | 'isTaxExempt'>>(doc: D, items: DocumentItem[], taxOff = false) {
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const { subtotal, taxableBase } = lineTotals(items);
+  const noTax = taxOff || doc.isTaxExempt === true;
+  const reapply = (c: { rateType: 'percentage' | 'flat'; rate: number; amount: number }) =>
+    c.rateType === 'percentage' ? r2(taxableBase * c.rate / 100) : c.amount;
+  const appliedFees = (doc.appliedFees || []).map(f => ({ ...f, amount: reapply(f) }));
+  const appliedTaxes = noTax ? [] : (doc.appliedTaxes || []).map(t => ({ ...t, amount: reapply(t) }));
+  const vatTax = appliedTaxes.find(t => t.id === 'ptax-1' || t.name.toLowerCase().includes('vat'));
+  const vatRate = noTax ? 0 : (vatTax ? vatTax.rate : doc.vatRate || 0);
+  const vatAmount = noTax ? 0 : (vatTax ? vatTax.amount : r2(taxableBase * vatRate / 100));
+  const taxTotal = appliedTaxes.length ? r2(appliedTaxes.reduce((s, t) => s + t.amount, 0)) : vatAmount;
+  const feeTotal = r2(appliedFees.reduce((s, f) => s + f.amount, 0));
+  return {
+    items, subtotal, vatRate, vatAmount,
+    ...(doc.appliedTaxes ? { appliedTaxes, taxTotal } : {}),
+    ...(doc.appliedFees ? { appliedFees, feeTotal } : {}),
+    total: r2(subtotal + taxTotal + feeTotal)
+  };
 }

@@ -496,6 +496,7 @@ export interface CRMDocument {
   total: number;
   status: 'draft' | 'sent' | 'partial' | 'paid' | 'cancelled' | 'accepted';
   partiallyPaidAmount?: number; // Amount partially received so far
+  partialLoggedAmount?: number; // How much of partiallyPaidAmount is already in the ledger (document currency)
   notes?: string;
   paymentMethod?: string; // e.g., "M-Paisa", "Bank Transfer", "Cash"
   projectId?: string; // Reference to associated Project

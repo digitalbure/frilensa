@@ -1,6 +1,7 @@
 import type { CRMData, CRMDocument, PaymentAttachment, Transaction } from '../types';
 import { suggestDocumentNumber } from './documentNumbers';
 import { generateShareToken } from './documentLinks';
+import { convertCurrency } from './currencies';
 
 export interface ConfirmedPaymentDetails {
   paymentMethod: string;
@@ -54,20 +55,26 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
 
   let newTransactions = data.transactions || [];
 
-  if (paymentDetails.autoLogTransaction !== false) {
+  // Part payments already logged in the ledger are left out of the final payment's entry.
+  const paidForeign = paymentDetails.paidAmountForeign || targetDoc.total;
+  const logged = Math.min(targetDoc.partialLoggedAmount || 0, paidForeign);
+  const share = paidForeign > 0 ? (paidForeign - logged) / paidForeign : 1;
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+
+  if (paymentDetails.autoLogTransaction !== false && share > 0) {
     // Create a bookkeeping transaction record in home currency
     const firstImgAtt = finalAttachments.find(a => a.type.startsWith('image/') || a.dataUrl.startsWith('data:image/'));
     const newTransaction: Transaction = {
       id: `tx-${Date.now()}`,
       date: finalPaymentDate,
-      description: `Payment received for ${targetDoc.type.toUpperCase()} #${targetDoc.documentNumber} (${docCur} ${(paymentDetails.paidAmountForeign || targetDoc.total).toLocaleString(undefined, { minimumFractionDigits: 2 })})`,
-      amount: paymentDetails.netReceivedHome || paymentDetails.paidAmountHome || targetDoc.total, // in Home currency (FJD)
+      description: `${logged > 0 ? 'Final payment' : 'Payment received'} for ${targetDoc.type.toUpperCase()} #${targetDoc.documentNumber} (${docCur} ${round2(paidForeign - logged).toLocaleString(undefined, { minimumFractionDigits: 2 })})`,
+      amount: round2((paymentDetails.netReceivedHome || paymentDetails.paidAmountHome || targetDoc.total) * share), // in Home currency (FJD)
       category: 'Consulting Revenue',
       status: 'reconciled',
       confidence: 100,
       bankName: paymentDetails.paymentMethod.includes('Bank') ? 'Bank Transfer' : paymentDetails.paymentMethod,
       currency: docCur,
-      originalAmount: paymentDetails.paidAmountForeign || targetDoc.total,
+      originalAmount: round2(paidForeign - logged),
       exchangeRate: paymentDetails.exchangeRate,
       bankFee: paymentDetails.bankFeesDeduction,
       netReceived: paymentDetails.netReceivedHome,
@@ -88,6 +95,62 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
 
 
   return { ...data, documents: updatedDocs, transactions: newTransactions };
+}
+
+/**
+ * Records a part payment: `amountSoFar` is the total received so far, in the document's currency.
+ * The ledger gets an entry for the difference from what was already logged (negative if corrected down).
+ */
+export function applyPartialPayment(
+  data: CRMData,
+  docId: string,
+  p: { amountSoFar: number; paymentMethod: string; paymentDate: string; notes?: string; paymentAttachments?: PaymentAttachment[] }
+): CRMData {
+  const doc = data.documents.find(d => d.id === docId);
+  if (!doc) return data;
+  const home = data.userProfile.defaultCurrency || 'FJD';
+  const docCur = doc.currency || home;
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const delta = round2(p.amountSoFar - (doc.partialLoggedAmount || 0));
+  const now = new Date().toISOString();
+  const updated: CRMDocument = {
+    ...doc,
+    status: 'partial',
+    partiallyPaidAmount: p.amountSoFar,
+    paidAmountForeign: p.amountSoFar,
+    partialLoggedAmount: p.amountSoFar,
+    paymentMethod: p.paymentMethod,
+    paymentDate: p.paymentDate,
+    paymentExchangeNotes: p.notes,
+    paymentAttachments: p.paymentAttachments ?? doc.paymentAttachments ?? [],
+    updatedAt: now
+  };
+  let transactions = data.transactions || [];
+  if (delta !== 0) {
+    const rates = data.businesses.find(b => b.id === doc.businessId)?.customExchangeRates;
+    const rate = docCur === home ? 1 : (doc.exchangeRate || convertCurrency(1, docCur, home, rates?.[docCur]).rate);
+    const tx: Transaction = {
+      id: `tx-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      date: p.paymentDate,
+      description: `${delta > 0 ? 'Part payment' : 'Part payment correction'} for INVOICE #${doc.documentNumber} (${docCur} ${delta.toLocaleString(undefined, { minimumFractionDigits: 2 })})`,
+      amount: round2(delta * rate),
+      category: 'Consulting Revenue',
+      status: 'reconciled',
+      confidence: 100,
+      bankName: p.paymentMethod.includes('Bank') ? 'Bank Transfer' : p.paymentMethod,
+      currency: docCur,
+      originalAmount: delta,
+      exchangeRate: rate === 1 ? undefined : rate,
+      documentId: doc.id,
+      paymentMethod: p.paymentMethod,
+      notes: p.notes,
+      businessId: doc.businessId || data.activeBusinessId,
+      projectId: doc.projectId,
+      clientId: doc.clientId
+    };
+    transactions = [tx, ...transactions];
+  }
+  return { ...data, documents: data.documents.map(d => d.id === docId ? updated : d), transactions };
 }
 
 /**

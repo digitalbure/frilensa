@@ -18,6 +18,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.10.1] - 2026-10-11
+
+### Fixed
+- Converting a quote to an invoice gave the invoice the same online link as the quote, marked it as sent and ignored your payment terms. It now creates a draft invoice with its own link, number and your business's terms, and the quote stops offering to convert again.
+- Recording a payment yourself (**Record payment**, or choosing **Paid**) now creates the receipt, as confirming a client's reported payment already did.
+- Part payments are now added to your ledger as they're received. When the rest is paid, only the remaining balance is added, so the ledger matches the invoice.
+- Lines you add from a bank statement now wait in **Reconcile** to be matched to invoices and expenses. Before, they were marked as matched straight away, so Reconcile was nearly always empty.
+- Adding a business from the side menu filled blank fields with made-up details (a placeholder TIN, address, phone and email). They're now left blank for you to fill in.
+- Billing tracked hours from a project:
+  - Choosing "+ New draft invoice" again did nothing.
+  - New invoices ignored your invoice numbering, payment terms and VAT setting.
+  - Adding hours to an existing draft dropped its other taxes and fees from the total.
+- Quotes and invoices made from a project's scope added VAT even with VAT turned off, used the wrong numbering and had no online link. The scope sections now show VAT as added on top, matching the document.
+- The P&L period button said "2026 YTD" in every year. The VAT switch in Settings always said 12.5%. "Invoices / month" counted every invoice ever.
+- The invoice and retainer item pickers listed catalogue items marked inactive, and the retainer picker listed other businesses' items.
+
 ## [3.10.0] - 2026-10-11
 
 ### Added

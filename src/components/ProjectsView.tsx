@@ -13,6 +13,10 @@ import DateInput from './DateInput';
 import ProjectProfitabilityChart from './ProjectProfitabilityChart';
 import ProjectKanbanBoard from './ProjectKanbanBoard';
 import ProjectCurrencyDisplay from './ProjectCurrencyDisplay';
+import { documentDefaults } from '../lib/documentTerms';
+import { recalcDocumentTotals } from '../lib/invoiceTotals';
+import { suggestDocumentNumber } from '../lib/documentNumbers';
+import { generateShareToken } from '../lib/documentLinks';
 
 interface ProjectsViewProps {
   data: CRMData;
@@ -462,10 +466,6 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     }
 
     const costOf = (s: { cost?: unknown }) => Number(s.cost) || 0;
-    const subtotal = sections.reduce((sum, s) => sum + costOf(s), 0);
-    const vatRate = data.userProfile.defaultVatRate ?? 12.5;
-    const vatAmount = Number((subtotal * (vatRate / 100)).toFixed(2));
-    const total = subtotal + vatAmount;
 
     // Build items
     const documentItems = sections.map((s, i) => ({
@@ -477,16 +477,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       total: costOf(s)
     }));
 
-    // Create unique invoice/quote number
-    const prefix = docType === 'quote' ? 'QT' : 'INV';
     const activeBiz = data.businesses.find(b => b.id === selectedProject.businessId) || data.businesses[0];
-    const startNum = docType === 'quote' 
-      ? (activeBiz?.quoteStartNumber || 1000) 
-      : (activeBiz?.invoiceStartNumber || 1000);
-      
-    const currentTypeDocs = (data.documents || []).filter(d => d.type === docType && d.businessId === selectedProject.businessId);
-    const docNumberVal = startNum + currentTypeDocs.length;
-    const documentNumber = `${prefix}-${docNumberVal}`;
+    const taxOff = data.userProfile.enableTax === false;
+    const totals = recalcDocumentTotals({ items: [], vatRate: taxOff ? 0 : (data.userProfile.defaultVatRate ?? 12.5) }, documentItems, taxOff);
+    const today = new Date().toISOString().split('T')[0];
+    const defaults = documentDefaults(activeBiz, docType, today);
+    const documentNumber = suggestDocumentNumber(data, docType, activeBiz?.id)
+      || `${(docType === 'quote' ? activeBiz?.quotePrefix : activeBiz?.invoicePrefix) || (docType === 'quote' ? 'QT' : 'INV')}-DRAFT-${Date.now().toString(36).toUpperCase()}`;
 
     const projectCurrency = selectedProject.currency || 
       (selectedProject.clientId ? data.clients.find(c => c.id === selectedProject.clientId)?.currency : undefined) || 
@@ -496,23 +493,17 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       id: `doc-${Date.now()}`,
       type: docType,
       documentNumber,
-      businessId: selectedProject.businessId,
+      businessId: activeBiz?.id || selectedProject.businessId,
       clientId: selectedProject.clientId || data.clients[0]?.id || '',
       currency: projectCurrency,
-      issueDate: new Date().toISOString().split('T')[0],
-      dueDate: (() => {
-        const d = new Date();
-        d.setDate(d.getDate() + 14); // 14 days due date
-        return d.toISOString().split('T')[0];
-      })(),
-      items: documentItems,
-      subtotal,
-      vatRate,
-      vatAmount,
-      total,
+      issueDate: today,
+      dueDate: defaults.dueDate,
+      ...totals,
       status: 'draft' as const,
       projectId: selectedProject.id,
-      notes: `From the scope of work for ${selectedProject.name}.`
+      notes: `${defaults.notes}\nFrom the scope of work for ${selectedProject.name}.`,
+      shareToken: generateShareToken(),
+      updatedAt: new Date().toISOString()
     };
 
     onUpdateData({
@@ -920,45 +911,31 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     let updatedDocs = [...(data.documents || [])];
 
     if (selectedInvoiceId === 'new') {
-      // Find highest invoice number to increment
-      const typeDocs = updatedDocs.filter(d => d.type === 'invoice' && d.businessId === data.activeBusinessId);
-      let maxSerial = 1000;
-      typeDocs.forEach(d => {
-        const parts = d.documentNumber.split('-');
-        const lastPart = parts[parts.length - 1];
-        const serial = parseInt(lastPart, 10);
-        if (!isNaN(serial) && serial > maxSerial) {
-          maxSerial = serial;
-        }
-      });
-      const newDocNum = `INV-${new Date().getFullYear()}-${maxSerial + 1}`;
-      
-      const subtotal = newItem.total;
-      const vatRate = data.userProfile.defaultVatRate ?? 12.5;
-      const vatAmount = subtotal * (vatRate / 100);
-      const total = subtotal + vatAmount;
-
-      const projCur = selectedProject.currency || 
-        (selectedProject.clientId ? data.clients.find(c => c.id === selectedProject.clientId)?.currency : undefined) || 
+      const projCur = selectedProject.currency ||
+        (selectedProject.clientId ? data.clients.find(c => c.id === selectedProject.clientId)?.currency : undefined) ||
         data.userProfile.defaultCurrency || 'FJD';
+      const business = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
+      const today = new Date().toISOString().split('T')[0];
+      const defaults = documentDefaults(business, 'invoice', today);
+      const taxOff = data.userProfile.enableTax === false;
+      const totals = recalcDocumentTotals({ items: [], vatRate: taxOff ? 0 : (data.userProfile.defaultVatRate ?? 12.5) }, [newItem], taxOff);
 
       const newInvoice = {
         id: `doc-${Date.now()}`,
         type: 'invoice' as const,
-        documentNumber: newDocNum,
-        businessId: data.activeBusinessId,
+        // The business's own series; manual numbering gets a placeholder to replace before sending.
+        documentNumber: suggestDocumentNumber(data, 'invoice', business?.id) || `${business?.invoicePrefix || 'INV'}-DRAFT-${Date.now().toString(36).toUpperCase()}`,
+        businessId: business?.id || data.activeBusinessId,
         clientId: selectedProject.clientId || '',
         currency: projCur,
-        issueDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        items: [newItem],
-        subtotal: parseFloat(subtotal.toFixed(2)),
-        vatRate,
-        vatAmount: parseFloat(vatAmount.toFixed(2)),
-        total: parseFloat(total.toFixed(2)),
+        issueDate: today,
+        dueDate: defaults.dueDate,
+        ...totals,
         status: 'draft' as const,
-        notes: `Created from tracked project time.`,
-        projectId: selectedProject.id
+        notes: defaults.notes,
+        projectId: selectedProject.id,
+        shareToken: generateShareToken(),
+        updatedAt: new Date().toISOString()
       };
 
       updatedDocs = [newInvoice, ...updatedDocs];
@@ -967,18 +944,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       updatedDocs = updatedDocs.map(doc => {
         if (doc.id === selectedInvoiceId) {
           const updatedItems = [...doc.items, newItem];
-          const subtotal = updatedItems.reduce((acc, curr) => acc + curr.total, 0);
-          const vatRate = doc.vatRate;
-          const vatAmount = subtotal * (vatRate / 100);
-          const total = subtotal + vatAmount;
-
-          return {
-            ...doc,
-            items: updatedItems,
-            subtotal: parseFloat(subtotal.toFixed(2)),
-            vatAmount: parseFloat(vatAmount.toFixed(2)),
-            total: parseFloat(total.toFixed(2))
-          };
+          return { ...doc, ...recalcDocumentTotals(doc, updatedItems, data.userProfile.enableTax === false), updatedAt: new Date().toISOString() };
         }
         return doc;
       });
@@ -1329,7 +1295,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <Percent className="w-3.5 h-3.5 text-amber-500" /> Bill this scope
                   </h4>
                   <p className="text-[9.5px] text-slate-500 mt-0.5">
-                    Create a draft quote or invoice from these sections, with {data.userProfile.defaultVatRate ?? 12.5}% VAT.
+                    Create a draft quote or invoice from these sections{data.userProfile.enableTax === false ? '.' : `, with ${data.userProfile.defaultVatRate ?? 12.5}% VAT added.`}
                   </p>
                 </div>
                 <div className="flex gap-2.5">
@@ -1372,8 +1338,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <div className="space-y-3">
                 {selectedProject.scopeSections.map((section, idx) => {
                   const currentVatRate = data.userProfile.defaultVatRate ?? 12.5;
-                  const vatDivisor = 1 + (currentVatRate / 100);
-                  const vatAmount = Number((section.cost - (section.cost / vatDivisor)).toFixed(2));
+                  // Section costs exclude VAT; it's added on the quote or invoice.
+                  const vatAmount = Number((section.cost * currentVatRate / 100).toFixed(2));
                   return (
                     <div 
                       key={section.id} 
@@ -1399,9 +1365,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                                 <span className="text-xs font-black text-slate-900 font-mono">
                                   {projCurrency} {projCfg.symbol}{section.cost.toLocaleString()}
                                 </span>
-                                <span className="text-[8px] font-semibold text-slate-400 font-mono mt-0.5">
-                                  (incl. {projCfg.symbol}{vatAmount.toLocaleString()} VAT)
-                                </span>
+                                {data.userProfile.enableTax !== false && (
+                                  <span className="text-[8px] font-semibold text-slate-400 font-mono mt-0.5">
+                                    + {projCfg.symbol}{vatAmount.toLocaleString()} VAT
+                                  </span>
+                                )}
                               </>
                             );
                           })()}
@@ -2281,7 +2249,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     onChange={(e) => setSelectedInvoiceId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-slate-400 focus:bg-white transition-all text-slate-700 font-medium"
                   >
-                    <option value="new font-bold">+ New draft invoice</option>
+                    <option value="new">+ New draft invoice</option>
                     {(data.documents || [])
                       .filter(d => 
                         d.type === 'invoice' && 

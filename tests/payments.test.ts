@@ -26,3 +26,35 @@ const again = addReceiptForInvoice(next, "inv1");
 assert.equal(again.data.documents.length, next.documents.length, "confirming twice doesn't create a second receipt");
 assert.equal(again.receipt!.id, receipt!.id);
 console.log("receipt checks passed");
+
+// Part payments go into the ledger as they're received; the final payment logs only the rest.
+{
+  const { applyPartialPayment } = await import("../src/lib/payments");
+  const { recalcDocumentTotals } = await import("../src/lib/invoiceTotals");
+  const base: any = {
+    userProfile: { defaultCurrency: "FJD" }, activeBusinessId: "b1", businesses: [{ id: "b1" }], transactions: [],
+    documents: [{ id: "p1", type: "invoice", documentNumber: "INV-1", businessId: "b1", clientId: "c1", total: 1000, subtotal: 1000, vatRate: 0, vatAmount: 0, status: "sent", items: [] }]
+  };
+  let d = applyPartialPayment(base, "p1", { amountSoFar: 300, paymentMethod: "Bank Transfer", paymentDate: "2026-10-01" });
+  assert.equal(d.transactions!.length, 1); assert.equal(d.transactions![0].amount, 300);
+  d = applyPartialPayment(d, "p1", { amountSoFar: 500, paymentMethod: "Bank Transfer", paymentDate: "2026-10-05" });
+  assert.equal(d.transactions!.length, 2); assert.equal(d.transactions![0].amount, 200, "only the new money");
+  d = applyPartialPayment(d, "p1", { amountSoFar: 450, paymentMethod: "Bank Transfer", paymentDate: "2026-10-05" });
+  assert.equal(d.transactions![0].amount, -50, "correcting down logs a negative entry");
+  const doc = d.documents.find((x: any) => x.id === "p1")!;
+  assert.equal(doc.status, "partial"); assert.equal(doc.partiallyPaidAmount, 450); assert.equal(doc.partialLoggedAmount, 450);
+  const paid = applyConfirmedPayment(d, "p1", { paymentMethod: "Bank Transfer", paymentDate: "2026-10-09", paidAmountForeign: 1000 } as any);
+  assert.equal(paid.transactions![0].amount, 550, "final payment logs the balance");
+  assert.equal(paid.transactions!.reduce((s: number, t: any) => s + t.amount, 0), 1000, "ledger adds up to the invoice");
+  // An invoice partly paid before this change (nothing logged) still logs the full amount.
+  const old: any = { ...base, documents: [{ ...base.documents[0], status: "partial", partiallyPaidAmount: 400 }] };
+  assert.equal(applyConfirmedPayment(old, "p1", { paymentMethod: "Cash", paidAmountForeign: 1000 } as any).transactions![0].amount, 1000);
+
+  // Totals after adding lines keep taxes and fees, re-applying percentages to the taxable base.
+  const t = recalcDocumentTotals({ vatRate: 12.5, items: [], appliedTaxes: [{ id: "ptax-1", name: "VAT", type: "tax", rate: 12.5, rateType: "percentage", amount: 0 }], appliedFees: [{ id: "f", name: "Fee", type: "fee", rate: 10, rateType: "flat", amount: 10 }] } as any,
+    [{ id: "a", name: "A", quantity: 2, rate: 100, total: 200 }, { id: "r", name: "Taxi", quantity: 1, rate: 40, total: 40, kind: "reimbursement" } as any]);
+  assert.equal(t.subtotal, 240); assert.equal(t.vatAmount, 25); assert.equal(t.total, 275);
+  const off = recalcDocumentTotals({ vatRate: 12.5, items: [] } as any, [{ id: "a", name: "A", quantity: 1, rate: 100, total: 100 }], true);
+  assert.equal(off.vatAmount, 0); assert.equal(off.total, 100);
+  console.log("part payment and totals checks passed");
+}

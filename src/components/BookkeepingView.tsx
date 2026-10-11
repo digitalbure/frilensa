@@ -353,7 +353,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
   // Add approved items from human-in-the-loop review queue to permanent ledger
   const handleApproveAllReview = (skipDuplicates: boolean = false) => {
-    let itemsToApprove = reviewQueue.map(item => ({ ...item, status: 'reconciled' as const }));
+    // Imported lines start unmatched; Reconcile matches them to invoices and expenses.
+    let itemsToApprove = reviewQueue.map(item => ({ ...item, status: 'pending' as const }));
     let skippedCount = 0;
 
     if (skipDuplicates) {
@@ -382,14 +383,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
     triggerUndoToast(
       point.id,
       'Entries added',
-      `Added ${itemsToApprove.length} transactions to the ledger${skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : ''}`
+      `Added ${itemsToApprove.length} transactions to the ledger${skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : ''}. Match them in Reconcile.`
     );
   };
 
   const handleApproveSingle = (id: string) => {
     const approvedItem = reviewQueue.find(item => item.id === id);
     if (approvedItem) {
-      const updatedTransactions = [{ ...approvedItem, status: 'reconciled' as const }, ...transactions];
+      const updatedTransactions = [{ ...approvedItem, status: 'pending' as const }, ...transactions];
       const point = saveLedgerRestorePoint(
         userEmail,
         `Approval of "${approvedItem.description}"`,
@@ -402,7 +403,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
         transactions: updatedTransactions
       });
       setReviewQueue(prev => prev.filter(item => item.id !== id));
-      triggerUndoToast(point.id, 'Entry added', `Added "${approvedItem.description}" to the ledger`);
+      triggerUndoToast(point.id, 'Entry added', `Added "${approvedItem.description}" to the ledger. Match it in Reconcile.`);
     }
   };
 

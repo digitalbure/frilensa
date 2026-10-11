@@ -745,7 +745,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <Percent className={`w-4 h-4 ${enableTax ? 'text-sky-600' : 'text-amber-600'}`} />
               <div>
                 <span className="text-xs font-bold text-slate-800 block">
-                  VAT (12.5%)
+                  VAT ({vatRate ?? 12.5}%)
                 </span>
                 <span className="text-[10px] text-slate-500 block">
                   {enableTax ? 'VAT is added to your invoices' : 'VAT is off. Invoices show no VAT.'}
@@ -2379,7 +2379,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="bg-zinc-50 p-2 rounded-lg">
             <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Invoices / month</span>
             <span className="text-xs font-mono font-bold text-zinc-800">
-              {data.documents.filter(d => d.type === 'invoice').length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth === -1 ? '∞' : (data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth || 5)}
+              {data.documents.filter(d => d.type === 'invoice' && (d.issueDate || '').slice(0, 7) === new Date().toISOString().slice(0, 7)).length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth === -1 ? '∞' : (data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth || 5)}
             </span>
           </div>
         </div>

@@ -111,12 +111,12 @@ export default function DesktopSidebar({
       name: newBizName.trim(),
       type: newBizType,
       saasAppCategory: newBizCategory || vConfig.defaultCategories[0] || 'General',
-      tin: newBizTin.trim() || '10-00000-0-0',
-      address: 'Suva, Fiji',
-      email: crmData.userProfile?.email || 'business@example.com',
-      phone: crmData.userProfile?.phone || '+679 000 0000',
+      // Left blank rather than filled with placeholders, so documents never show made-up details.
+      tin: newBizTin.trim(),
+      address: '',
+      email: crmData.userProfile?.email || '',
+      phone: crmData.userProfile?.phone || '',
       colorTheme: newBizColor,
-      brandSlogan: vConfig.tagline,
       isPrimary: (crmData.businesses?.length || 0) === 0
     };
 
