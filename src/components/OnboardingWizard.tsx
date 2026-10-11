@@ -39,6 +39,16 @@ const INDUSTRY_OPTIONS = [
   'General Freelance & Business Consulting'
 ];
 
+const INDUSTRY_LABELS: Record<string, string> = {
+  'Film, Video, Audio & AV Production': 'Film, video and audio',
+  'Web, Software & Digital Technology': 'Web and software',
+  'Legal, Medical & Professional Advisory': 'Legal, medical and advisory',
+  'Automotive Services, Mechanics & Fleet': 'Automotive and mechanics',
+  'Construction, Trades, Electrical & Plumbing': 'Construction and trades',
+  'Creative Design, Photography & Events': 'Design, photography and events',
+  'General Freelance & Business Consulting': 'General freelance and consulting'
+};
+
 const FIJI_BANKS = [
   'Westpac Bank Fiji',
   'BSP (Bank South Pacific) Fiji',
@@ -158,7 +168,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
     setGeneratedOtp(code);
     setResendCooldown(30);
     setCanResend(false);
-    setOtpNotice(`SMS verification code sent to ${phone || 'your phone'}`);
+    setOtpNotice(`Code sent to ${phone || 'your phone'}`);
     setOtpError(null);
   };
 
@@ -189,19 +199,19 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   const handleVerifyOtp = () => {
     const entered = otpDigits.join('');
     if (entered.length < 6) {
-      setOtpError('Please enter all 6 digits of the SMS code.');
+      setOtpError('Enter all 6 digits of the code.');
       return;
     }
 
     if (entered === generatedOtp || entered === '884219' || entered === '123456') {
       setIsPhoneVerified(true);
       setOtpError(null);
-      setOtpNotice('✓ Phone number verified successfully!');
+      setOtpNotice('Phone number verified');
       setTimeout(() => {
         setStep(prev => prev + 1);
       }, 500);
     } else {
-      setOtpError('Invalid passcode. Use the test simulation code displayed or click Auto-fill.');
+      setOtpError('That code doesn’t match. Try again or use Auto-fill.');
     }
   };
 
@@ -210,29 +220,29 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
     setOtpDigits(digits);
     setOtpError(null);
     setIsPhoneVerified(true);
-    setOtpNotice('✓ Passcode auto-filled and verified!');
+    setOtpNotice('Code filled in and verified');
   };
 
   // Validation
   const validateCurrentStep = (): string | null => {
     if (step === 1) {
-      if (!accountType) return 'Please select whether to continue as a Free User or Business.';
+      if (!accountType) return 'Choose Free or Business to continue.';
     }
 
     if (accountType === 'free') {
       if (step === 2) {
-        if (!fullName.trim()) return 'Please enter your name.';
-        if (!email.trim() || !email.includes('@')) return 'Please enter a valid email address.';
+        if (!fullName.trim()) return 'Enter your name.';
+        if (!email.trim() || !email.includes('@')) return 'Enter a valid email address.';
       }
     } else {
       // Business path
       if (step === 2) {
-        if (!businessName.trim()) return 'Please enter your business or company name.';
-        if (!businessTin.trim()) return 'Please enter your Fiji FRCS Tax Identification Number (TIN).';
-        if (!fullName.trim()) return 'Please enter the principal owner / contact name.';
+        if (!businessName.trim()) return 'Enter your business name.';
+        if (!businessTin.trim()) return 'Enter your TIN.';
+        if (!fullName.trim()) return 'Enter the owner or contact name.';
       }
       if (step === 3 && !isPhoneVerified) {
-        return 'Please complete SMS verification or click Skip to proceed.';
+        return 'Enter the code to confirm your phone number.';
       }
     }
     return null;
@@ -380,9 +390,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 <Waves className="w-5 h-5" />
               </div>
               <div>
-                <h2 className="text-base font-extrabold tracking-tight">Frilensa Onboarding</h2>
+                <h2 className="text-base font-extrabold tracking-tight">Set up Frilensa</h2>
                 <p className="text-xs text-slate-400">
-                  {accountType === 'free' ? 'Free Solo Freelancer Setup' : 'Registered Business & VAT Setup'}
+                  {accountType === 'free' ? 'Freelancer' : 'Business'}
                 </p>
               </div>
             </div>
@@ -394,9 +404,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                   type="button"
                   onClick={onSignOut}
                   className="text-[11px] text-slate-400 hover:text-white px-2.5 py-1 rounded-lg hover:bg-slate-800 transition-colors font-medium cursor-pointer"
-                  title="Switch to sign in / sign up landing page"
+                  title="Sign out and return to the sign-in page"
                 >
-                  Sign Out
+                  Sign out
                 </button>
               )}
               <div className="bg-slate-800 px-3 py-1 rounded-full border border-slate-700 text-xs font-bold text-slate-300">
@@ -433,7 +443,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               <div className="text-center max-w-md mx-auto">
                 <h3 className="text-lg font-black text-slate-900">How will you be using Frilensa?</h3>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Choose the profile that matches your work. You can always upgrade or modify your settings later.
+                  Pick the one that fits. You can change this later in Settings.
                 </p>
               </div>
 
@@ -460,36 +470,36 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                     </div>
                     
                     <span className="text-[10px] font-extrabold uppercase tracking-wider bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full inline-block mb-1.5">
-                      Solo & Freelancer
+                      Freelancer
                     </span>
                     
-                    <h4 className="text-base font-black text-slate-900">Continue as Free User</h4>
+                    <h4 className="text-base font-black text-slate-900">Continue as freelancer</h4>
                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      For independent contractors, solopreneurs, digital nomads, and casual consultants.
+                      For sole traders, contractors and consultants.
                     </p>
 
                     <div className="mt-4 space-y-2 text-xs text-slate-700">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Instant 1-minute setup (No TIN required)</span>
+                        <span>No TIN needed</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Simple invoices, quotes & receipts</span>
+                        <span>Invoices, quotes and receipts</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Personal M-PAiSA / MyCash payouts</span>
+                        <span>Get paid by M-PAiSA or MyCash</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Direct client link sharing</span>
+                        <span>Share documents with clients by link</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-5 pt-3 border-t border-slate-100/80">
-                    <span className="text-xs font-bold text-sky-700">100% Free Forever • Zero Friction</span>
+                    <span className="text-xs font-bold text-sky-700">Free</span>
                   </div>
                 </div>
 
@@ -514,36 +524,36 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                     </div>
 
                     <span className="text-[10px] font-extrabold uppercase tracking-wider bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full inline-block mb-1.5">
-                      Business & Studio
+                      Business
                     </span>
 
-                    <h4 className="text-base font-black text-slate-900">Continue as Business</h4>
+                    <h4 className="text-base font-black text-slate-900">Continue as business</h4>
                     <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                      For registered companies, studios, agencies, partnerships & enterprises in Fiji.
+                      For registered companies, studios, agencies and partnerships in Fiji.
                     </p>
 
                     <div className="mt-4 space-y-2 text-xs text-slate-700">
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>FRCS TIN & Digital VAT (9%, 12.5%, 15%)</span>
+                        <span>TIN and VAT on invoices (9%, 12.5%, 15%)</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Custom company branding & logos</span>
+                        <span>Your logo and brand colour</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Fiji Commercial Banks & Merchant IDs</span>
+                        <span>Bank and merchant payment details</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                        <span>Custom INV / QT invoice numbering</span>
+                        <span>Your own invoice and quote numbering</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="mt-5 pt-3 border-t border-slate-100/80">
-                    <span className="text-xs font-bold text-teal-700">Full Business & Tax Compliance</span>
+                    <span className="text-xs font-bold text-teal-700">TIN, VAT and branding</span>
                   </div>
                 </div>
 
@@ -557,12 +567,12 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'free' && step === 2 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">Your Freelancer Profile</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Let clients know who you are and where you operate.</p>
+                <h3 className="text-base font-extrabold text-slate-900">Your profile</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Tell clients who you are and where you work.</p>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Your Full Name / Trading Name *</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Full name or trading name *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-slate-400">
                     <User className="w-4 h-4" />
@@ -579,7 +589,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Contact Email *</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Email *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-slate-400">
                     <Mail className="w-4 h-4" />
@@ -596,7 +606,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mobile Phone (for M-PAiSA payouts)</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Mobile number (for M-PAiSA)</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-slate-400">
                     <Phone className="w-4 h-4" />
@@ -627,13 +637,13 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Industry / Specialty</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Industry</label>
                   <select
                     value={industry}
                     onChange={(e) => handleIndustryChange(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                   >
-                    {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{INDUSTRY_LABELS[opt] ?? opt}</option>)}
                   </select>
                 </div>
               </div>
@@ -646,27 +656,27 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'free' && step === 3 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">Payout Preferences & Rates</h3>
-                <p className="text-xs text-slate-500 mt-0.5">How your clients can pay you directly.</p>
+                <h3 className="text-base font-extrabold text-slate-900">Payments and rates</h3>
+                <p className="text-xs text-slate-500 mt-0.5">How clients pay you.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Default Currency</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Currency</label>
                   <select
                     value={defaultCurrency}
                     onChange={(e) => setDefaultCurrency(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold focus:ring-2 focus:ring-slate-900 focus:outline-none"
                   >
-                    <option value="FJD">🇫🇯 FJD - Fiji Dollar</option>
-                    <option value="AUD">🇦🇺 AUD - Australian Dollar</option>
-                    <option value="NZD">🇳🇿 NZD - New Zealand Dollar</option>
-                    <option value="USD">🇺🇸 USD - US Dollar</option>
+                    <option value="FJD">FJD - Fiji dollar</option>
+                    <option value="AUD">AUD - Australian dollar</option>
+                    <option value="NZD">NZD - New Zealand dollar</option>
+                    <option value="USD">USD - US dollar</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Standard Hourly Rate ({defaultCurrency})</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Hourly rate ({defaultCurrency})</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
                     <input
@@ -680,7 +690,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Vodafone M-PAiSA Mobile Wallet</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">M-PAiSA number</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-slate-400">
                     <Smartphone className="w-4 h-4" />
@@ -696,7 +706,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2">
-                <span className="text-[10px] font-bold text-slate-500 uppercase">Optional Personal Bank Account</span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase">Bank account (optional)</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <select
                     value={selectedBank}
@@ -709,7 +719,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                     type="text"
                     value={bankAccount}
                     onChange={(e) => setBankAccount(e.target.value)}
-                    placeholder="Account Number (Optional)"
+                    placeholder="Account number"
                     className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs font-mono"
                   />
                 </div>
@@ -728,29 +738,29 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">
-                  Free Account Ready
+                  You’re set up
                 </span>
-                <h3 className="text-lg font-black text-slate-900 mt-1">Welcome to Frilensa, {fullName}!</h3>
+                <h3 className="text-lg font-black text-slate-900 mt-1">Welcome to Frilensa, {fullName}</h3>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1">
-                  Your solo freelancer workspace is ready. You can generate professional invoices, share client portal links with security PINs, and track payments instantly.
+                  You can now create invoices, share them with clients through a PIN-protected portal, and track what you’ve been paid.
                 </p>
               </div>
 
               <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-2 text-xs max-w-md mx-auto">
                 <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Freelancer Name:</span>
+                  <span className="text-slate-500">Name</span>
                   <span className="font-bold text-slate-800">{fullName}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Contact Email:</span>
+                  <span className="text-slate-500">Email</span>
                   <span className="font-mono font-bold text-slate-800">{email}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-slate-200/60">
-                  <span className="text-slate-500">Currency & Rate:</span>
+                  <span className="text-slate-500">Hourly rate</span>
                   <span className="font-bold text-slate-800">{defaultCurrency} ${hourlyRate}/hr</span>
                 </div>
                 <div className="flex justify-between py-1">
-                  <span className="text-slate-500">M-PAiSA Mobile:</span>
+                  <span className="text-slate-500">M-PAiSA</span>
                   <span className="font-mono font-bold text-slate-800">{mPaisaId || phone}</span>
                 </div>
               </div>
@@ -763,13 +773,13 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'business' && step === 2 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">Business Identity & FRCS Registration</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Enter your formal company information and Tax Identification Number.</p>
+                <h3 className="text-base font-extrabold text-slate-900">Business details</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Your registered business name and TIN.</p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Company / Studio Name *</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Business name *</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-slate-400">
                       <Building2 className="w-4 h-4" />
@@ -786,7 +796,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">FRCS Tax Identification Number (TIN) *</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">TIN *</label>
                   <div className="relative">
                     <span className="absolute left-3 top-2.5 text-slate-400">
                       <ShieldCheck className="w-4 h-4" />
@@ -804,7 +814,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Principal Owner / Director Name *</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Owner or director name *</label>
                 <div className="relative">
                   <span className="absolute left-3 top-2.5 text-slate-400">
                     <User className="w-4 h-4" />
@@ -822,7 +832,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Registered City / Division</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Town or city</label>
                   <select
                     value={city}
                     onChange={(e) => setCity(e.target.value)}
@@ -833,13 +843,13 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Industry Classification</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Industry</label>
                   <select
                     value={industry}
                     onChange={(e) => handleIndustryChange(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs focus:ring-2 focus:ring-slate-900 focus:outline-none"
                   >
-                    {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                    {INDUSTRY_OPTIONS.map(opt => <option key={opt} value={opt}>{INDUSTRY_LABELS[opt] ?? opt}</option>)}
                   </select>
                 </div>
               </div>
@@ -856,9 +866,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <h3 className="text-base font-extrabold text-slate-900">SMS Verification Code</h3>
+                <h3 className="text-base font-extrabold text-slate-900">Confirm your phone number</h3>
                 <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  A verification passcode was sent to <span className="font-mono font-bold text-slate-800">{phone}</span>
+                  Enter the 6-digit code for <span className="font-mono font-bold text-slate-800">{phone}</span>
                 </p>
               </div>
 
@@ -894,14 +904,14 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                   onClick={handleAutoFillOtp}
                   className="text-xs text-teal-700 bg-teal-50 border border-teal-200 font-bold px-3 py-1.5 rounded-xl hover:bg-teal-100 cursor-pointer"
                 >
-                  ⚡ Auto-Fill Code ({generatedOtp})
+                  Auto-fill code ({generatedOtp})
                 </button>
                 <button
                   type="button"
                   onClick={handleVerifyOtp}
                   className="text-xs text-white bg-slate-900 font-bold px-4 py-1.5 rounded-xl hover:bg-slate-800 cursor-pointer"
                 >
-                  Confirm Passcode
+                  Confirm code
                 </button>
               </div>
             </div>
@@ -913,12 +923,12 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'business' && step === 4 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">Commercial Bank & Merchant Payouts</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Connect your Fiji commercial banking details and mobile merchant IDs.</p>
+                <h3 className="text-base font-extrabold text-slate-900">Bank and mobile money</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Add the bank account and mobile money numbers clients can pay into.</p>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Select Fiji Commercial Bank</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bank</label>
                 <select
                   value={selectedBank}
                   onChange={(e) => setSelectedBank(e.target.value)}
@@ -930,7 +940,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Bank Account Number</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Account number</label>
                   <input
                     type="text"
                     value={bankAccount}
@@ -941,7 +951,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Branch Name</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Branch</label>
                   <input
                     type="text"
                     value={bankBranch}
@@ -954,7 +964,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Vodafone M-PAiSA Merchant / Mobile</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">M-PAiSA number</label>
                   <input
                     type="text"
                     value={mPaisaId}
@@ -965,7 +975,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Digicel MyCash ID (Optional)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">MyCash number (optional)</label>
                   <input
                     type="text"
                     value={myCashId}
@@ -984,15 +994,15 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'business' && step === 5 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">VAT Compliance & Invoice Styling</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Configure FRCS VAT rates and custom document prefixes.</p>
+                <h3 className="text-base font-extrabold text-slate-900">VAT and invoice settings</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Set your VAT rate and document numbering.</p>
               </div>
 
               {/* VAT Registration toggle */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
                 <div>
-                  <h4 className="text-xs font-extrabold text-slate-900">VAT Registered Business</h4>
-                  <p className="text-[11px] text-slate-500">Apply standard Fiji Value Added Tax to invoices</p>
+                  <h4 className="text-xs font-extrabold text-slate-900">VAT registered</h4>
+                  <p className="text-[11px] text-slate-500">Add VAT to your invoices</p>
                 </div>
                 <button
                   type="button"
@@ -1009,7 +1019,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               {isVatRegistered && (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Standard VAT Rate (%)</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">VAT rate (%)</label>
                   <div className="flex gap-2">
                     {[12.5, 9, 15].map(rate => (
                       <button
@@ -1022,7 +1032,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        {rate}% {rate === 12.5 ? '(Fiji Standard)' : ''}
+                        {rate}% {rate === 12.5 ? '(standard)' : ''}
                       </button>
                     ))}
                   </div>
@@ -1031,7 +1041,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Invoice Prefix</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Invoice prefix</label>
                   <input
                     type="text"
                     value={invoicePrefix}
@@ -1040,7 +1050,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Quote Prefix</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Quote prefix</label>
                   <input
                     type="text"
                     value={quotePrefix}
@@ -1051,7 +1061,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Brand Theme Color</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Brand colour</label>
                 <div className="flex gap-2">
                   {COLOR_THEMES.map(theme => (
                     <button
@@ -1078,13 +1088,13 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           {accountType === 'business' && step === 6 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
-                <h3 className="text-base font-extrabold text-slate-900">Services Catalog & Client Setup</h3>
-                <p className="text-xs text-slate-500 mt-0.5">Add your starting offerings and optionally your first client.</p>
+                <h3 className="text-base font-extrabold text-slate-900">Services and first client</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Add the services you sell. You can also add your first client.</p>
               </div>
 
               {/* Service list */}
               <div className="space-y-2">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Core Offerings</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Services</label>
                 {servicesList.map((srv, idx) => (
                   <div key={idx} className="flex items-center justify-between p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
                     <div>
@@ -1108,7 +1118,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                   type="text"
                   value={newServiceName}
                   onChange={(e) => setNewServiceName(e.target.value)}
-                  placeholder="New service title"
+                  placeholder="Service name"
                   className="flex-1 bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs"
                 />
                 <input
@@ -1129,7 +1139,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               {/* Optional first client */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5 pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-900">Add First Client (Optional)</span>
+                  <span className="text-xs font-bold text-slate-900">Add a client (optional)</span>
                   <input
                     type="checkbox"
                     checked={hasClient}
@@ -1144,7 +1154,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                       type="text"
                       value={clientName}
                       onChange={(e) => setClientName(e.target.value)}
-                      placeholder="Client Company or Contact Name"
+                      placeholder="Client or company name"
                       className="bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs"
                     />
                     <input
@@ -1193,7 +1203,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
               className="bg-gradient-to-r from-teal-600 to-sky-600 hover:opacity-95 active:scale-[0.98] text-white text-xs font-extrabold px-6 py-2.5 rounded-xl shadow-lg shadow-teal-600/20 flex items-center gap-2 transition-all cursor-pointer"
             >
               <Sparkles className="w-4 h-4 text-amber-300" />
-              <span>Launch {accountType === 'business' ? 'Business' : 'Freelancer'} Workspace</span>
+              <span>Finish setup</span>
             </button>
           )}
         </div>

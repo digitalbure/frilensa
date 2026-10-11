@@ -103,7 +103,7 @@ export default function ClientDetailDrawer({
       setPinStatus(`PIN saved. Share it with ${client.name} privately — it can't be viewed again.`);
       setClientPin('');
     } catch (e: any) {
-      setPinStatus(e?.message || 'Error saving PIN. Please try again.');
+      setPinStatus(e?.message || 'Could not save the PIN. Try again.');
     } finally {
       setSavingPin(false);
     }
@@ -175,7 +175,7 @@ export default function ClientDetailDrawer({
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                    Client Dossier
+                    Client
                   </span>
                   <span className="bg-slate-100 text-[10px] text-slate-700 font-mono font-bold px-2 py-0.5 rounded-full border border-slate-200 flex items-center gap-1">
                     <span>{currencyConf.flag}</span>
@@ -183,7 +183,7 @@ export default function ClientDetailDrawer({
                   </span>
                   {client.accessToken && (
                     <span className="bg-emerald-50 text-[10px] text-emerald-700 font-bold px-2 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Portal Active
+                      <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Portal active
                     </span>
                   )}
                 </div>
@@ -193,7 +193,7 @@ export default function ClientDetailDrawer({
                 {(client.contactPerson || client.contactName) && (
                   <p className="text-xs text-slate-600 font-medium flex items-center gap-1 mt-0.5">
                     <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                    <span>Representative: {client.contactPerson || client.contactName}</span>
+                    <span>Contact: {client.contactPerson || client.contactName}</span>
                   </p>
                 )}
               </div>
@@ -218,7 +218,7 @@ export default function ClientDetailDrawer({
                   : 'border-transparent text-slate-500 hover:text-slate-800'
               }`}
             >
-              Overview & Details
+              Details
             </button>
             <button
               type="button"
@@ -230,7 +230,7 @@ export default function ClientDetailDrawer({
               }`}
             >
               <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-              Portal Access
+              Portal
             </button>
             <button
               type="button"
@@ -242,7 +242,7 @@ export default function ClientDetailDrawer({
               }`}
             >
               <FileText className="w-3.5 h-3.5 text-slate-400" />
-              Invoices & Quotes ({clientDocs.length})
+              Documents ({clientDocs.length})
             </button>
             <button
               type="button"
@@ -254,7 +254,7 @@ export default function ClientDetailDrawer({
               }`}
             >
               <MessageSquare className="w-3.5 h-3.5 text-indigo-600" />
-              Inquiries {clientMessages.length > 0 && `(${clientMessages.length})`}
+              Messages {clientMessages.length > 0 && `(${clientMessages.length})`}
             </button>
           </div>
         </div>
@@ -267,7 +267,7 @@ export default function ClientDetailDrawer({
               {/* Financial Snapshot */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-2xl">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total Invoiced</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Total invoiced</span>
                   <span className="text-sm font-bold text-slate-900 font-mono block mt-1">
                     {currencyCode} ${totalBilled.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
@@ -281,7 +281,7 @@ export default function ClientDetailDrawer({
                 <div className="bg-slate-50 border border-slate-200/80 p-3.5 rounded-2xl">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Documents</span>
                   <span className="text-sm font-bold text-slate-900 font-mono block mt-1">
-                    {clientDocs.length} records
+                    {clientDocs.length}
                   </span>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export default function ClientDetailDrawer({
                 <div className="flex items-start gap-3">
                   <Building2 className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Company / Entity</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Name</span>
                     <span className="text-slate-900 font-semibold">{client.name}</span>
                   </div>
                 </div>
@@ -300,7 +300,7 @@ export default function ClientDetailDrawer({
                   <div className="flex items-start gap-3">
                     <Mail className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Email Address</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Email</span>
                       <a href={`mailto:${client.email}`} className="text-slate-900 font-medium hover:underline">
                         {client.email}
                       </a>
@@ -312,7 +312,7 @@ export default function ClientDetailDrawer({
                   <div className="flex items-start gap-3">
                     <Phone className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Phone Number</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Phone</span>
                       <a href={`tel:${client.phone}`} className="text-slate-900 font-medium">
                         {client.phone}
                       </a>
@@ -324,7 +324,7 @@ export default function ClientDetailDrawer({
                   <div className="flex items-start gap-3">
                     <MapPin className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                     <div>
-                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Billing Address</span>
+                      <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Billing address</span>
                       <span className="text-slate-800">{client.address}</span>
                     </div>
                   </div>
@@ -333,9 +333,9 @@ export default function ClientDetailDrawer({
                 <div className="flex items-start gap-3">
                   <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Fiji Tax Identification (TIN)</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">TIN</span>
                     <span className="font-mono text-slate-900 font-bold">
-                      {client.tin || 'Not registered / exempt'}
+                      {client.tin || 'Not recorded'}
                     </span>
                   </div>
                 </div>
@@ -343,7 +343,7 @@ export default function ClientDetailDrawer({
                 <div className="flex items-start gap-3">
                   <Coins className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                   <div>
-                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Invoicing Currency</span>
+                    <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">Currency</span>
                     <span className="text-slate-900 font-bold flex items-center gap-1.5 mt-0.5 font-mono">
                       <span>{currencyConf.flag}</span>
                       <span>{currencyCode}</span>
@@ -356,11 +356,11 @@ export default function ClientDetailDrawer({
               {/* SaaS Subscriptions */}
               <div className="space-y-2 bg-emerald-50/50 border border-emerald-100 rounded-2xl p-4 text-xs text-slate-700">
                 <h4 className="text-[10px] font-bold text-emerald-800 uppercase tracking-widest flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Active SaaS Subscriptions
+                  <CreditCard className="w-3.5 h-3.5 text-emerald-600" /> Subscriptions
                 </h4>
                 {(!client.subscriptions || client.subscriptions.length === 0) ? (
                   <p className="text-xs text-emerald-700/80 italic">
-                    No active SaaS plan subscriptions for this client.
+                    No active subscriptions for this client.
                   </p>
                 ) : (
                   <div className="space-y-1.5">
@@ -369,8 +369,8 @@ export default function ClientDetailDrawer({
                       return (
                         <div key={sub.id} className="bg-white p-2.5 rounded-xl border border-emerald-100 flex justify-between items-center shadow-xs">
                           <div>
-                            <span className="text-xs font-bold text-slate-900 block">{plan?.name || 'SaaS Subscription'}</span>
-                            <span className="text-[10px] text-slate-400">Interval: {sub.billingInterval}</span>
+                            <span className="text-xs font-bold text-slate-900 block">{plan?.name || 'Subscription'}</span>
+                            <span className="text-[10px] text-slate-400">Billed: {sub.billingInterval}</span>
                           </div>
                           <div className="text-right">
                             <span className="text-xs font-mono font-bold text-emerald-700 block">
@@ -400,13 +400,13 @@ export default function ClientDetailDrawer({
                       <Link2 className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900">Direct 1-Click Access Link</h4>
-                      <p className="text-[11px] text-slate-500">Allows client to enter their portal with zero friction</p>
+                      <h4 className="text-xs font-bold text-slate-900">Portal link</h4>
+                      <p className="text-[11px] text-slate-500">Opens the client's portal without a password</p>
                     </div>
                   </div>
                   {client.accessToken && (
                     <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
-                      Token Active
+                      Active
                     </span>
                   )}
                 </div>
@@ -432,12 +432,12 @@ export default function ClientDetailDrawer({
                         {copiedClientId === client.id ? (
                           <>
                             <Check className="w-3.5 h-3.5" />
-                            <span>Copied!</span>
+                            <span>Copied</span>
                           </>
                         ) : (
                           <>
                             <Copy className="w-3.5 h-3.5" />
-                            <span>Copy Link</span>
+                            <span>Copy link</span>
                           </>
                         )}
                       </button>
@@ -450,7 +450,7 @@ export default function ClientDetailDrawer({
                         className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs cursor-pointer"
                       >
                         <Share2 className="w-3.5 h-3.5 text-sky-400" />
-                        <span>Share Sheet & QR</span>
+                        <span>Share or QR code</span>
                       </button>
 
                       <a
@@ -460,7 +460,7 @@ export default function ClientDetailDrawer({
                         className="bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-semibold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        <span>Test Link in Tab</span>
+                        <span>Open link</span>
                       </a>
                     </div>
                   </div>
@@ -475,12 +475,12 @@ export default function ClientDetailDrawer({
                       {generatingLinkId === client.id ? (
                         <>
                           <RefreshCw className="w-4 h-4 animate-spin" />
-                          <span>Generating Secure Token...</span>
+                          <span>Creating link…</span>
                         </>
                       ) : (
                         <>
                           <Sparkles className="w-4 h-4" />
-                          <span>Generate Access Link</span>
+                          <span>Create portal link</span>
                         </>
                       )}
                     </button>
@@ -492,7 +492,7 @@ export default function ClientDetailDrawer({
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 sm:p-5 space-y-3">
                 <div className="flex justify-between items-center">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                    Portal PIN (sign in with email + PIN)
+                    Portal PIN (sign in with email and PIN)
                   </label>
                   <span className="text-[10px] text-slate-400 font-mono">
                     {hasPin === null ? '' : hasPin ? 'PIN is set' : 'No PIN set'}
@@ -513,7 +513,7 @@ export default function ClientDetailDrawer({
                     onClick={handleGeneratePin}
                     className="bg-slate-200 hover:bg-slate-300 text-slate-800 font-semibold py-2 px-3 rounded-xl text-xs transition-colors cursor-pointer"
                   >
-                    Auto PIN
+                    Random PIN
                   </button>
                   <button
                     type="button"
@@ -521,7 +521,7 @@ export default function ClientDetailDrawer({
                     disabled={savingPin}
                     className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-3.5 rounded-xl text-xs transition-colors cursor-pointer"
                   >
-                    {savingPin ? 'Saving...' : 'Save PIN'}
+                    {savingPin ? 'Saving…' : 'Save PIN'}
                   </button>
                 </div>
                 {pinStatus && (
@@ -535,7 +535,7 @@ export default function ClientDetailDrawer({
           {activeTab === 'invoices' && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-slate-900">Document History</h4>
+                <h4 className="text-xs font-bold text-slate-900">Documents</h4>
                 <button
                   onClick={() => {
                     onClose();
@@ -543,14 +543,14 @@ export default function ClientDetailDrawer({
                   }}
                   className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-1.5 px-3 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-xs cursor-pointer"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Fast Invoice
+                  <Plus className="w-3.5 h-3.5" /> New invoice
                 </button>
               </div>
 
               {clientDocs.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80">
                   <FileText className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs text-slate-500 font-medium">No quotes or invoices recorded for this client yet.</p>
+                  <p className="text-xs text-slate-500 font-medium">No quotes or invoices for this client yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -597,7 +597,7 @@ export default function ClientDetailDrawer({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
-                  <MessageSquare className="w-4 h-4 text-indigo-600" /> Client Portal Inquiries
+                  <MessageSquare className="w-4 h-4 text-indigo-600" /> Portal messages
                 </h4>
                 <button
                   onClick={() => client.email && fetchClientMessages(client.email)}
@@ -615,7 +615,7 @@ export default function ClientDetailDrawer({
               ) : clientMessages.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200/80">
                   <MessageSquare className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                  <p className="text-xs text-slate-500 font-medium">No messages or support inquiries yet.</p>
+                  <p className="text-xs text-slate-500 font-medium">No messages yet.</p>
                 </div>
               ) : (
                 <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
@@ -632,7 +632,7 @@ export default function ClientDetailDrawer({
                       >
                         <div className="flex items-center justify-between text-[10px] opacity-80">
                           <span className="font-bold uppercase tracking-wider">
-                            {isClient ? `${client.name} (Client)` : 'You (Consultant)'}
+                            {isClient ? `${client.name}` : 'You'}
                           </span>
                           <span>{new Date(msg.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
@@ -654,7 +654,7 @@ export default function ClientDetailDrawer({
                   type="text"
                   value={consultantReply}
                   onChange={(e) => setConsultantReply(e.target.value)}
-                  placeholder={`Reply to ${client.name}...`}
+                  placeholder={`Reply to ${client.name}`}
                   className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-900 focus:outline-none focus:border-indigo-600 focus:bg-white transition-colors"
                 />
                 <button
@@ -675,13 +675,13 @@ export default function ClientDetailDrawer({
             onClick={() => onOpenEdit(client)}
             className="flex-1 bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
-            <Edit3 className="w-3.5 h-3.5" /> Edit Profile
+            <Edit3 className="w-3.5 h-3.5" /> Edit
           </button>
           <button
             onClick={() => onOpenShareModal(client)}
             className="flex-1 bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
           >
-            <Share2 className="w-3.5 h-3.5 text-sky-600" /> Share Portal
+            <Share2 className="w-3.5 h-3.5 text-sky-600" /> Share portal
           </button>
           <button
             onClick={() => {
@@ -690,7 +690,7 @@ export default function ClientDetailDrawer({
             }}
             className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer"
           >
-            <Plus className="w-3.5 h-3.5" /> New Invoice
+            <Plus className="w-3.5 h-3.5" /> New invoice
           </button>
         </div>
       </motion.div>

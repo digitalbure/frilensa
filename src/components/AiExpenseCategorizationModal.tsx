@@ -62,42 +62,42 @@ export default function AiExpenseCategorizationModal({
   const examplePresets = [
     {
       sector: 'film_audio_av',
-      label: '🎬 Film / AV Gear',
+      label: 'Film / AV gear',
       desc: 'Arri Alexa Mini LF camera & anamorphic lens package hire for 3-day commercial shoot',
       vendor: 'Pacific Cinema Gear Suva',
       amount: '1850.00'
     },
     {
       sector: 'web_digital',
-      label: '💻 SaaS & Cloud',
+      label: 'Software & cloud',
       desc: 'AWS Production Kubernetes cluster hosting and monthly database snapshot storage',
       vendor: 'Amazon Web Services',
       amount: '380.00'
     },
     {
       sector: 'legal_medical_pro',
-      label: '⚖️ Legal & Tax Filing',
+      label: 'Legal & tax filing',
       desc: 'Fiji High Court commercial contract stamp duty and affidavit notarization filing fees',
       vendor: 'High Court of Fiji / FRCS',
       amount: '350.00'
     },
     {
       sector: 'automotive_mechanics',
-      label: '🚗 Auto Replacement Parts',
+      label: 'Car parts',
       desc: 'Genuine Toyota Hilux brake pads, engine oil filter, and hydraulic clutch fluid',
       vendor: 'Asco Motors Suva',
       amount: '620.00'
     },
     {
       sector: 'construction_trades',
-      label: '🔨 Construction Supplies',
+      label: 'Building supplies',
       desc: 'Treated pine structural timber framing, galvanized roofing screws, and bag cement',
       vendor: 'Vinod Patel Hardware',
       amount: '940.00'
     },
     {
       sector: 'creative_agency',
-      label: '🎨 Event Catering & Hospitality',
+      label: 'Client catering',
       desc: 'Client hospitality dinner and refreshment catering during branding campaign presentation',
       vendor: 'Grand Pacific Hotel Suva',
       amount: '295.00'
@@ -205,7 +205,7 @@ export default function AiExpenseCategorizationModal({
                 originalCategory: t.category || 'Other Expense',
                 suggestedCategory: resJson.category || 'Other Expense',
                 confidence: resJson.confidence || 85,
-                reason: resJson.reason || 'Classified by AI heuristic.',
+                reason: resJson.reason || 'Suggested by AI.',
                 applied: false
               };
             }
@@ -218,7 +218,7 @@ export default function AiExpenseCategorizationModal({
             originalCategory: t.category || 'Other Expense',
             suggestedCategory: 'Other Expense',
             confidence: 70,
-            reason: 'Standard classification.',
+            reason: 'No better match found.',
             applied: false
           };
         })
@@ -294,14 +294,14 @@ export default function AiExpenseCategorizationModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-black text-slate-900 tracking-tight">
-                  AI Expense Categorization Studio
+                  Categorise expenses with AI
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200">
-                  Gemini 3.7 Flash
+                  AI
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-0.5">
-                Multi-industry expense classification, FRCS VAT alignment & tax reasonings
+                Suggests a category, VAT treatment and reason for each expense
               </p>
             </div>
           </div>
@@ -325,7 +325,7 @@ export default function AiExpenseCategorizationModal({
             }`}
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-            <span>Interactive Categorizer Sandbox</span>
+            <span>Try it</span>
           </button>
 
           <button
@@ -340,7 +340,7 @@ export default function AiExpenseCategorizationModal({
             }`}
           >
             <Layers className="w-3.5 h-3.5 text-sky-500" />
-            <span>Batch Ledger Audit</span>
+            <span>Check ledger</span>
           </button>
 
           <button
@@ -352,7 +352,7 @@ export default function AiExpenseCategorizationModal({
             }`}
           >
             <Briefcase className="w-3.5 h-3.5 text-indigo-500" />
-            <span>Cross-Industry Guidelines</span>
+            <span>Category guide</span>
           </button>
         </div>
 
@@ -363,7 +363,7 @@ export default function AiExpenseCategorizationModal({
               {/* Quick Presets Carousel */}
               <div>
                 <label className="text-[10px] font-black uppercase text-slate-400 tracking-wider block mb-1.5">
-                  Try Cross-Industry Preset Scenarios:
+                  Try an example
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {examplePresets.map((preset, idx) => (
@@ -389,25 +389,25 @@ export default function AiExpenseCategorizationModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-500 block">
-                      Industry Sector / Project Domain
+                      Industry
                     </label>
                     <select
                       value={testSector}
                       onChange={(e) => setTestSector(e.target.value)}
                       className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-900"
                     >
-                      <option value="film_audio_av">🎬 Film, Video, Audio & AV Production</option>
-                      <option value="web_digital">💻 Web, Software, SaaS & Digital</option>
-                      <option value="legal_medical_pro">⚖️ Legal, Medical & Professional Services</option>
-                      <option value="automotive_mechanics">🚗 Automotive, Mechanics & Fleet</option>
-                      <option value="construction_trades">🔨 Construction, Trades & Engineering</option>
-                      <option value="creative_agency">🎨 Creative Studio, Events & Agency</option>
+                      <option value="film_audio_av">Film, video, audio & AV</option>
+                      <option value="web_digital">Web, software & digital</option>
+                      <option value="legal_medical_pro">Legal, medical & professional services</option>
+                      <option value="automotive_mechanics">Automotive & mechanics</option>
+                      <option value="construction_trades">Construction & trades</option>
+                      <option value="creative_agency">Creative studio, events & agency</option>
                     </select>
                   </div>
 
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-500 block">
-                      Vendor / Payee Name
+                      Vendor
                     </label>
                     <input
                       type="text"
@@ -421,13 +421,13 @@ export default function AiExpenseCategorizationModal({
 
                 <div className="space-y-1">
                   <label className="text-[9px] font-black uppercase text-slate-500 block">
-                    Service Description / Expense Purpose
+                    Description
                   </label>
                   <textarea
                     rows={2}
                     value={testDescription}
                     onChange={(e) => setTestDescription(e.target.value)}
-                    placeholder="Enter detailed description of the expense or scope item..."
+                    placeholder="What was it for?"
                     className="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-xs text-slate-800 focus:outline-none focus:border-slate-900 resize-none"
                   />
                 </div>
@@ -435,14 +435,14 @@ export default function AiExpenseCategorizationModal({
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-500 block">
-                      Linked Project (Optional)
+                      Project (optional)
                     </label>
                     <select
                       value={testProjectId}
                       onChange={(e) => setTestProjectId(e.target.value)}
                       className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-900"
                     >
-                      <option value="">No linked project (General Business)</option>
+                      <option value="">No project</option>
                       {data.projects.map(p => (
                         <option key={p.id} value={p.id}>{p.name}</option>
                       ))}
@@ -451,7 +451,7 @@ export default function AiExpenseCategorizationModal({
 
                   <div className="space-y-1">
                     <label className="text-[9px] font-black uppercase text-slate-500 block">
-                      Expense Amount (FJD)
+                      Amount (FJD)
                     </label>
                     <input
                       type="number"
@@ -472,7 +472,7 @@ export default function AiExpenseCategorizationModal({
                     className="bg-amber-600 hover:bg-amber-700 text-white font-black text-xs px-4 py-2 rounded-xl flex items-center gap-2 shadow-sm transition-all disabled:opacity-50"
                   >
                     <Sparkles className={`w-3.5 h-3.5 ${isLoadingSuggestion ? 'animate-spin' : ''}`} />
-                    <span>{isLoadingSuggestion ? 'Analyzing Service Scope...' : 'Run AI Categorization'}</span>
+                    <span>{isLoadingSuggestion ? 'Thinking…' : 'Suggest category'}</span>
                   </button>
                 </div>
               </div>
@@ -484,13 +484,13 @@ export default function AiExpenseCategorizationModal({
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-black uppercase tracking-wider text-slate-400">
-                          AI Recommended Category:
+                          Suggested category
                         </span>
                         <span className="px-2.5 py-1 rounded-xl bg-amber-500 text-white font-extrabold text-xs shadow-xs">
                           {suggestionResult.category}
                         </span>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          {suggestionResult.confidence}% Confidence
+                          {suggestionResult.confidence}% confident
                         </span>
                       </div>
                       <p className="text-xs text-slate-700 font-medium mt-2 leading-relaxed">
@@ -502,30 +502,30 @@ export default function AiExpenseCategorizationModal({
                       onClick={handleLogAsExpense}
                       className="shrink-0 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-xs transition-colors"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Log As Expense
+                      <Plus className="w-3.5 h-3.5" /> Add expense
                     </button>
                   </div>
 
                   {/* Tax & VAT Rules Grid */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-amber-200/60 text-xs">
                     <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200">
-                      <span className="text-[9px] font-bold uppercase text-slate-400 block">Fiji VAT Treatment</span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400 block">Fiji VAT</span>
                       <span className="font-bold text-slate-800 mt-0.5 block">
                         {suggestionResult.isVatClaimable 
-                          ? `Claimable Input VAT (${suggestionResult.recommendedVatRate ?? currentVatRate}%)`
-                          : '0% Non-VAT (Overseas/Exempt)'}
+                          ? `Input VAT claimable (${suggestionResult.recommendedVatRate ?? currentVatRate}%)`
+                          : 'No VAT (overseas or exempt)'}
                       </span>
                     </div>
 
                     <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200">
-                      <span className="text-[9px] font-bold uppercase text-slate-400 block">FRCS Income Tax</span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400 block">Income tax</span>
                       <span className="font-bold text-emerald-700 mt-0.5 block flex items-center gap-1">
-                        <Check className="w-3.5 h-3.5" /> 100% Tax Deductible
+                        <Check className="w-3.5 h-3.5" /> Usually deductible
                       </span>
                     </div>
 
                     <div className="p-2.5 bg-white/90 rounded-xl border border-slate-200">
-                      <span className="text-[9px] font-bold uppercase text-slate-400 block">Alternative Categories</span>
+                      <span className="text-[9px] font-bold uppercase text-slate-400 block">Other options</span>
                       <div className="flex flex-wrap gap-1 mt-0.5">
                         {suggestionResult.alternativeCategories && suggestionResult.alternativeCategories.length > 0 ? (
                           suggestionResult.alternativeCategories.map(alt => (
@@ -534,7 +534,7 @@ export default function AiExpenseCategorizationModal({
                             </span>
                           ))
                         ) : (
-                          <span className="text-[10px] text-slate-400">None needed</span>
+                          <span className="text-[10px] text-slate-400">None</span>
                         )}
                       </div>
                     </div>
@@ -549,10 +549,10 @@ export default function AiExpenseCategorizationModal({
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-800">
-                    Unreconciled & Misc Expense Ledger Audit
+                    Uncategorised entries
                   </h4>
                   <p className="text-[10px] text-slate-500 mt-0.5">
-                    Automatically scans unclassified transactions and suggests precise bookkeeping categories.
+                    Suggests a category for pending entries and anything filed as Other Expense.
                   </p>
                 </div>
 
@@ -564,7 +564,7 @@ export default function AiExpenseCategorizationModal({
                     className="text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isAuditingBatch ? 'animate-spin' : ''}`} />
-                    <span>Re-scan Ledger</span>
+                    <span>Check again</span>
                   </button>
 
                   {auditResults.length > 0 && (
@@ -574,7 +574,7 @@ export default function AiExpenseCategorizationModal({
                       className="text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white px-3 py-1.5 rounded-xl flex items-center gap-1.5 shadow-xs transition-colors"
                     >
                       <Check className="w-3.5 h-3.5" />
-                      <span>Accept All AI Categories</span>
+                      <span>Accept all</span>
                     </button>
                   )}
                 </div>
@@ -584,15 +584,15 @@ export default function AiExpenseCategorizationModal({
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                   <Sparkles className="w-6 h-6 text-sky-500 animate-spin mx-auto" />
                   <p className="text-xs font-bold text-slate-600">
-                    Running AI heuristic categorization across your bank statement lines...
+                    Suggesting categories…
                   </p>
                 </div>
               ) : auditResults.length === 0 ? (
                 <div className="p-8 text-center bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <Check className="w-8 h-8 text-emerald-500 mx-auto" />
-                  <h5 className="text-xs font-bold text-slate-800">Ledger is Clean & Categorized!</h5>
+                  <h5 className="text-xs font-bold text-slate-800">Nothing to categorise</h5>
                   <p className="text-[10px] text-slate-500 max-w-sm mx-auto">
-                    No pending unclassified or 'Other Expense' ledger entries detected. All expenses are properly categorized.
+                    No pending entries or entries filed as Other Expense.
                   </p>
                 </div>
               ) : (
@@ -622,7 +622,7 @@ export default function AiExpenseCategorizationModal({
 
                       <div className="flex items-center gap-3 shrink-0">
                         <div className="text-right">
-                          <span className="text-[9px] font-bold uppercase text-slate-400 block">AI Suggestion</span>
+                          <span className="text-[9px] font-bold uppercase text-slate-400 block">Suggested</span>
                           <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="text-xs font-black text-amber-700">
                               {item.suggestedCategory}
@@ -635,7 +635,7 @@ export default function AiExpenseCategorizationModal({
 
                         {item.applied ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-xl">
-                            <Check className="w-3 h-3" /> Categorized
+                            <Check className="w-3 h-3" /> Applied
                           </span>
                         ) : (
                           <button
@@ -659,23 +659,23 @@ export default function AiExpenseCategorizationModal({
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <Film className="w-4 h-4 text-amber-600" />
-                    <span>Film, Video & AV Production</span>
+                    <span>Film, video & AV</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
-                    <li><strong>Hardware & Equipment:</strong> Camera rigs, lenses, lighting, audio mics, drones, tripod systems.</li>
-                    <li><strong>Subcontractors:</strong> Boom mic operators, colorists, second shooters, voice actors, gaffers.</li>
-                    <li><strong>Meals & Hospitality:</strong> Crew catering on film sets (Fiji 12.5% VAT claimable with tax invoice).</li>
+                    <li><strong>Hardware & Equipment:</strong> Cameras, lenses, lighting, mics, drones, tripods.</li>
+                    <li><strong>Subcontractors:</strong> Boom operators, colourists, second shooters, voice actors, gaffers.</li>
+                    <li><strong>Meals & Hospitality:</strong> Crew catering on set (12.5% VAT claimable with a tax invoice).</li>
                   </ul>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <Code className="w-4 h-4 text-sky-600" />
-                    <span>Web, Digital & SaaS Services</span>
+                    <span>Web, software & digital</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
                     <li><strong>Software SaaS:</strong> AWS, GitHub, Figma, Vercel, OpenAI API tokens (0% local VAT for overseas).</li>
-                    <li><strong>Internet & Utilities:</strong> Telecom Fiji fibre, Vodafone/Digicel mobile data connections.</li>
+                    <li><strong>Internet & Utilities:</strong> Telecom Fiji fibre, Vodafone or Digicel mobile data.</li>
                     <li><strong>Marketing & Ads:</strong> Meta ads, Google ads, domain registrations.</li>
                   </ul>
                 </div>
@@ -683,35 +683,35 @@ export default function AiExpenseCategorizationModal({
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <Scale className="w-4 h-4 text-purple-600" />
-                    <span>Legal, Medical & Consulting</span>
+                    <span>Legal, medical & consulting</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
-                    <li><strong>Tax & Licensing:</strong> High Court filing fees, business license renewal, FRCS TIN certification.</li>
-                    <li><strong>Subcontractors:</strong> Senior counsel retainers, specialist medical diagnostics.</li>
-                    <li><strong>Office Supplies:</strong> Legal stationery, certified binding, stamp paper.</li>
+                    <li><strong>Tax & Licensing:</strong> High Court filing fees, business licence renewal, FRCS fees.</li>
+                    <li><strong>Subcontractors:</strong> Counsel retainers, specialist medical tests.</li>
+                    <li><strong>Office Supplies:</strong> Stationery, binding, stamp paper.</li>
                   </ul>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <Wrench className="w-4 h-4 text-rose-600" />
-                    <span>Automotive, Mechanics & Fleet</span>
+                    <span>Automotive & mechanics</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
                     <li><strong>Hardware & Equipment:</strong> Brake pads, filters, engine gaskets, OBD diagnostic scanners.</li>
                     <li><strong>Travel & Transport:</strong> Fuel, vehicle recovery towing, mobile workshop transport.</li>
-                    <li><strong>Subcontractors:</strong> Specialized auto electricians, panel beaters.</li>
+                    <li><strong>Subcontractors:</strong> Auto electricians, panel beaters.</li>
                   </ul>
                 </div>
 
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <HardHat className="w-4 h-4 text-emerald-600" />
-                    <span>Construction, Trades & Carpentry</span>
+                    <span>Construction & trades</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
                     <li><strong>Hardware & Equipment:</strong> Timber framing, cement, scaffolding hire, power tools.</li>
-                    <li><strong>Subcontractors:</strong> Registered master plumbers, certified electricians, tilers.</li>
+                    <li><strong>Subcontractors:</strong> Plumbers, electricians, tilers.</li>
                     <li><strong>Travel & Transport:</strong> Site haulage, delivery logistics.</li>
                   </ul>
                 </div>
@@ -719,12 +719,12 @@ export default function AiExpenseCategorizationModal({
                 <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                   <div className="flex items-center gap-2 text-slate-800 font-bold">
                     <Building2 className="w-4 h-4 text-blue-600" />
-                    <span>Fiji FRCS Tax & VAT Treatment</span>
+                    <span>Fiji tax & VAT</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
-                    <li><strong>VAT Input Tax:</strong> 12.5% standard rate claimable on local VAT tax invoices.</li>
-                    <li><strong>Digital Subscriptions:</strong> Foreign software providers are exempt from Fiji VAT input credit.</li>
-                    <li><strong>Deductibility:</strong> All ordinary business operating expenses reduce assessable income.</li>
+                    <li><strong>VAT Input Tax:</strong> 12.5% claimable on local tax invoices.</li>
+                    <li><strong>Digital Subscriptions:</strong> Overseas software usually has no Fiji VAT to claim.</li>
+                    <li><strong>Deductibility:</strong> Ordinary business expenses reduce taxable income.</li>
                   </ul>
                 </div>
               </div>
@@ -735,7 +735,7 @@ export default function AiExpenseCategorizationModal({
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs">
           <span className="text-slate-500 font-medium">
-            Frilensa AI Financial Architecture &copy; Fiji
+            AI suggestions can be wrong. Check before applying.
           </span>
 
           <button

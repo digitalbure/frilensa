@@ -96,9 +96,9 @@ export default function AuthView({
       const found = allInvites.find(i => i.code.toUpperCase() === codeUpper && !i.used);
       if (found) {
         setValidatedInvite(found);
-        setSuccessInfo(`Valid invite code detected: ${found.plan.toUpperCase()} Plan pre-assigned.`);
+        setSuccessInfo(`Invite code accepted: ${found.plan.toUpperCase()} plan.`);
       } else {
-        setInviteError('Invite code not recognized or already claimed.');
+        setInviteError('This invite code isn’t valid or has already been used.');
       }
     }
   }, [currentSettings.invites]);
@@ -118,7 +118,7 @@ export default function AuthView({
     if (found) {
       if (found.used) {
         setValidatedInvite(null);
-        setInviteError('This invite code has already been redeemed.');
+        setInviteError('This invite code has already been used.');
         return false;
       }
       setValidatedInvite(found);
@@ -142,7 +142,7 @@ export default function AuthView({
         return true;
       }
       setValidatedInvite(null);
-      setInviteError('Invalid invite code. Please verify code or contact admin.');
+      setInviteError('Invite code not recognised. Check the code or ask whoever invited you.');
       return false;
     }
   };
@@ -159,7 +159,7 @@ export default function AuthView({
         try {
           await verifyEmailActionCode(oobCode);
           setEmailVerifiedSuccess(true);
-          setSuccessInfo('Email address verified successfully! Redirecting to setup wizard...');
+          setSuccessInfo('Email verified. Taking you to setup…');
           setTimeout(() => {
             onSignIn({
               name: auth.currentUser?.displayName || 'Fiji Consultant',
@@ -174,7 +174,7 @@ export default function AuthView({
             }, true);
           }, 1500);
         } catch (err: any) {
-          setError(err?.message || 'Verification link expired or already used.');
+          setError(err?.message || 'This verification link has expired or was already used.');
         } finally {
           setLoading(false);
         }
@@ -206,7 +206,7 @@ export default function AuthView({
           const isVerified = await checkEmailVerificationStatus();
           if (isVerified) {
             setEmailVerifiedSuccess(true);
-            setSuccessInfo('Email confirmed! Redirecting to your onboarding setup...');
+            setSuccessInfo('Email verified. Taking you to setup…');
             clearInterval(interval);
             setTimeout(() => {
               if (pendingProfile) {
@@ -266,12 +266,12 @@ export default function AuthView({
     } catch (err: any) {
       console.warn('Google Sign-In caught error:', err);
       if (err?.code === 'auth/popup-blocked' || err?.message?.includes('popup')) {
-        setError('Popup was blocked by browser. Please enable popups or sign in with your email and password.');
+        setError('Your browser blocked the Google sign-in window. Allow pop-ups, or sign in with your email and password.');
       } else if (err?.code === 'auth/unauthorized-domain') {
         setIsUnauthorizedDomain(true);
-        setError('Firebase Google Sign-In domain authorization required. You can sign in directly with email and password below.');
+        setError('Google sign-in isn’t set up for this address yet. Sign in with your email and password below.');
       } else {
-        setError(err?.message || 'Google Sign-In encountered an issue. Please try again or use direct email sign in.');
+        setError(err?.message || 'Google sign-in didn’t work. Try again, or sign in with your email.');
       }
     } finally {
       setGoogleLoading(false);
@@ -285,7 +285,7 @@ export default function AuthView({
     setSuccessInfo('');
 
     if (!name.trim() || !email.trim() || !password.trim()) {
-      setError('Please provide your full name, email, and password.');
+      setError('Enter your full name, email and password.');
       return;
     }
 
@@ -295,14 +295,14 @@ export default function AuthView({
     }
 
     if (registrationMode === 'disabled') {
-      setError('Account registration is currently closed. Please sign in or contact the platform administrator.');
+      setError('New sign-ups are closed right now. If you already have an account, sign in.');
       return;
     }
 
     if (registrationMode === 'invite_only') {
       const isValid = validatedInvite || validateInviteCode(inviteCodeInput);
       if (!isValid) {
-        setError('A valid admin-generated invite code is required to create an account.');
+        setError('You need a valid invite code to create an account.');
         return;
       }
     }
@@ -332,15 +332,15 @@ export default function AuthView({
       setStage('awaiting_email_verification');
       setResendCooldown(30);
       setCanResend(false);
-      setSuccessInfo(`Verification email dispatched to ${email}. Please check your inbox.`);
+      setSuccessInfo(`We sent a verification email to ${email}.`);
     } catch (err: any) {
       console.warn('Firebase Sign-Up error:', err);
       if (err?.code === 'auth/email-already-in-use') {
-        setError('An account with this email already exists. Please switch to Sign In.');
+        setError('An account with this email already exists. Sign in instead.');
       } else if (err?.code === 'auth/invalid-email') {
         setError('Please enter a valid email address.');
       } else if (err?.code === 'auth/weak-password') {
-        setError('Please choose a stronger password (at least 6 characters).');
+        setError('Choose a stronger password (at least 6 characters).');
       } else {
         setError(err?.message || 'Could not create your account. Please try again.');
       }
@@ -358,7 +358,7 @@ export default function AuthView({
       const isVerified = await checkEmailVerificationStatus();
       if (isVerified) {
         setEmailVerifiedSuccess(true);
-        setSuccessInfo('Email confirmed! Setting up your workspace...');
+        setSuccessInfo('Email verified. Setting up your account…');
         setTimeout(() => {
           if (pendingProfile) {
             onSignIn({
@@ -375,10 +375,10 @@ export default function AuthView({
           }
         }, 800);
       } else {
-        setError('Email not yet verified. Please click the link sent to your inbox, then tap Check Status again.');
+        setError('Your email isn’t verified yet. Click the link we sent you, then try again.');
       }
     } catch (err: any) {
-      setError('Could not verify status right now. Please try again.');
+      setError('Couldn’t check your verification status. Try again.');
     } finally {
       setIsCheckingEmailStatus(false);
     }
@@ -395,12 +395,12 @@ export default function AuthView({
       setResendCooldown(30);
       setCanResend(false);
       setVerificationEmailSentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
-      setSuccessInfo(`A fresh verification email was sent to ${pendingProfile?.email || email}.`);
+      setSuccessInfo(`We sent a new verification email to ${pendingProfile?.email || email}.`);
     } catch (err: any) {
       setResendCooldown(30);
       setCanResend(false);
       setError(err?.code === 'auth/too-many-requests'
-        ? 'Too many verification emails requested. Please wait a few minutes and try again.'
+        ? 'Too many emails requested. Wait a few minutes and try again.'
         : (err?.message || 'Could not resend the verification email.'));
     } finally {
       setLoading(false);
@@ -414,7 +414,7 @@ export default function AuthView({
     setSuccessInfo('');
 
     if (!email || !password) {
-      setError('Please enter your email and password.');
+      setError('Enter your email and password.');
       return;
     }
 
@@ -431,7 +431,7 @@ export default function AuthView({
         setStage('awaiting_email_verification');
         setResendCooldown(30);
         setCanResend(false);
-        setSuccessInfo('Your account is awaiting email verification. We sent a link to your email.');
+        setSuccessInfo('Verify your email to continue. We sent you a link.');
         return;
       }
 
@@ -449,9 +449,9 @@ export default function AuthView({
     } catch (err: any) {
       console.warn('Sign-in error:', err);
       if (err?.code === 'auth/user-not-found' || err?.code === 'auth/wrong-password' || err?.code === 'auth/invalid-credential') {
-        setError('Invalid email or password. Please try again or create an account.');
+        setError('Email or password is incorrect.');
       } else {
-        setError(err?.message || 'Unable to sign in. Please verify your email and password.');
+        setError(err?.message || 'Couldn’t sign in. Check your email and password.');
       }
     } finally {
       setLoading(false);
@@ -461,7 +461,7 @@ export default function AuthView({
   // Forgot password reset handler
   const handleForgotPassword = async () => {
     if (!email.trim()) {
-      setError('Please enter your email address in the field below first, then click Forgot Password.');
+      setError('Enter your email address first, then tap Forgot password.');
       return;
     }
     setError('');
@@ -469,13 +469,13 @@ export default function AuthView({
     setResetLoading(true);
     try {
       await sendUserPasswordResetEmail(email.trim());
-      setSuccessInfo(`Password reset link dispatched to ${email.trim()}. Please check your email inbox to set your password.`);
+      setSuccessInfo(`We sent a password reset link to ${email.trim()}.`);
     } catch (err: any) {
       console.warn('Password reset error:', err);
       if (err?.code === 'auth/user-not-found') {
-        setError('No account found with this email. Please click Create Account above to register.');
+        setError('No account uses this email. Tap Create account to sign up.');
       } else {
-        setError(err?.message || 'Could not send password reset email. Please verify your address.');
+        setError(err?.message || 'Couldn’t send the reset email. Check the address and try again.');
       }
     } finally {
       setResetLoading(false);
@@ -522,7 +522,7 @@ export default function AuthView({
             transition={{ delay: 0.15 }}
             className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed"
           >
-            Fiji & Pacific Business CRM, FRCS Invoicing & Payments
+            Invoicing, bookkeeping and Fiji tax for freelancers
           </motion.p>
         </div>
 
@@ -545,7 +545,7 @@ export default function AuthView({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-bold text-amber-950 text-[11px] uppercase tracking-wider">Session Inactivity Timeout</p>
+                  <p className="font-bold text-amber-950 text-[11px] uppercase tracking-wider">Signed out</p>
                   {onClearLogoutReason && (
                     <button
                       type="button"
@@ -579,10 +579,10 @@ export default function AuthView({
                 <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-amber-950 text-[11px] uppercase tracking-wider">
-                    Firebase Authorized Domain Required
+                    Google sign-in unavailable here
                   </p>
                   <p className="text-[11px] text-amber-800 mt-0.5 leading-relaxed">
-                    Google OAuth popups require this app’s preview domain to be authorized in Firebase Console:
+                    To use Google sign-in, an admin needs to authorise this domain:
                   </p>
                 </div>
               </div>
@@ -603,12 +603,12 @@ export default function AuthView({
                   className="px-2.5 py-1 bg-amber-100 hover:bg-amber-200 text-amber-900 rounded-lg text-[10px] font-bold flex items-center gap-1 shrink-0 transition-colors cursor-pointer"
                 >
                   {copiedDomain ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
-                  <span>{copiedDomain ? 'Copied' : 'Copy Domain'}</span>
+                  <span>{copiedDomain ? 'Copied' : 'Copy domain'}</span>
                 </button>
               </div>
 
               <div className="pt-0.5 text-[11px] text-amber-900 flex items-center justify-between gap-2">
-                <span className="font-medium">Or continue right now with email below:</span>
+                <span className="font-medium">Or sign in with email below.</span>
               </div>
             </div>
           )}
@@ -636,13 +636,13 @@ export default function AuthView({
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  Sign In
+                  Sign in
                 </button>
                 <button
                   type="button"
                   onClick={() => { 
                     if (registrationMode === 'disabled') {
-                      setError('Public registration is currently disabled by administrator.');
+                      setError('New sign-ups are closed right now.');
                       return;
                     }
                     setAuthMode('signup'); 
@@ -658,7 +658,7 @@ export default function AuthView({
                 >
                   {registrationMode === 'invite_only' && <UserPlus className="w-3.5 h-3.5 text-amber-500" />}
                   {registrationMode === 'disabled' && <Ban className="w-3.5 h-3.5 text-rose-400" />}
-                  <span>{registrationMode === 'invite_only' ? 'Invite Sign Up' : 'Create Account'}</span>
+                  <span>{registrationMode === 'invite_only' ? 'Sign up with invite' : 'Create account'}</span>
                 </button>
                 <button
                   type="button"
@@ -669,7 +669,7 @@ export default function AuthView({
                       : 'text-slate-500 hover:text-slate-800'
                   }`}
                 >
-                  I&apos;m a Client
+                  I’m a client
                 </button>
               </div>
 
@@ -682,17 +682,17 @@ export default function AuthView({
                     <Ban className="w-5 h-5" />
                   </div>
                   <h3 className="text-xs font-bold text-rose-900 uppercase tracking-wider">
-                    Registration Closed
+                    Sign-ups closed
                   </h3>
                   <p className="text-xs text-rose-700 leading-relaxed max-w-xs mx-auto">
-                    New account registration is currently paused. Existing business owners and consultants can sign in below.
+                    New sign-ups are paused. If you already have an account, you can still sign in.
                   </p>
                   <button
                     type="button"
                     onClick={() => setAuthMode('signin')}
                     className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
                   >
-                    Return to Sign In
+                    Back to sign in
                   </button>
                 </div>
               ) : (
@@ -750,7 +750,7 @@ export default function AuthView({
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-1.5 text-amber-900 font-bold text-xs">
                               <UserCheck className="w-3.5 h-3.5 text-amber-600" />
-                              <span>Invite-Only Access Active</span>
+                              <span>Invite code required</span>
                             </div>
                           </div>
                           <div className="flex gap-1.5">
@@ -765,7 +765,7 @@ export default function AuthView({
                                   setInviteCodeInput(e.target.value.toUpperCase());
                                   validateInviteCode(e.target.value);
                                 }}
-                                placeholder="Enter Invite Code (e.g. BULA-VIP)"
+                                placeholder="Invite code"
                                 className="w-full bg-white border border-amber-200 rounded-xl py-1.5 pl-8 pr-2 text-xs font-mono font-bold text-slate-800 uppercase focus:outline-none focus:border-amber-500"
                               />
                             </div>
@@ -780,7 +780,7 @@ export default function AuthView({
                           {validatedInvite && (
                             <div className="bg-emerald-100 text-emerald-900 text-[11px] font-bold p-2 rounded-xl flex items-center gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Valid invite code: {validatedInvite.plan.toUpperCase()} plan pre-assigned</span>
+                              <span>Invite code accepted: {validatedInvite.plan.toUpperCase()} plan</span>
                             </div>
                           )}
                           {inviteError && (
@@ -792,7 +792,7 @@ export default function AuthView({
                       {/* Full Name */}
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Full Name *
+                          Full name *
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-slate-400">
@@ -812,7 +812,7 @@ export default function AuthView({
                       {/* Email */}
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Email Address *
+                          Email *
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-slate-400">
@@ -833,7 +833,7 @@ export default function AuthView({
                       {/* Password */}
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Create Password *
+                          Password *
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-slate-400">
@@ -868,7 +868,7 @@ export default function AuthView({
                           <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
                           <>
-                            <span>Create Account & Continue</span>
+                            <span>Create account</span>
                             <ArrowRight className="w-4 h-4" />
                           </>
                         )}
@@ -881,7 +881,7 @@ export default function AuthView({
                     <form onSubmit={handleSignInSubmit} className="space-y-3.5">
                       <div>
                         <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Email Address *
+                          Email *
                         </label>
                         <div className="relative">
                           <span className="absolute left-3 top-2.5 text-slate-400">
@@ -934,7 +934,7 @@ export default function AuthView({
                           disabled={resetLoading}
                           className="text-sky-600 hover:text-sky-800 font-bold cursor-pointer disabled:opacity-50"
                         >
-                          {resetLoading ? 'Sending reset link...' : 'Forgot Password?'}
+                          {resetLoading ? 'Sending…' : 'Forgot password?'}
                         </button>
                       </div>
 
@@ -946,7 +946,7 @@ export default function AuthView({
                         {loading ? (
                           <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                         ) : (
-                          <span>Sign In to Workspace</span>
+                          <span>Sign in</span>
                         )}
                       </button>
                     </form>
@@ -989,15 +989,15 @@ export default function AuthView({
                 </div>
 
                 <span className="text-[10px] font-bold tracking-wider uppercase bg-amber-50 text-amber-700 border border-amber-200 px-2.5 py-0.5 rounded-full inline-block mb-1.5">
-                  Verification Required
+                  Check your email
                 </span>
 
                 <h3 className="text-base font-bold text-slate-800">
-                  Verify Your Email Address
+                  Verify your email
                 </h3>
 
                 <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                  We sent a confirmation link to:
+                  We sent a link to:
                 </p>
 
                 <div className="mt-2 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 inline-flex items-center gap-2 text-xs font-mono font-bold text-sky-700">
@@ -1010,15 +1010,15 @@ export default function AuthView({
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-2 text-[11px] text-slate-600">
                 <div className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</div>
-                  <p className="leading-snug">Open your email inbox from <strong>Frilensa</strong>.</p>
+                  <p className="leading-snug">Open the email from <strong>Frilensa</strong>.</p>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</div>
-                  <p className="leading-snug">Click <strong>Verify Email Address</strong> to authenticate.</p>
+                  <p className="leading-snug">Click the verification link in it.</p>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">3</div>
-                  <p className="leading-snug">Return here — this screen will automatically enter the onboarding wizard.</p>
+                  <p className="leading-snug">Come back here. Setup starts on its own once you’re verified.</p>
                 </div>
               </div>
 
@@ -1031,7 +1031,7 @@ export default function AuthView({
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-2.5 text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isCheckingEmailStatus ? 'animate-spin' : ''}`} />
-                  <span>{isCheckingEmailStatus ? 'Checking Status...' : "I've Clicked the Email Link"}</span>
+                  <span>{isCheckingEmailStatus ? 'Checking…' : "I’ve clicked the link"}</span>
                 </button>
 
                 <div className="flex items-center justify-between gap-2 pt-1">
@@ -1055,7 +1055,7 @@ export default function AuthView({
         <div className="mt-5 text-center text-[11px] text-slate-400 space-y-1">
           <p className="flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" />
-            <span>Fiji FRCS Tax & Digital VAT Invoicing Ready</span>
+            <span>Calculates Fiji VAT, ECAL and STT</span>
           </p>
         </div>
       </div>
@@ -1089,7 +1089,7 @@ function ClientPortalSignIn({ onPortalSignIn }: { onPortalSignIn?: (session: Por
         View your invoices and quotes. Use the portal link your consultant sent you, or sign in with your email and the PIN they gave you.
       </p>
       <div>
-        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Email Address</label>
+        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Email</label>
         <input
           type="email"
           required
@@ -1117,7 +1117,7 @@ function ClientPortalSignIn({ onPortalSignIn }: { onPortalSignIn?: (session: Por
         disabled={busy}
         className="w-full bg-slate-900 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-2.5 rounded-xl text-xs transition-all cursor-pointer"
       >
-        {busy ? 'Signing in…' : 'Open Client Portal'}
+        {busy ? 'Signing in…' : 'Open portal'}
       </button>
     </form>
   );

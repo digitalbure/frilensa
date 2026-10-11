@@ -42,8 +42,8 @@ export default function RecentActivityLog({
           rawLogs.push({
             id: synthSentId,
             type: 'invoice_sent',
-            title: `Invoice #${doc.documentNumber} Sent`,
-            description: `FRCS VAT invoice for ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} issued to ${clientName}.`,
+            title: `Invoice #${doc.documentNumber} created`,
+            description: `Invoice for ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} issued to ${clientName}.`,
             timestamp: doc.issueDate ? `${doc.issueDate}T10:00:00Z` : new Date().toISOString(),
             entityType: 'invoice',
             entityId: doc.id,
@@ -61,8 +61,8 @@ export default function RecentActivityLog({
             rawLogs.push({
               id: synthPaidId,
               type: 'payment_received',
-              title: `Payment Received for #${doc.documentNumber}`,
-              description: `Settlement of ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded from ${clientName} (${doc.paymentMethod || 'Direct Transfer'}).`,
+              title: `Payment received for #${doc.documentNumber}`,
+              description: `Payment of ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded from ${clientName} (${doc.paymentMethod || 'Direct Transfer'}).`,
               timestamp: doc.paymentDate ? `${doc.paymentDate}T14:30:00Z` : doc.issueDate ? `${doc.issueDate}T14:30:00Z` : new Date().toISOString(),
               entityType: 'payment',
               entityId: doc.id,
@@ -82,8 +82,8 @@ export default function RecentActivityLog({
           rawLogs.push({
             id: synthQuoteId,
             type: doc.status === 'accepted' ? 'quote_accepted' : 'quote_sent',
-            title: doc.status === 'accepted' ? `Quote #${doc.documentNumber} Accepted` : `Quote #${doc.documentNumber} Generated`,
-            description: `Proposal for ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} for ${clientName}.`,
+            title: doc.status === 'accepted' ? `Quote #${doc.documentNumber} accepted` : `Quote #${doc.documentNumber} created`,
+            description: `Quote for ${doc.currency || data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })} for ${clientName}.`,
             timestamp: doc.issueDate ? `${doc.issueDate}T09:00:00Z` : new Date().toISOString(),
             entityType: 'quote',
             entityId: doc.id,
@@ -103,8 +103,8 @@ export default function RecentActivityLog({
         rawLogs.push({
           id: synthClientId,
           type: 'client_updated',
-          title: `Client Profile Verified: ${client.name}`,
-          description: `Contact credentials, TIN (${client.tin || 'Non-VAT'}) and billing profiles maintained for ${client.name}.`,
+          title: `Client: ${client.name}`,
+          description: `Contact details and TIN (${client.tin || 'none'}) on file for ${client.name}.`,
           timestamp: client.tokenCreatedAt || new Date(Date.now() - (idx + 1) * 86400000 * 2).toISOString(),
           entityType: 'client',
           entityId: client.id,
@@ -264,13 +264,13 @@ export default function RecentActivityLog({
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-800 tracking-tight flex items-center gap-1.5">
-                <span>Recent Activity & Audit Trail</span>
+                <span>Recent activity</span>
                 <span className="bg-emerald-50 text-emerald-700 border border-emerald-200/80 text-[8.5px] font-extrabold px-2 py-0.2 rounded-full uppercase flex items-center gap-1">
-                  <ShieldCheck className="w-2.5 h-2.5" /> Live & Tamper-Evident
+                  <ShieldCheck className="w-2.5 h-2.5" /> Activity log
                 </span>
               </h3>
               <p className="text-[10.5px] text-slate-400">
-                Tracking when invoices are sent, payments received, clients updated, or rates adjusted.
+                Invoices, payments, client changes and rate updates.
               </p>
             </div>
           </div>
@@ -282,10 +282,10 @@ export default function RecentActivityLog({
               type="button"
               onClick={handleExportCsv}
               className="px-2.5 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-600 text-[10.5px] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-              title="Download full CSV audit trail for accounting & FRCS compliance"
+              title="Download activity as CSV"
             >
               <Download className="w-3.5 h-3.5 text-slate-500" />
-              <span>Export Audit</span>
+              <span>Export CSV</span>
             </button>
           </div>
         )}
@@ -296,11 +296,11 @@ export default function RecentActivityLog({
         <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2.5 pt-0.5">
           <div className="flex items-center gap-1 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
             {[
-              { id: 'all', label: 'All Events', count: combinedLogs.length },
-              { id: 'invoices', label: 'Invoices & Quotes', count: combinedLogs.filter(l => ['invoice_sent', 'invoice_created', 'invoice_paid', 'quote_sent', 'quote_accepted'].includes(l.type)).length },
+              { id: 'all', label: 'All', count: combinedLogs.length },
+              { id: 'invoices', label: 'Invoices and quotes', count: combinedLogs.filter(l => ['invoice_sent', 'invoice_created', 'invoice_paid', 'quote_sent', 'quote_accepted'].includes(l.type)).length },
               { id: 'payments', label: 'Payments', count: combinedLogs.filter(l => ['payment_received', 'invoice_paid'].includes(l.type)).length },
               { id: 'clients', label: 'Clients', count: combinedLogs.filter(l => ['client_created', 'client_updated'].includes(l.type)).length },
-              { id: 'rates', label: 'Rates & Catalogue', count: combinedLogs.filter(l => ['rate_updated', 'service_created', 'service_updated'].includes(l.type)).length },
+              { id: 'rates', label: 'Rates', count: combinedLogs.filter(l => ['rate_updated', 'service_created', 'service_updated'].includes(l.type)).length },
               { id: 'security', label: 'Security', count: combinedLogs.filter(l => ['security_login', 'escrow_contract'].includes(l.type)).length }
             ].map(tab => (
               <button
@@ -327,7 +327,7 @@ export default function RecentActivityLog({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search audit trail..."
+              placeholder="Search activity…"
               className="w-full bg-slate-50 border border-slate-200/80 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-sky-500 transition-all"
             />
             {searchQuery && (
@@ -346,9 +346,9 @@ export default function RecentActivityLog({
       {displayedLogs.length === 0 ? (
         <div className="p-8 text-center bg-slate-50/70 rounded-2xl border border-dashed border-slate-200 space-y-2">
           <Clock className="w-8 h-8 text-slate-300 mx-auto" />
-          <p className="text-xs font-bold text-slate-600">No activity events found</p>
+          <p className="text-xs font-bold text-slate-600">No activity yet</p>
           <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-            {searchQuery ? `No logs matched your search "${searchQuery}".` : 'Activity events will automatically appear here as you issue invoices, receive payments, and manage clients.'}
+            {searchQuery ? `Nothing matches "${searchQuery}".` : 'Invoices, payments and client changes will show up here.'}
           </p>
         </div>
       ) : (
@@ -414,7 +414,7 @@ export default function RecentActivityLog({
       {filteredLogs.length > maxDisplay && (
         <div className="text-center pt-1 border-t border-slate-100">
           <p className="text-[10px] text-slate-400 font-medium">
-            Showing latest {displayedLogs.length} of {filteredLogs.length} verified audit records
+            Showing the latest {displayedLogs.length} of {filteredLogs.length}
           </p>
         </div>
       )}

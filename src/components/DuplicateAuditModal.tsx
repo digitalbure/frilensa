@@ -102,13 +102,13 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-zinc-900 tracking-tight">Ledger Duplicate Audit & Correction</h3>
+                <h3 className="text-sm font-bold text-zinc-900 tracking-tight">Duplicate entries</h3>
                 <span className="text-[10px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded-full border border-amber-300">
-                  {totalDuplicatesToRemove} {totalDuplicatesToRemove === 1 ? 'Duplicate' : 'Duplicates'} Found
+                  {totalDuplicatesToRemove} found
                 </span>
               </div>
               <p className="text-[11px] text-zinc-500">
-                Review and resolve duplicate bank entries to prevent double-counting numbers
+                Remove duplicate bank entries so nothing is counted twice
               </p>
             </div>
           </div>
@@ -128,16 +128,16 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                 <ShieldCheck className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-zinc-900">Your Ledger is Completely Clean</h4>
+                <h4 className="text-sm font-bold text-zinc-900">No duplicates</h4>
                 <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                  No duplicate entries detected across dates, amounts, or bank account balances.
+                  No entries share the same date, amount and account.
                 </p>
               </div>
               <button
                 onClick={onClose}
                 className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all cursor-pointer"
               >
-                Close Audit
+                Close
               </button>
             </div>
           ) : (
@@ -148,11 +148,11 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                   <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                   <div className="space-y-0.5">
                     <p className="font-bold">
-                      Found {clusters.length} duplicate {clusters.length === 1 ? 'group' : 'groups'} ({totalDuplicatesToRemove} redundant entries).
+                      Found {clusters.length} duplicate {clusters.length === 1 ? 'group' : 'groups'} ({totalDuplicatesToRemove} extra entries).
                     </p>
                     <p className="text-[11px] text-amber-700">
-                      Double-counted volume: <strong className="font-mono text-zinc-900">FJD ${totalExcessAmount.toFixed(2)}</strong>.
-                      The system automatically selected the best entry to keep in each group (prioritizing reconciled status and attachments).
+                      Counted twice: <strong className="font-mono text-zinc-900">FJD ${totalExcessAmount.toFixed(2)}</strong>.
+                      In each group we've picked one entry to keep, preferring reconciled entries and ones with attachments.
                     </p>
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                   className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Auto-Clean All ({totalDuplicatesToRemove})</span>
+                  <span>Remove all ({totalDuplicatesToRemove})</span>
                 </button>
               </div>
 
@@ -194,9 +194,9 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                           <button
                             onClick={() => handleResolveSingleCluster(cluster)}
                             className="text-[10px] text-amber-700 hover:text-amber-900 font-bold bg-amber-100/70 hover:bg-amber-200 px-2 py-1 rounded-lg transition-colors cursor-pointer"
-                            title="Resolve just this duplicate pair"
+                            title="Remove the duplicates in this group only"
                           >
-                            Resolve this
+                            Fix this group
                           </button>
                         </div>
                       </div>
@@ -232,7 +232,7 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                                       {item.description}
                                     </span>
                                     <span className="text-[9px] bg-zinc-100 text-zinc-600 px-1.5 py-0.5 rounded font-mono">
-                                      🏦 {item.bankName}
+                                      {item.bankName}
                                     </span>
                                     <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${
                                       item.status === 'reconciled'
@@ -256,7 +256,7 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
                                     ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                                     : 'bg-rose-100 text-rose-700 border border-rose-200'
                                 }`}>
-                                  {isKept ? 'Keep This' : 'Remove Copy'}
+                                  {isKept ? 'Keep' : 'Remove'}
                                 </span>
                               </div>
                             </div>
@@ -288,7 +288,7 @@ export const DuplicateAuditModal: React.FC<DuplicateAuditModalProps> = ({
               className="bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Check className="w-3.5 h-3.5" />
-              <span>Apply Deduplication ({totalDuplicatesToRemove} Removed)</span>
+              <span>Remove duplicates ({totalDuplicatesToRemove})</span>
             </button>
           )}
         </div>

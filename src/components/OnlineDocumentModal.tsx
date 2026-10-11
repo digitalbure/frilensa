@@ -68,7 +68,7 @@ export default function OnlineDocumentModal({
       try {
         await navigator.share({
           title: `${docTitle} #${document.documentNumber} - ${business.name}`,
-          text: `Bula! Please view your ${docTitle} #${document.documentNumber} from ${business.name} (${document.currency || userProfile.defaultCurrency || 'FJD'} $${document.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
+          text: `Bula! Here is your ${docTitle} #${document.documentNumber} from ${business.name} (${document.currency || userProfile.defaultCurrency || 'FJD'} $${document.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
           url: documentUrl
         });
         return;
@@ -118,7 +118,7 @@ export default function OnlineDocumentModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className="font-extrabold text-xs tracking-wide">Official Online Document Portal</span>
+                <span className="font-extrabold text-xs tracking-wide">Online document</span>
                 {isCancelled ? (
                   <span className="bg-rose-500/20 text-rose-300 font-mono text-[9px] font-bold px-1.5 py-0.5 rounded border border-rose-500/30 flex items-center gap-1">
                     <Ban className="w-2.5 h-2.5" />
@@ -131,7 +131,7 @@ export default function OnlineDocumentModal({
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-slate-400 font-mono">Hash: {verificationHash}</p>
+              <p className="text-[10px] text-slate-400 font-mono">Ref: {verificationHash}</p>
             </div>
           </div>
 
@@ -139,18 +139,18 @@ export default function OnlineDocumentModal({
             <button
               onClick={handleDownloadPdf}
               className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Download PDF Document"
+              title="Download PDF"
             >
               {downloadSuccess ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Download className="w-3.5 h-3.5 text-sky-400" />}
-              <span className="hidden sm:inline">{downloadSuccess ? 'Downloaded!' : 'Download PDF'}</span>
+              <span className="hidden sm:inline">{downloadSuccess ? 'Downloaded' : 'Download PDF'}</span>
             </button>
             <button
               onClick={handleShareNative}
               className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-              title="Share or Copy Public Link"
+              title="Share link"
             >
               {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Share2 className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{copiedLink ? 'Copied!' : 'Share'}</span>
+              <span className="hidden sm:inline">{copiedLink ? 'Copied' : 'Share'}</span>
             </button>
             <button
               onClick={handlePrint}
@@ -174,14 +174,14 @@ export default function OnlineDocumentModal({
             <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
             <div className="flex-1 text-xs">
               <h4 className="font-extrabold uppercase tracking-wide text-rose-800">
-                This Document Has Been Officially Cancelled / Voided
+                This document has been cancelled
               </h4>
               <p className="text-[11px] text-rose-700 mt-0.5">
-                <strong>Reason:</strong> {document.cancellationReason || 'Cancelled by account issuer'}
+                <strong>Reason:</strong> {document.cancellationReason || 'Cancelled by the issuer'}
                 {document.cancelledAt && ` on ${new Date(document.cancelledAt).toLocaleDateString()}`}.
                 {document.creditNoteNumber && (
                   <span className="block mt-1 font-mono font-bold text-rose-950">
-                    Linked Offset Credit Note: #{document.creditNoteNumber}
+                    Credit note: #{document.creditNoteNumber}
                   </span>
                 )}
               </p>
@@ -210,7 +210,7 @@ export default function OnlineDocumentModal({
                 {((business.logoType === 'image' || (!business.logoType && business.logoUrl)) && business.logoUrl) && (
                   <img 
                     src={business.logoUrl} 
-                    alt={business.name || 'Company Logo'} 
+                    alt={business.name || 'Logo'} 
                     className="max-h-12 max-w-[140px] w-auto object-contain rounded-lg shadow-2xs shrink-0 border border-slate-100 bg-white p-0.5"
                     referrerPolicy="no-referrer"
                     onError={(e) => {
@@ -249,10 +249,10 @@ export default function OnlineDocumentModal({
                 </div>
               </div>
 
-              <p className="text-slate-500 text-[11px] leading-relaxed">{business.address || 'Suva, Fiji Islands'}</p>
+              <p className="text-slate-500 text-[11px] leading-relaxed">{business.address || ''}</p>
               <div className="flex flex-wrap gap-x-3 text-[10.5px] text-slate-500">
                 <span>Email: <strong className="text-slate-700">{business.email || userProfile.email}</strong></span>
-                <span>Phone: <strong className="text-slate-700">{business.phone || userProfile.phone || '+679 991 2345'}</strong></span>
+                <span>Phone: <strong className="text-slate-700">{business.phone || userProfile.phone || 'Not provided'}</strong></span>
               </div>
               <div className="flex flex-wrap items-center gap-2 text-slate-800 text-[11px] pt-0.5">
                 <span>
@@ -291,9 +291,9 @@ export default function OnlineDocumentModal({
                    document.type.toUpperCase()}
                 </span>
                 <h3 className="font-mono font-black text-slate-900 text-sm mt-1">#{document.documentNumber}</h3>
-                <p className="text-[10.5px] text-slate-400 mt-0.5">Issue Date: <strong className="text-slate-700">{document.issueDate}</strong></p>
+                <p className="text-[10.5px] text-slate-400 mt-0.5">Issued: <strong className="text-slate-700">{document.issueDate}</strong></p>
                 {document.dueDate && (
-                  <p className="text-[10.5px] text-slate-400">Due Date: <strong className="text-rose-600">{document.dueDate}</strong></p>
+                  <p className="text-[10.5px] text-slate-400">Due: <strong className="text-rose-600">{document.dueDate}</strong></p>
                 )}
                 <div className="mt-1.5 flex justify-end">
                   {isCancelled ? (
@@ -331,7 +331,7 @@ export default function OnlineDocumentModal({
                   includeMargin={false}
                 />
                 <span className="text-[8px] font-mono font-bold text-slate-500 uppercase tracking-tighter">
-                  Scan to View & Pay
+                  Scan to view and pay
                 </span>
               </div>
             </div>
@@ -340,17 +340,17 @@ export default function OnlineDocumentModal({
           {/* Billed To Customer Information */}
           <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80">
             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-              Billed To Customer / Client:
+              Bill to
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <h4 className="font-extrabold text-slate-900 text-sm">{client?.name || 'Valued Client'}</h4>
+                <h4 className="font-extrabold text-slate-900 text-sm">{client?.name || 'Client'}</h4>
                 {(client?.contactPerson || client?.contactName) && (
                   <p className="text-slate-700 font-semibold text-[11px] mt-0.5">
                     Attn: <span>{client?.contactPerson || client?.contactName}</span>
                   </p>
                 )}
-                <p className="text-slate-500 text-[11px] mt-0.5">{client?.address || 'Fiji Islands'}</p>
+                <p className="text-slate-500 text-[11px] mt-0.5">{client?.address || ''}</p>
               </div>
               <div className="text-left sm:text-right space-y-0.5 text-[11px]">
                 {client?.email && <p className="text-slate-600">Email: <strong>{client.email}</strong></p>}
@@ -367,7 +367,7 @@ export default function OnlineDocumentModal({
           {/* Line Items Table */}
           <div className="space-y-2">
             <div className="border-b border-slate-300 pb-1.5 grid grid-cols-12 text-[10px] font-bold uppercase text-slate-400 tracking-wider">
-              <span className="col-span-6 sm:col-span-7">Description / Scope Deliverable</span>
+              <span className="col-span-6 sm:col-span-7">Description</span>
               <span className="col-span-2 text-center">Qty / Hrs</span>
               <span className="col-span-2 text-right">Rate</span>
               <span className="col-span-2 text-right">Amount ({document.currency || userProfile.defaultCurrency || 'FJD'})</span>
@@ -398,11 +398,11 @@ export default function OnlineDocumentModal({
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-4 border-t border-slate-200">
             {/* Notes & Advice */}
             <div className="max-w-xs space-y-1 text-[10.5px]">
-              <span className="font-bold text-slate-500 uppercase tracking-wider block text-[9.5px]">Notes & Payment Terms:</span>
-              <p className="text-slate-500 leading-relaxed">{document.notes || 'Vinaka vakalevu for your business partnership.'}</p>
+              <span className="font-bold text-slate-500 uppercase tracking-wider block text-[9.5px]">Notes and terms</span>
+              <p className="text-slate-500 leading-relaxed">{document.notes || 'Vinaka vakalevu for your business.'}</p>
               {isTaxExemptDoc && (
                 <span className="text-[9.5px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono inline-block mt-1">
-                  Tax-Exempt / 0% VAT Invoicing (Section 21 FRCS Exemption)
+                  Tax exempt: 0% VAT (Section 21 exemption)
                 </span>
               )}
             </div>
@@ -442,7 +442,7 @@ export default function OnlineDocumentModal({
               )}
 
               <div className="pt-2 border-t border-slate-300 flex justify-between items-baseline text-slate-900 font-black text-sm">
-                <span>TOTAL DUE:</span>
+                <span>Total due</span>
                 <span className="font-mono text-sky-700 text-base">
                   {document.currency || userProfile.defaultCurrency || 'FJD'} ${document.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
@@ -459,8 +459,8 @@ export default function OnlineDocumentModal({
                     <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="font-black text-sm text-white">Pay Online / Pacific Payment Options</h4>
-                    <p className="text-[10px] text-slate-400">Instant mobile wallet & direct local Fiji bank settlement</p>
+                    <h4 className="font-black text-sm text-white">How to pay</h4>
+                    <p className="text-[10px] text-slate-400">M-PAiSA, MyCash or bank transfer</p>
                   </div>
                 </div>
 
@@ -470,7 +470,7 @@ export default function OnlineDocumentModal({
                     className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-4 py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95 cursor-pointer"
                   >
                     <CheckCircle2 className="w-4 h-4" />
-                    Accept & Sign Quote
+                    Accept quote
                   </button>
                 )}
               </div>
@@ -499,7 +499,7 @@ export default function OnlineDocumentModal({
                     activePaymentTab === 'bank' ? 'bg-sky-600 text-white shadow-sm' : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  Fiji Bank Wire
+                  Bank transfer
                 </button>
               </div>
 
@@ -508,12 +508,12 @@ export default function OnlineDocumentModal({
                 <div className="space-y-3 pt-1">
                   <div className="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/50 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Registered M-Paisa Mobile Number</span>
-                      <span className="font-mono font-black text-sm text-white">{business.mPaisaId || userProfile.phone || '+679 991 2345'}</span>
+                      <span className="text-[10px] text-slate-400 block">M-PAiSA number</span>
+                      <span className="font-mono font-black text-sm text-white">{business.mPaisaId || userProfile.phone || 'Not provided'}</span>
                     </div>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(business.mPaisaId || userProfile.phone || '+679 991 2345');
+                        navigator.clipboard.writeText(business.mPaisaId || userProfile.phone || '');
                         setCopiedBankRef(true);
                         setTimeout(() => setCopiedBankRef(false), 2000);
                       }}
@@ -526,7 +526,7 @@ export default function OnlineDocumentModal({
 
                   <div className="space-y-2">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase">
-                      Confirm M-Paisa Transaction Reference / SMS Receipt Code
+                      M-PAiSA transaction reference
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -541,7 +541,7 @@ export default function OnlineDocumentModal({
                         className="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
                       >
                         <Check className="w-3.5 h-3.5" />
-                        Confirm Sent
+                        Confirm payment
                       </button>
                     </div>
                   </div>
@@ -553,12 +553,12 @@ export default function OnlineDocumentModal({
                 <div className="space-y-3 pt-1">
                   <div className="bg-slate-800/60 p-3 rounded-2xl border border-slate-700/50 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Registered Digicel MyCash Mobile ID</span>
-                      <span className="font-mono font-black text-sm text-white">{business.myCashId || userProfile.phone || '+679 701 2345'}</span>
+                      <span className="text-[10px] text-slate-400 block">MyCash number</span>
+                      <span className="font-mono font-black text-sm text-white">{business.myCashId || userProfile.phone || 'Not provided'}</span>
                     </div>
                     <button
                       onClick={() => {
-                        navigator.clipboard.writeText(business.myCashId || userProfile.phone || '+679 701 2345');
+                        navigator.clipboard.writeText(business.myCashId || userProfile.phone || '');
                         setCopiedBankRef(true);
                         setTimeout(() => setCopiedBankRef(false), 2000);
                       }}
@@ -582,7 +582,7 @@ export default function OnlineDocumentModal({
                       className="bg-red-700 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1 transition-all active:scale-95 cursor-pointer"
                     >
                       <Check className="w-3.5 h-3.5" />
-                      Confirm Sent
+                      Confirm payment
                     </button>
                   </div>
                 </div>
@@ -592,9 +592,9 @@ export default function OnlineDocumentModal({
               {activePaymentTab === 'bank' && (
                 <div className="space-y-3 pt-1">
                   <div className="bg-slate-800/60 p-3.5 rounded-2xl border border-slate-700/50 space-y-2">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Fiji Commercial Bank Account Details</span>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold block">Bank account</span>
                     <p className="font-mono text-xs text-slate-200 whitespace-pre-line leading-relaxed">
-                      {business.bankDetails || 'Bank: Westpac / ANZ Bank Fiji\nAccount Name: ' + (business.name || userProfile.name) + '\nBSB / Branch: 039-001\nAccount Number: 9801234567\nPayment Reference: ' + document.documentNumber}
+                      {business.bankDetails || 'Ask ' + (business.name || userProfile.name) + ' for bank details.\nPayment reference: ' + document.documentNumber}
                     </p>
                   </div>
                   <button
@@ -606,7 +606,7 @@ export default function OnlineDocumentModal({
                     className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     {copiedBankRef ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copiedBankRef ? 'Bank Details Copied!' : 'Copy Bank Account & Reference Code'}
+                    {copiedBankRef ? 'Copied' : 'Copy bank details'}
                   </button>
                 </div>
               )}
@@ -621,9 +621,9 @@ export default function OnlineDocumentModal({
                   <Paperclip className="w-4 h-4" />
                 </span>
                 <div>
-                  <h4 className="text-xs font-black text-slate-800">Verified Payment Records & Proofs</h4>
+                  <h4 className="text-xs font-black text-slate-800">Proof of payment</h4>
                   <p className="text-[10px] text-slate-500">
-                    {document.paymentAttachments.length} document{document.paymentAttachments.length > 1 ? 's' : ''} on record for this invoice
+                    {document.paymentAttachments.length} document{document.paymentAttachments.length > 1 ? 's' : ''} attached to this invoice
                   </p>
                 </div>
               </div>
@@ -676,8 +676,8 @@ export default function OnlineDocumentModal({
 
           {/* Footer Statutory Note */}
           <div className="text-center pt-4 border-t border-slate-200 text-[9.5px] text-slate-400 space-y-1">
-            <p>Generated via Frilensa • Fiji & Pacific Cloud Invoicing and Escrow Suite</p>
-            <p className="font-mono">Document Token: {document.id} • Verified Timestamp: {new Date().toISOString()}</p>
+            <p>Made with Frilensa</p>
+            <p className="font-mono">Document ID: {document.id}</p>
           </div>
 
         </div>
@@ -688,7 +688,7 @@ export default function OnlineDocumentModal({
             onClick={onClose}
             className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-5 py-2 rounded-xl text-xs transition-all cursor-pointer"
           >
-            Close Viewer
+            Close
           </button>
         </div>
       </motion.div>

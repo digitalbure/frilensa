@@ -247,7 +247,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
   // Handle Project Delete
   const handleDeleteProject = (projId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!window.confirm('Are you sure you want to delete this project? This will also remove all associated tasks.')) return;
+    if (!window.confirm('Delete this project and all its tasks?')) return;
     
     const updatedProjects = projects.filter(p => p.id !== projId);
     onUpdateData({
@@ -352,7 +352,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
   const handleDeleteScopeSection = (sectionId: string) => {
     if (!selectedProjectId) return;
-    if (!window.confirm('Are you sure you want to delete this scope section?')) return;
+    if (!window.confirm('Delete this scope section?')) return;
 
     const targetProj = projects.find(p => p.id === selectedProjectId);
     if (!targetProj) return;
@@ -385,7 +385,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     const sumCost = currentSections.reduce((sum, s) => sum + s.cost, 0);
 
     if (sumCost === 0) {
-      alert("No scope sections defined yet or cumulative cost is FJD $0.");
+      alert("Add scope sections with a cost first.");
       return;
     }
 
@@ -443,11 +443,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         });
         setAiScopePrompt('');
       } else {
-        alert("Bula AI could not compile scope presets for this topic. Let's try specifying a clearer prompt.");
+        alert("The AI couldn't suggest scope sections for this. Try a more specific description.");
       }
     } catch (e) {
       console.error("AI Scope Generation failed", e);
-      alert("Encountered connection errors generating scope with Bula AI.");
+      alert("Couldn't reach the AI to draft a scope. Check your connection and try again.");
     } finally {
       setIsAiGeneratingScope(false);
     }
@@ -457,7 +457,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     if (!selectedProject) return;
     const sections = selectedProject.scopeSections || [];
     if (sections.length === 0) {
-      alert("Please add at least one Scope of Work section before exporting to billing.");
+      alert("Add at least one scope section first.");
       return;
     }
 
@@ -512,7 +512,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       total,
       status: 'draft' as const,
       projectId: selectedProject.id,
-      notes: `Generated from Project Scope of Work: ${selectedProject.name}. All milestones align with project contracts.`
+      notes: `From the scope of work for ${selectedProject.name}.`
     };
 
     onUpdateData({
@@ -711,7 +711,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
   // Unlink a document from this project
   const handleUnlinkDocument = (docId: string) => {
-    if (!window.confirm('Are you sure you want to unlink this document from this project?')) return;
+    if (!window.confirm('Unlink this document from the project?')) return;
     const updatedDocs = (data.documents || []).map(d => {
       if (d.id === docId) {
         // Remove projectId
@@ -848,7 +848,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
   // Reset/Clear tracked hours for a task
   const handleResetTimer = (taskId: string) => {
     if (!selectedProjectId) return;
-    if (!window.confirm('Are you sure you want to clear tracked hours for this task?')) return;
+    if (!window.confirm('Clear tracked hours for this task?')) return;
 
     const updatedProjects = projects.map(p => {
       if (p.id === selectedProjectId) {
@@ -957,7 +957,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         vatAmount: parseFloat(vatAmount.toFixed(2)),
         total: parseFloat(total.toFixed(2)),
         status: 'draft' as const,
-        notes: `Invoice generated automatically from tracked project time.`,
+        notes: `Created from tracked project time.`,
         projectId: selectedProject.id
       };
 
@@ -1040,10 +1040,10 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
   const getStatusLabel = (status: Project['status']) => {
     switch (status) {
       case 'lead': return 'Lead';
-      case 'in_progress': return 'In Progress';
-      case 'pending_review': return 'Pending Review';
+      case 'in_progress': return 'In progress';
+      case 'pending_review': return 'Pending review';
       case 'completed': return 'Completed';
-      case 'on_hold': return 'On Hold';
+      case 'on_hold': return 'On hold';
       case 'not_started': return 'Planning';
       default: return 'Active';
     }
@@ -1096,14 +1096,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             onClick={() => setSelectedProjectId(null)}
             className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-white border border-slate-200/80 rounded-xl py-2 px-3.5 shadow-2xs transition-colors cursor-pointer"
           >
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Projects
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to projects
           </button>
 
           <button
             onClick={(e) => handleOpenEdit(selectedProject, e)}
             className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 bg-white border border-sky-200 rounded-xl py-2 px-3.5 shadow-2xs transition-all cursor-pointer"
           >
-            <Edit3 className="w-3.5 h-3.5" /> Edit Project
+            <Edit3 className="w-3.5 h-3.5" /> Edit project
           </button>
         </div>
 
@@ -1134,7 +1134,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             </div>
 
             <div className="space-y-1">
-              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Financials & Valuation</span>
+              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Value</span>
               <ProjectCurrencyDisplay 
                 amount={selectedProject.cost}
                 currency={resolveProjectCurrency(selectedProject, associatedClient, data.userProfile.defaultCurrency)}
@@ -1146,7 +1146,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
             {associatedClient && (
               <div className="space-y-1 col-span-2">
-                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Associated Client</span>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Client</span>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-700 font-medium">
                   <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                   <span>{associatedClient.name} ({associatedClient.email})</span>
@@ -1158,7 +1158,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
           {/* Progress Indicator */}
           <div className="pt-3 border-t border-slate-50 space-y-1.5">
             <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
-              <span className="uppercase tracking-wider">Milestone Progress</span>
+              <span className="uppercase tracking-wider">Progress</span>
               <span className="text-sky-600 font-mono">{progressPercent}%</span>
             </div>
             <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -1184,7 +1184,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 : 'text-slate-500 hover:text-slate-800 font-bold'
             }`}
           >
-            <LayoutGrid className="w-4 h-4" /> Scope Builder (SOW)
+            <LayoutGrid className="w-4 h-4" /> Scope
           </button>
           <button
             type="button"
@@ -1195,7 +1195,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 : 'text-slate-500 hover:text-slate-800 font-bold'
             }`}
           >
-            <ListTodo className="w-4 h-4" /> Tasks & Kanban ({totalTasks})
+            <ListTodo className="w-4 h-4" /> Tasks ({totalTasks})
           </button>
           <button
             type="button"
@@ -1206,7 +1206,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 : 'text-slate-500 hover:text-slate-800 font-bold'
             }`}
           >
-            <FileText className="w-4 h-4" /> Billings ({linkedDocuments.length})
+            <FileText className="w-4 h-4" /> Billing ({linkedDocuments.length})
           </button>
         </div>
 
@@ -1218,9 +1218,9 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <div className="flex justify-between items-center flex-wrap gap-2.5">
                 <div className="text-left">
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                    <Columns className="w-4 h-4 text-sky-600" /> SOW Sections & Deliverables
+                    <Columns className="w-4 h-4 text-sky-600" /> Scope of work
                   </h3>
-                  <p className="text-[10px] text-slate-400 mt-0.5">Define your project milestones and ensure cost alignment.</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">Break the project into sections, each with a cost and deliverables.</p>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -1228,7 +1228,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     className="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 font-bold py-1.5 px-3 rounded-xl text-[10px] transition-all flex items-center gap-1.5 shadow-sm active:scale-95 cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span>Add SOW Section</span>
+                    <span>Add section</span>
                   </button>
                 </div>
               </div>
@@ -1240,14 +1240,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <Briefcase className="w-4 h-4" />
                   </div>
                   <div className="text-left">
-                    <h4 className="text-xs font-black uppercase tracking-wider">Bula AI Scope Proposal Assistant</h4>
-                    <p className="text-[10px] text-slate-300">Generate section-by-section SOW proposals instantly with Gemini AI</p>
+                    <h4 className="text-xs font-black uppercase tracking-wider">Draft a scope with AI</h4>
+                    <p className="text-[10px] text-slate-300">Describe the work and AI suggests sections, costs and deliverables</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="e.g. 3 phases for a professional hotel website with M-Paisa integration..."
+                    placeholder="e.g. 3 phases for a hotel website with M-PAiSA payments"
                     value={aiScopePrompt}
                     onChange={(e) => setAiScopePrompt(e.target.value)}
                     disabled={isAiGeneratingScope}
@@ -1261,12 +1261,12 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     {isAiGeneratingScope ? (
                       <>
                         <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        <span>Generating...</span>
+                        <span>Drafting…</span>
                       </>
                     ) : (
                       <>
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Generate SOW</span>
+                        <span>Draft scope</span>
                       </>
                     )}
                   </button>
@@ -1294,14 +1294,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       <div>
                         <p className="text-[10.5px] font-bold">
                           {costDifference === 0 
-                            ? '✓ SOW costs perfectly aligned with project contract budget!' 
-                            : `⚠ Budget mismatch: SOW total is ${projCurrency} ${projCfg.symbol}${totalScopeCost.toLocaleString()} vs contract budget of ${projCurrency} ${projCfg.symbol}${selectedProject.cost.toLocaleString()}`
+                            ? '✓ Scope total matches the project budget' 
+                            : `⚠ Scope total is ${projCurrency} ${projCfg.symbol}${totalScopeCost.toLocaleString()}, but the project budget is ${projCurrency} ${projCfg.symbol}${selectedProject.cost.toLocaleString()}`
                           }
                         </p>
                         <p className="text-[9px] opacity-80 leading-normal">
                           {costDifference === 0 
-                            ? 'Your section-by-section costs are in sync with your financials.' 
-                            : `There is an unaligned variance of ${projCurrency} ${projCfg.symbol}${Math.abs(costDifference).toLocaleString()}.`
+                            ? 'Section costs add up to the budget.' 
+                            : `Difference: ${projCurrency} ${projCfg.symbol}${Math.abs(costDifference).toLocaleString()}.`
                           }
                         </p>
                       </div>
@@ -1313,7 +1313,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         onClick={handleAlignCostToScope}
                         className="bg-zinc-950 hover:bg-zinc-900 text-white font-extrabold text-[9px] uppercase px-2.5 py-1.5 rounded-lg tracking-wider transition-all cursor-pointer shadow-xs active:scale-95 shrink-0 animate-pulse"
                       >
-                        Align Project Budget
+                        Match budget to scope
                       </button>
                     )}
                   </div>
@@ -1326,10 +1326,10 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex justify-between items-center flex-wrap gap-3.5">
                 <div className="text-left">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1">
-                    <Percent className="w-3.5 h-3.5 text-amber-500" /> Billing Export Suite
+                    <Percent className="w-3.5 h-3.5 text-amber-500" /> Bill this scope
                   </h4>
                   <p className="text-[9.5px] text-slate-500 mt-0.5">
-                    Generate structured documentation (with standard {data.userProfile.defaultVatRate ?? 12.5}% VAT breakdown) based on these scope sections.
+                    Create a draft quote or invoice from these sections, with {data.userProfile.defaultVatRate ?? 12.5}% VAT.
                   </p>
                 </div>
                 <div className="flex gap-2.5">
@@ -1337,13 +1337,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     onClick={() => handleExportScopeToQuoteOrInvoice('quote')}
                     className="bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 font-bold py-1.5 px-3 rounded-xl text-[10px] transition-all flex items-center gap-1 cursor-pointer active:scale-95 font-semibold"
                   >
-                    <FileText className="w-3.5 h-3.5" /> Export to Quote
+                    <FileText className="w-3.5 h-3.5" /> Create quote
                   </button>
                   <button
                     onClick={() => handleExportScopeToQuoteOrInvoice('invoice')}
                     className="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-800 font-bold py-1.5 px-3 rounded-xl text-[10px] transition-all flex items-center gap-1 cursor-pointer active:scale-95 font-semibold"
                   >
-                    <DollarSign className="w-3.5 h-3.5" /> Export to Invoice
+                    <DollarSign className="w-3.5 h-3.5" /> Create invoice
                   </button>
                 </div>
               </div>
@@ -1356,16 +1356,16 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                   <Columns className="w-6 h-6 text-slate-400" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold text-slate-700 uppercase">No SOW Sections Configured</h4>
+                  <h4 className="text-xs font-bold text-slate-700 uppercase">No scope sections yet</h4>
                   <p className="text-[10px] text-slate-400 mt-0.5 max-w-[280px] mx-auto leading-normal">
-                    Add scope sections manually or leverage our <strong>Bula AI Scope Proposal Assistant</strong> to create customized milestones instantly.
+                    Add a section yourself, or describe the work above and let AI draft one.
                   </p>
                 </div>
                 <button
                   onClick={handleOpenAddScope}
                   className="bg-sky-500 hover:bg-sky-400 text-white font-bold py-2 px-4 rounded-xl text-xs transition-all cursor-pointer shadow-sm active:scale-95"
                 >
-                  + Create SOW Section
+                  + Add section
                 </button>
               </div>
             ) : (
@@ -1425,7 +1425,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       {/* Deliverables Checklist */}
                       {section.deliverables && section.deliverables.length > 0 && (
                         <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-1.5">
-                          <span className="text-[8px] font-extrabold uppercase text-slate-400 tracking-wider block">Scope Deliverables checklist</span>
+                          <span className="text-[8px] font-extrabold uppercase text-slate-400 tracking-wider block">Deliverables</span>
                           <div className="space-y-1">
                             {section.deliverables.map((item, bidx) => (
                               <div key={bidx} className="flex items-start gap-2 text-[9.5px] text-slate-600 leading-tight">
@@ -1450,7 +1450,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
           <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-3 border-b border-slate-50 pb-3">
             <div className="flex flex-wrap items-center gap-3">
               <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 mr-1">
-                <ListTodo className="w-4 h-4 text-sky-600" /> Project Tasks
+                <ListTodo className="w-4 h-4 text-sky-600" /> Tasks
               </h3>
               
               <div className="flex items-center gap-2 flex-wrap">
@@ -1502,7 +1502,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
-                    <ArrowUpDown className="w-2.5 h-2.5" /> Urgency
+                    <ArrowUpDown className="w-2.5 h-2.5" /> Priority
                   </button>
                 </div>
               </div>
@@ -1512,16 +1512,16 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               onClick={() => setShowAddTaskForm(!showAddTaskForm)}
               className="text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-lg py-1 px-2.5 transition-all flex items-center gap-1 shadow-sm self-end lg:self-auto"
             >
-              {showAddTaskForm ? 'Cancel' : 'Add Task'} <Plus className="w-3 h-3" />
+              {showAddTaskForm ? 'Cancel' : 'Add task'} <Plus className="w-3 h-3" />
             </button>
           </div>
 
           {showAddTaskForm && (
             <form onSubmit={handleAddTaskSubmit} className="bg-slate-50 p-3 rounded-xl border border-slate-100 space-y-3 animate-fade-in">
-              <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">Create New Task</h4>
+              <h4 className="text-[10px] font-bold text-slate-600 uppercase tracking-wider">New task</h4>
               
               <div>
-                <label className="block text-[8px] font-bold text-slate-400 uppercase">Task Title *</label>
+                <label className="block text-[8px] font-bold text-slate-400 uppercase">Title *</label>
                 <input
                   type="text"
                   required
@@ -1533,9 +1533,9 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               </div>
 
               <div>
-                <label className="block text-[8px] font-bold text-slate-400 uppercase">Brief Description</label>
+                <label className="block text-[8px] font-bold text-slate-400 uppercase">Description</label>
                 <textarea
-                  placeholder="Details or deliverables for this task..."
+                  placeholder="Details or deliverables for this task"
                   value={taskDesc}
                   onChange={(e) => setTaskDesc(e.target.value)}
                   rows={2}
@@ -1545,14 +1545,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <DateInput
-                  label="Due Date"
+                  label="Due date"
                   value={taskDueDate}
                   onChange={setTaskDueDate}
-                  placeholder="Set due date..."
+                  placeholder="Set due date"
                 />
 
                 <div>
-                  <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Priority / Urgency</label>
+                  <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Priority</label>
                   <div className="flex items-center gap-1.5 mt-1">
                     {(['low', 'medium', 'high'] as const).map((prio) => {
                       let btnStyle = 'border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700';
@@ -1581,7 +1581,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 type="submit"
                 className="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold py-1.5 rounded-lg transition-colors shadow-sm"
               >
-                Add Project Task
+                Add task
               </button>
             </form>
           )}
@@ -1589,8 +1589,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
           {(!selectedProject.tasks || selectedProject.tasks.length === 0) ? (
             <div className="text-center py-6 px-4 bg-slate-50 rounded-xl border border-dashed border-slate-200">
               <CheckSquare className="w-6 h-6 text-slate-300 mx-auto mb-1.5" />
-              <p className="text-[11px] text-slate-500 font-medium">No tasks added to this project yet.</p>
-              <p className="text-[9px] text-slate-400 mt-0.5">Define milestones and task items using the button above.</p>
+              <p className="text-[11px] text-slate-500 font-medium">No tasks yet.</p>
+              <p className="text-[9px] text-slate-400 mt-0.5">Use Add task to create the first one.</p>
             </div>
           ) : taskViewMode === 'kanban' ? (
             /* Kanban Board View */
@@ -1607,12 +1607,12 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                   });
                 }
 
-                let colTitle = 'To Do';
+                let colTitle = 'To do';
                 let headerBg = 'bg-slate-100 text-slate-700';
                 let dotColor = 'bg-slate-400';
 
                 if (status === 'in_progress') {
-                  colTitle = 'In Progress';
+                  colTitle = 'In progress';
                   headerBg = 'bg-sky-50 text-sky-700';
                   dotColor = 'bg-sky-500';
                 } else if (status === 'done') {
@@ -1652,8 +1652,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <div className="flex-1 space-y-2.5 overflow-y-auto max-h-[450px] pr-0.5">
                       {columnTasks.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center py-10 text-center border border-dashed border-slate-150 rounded-xl bg-white/40">
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Empty Column</p>
-                          <p className="text-[8px] text-slate-400 mt-0.5 max-w-[120px] mx-auto leading-normal">Drag tasks here or use controls.</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">No tasks</p>
+                          <p className="text-[8px] text-slate-400 mt-0.5 max-w-[120px] mx-auto leading-normal">Drag a task here.</p>
                         </div>
                       ) : (
                         columnTasks.map((task) => (
@@ -1715,7 +1715,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); handleStopTimer(task.id); }}
                                     className="w-5 h-5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 rounded flex items-center justify-center transition-all animate-pulse"
-                                    title="Stop Timer"
+                                    title="Stop timer"
                                   >
                                     <div className="w-1.5 h-1.5 bg-rose-600 rounded-xs" />
                                   </button>
@@ -1724,7 +1724,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                                     type="button"
                                     onClick={(e) => { e.stopPropagation(); handleStartTimer(task.id); }}
                                     className="w-5 h-5 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded flex items-center justify-center transition-all active:scale-95"
-                                    title="Start Timer"
+                                    title="Start timer"
                                   >
                                     <Play className="w-1.5 h-1.5 fill-emerald-600" />
                                   </button>
@@ -1845,14 +1845,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       <div 
                         onClick={() => setDetailTask(task)}
                         className="flex-1 min-w-0 cursor-pointer hover:bg-slate-200/50 p-1.5 rounded-lg transition-all"
-                        title="Click to view task details & references"
+                        title="View task details"
                       >
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className={`text-xs font-bold text-slate-800 font-sans ${task.status === 'done' ? 'line-through text-slate-400' : ''}`}>
                             {task.title}
                           </span>
                           <span className={`text-[8px] font-bold uppercase px-1 rounded ${getTaskStatusBadge(task.status)}`}>
-                            {task.status === 'todo' ? 'To Do' : task.status === 'in_progress' ? 'In Progress' : 'Done'}
+                            {task.status === 'todo' ? 'To do' : task.status === 'in_progress' ? 'In progress' : 'Done'}
                           </span>
                           {task.priority && (
                             <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
@@ -1898,7 +1898,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleStopTimer(task.id); }}
                           className="w-6 h-6 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-100 rounded-lg flex items-center justify-center transition-all animate-pulse animate-duration-1000"
-                          title="Stop Timer"
+                          title="Stop timer"
                         >
                           <div className="w-2 h-2 bg-rose-600 rounded-xs" />
                         </button>
@@ -1907,7 +1907,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                           type="button"
                           onClick={(e) => { e.stopPropagation(); handleStartTimer(task.id); }}
                           className="w-6 h-6 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 border border-emerald-100 rounded-lg flex items-center justify-center transition-all active:scale-95"
-                          title="Start Timer"
+                          title="Start timer"
                         >
                           <Play className="w-2 h-2 fill-emerald-600" />
                         </button>
@@ -1924,7 +1924,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                             {(task.trackedHours || 0) > 0 ? `${(task.trackedHours || 0).toFixed(2)} hrs` : '0.00 hrs'}
                           </span>
                         )}
-                        <span className="text-[7.5px] font-extrabold uppercase text-slate-400 leading-none">Tracked Hours</span>
+                        <span className="text-[7.5px] font-extrabold uppercase text-slate-400 leading-none">Tracked</span>
                       </div>
 
                       {/* Reset button if there are tracked hours */}
@@ -1947,7 +1947,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         onClick={(e) => { e.stopPropagation(); handleOpenBillingModal(task); }}
                         className="bg-sky-50 hover:bg-sky-100 border border-sky-100/60 text-sky-800 font-extrabold text-[8.5px] uppercase tracking-wider py-1 px-2.5 rounded-xl flex items-center gap-1 transition-all active:scale-95 shadow-sm"
                       >
-                        <DollarSign className="w-3 h-3 animate-pulse" /> Add to Invoice
+                        <DollarSign className="w-3 h-3 animate-pulse" /> Add to invoice
                       </button>
                     ) : null}
                   </div>
@@ -1964,16 +1964,16 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm space-y-4 animate-fade-in">
           <div className="flex justify-between items-center">
             <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
-              <DollarSign className="w-4 h-4 text-sky-600" /> Linked Billings & Quotes
+              <DollarSign className="w-4 h-4 text-sky-600" /> Quotes and invoices
             </h3>
           </div>
 
           {/* List of Linked Docs */}
           {linkedDocuments.length === 0 ? (
             <div className="text-center py-6 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200 text-slate-500">
-              <p className="text-[11px] font-semibold text-slate-600">No billing documents linked yet.</p>
+              <p className="text-[11px] font-semibold text-slate-600">No quotes or invoices linked yet.</p>
               <p className="text-[9px] text-slate-400 mt-0.5 max-w-[250px] mx-auto leading-normal">
-                Attach existing invoices/quotes, or generate pre-linked ones below.
+                Create one below, or link one you already have.
               </p>
             </div>
           ) : (
@@ -2024,7 +2024,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <button
                       type="button"
                       onClick={() => handleUnlinkDocument(doc.id)}
-                      title="Unlink Document"
+                      title="Unlink document"
                       className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors shrink-0"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -2044,14 +2044,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 onClick={() => onNavigateToTab?.('billing', `NEW_QUOTE_FOR_PROJECT_${selectedProject.id}`)}
                 className="flex-1 bg-amber-50 hover:bg-amber-100 border border-amber-100/60 text-amber-800 font-bold py-1.5 px-2.5 rounded-xl text-[10px] text-center transition-all flex items-center justify-center gap-1 active:scale-95"
               >
-                + New Quote
+                + New quote
               </button>
               <button
                 type="button"
                 onClick={() => onNavigateToTab?.('billing', `NEW_INVOICE_FOR_PROJECT_${selectedProject.id}`)}
                 className="flex-1 bg-sky-50 hover:bg-sky-100 border border-sky-100/60 text-sky-800 font-bold py-1.5 px-2.5 rounded-xl text-[10px] text-center transition-all flex items-center justify-center gap-1 active:scale-95"
               >
-                + New Invoice
+                + New invoice
               </button>
             </div>
 
@@ -2068,14 +2068,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               return (
                 <div className="space-y-1">
                   <label className="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wide">
-                    Link Existing Quote or Invoice
+                    Link a quote or invoice
                   </label>
                   <select
                     value=""
                     onChange={(e) => handleLinkExistingDocument(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-150 rounded-xl py-1.5 px-2.5 text-[10px] text-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500"
                   >
-                    <option value="" disabled>-- Choose Unlinked Bill/Quote --</option>
+                    <option value="" disabled>Choose a document</option>
                     {linkableDocs.map(doc => {
                       const clientName = data.clients.find(c => c.id === doc.clientId)?.name || 'Client';
                       return (
@@ -2098,7 +2098,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             <div className="bg-white w-full max-w-md rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
               <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
                 <h3 className="text-xs font-black uppercase tracking-wider">
-                  {editingScopeId ? 'Edit Scope Section' : 'Add SOW Milestone Section'}
+                  {editingScopeId ? 'Edit section' : 'Add section'}
                 </h3>
                 <button 
                   onClick={() => setShowAddScopeModal(false)}
@@ -2111,11 +2111,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <form onSubmit={handleSaveScopeSection} className="p-5 space-y-4 text-left">
                 {/* Scope Title */}
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Milestone / Section Title</label>
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Section title</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Phase 1: Interactive Bula Frontend Portal"
+                    placeholder="e.g. Phase 1: Website design"
                     value={scopeTitle}
                     onChange={(e) => setScopeTitle(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 focus:bg-white rounded-xl py-2 px-3 text-xs text-slate-800 transition-all font-semibold focus:outline-none"
@@ -2124,10 +2124,10 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                 {/* Scope Description */}
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Section Description</label>
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Description</label>
                   <textarea
                     rows={3}
-                    placeholder="Provide client-friendly explanations outlining work items..."
+                    placeholder="Describe the work in terms the client will understand"
                     value={scopeDesc}
                     onChange={(e) => setScopeDesc(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 focus:border-slate-400 focus:bg-white rounded-xl py-2 px-3 text-xs text-slate-800 transition-all focus:outline-none"
@@ -2136,7 +2136,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                 {/* Section Cost (FJD) */}
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Section Budget / Cost (FJD)</label>
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Cost (FJD)</label>
                   <div className="relative">
                     <span className="absolute left-3.5 top-2 text-xs text-slate-400 font-bold">$</span>
                     <input
@@ -2153,13 +2153,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                 {/* Scope Deliverables Bullet Items */}
                 <div className="space-y-2 pt-1">
-                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">SOW Itemized Deliverables</label>
+                  <label className="text-[8px] font-black uppercase text-slate-400 tracking-wider block">Deliverables</label>
                   
                   {/* Input with Plus */}
                   <div className="flex gap-2">
                     <input
                       type="text"
-                      placeholder="e.g. Map out FRCS TIN reporting structures"
+                      placeholder="e.g. Homepage and contact page"
                       value={newDeliverable}
                       onChange={(e) => setNewDeliverable(e.target.value)}
                       onKeyDown={(e) => {
@@ -2214,7 +2214,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     type="submit"
                     className="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-bold py-2 rounded-xl text-xs text-center transition-all cursor-pointer active:scale-95"
                   >
-                    {editingScopeId ? 'Update Section' : 'Save Section'}
+                    {editingScopeId ? 'Save changes' : 'Save section'}
                   </button>
                 </div>
               </form>
@@ -2228,7 +2228,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             <div className="bg-white rounded-2xl border border-slate-100 shadow-xl max-w-sm w-full p-4 space-y-4 animate-fade-in text-slate-700">
               <div className="flex justify-between items-start">
                 <div>
-                  <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block">Bill Tracked Hours</span>
+                  <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-widest block">Bill tracked hours</span>
                   <h4 className="text-xs font-bold text-slate-800 mt-1 leading-tight">{billingTask.title}</h4>
                 </div>
                 <button
@@ -2244,11 +2244,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 {/* Statistics panel */}
                 <div className="grid grid-cols-2 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                   <div>
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide">Hours Tracked</span>
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide">Hours tracked</span>
                     <p className="text-sm font-black text-slate-800 font-mono mt-0.5">{(billingTask.trackedHours || 0).toFixed(2)} hrs</p>
                   </div>
                   <div>
-                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide font-sans">Est. Subtotal</span>
+                    <span className="text-[8px] font-extrabold text-slate-400 uppercase tracking-wide font-sans">Subtotal</span>
                     <p className="text-sm font-black text-emerald-600 font-mono mt-0.5">
                       {data.userProfile.defaultCurrency} {((billingTask.trackedHours || 0) * billingRate).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </p>
@@ -2258,7 +2258,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 {/* Billing Rate */}
                 <div className="space-y-1">
                   <label className="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    Hourly Rate ({data.userProfile.defaultCurrency})
+                    Hourly rate ({data.userProfile.defaultCurrency})
                   </label>
                   <input
                     type="number"
@@ -2274,14 +2274,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 {/* Target Invoice */}
                 <div className="space-y-1">
                   <label className="block text-[8px] font-extrabold text-slate-400 uppercase tracking-wider">
-                    Select Draft Invoice
+                    Invoice
                   </label>
                   <select
                     value={selectedInvoiceId}
                     onChange={(e) => setSelectedInvoiceId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs focus:outline-none focus:border-slate-400 focus:bg-white transition-all text-slate-700 font-medium"
                   >
-                    <option value="new font-bold">+ Create a New Draft Invoice</option>
+                    <option value="new font-bold">+ New draft invoice</option>
                     {(data.documents || [])
                       .filter(d => 
                         d.type === 'invoice' && 
@@ -2291,7 +2291,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       )
                       .map(invoice => (
                         <option key={invoice.id} value={invoice.id}>
-                          Append to Draft #{invoice.documentNumber} ({data.userProfile.defaultCurrency} {invoice.total.toLocaleString()})
+                          Add to draft #{invoice.documentNumber} ({data.userProfile.defaultCurrency} {invoice.total.toLocaleString()})
                         </option>
                       ))
                     }
@@ -2310,7 +2310,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     type="submit"
                     className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2 rounded-xl text-xs text-center transition-all shadow-md active:scale-95"
                   >
-                    Add to Invoice
+                    Add to invoice
                   </button>
                 </div>
               </form>
@@ -2327,8 +2327,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       {/* Header section with Active Venture context & View Switcher */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-100 shadow-xs">
         <div>
-          <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest block">Venture Projects</span>
-          <h2 className="text-sm md:text-base font-bold text-slate-800 mt-0.5">{activeBiz ? activeBiz.name : 'All Ventures'}</h2>
+          <span className="text-[10px] font-bold text-sky-600 uppercase tracking-widest block">Projects</span>
+          <h2 className="text-sm md:text-base font-bold text-slate-800 mt-0.5">{activeBiz ? activeBiz.name : 'All businesses'}</h2>
         </div>
 
         <div className="flex items-center gap-2">
@@ -2344,7 +2344,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               }`}
             >
               <Kanban className="w-3.5 h-3.5 text-sky-600" />
-              <span>Kanban Board</span>
+              <span>Board</span>
             </button>
             <button
               type="button"
@@ -2356,7 +2356,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               }`}
             >
               <LayoutGrid className="w-3.5 h-3.5 text-slate-600" />
-              <span>Grid / List</span>
+              <span>Grid</span>
             </button>
           </div>
 
@@ -2364,7 +2364,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             onClick={handleOpenAdd}
             className="flex items-center gap-1.5 text-xs font-bold bg-sky-600 hover:bg-sky-700 text-white py-2 px-3.5 rounded-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
           >
-            <Plus className="w-3.5 h-3.5" /> New Project
+            <Plus className="w-3.5 h-3.5" /> New project
           </button>
         </div>
       </div>
@@ -2383,14 +2383,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
-                Pipeline Stages
+                Stages
               </h3>
               <span className="text-[10px] text-slate-400">
-                (Drag cards across columns to advance workflow)
+                (Drag a card to move it to another stage)
               </span>
             </div>
             <span className="text-[10px] font-bold text-slate-400 font-mono">
-              {filteredProjects.length} total projects
+              {filteredProjects.length} projects
             </span>
           </div>
 
@@ -2417,7 +2417,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               </span>
             </div>
             <div className="bg-sky-50/50 border border-sky-100 p-2.5 rounded-2xl shadow-2xs">
-              <span className="text-[8.5px] font-bold text-sky-600 uppercase block tracking-wider">In Progress</span>
+              <span className="text-[8.5px] font-bold text-sky-600 uppercase block tracking-wider">In progress</span>
               <span className="text-xs font-bold text-sky-800 font-mono mt-0.5 block">
                 {filteredProjects.filter(p => p.status === 'in_progress').length}
               </span>
@@ -2442,7 +2442,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <Search className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search projects..."
+                placeholder="Search projects"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-white border border-slate-200/80 rounded-xl py-2.5 pl-10 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500 shadow-2xs text-slate-800 placeholder-slate-400 font-sans"
@@ -2461,7 +2461,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       : 'bg-white text-slate-500 border-slate-200/60 hover:bg-slate-50'
                   }`}
                 >
-                  {status === 'all' ? 'All' : status === 'lead' ? 'Leads' : status === 'in_progress' ? 'Active' : status === 'pending_review' ? 'Review' : status === 'completed' ? 'Done' : 'On Hold'}
+                  {status === 'all' ? 'All' : status === 'lead' ? 'Leads' : status === 'in_progress' ? 'Active' : status === 'pending_review' ? 'Review' : status === 'completed' ? 'Done' : 'On hold'}
                 </button>
               ))}
             </div>
@@ -2473,7 +2473,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
               <Briefcase className="w-8 h-8 text-slate-300 mx-auto mb-2" />
               <p className="text-xs font-semibold text-slate-600">No projects found</p>
               <p className="text-[10px] text-slate-400 mt-0.5 max-w-[240px] mx-auto leading-relaxed">
-                Create your first project to organize timeline deliverables and task milestones for this business venture.
+                Create a project to track its tasks, deadlines and billing.
               </p>
             </div>
           ) : (
@@ -2526,7 +2526,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     </div>
 
                     <p className="text-[10px] text-slate-400 leading-relaxed line-clamp-2">
-                      {proj.description || 'No project description added.'}
+                      {proj.description || 'No description'}
                     </p>
 
                     {/* Progress bar and date/cost */}
@@ -2573,7 +2573,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 <div className="flex items-center gap-2">
                   <Wand2 className="w-4 h-4 text-sky-400" />
                   <h3 className="text-xs font-bold uppercase tracking-wider">
-                    {editingProject ? 'Edit Project Properties' : 'Create New Project / SOW'}
+                    {editingProject ? 'Edit project' : 'New project'}
                   </h3>
                 </div>
                 <button 
@@ -2590,8 +2590,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 {!editingProject && (
                   <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2">
                     <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-                      <span>1-Click Industry Workflow Template</span>
-                      <span className="text-[9px] text-sky-600 font-normal">Auto-fills SOW & tasks</span>
+                      <span>Start from a template</span>
+                      <span className="text-[9px] text-sky-600 font-normal">Fills in scope and tasks</span>
                     </label>
 
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
@@ -2606,8 +2606,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                             : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
                         }`}
                       >
-                        <div className="text-[10.5px] font-bold">Custom Blank</div>
-                        <div className="text-[9px] text-slate-400 font-normal">Start fresh</div>
+                        <div className="text-[10.5px] font-bold">Blank</div>
+                        <div className="text-[9px] text-slate-400 font-normal">Start from scratch</div>
                       </button>
 
                       {INDUSTRY_PRESETS.slice(0, 5).map((preset) => (

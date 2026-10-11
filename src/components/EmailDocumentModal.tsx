@@ -32,7 +32,7 @@ export default function EmailDocumentModal({
   if (!isOpen || !document) return null;
 
   const docTypeLabel = document.type === 'quote' ? 'Quotation' :
-                       document.type === 'receipt' ? 'Official Receipt' :
+                       document.type === 'receipt' ? 'Receipt' :
                        document.type === 'credit_note' ? 'Credit Note' : 'Tax Invoice';
 
   const defaultRecipient = client?.email || '';
@@ -44,10 +44,10 @@ export default function EmailDocumentModal({
   );
   const [customMessage, setCustomMessage] = useState(
     document.type === 'receipt'
-      ? `Bula! Vinaka vaka levu for your payment. Please find your official receipt attached.`
+      ? `Vinaka vaka levu for your payment. Your receipt is attached.`
       : document.type === 'quote'
-      ? `Bula! Please find your requested quotation attached. Feel free to review and accept online.`
-      : `Bula! Please find your tax invoice attached. Online payment instructions (including M-PAiSA and Bank Transfer) are provided inside.`
+      ? `Your quotation is attached. You can review and accept it online.`
+      : `Your tax invoice is attached. It includes payment options, including M-PAiSA and bank transfer.`
   );
 
   const [activeTab, setActiveTab] = useState<'compose' | 'preview' | 'history'>('compose');
@@ -71,7 +71,7 @@ export default function EmailDocumentModal({
 
   const handleSend = async () => {
     if (!recipientEmail || !recipientEmail.includes('@')) {
-      setErrorMessage('Please provide a valid client email address.');
+      setErrorMessage('Enter a valid email address for the client.');
       return;
     }
 
@@ -98,7 +98,7 @@ export default function EmailDocumentModal({
       }
     } catch (err: any) {
       console.error('Email sending error:', err);
-      setErrorMessage(err.message || 'Failed to dispatch email. Please check internet connection.');
+      setErrorMessage(err.message || 'The email could not be sent. Check your connection and try again.');
     } finally {
       setIsSending(false);
     }
@@ -136,7 +136,7 @@ export default function EmailDocumentModal({
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Direct delivery to {client?.name || 'Client'} &bull; {business.name}
+                To {client?.name || 'client'} &bull; {business.name}
               </p>
             </div>
           </div>
@@ -162,7 +162,7 @@ export default function EmailDocumentModal({
             }`}
           >
             <Send className="w-3.5 h-3.5" />
-            Compose Message
+            Message
           </button>
           <button
             onClick={() => setActiveTab('preview')}
@@ -173,7 +173,7 @@ export default function EmailDocumentModal({
             }`}
           >
             <Eye className="w-3.5 h-3.5" />
-            Branded Email Preview
+            Preview
           </button>
           {emailHistory.length > 0 && (
             <button
@@ -185,7 +185,7 @@ export default function EmailDocumentModal({
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              Send History ({emailHistory.length})
+              History ({emailHistory.length})
             </button>
           )}
         </div>
@@ -196,9 +196,9 @@ export default function EmailDocumentModal({
             <ShieldCheck className="w-4 h-4 text-sky-600" />
             <span>
               {config?.sendgridConfigured ? (
-                <>Delivered via <strong>Twilio SendGrid</strong> with automatic PDF attachment</>
+                <>Sent by email from Frilensa</>
               ) : (
-                <>Delivered via <strong>Firebase Trigger Email</strong> &amp; SendGrid Pipeline</>
+                <>Sent by email from Frilensa</>
               )}
             </span>
           </div>
@@ -206,7 +206,7 @@ export default function EmailDocumentModal({
           <div className="flex items-center gap-2">
             <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Operational
+              Ready
             </span>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function EmailDocumentModal({
                 <CheckCircle2 className="w-10 h-10" />
               </div>
               <div>
-                <h3 className="text-lg font-black text-slate-900">Email Successfully Dispatched!</h3>
+                <h3 className="text-lg font-black text-slate-900">Email sent</h3>
                 <p className="text-xs text-slate-600 mt-1">
                   {docTypeLabel} #{document.documentNumber} was sent to <strong>{sendResult.recipient}</strong>.
                 </p>
@@ -236,7 +236,7 @@ export default function EmailDocumentModal({
                   onClick={() => setSendResult(null)}
                   className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all cursor-pointer"
                 >
-                  Send Another Copy
+                  Send again
                 </button>
                 <button
                   onClick={onClose}
@@ -259,7 +259,7 @@ export default function EmailDocumentModal({
               {/* Recipient Input */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Recipient Email <span className="text-rose-500">*</span>
+                  Recipient email <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
@@ -282,7 +282,7 @@ export default function EmailDocumentModal({
               {/* Subject Line */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Subject Line
+                  Subject
                 </label>
                 <input
                   type="text"
@@ -295,14 +295,14 @@ export default function EmailDocumentModal({
               {/* Message */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Personalized Message / Note to Client
+                  Message
                 </label>
                 <textarea
                   value={customMessage}
                   onChange={(e) => setCustomMessage(e.target.value)}
                   rows={4}
                   className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-hidden font-sans resize-none"
-                  placeholder="Include any personalized greeting or special payment notes..."
+                  placeholder="Add a note or payment instructions"
                 />
               </div>
 
@@ -317,7 +317,7 @@ export default function EmailDocumentModal({
                   />
                   <span className="flex items-center gap-1.5">
                     <Paperclip className="w-3.5 h-3.5 text-slate-500" />
-                    Attach high-resolution official PDF document
+                    Attach PDF
                   </span>
                 </label>
 
@@ -329,7 +329,7 @@ export default function EmailDocumentModal({
                     className="w-4 h-4 text-sky-600 rounded border-slate-300 focus:ring-sky-500"
                   />
                   <span>
-                    Send a CC copy to me ({consultantEmail || userProfile.email || 'my email'})
+                    Send me a copy ({consultantEmail || userProfile.email || 'my email'})
                   </span>
                 </label>
               </div>
@@ -338,7 +338,7 @@ export default function EmailDocumentModal({
               <div className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between text-xs">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Document Attached
+                    Document
                   </span>
                   <span className="font-extrabold text-slate-800">
                     {docTypeLabel} #{document.documentNumber}
@@ -349,7 +349,7 @@ export default function EmailDocumentModal({
                 </div>
                 <div className="text-right">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
-                    Total Due
+                    Total due
                   </span>
                   <span className="font-mono font-black text-sky-700 text-sm">
                     {document.currency || userProfile.defaultCurrency || 'FJD'} ${document.total.toFixed(2)}
@@ -361,7 +361,7 @@ export default function EmailDocumentModal({
             /* Live Email Preview */
             <div className="space-y-3">
               <p className="text-xs text-slate-500">
-                This is a live rendered preview of the responsive HTML email template your client will receive in their email inbox:
+                This is how the email will look to your client.
               </p>
               <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-slate-100 min-h-[420px]">
                 <iframe
@@ -387,11 +387,11 @@ export default function EmailDocumentModal({
   <div class="box">
     <div class="banner">
       <h2 style="margin:0 0 4px 0; font-size: 18px;">${business.name}</h2>
-      <p style="margin:0; font-size: 12px; opacity: 0.9;">${business.tagline || 'Pacific Freelance & Business Consulting'}</p>
+      <p style="margin:0; font-size: 12px; opacity: 0.9;">${business.tagline || ''}</p>
       <div class="pill">${docTypeLabel.toUpperCase()} #${document.documentNumber}</div>
     </div>
     <div class="content">
-      <p style="font-size: 14px; font-weight: bold; margin-top: 0;">Bula ${client?.name || 'Valued Client'},</p>
+      <p style="font-size: 14px; font-weight: bold; margin-top: 0;">Bula${client?.name ? ` ${client.name}` : ''},</p>
       <p style="font-size: 13px; line-height: 1.5; color: #334155;">
         ${customMessage ? customMessage.replace(/\n/g, '<br/>') : 'Please find your document attached.'}
       </p>
@@ -408,21 +408,21 @@ export default function EmailDocumentModal({
             </tr>
           `).join('')}
           <tr style="font-size: 14px; font-weight: bold; border-top: 2px solid #cbd5e1;">
-            <td colspan="2">TOTAL AMOUNT:</td>
+            <td colspan="2">Total</td>
             <td style="text-align:right; color:${business.colorTheme || '#0284c7'}">${document.currency || 'FJD'} $${document.total.toFixed(2)}</td>
           </tr>
         </tbody>
       </table>
-      <div class="btn">&#128279; View & Pay Online via Secure Client Portal</div>
+      <div class="btn">View and pay online</div>
       ${business.bankDetails ? `
         <div style="background:#f1f5f9; padding:12px; border-radius:8px; font-size:11px; margin-top:14px;">
-          <strong>Banking Instructions:</strong><br/>
+          <strong>Bank details:</strong><br/>
           <span style="font-family: monospace;">${business.bankDetails.replace(/\n/g, '<br/>')}</span>
         </div>
       ` : ''}
     </div>
     <div class="footer">
-      Official invoice delivery via <strong>Frilensa</strong> &bull; FRCS Tax Compliant
+      Sent with <strong>Frilensa</strong>
     </div>
   </div>
 </body>
@@ -435,7 +435,7 @@ export default function EmailDocumentModal({
           ) : (
             /* Send History */
             <div className="space-y-3">
-              <h4 className="text-xs font-bold text-slate-700">Previous Deliveries</h4>
+              <h4 className="text-xs font-bold text-slate-700">Sent emails</h4>
               <div className="space-y-2">
                 {emailHistory.map((item, idx) => (
                   <div key={idx} className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs flex items-center justify-between">
@@ -480,12 +480,12 @@ export default function EmailDocumentModal({
               {isSending ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Dispatching Email...</span>
+                  <span>Sending…</span>
                 </>
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  <span>Send {docTypeLabel} to Client</span>
+                  <span>Send {docTypeLabel.toLowerCase()}</span>
                 </>
               )}
             </button>

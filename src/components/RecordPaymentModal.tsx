@@ -191,7 +191,7 @@ export default function RecordPaymentModal({
 
             <div className="flex items-center gap-2 mb-1 text-sky-300 text-[10px] font-extrabold uppercase tracking-wider">
               <Receipt className="w-3.5 h-3.5" />
-              <span>Record Payment & Exchange Settlement</span>
+              <span>Record payment</span>
             </div>
 
             <div className="flex items-start justify-between gap-3">
@@ -201,12 +201,12 @@ export default function RecordPaymentModal({
                   <span className="text-xs font-normal text-slate-300">({document.type.toUpperCase()})</span>
                 </h3>
                 <p className="text-xs text-slate-300 mt-0.5">
-                  Client: <strong className="text-white">{client?.name || 'Valued Client'}</strong>
+                  Client: <strong className="text-white">{client?.name || 'Client'}</strong>
                 </p>
               </div>
 
               <div className="text-right">
-                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Billed Total</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Invoice total</span>
                 <span className="text-base font-black font-mono text-emerald-400 flex items-center justify-end gap-1">
                   <span>{docCurrencyCfg.flag}</span>
                   <span>{docCurrency} ${document.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
@@ -224,7 +224,7 @@ export default function RecordPaymentModal({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5 text-sky-900 font-extrabold text-xs">
                     <ArrowRightLeft className="w-4 h-4 text-sky-600" />
-                    <span>Foreign Currency Conversion & Deductions</span>
+                    <span>Currency conversion</span>
                   </div>
                   <span className="bg-sky-200/70 text-sky-800 text-[9px] font-black px-2 py-0.5 rounded-full font-mono">
                     {docCurrency} ➔ {homeCurrency}
@@ -235,7 +235,7 @@ export default function RecordPaymentModal({
                   {/* Foreign Amount Paid */}
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      Foreign Amount Received ({docCurrency})
+                      Amount received ({docCurrency})
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
@@ -257,15 +257,15 @@ export default function RecordPaymentModal({
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
-                        Exchange Rate (1 {docCurrency} = X {homeCurrency})
+                        Exchange rate (1 {docCurrency} = X {homeCurrency})
                       </label>
                       <button
                         type="button"
                         onClick={() => handleRateChange(docCurrencyCfg.approxFjdMultiplier || 1.485)}
                         className="text-[9px] font-bold text-sky-700 hover:underline cursor-pointer flex items-center gap-0.5"
-                        title="Reset to standard reference rate"
+                        title="Use the estimated rate"
                       >
-                        <Sparkles className="w-2.5 h-2.5" /> Est. Rate
+                        <Sparkles className="w-2.5 h-2.5" /> Est. rate
                       </button>
                     </div>
                     <div className="relative">
@@ -287,7 +287,7 @@ export default function RecordPaymentModal({
                   {/* Gross Converted Home Amount */}
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      Gross Banked in {homeCurrency} (Before Deductions)
+                      Amount in {homeCurrency} before fees
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
@@ -307,7 +307,7 @@ export default function RecordPaymentModal({
                   {/* Bank Fees & International Wire Deductions */}
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      Bank Wire / Intermediary Fee ({homeCurrency})
+                      Bank fees ({homeCurrency})
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-mono font-bold text-slate-400">
@@ -331,10 +331,10 @@ export default function RecordPaymentModal({
                 <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
                   <div>
                     <span className="text-[9.5px] font-extrabold text-emerald-800 uppercase tracking-wider block">
-                      Net Banked Revenue ({homeCurrency})
+                      Net received ({homeCurrency})
                     </span>
                     <span className="text-[10px] text-emerald-700 flex items-center gap-1 mt-0.5">
-                      <span>Effective Rate:</span>
+                      <span>Effective rate:</span>
                       <strong className="font-mono">1 {docCurrency} = {fxResult.effectiveNetExchangeRate} {homeCurrency}</strong>
                     </span>
                   </div>
@@ -357,7 +357,7 @@ export default function RecordPaymentModal({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      Amount Paid ({homeCurrency})
+                      Amount paid ({homeCurrency})
                     </label>
                     <input
                       type="number"
@@ -372,7 +372,7 @@ export default function RecordPaymentModal({
 
                   <div>
                     <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                      Deductions / Gateway Fees ({homeCurrency})
+                      Fees deducted ({homeCurrency})
                     </label>
                     <input
                       type="number"
@@ -388,7 +388,7 @@ export default function RecordPaymentModal({
 
                 {bankDeduction > 0 && (
                   <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
-                    <span className="text-slate-500 font-bold">Net Banked:</span>
+                    <span className="text-slate-500 font-bold">Net received:</span>
                     <span className="font-mono font-black text-emerald-700">
                       {homeCurrency} ${(Math.max(0, foreignAmount - bankDeduction)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
@@ -401,7 +401,7 @@ export default function RecordPaymentModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                  Settlement Method *
+                  Payment method *
                 </label>
                 <select
                   value={paymentMethod}
@@ -410,26 +410,26 @@ export default function RecordPaymentModal({
                 >
                   {isForeignCurrency ? (
                     <>
-                      <option value="Overseas Telegraphic Transfer (TT)">Overseas Telegraphic Transfer (TT)</option>
-                      <option value="ANZ Fiji International Wire">ANZ Fiji International Wire</option>
-                      <option value="Westpac Fiji International TT">Westpac Fiji International TT</option>
-                      <option value="BSP Fiji International Wire">BSP Fiji International Wire</option>
-                      <option value="Vodafone M-PAiSA International">Vodafone M-PAiSA International Remittance</option>
-                      <option value="Stripe / International Credit Card">Stripe / International Card</option>
+                      <option value="Overseas Telegraphic Transfer (TT)">Overseas telegraphic transfer (TT)</option>
+                      <option value="ANZ Fiji International Wire">ANZ Fiji international transfer</option>
+                      <option value="Westpac Fiji International TT">Westpac Fiji international TT</option>
+                      <option value="BSP Fiji International Wire">BSP Fiji international transfer</option>
+                      <option value="Vodafone M-PAiSA International">M-PAiSA international transfer</option>
+                      <option value="Stripe / International Credit Card">Stripe / international card</option>
                       <option value="PayPal / Payoneer">PayPal / Payoneer</option>
-                      <option value="Foreign Currency Cash">Foreign Currency Cash</option>
-                      <option value="Direct Bank Deposit">Direct Bank Deposit</option>
+                      <option value="Foreign Currency Cash">Foreign currency cash</option>
+                      <option value="Direct Bank Deposit">Bank deposit</option>
                     </>
                   ) : (
                     <>
                       <option value="Vodafone M-PAiSA">Vodafone M-PAiSA</option>
                       <option value="Digicel MyCash">Digicel MyCash</option>
-                      <option value="Westpac Fiji Bank Transfer">Westpac Fiji Bank Transfer</option>
-                      <option value="BSP Fiji Bank Transfer">BSP Fiji Bank Transfer</option>
-                      <option value="ANZ Fiji Bank Transfer">ANZ Fiji Bank Transfer</option>
-                      <option value="HFC Bank Transfer">HFC Bank Transfer</option>
-                      <option value="Credit / Debit Card">Credit / Debit Card</option>
-                      <option value="Cash / Cheque">Cash / Cheque</option>
+                      <option value="Westpac Fiji Bank Transfer">Westpac Fiji bank transfer</option>
+                      <option value="BSP Fiji Bank Transfer">BSP Fiji bank transfer</option>
+                      <option value="ANZ Fiji Bank Transfer">ANZ Fiji bank transfer</option>
+                      <option value="HFC Bank Transfer">HFC bank transfer</option>
+                      <option value="Credit / Debit Card">Credit or debit card</option>
+                      <option value="Cash / Cheque">Cash or cheque</option>
                     </>
                   )}
                 </select>
@@ -437,7 +437,7 @@ export default function RecordPaymentModal({
 
               <div>
                 <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                  Payment Date *
+                  Payment date *
                 </label>
                 <input
                   type="date"
@@ -452,13 +452,13 @@ export default function RecordPaymentModal({
             {/* Reference Number & Bank Notes */}
             <div>
               <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1">
-                Reference ID / Transfer Memo (Optional)
+                Reference (optional)
               </label>
               <input
                 type="text"
                 value={referenceNotes}
                 onChange={(e) => setReferenceNotes(e.target.value)}
-                placeholder="e.g. TT Ref: ANZ-99824, M-Paisa Receipt #8812, etc."
+                placeholder="e.g. TT ref ANZ-99824, M-PAiSA receipt 8812"
                 className="w-full bg-white border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-600"
               />
             </div>
@@ -473,9 +473,9 @@ export default function RecordPaymentModal({
                   className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 w-4 h-4"
                 />
                 <div>
-                  <span className="font-bold text-slate-800 block">Record in Cash Flow & Bookkeeping Ledger</span>
+                  <span className="font-bold text-slate-800 block">Add to bookkeeping</span>
                   <span className="text-[10px] text-slate-500 block">
-                    Automatically credits {homeCurrency} ${isForeignCurrency ? fxResult.netReceivedHome.toLocaleString(undefined, { minimumFractionDigits: 2 }) : (Math.max(0, foreignAmount - bankDeduction)).toLocaleString(undefined, { minimumFractionDigits: 2 })} into your reconciled financial records.
+                    Adds {homeCurrency} ${isForeignCurrency ? fxResult.netReceivedHome.toLocaleString(undefined, { minimumFractionDigits: 2 }) : (Math.max(0, foreignAmount - bankDeduction)).toLocaleString(undefined, { minimumFractionDigits: 2 })} to your income.
                   </span>
                 </div>
               </label>
@@ -488,7 +488,7 @@ export default function RecordPaymentModal({
                   htmlFor="payment-modal-notes-input" 
                   className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500"
                 >
-                  Notes (Optional)
+                  Notes (optional)
                 </label>
                 {notes && (
                   <button
@@ -505,7 +505,7 @@ export default function RecordPaymentModal({
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="e.g. Wire received in Westpac Suva branch, TT slip filed, payment verified with accountant."
+                placeholder="e.g. Received at Westpac Suva, TT slip filed"
                 className="w-full bg-white border border-slate-300 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-600 resize-none transition-colors"
               />
               <div className="flex flex-wrap gap-1.5 mt-1.5">
@@ -532,8 +532,8 @@ export default function RecordPaymentModal({
               <PaymentAttachmentWidget
                 attachments={attachments}
                 onChange={setAttachments}
-                title="Payment Proof & Remittance Records"
-                description="Attach M-Paisa SMS screenshot, bank transfer receipt, telegraphic transfer slip, or deposit proof."
+                title="Proof of payment"
+                description="Attach an M-PAiSA SMS screenshot, transfer receipt, TT slip or deposit slip."
                 allowCamera={true}
               />
             </div>
@@ -552,7 +552,7 @@ export default function RecordPaymentModal({
                 className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-extrabold py-2.5 rounded-xl text-xs transition-all flex items-center justify-center gap-1.5 shadow-md cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Confirm & Log Payment</span>
+                <span>Record payment</span>
               </button>
             </div>
 

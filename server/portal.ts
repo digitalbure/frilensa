@@ -204,7 +204,7 @@ export function createPortalRouter() {
 
   router.post("/admin/revoke", requireUser, async (req: AuthedRequest, res) => {
     const email = normEmail(req.body?.email);
-    if (!isEmail(email)) return res.status(400).json({ error: "Invalid email." });
+    if (!isEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
     const consultantId = req.user!.uid;
     const db = getAdminDb();
     await db.collection(ACCESS).doc(accessDocId(consultantId, email)).delete();
@@ -220,7 +220,7 @@ export function createPortalRouter() {
 
   router.get("/admin/status", requireUser, async (req: AuthedRequest, res) => {
     const email = normEmail(req.query.email);
-    if (!isEmail(email)) return res.status(400).json({ error: "Invalid email." });
+    if (!isEmail(email)) return res.status(400).json({ error: "Enter a valid email address." });
     const snap = await getAdminDb().collection(ACCESS).doc(accessDocId(req.user!.uid, email)).get();
     const data = snap.data() || {};
     res.json({ hasPin: Boolean(data.pinHash), hasLink: Boolean(data.tokenHash) });
@@ -235,7 +235,7 @@ export function createPortalRouter() {
       const token = typeof req.body?.token === "string" ? req.body.token.trim() : "";
 
       if (token) {
-        if (token.length > 200) return res.status(400).json({ error: "Invalid link." });
+        if (token.length > 200) return res.status(400).json({ error: "This link isn't valid. Ask your consultant for a new one." });
         const byHash = await db.collection(ACCESS).where("tokenHash", "==", sha256(token)).limit(1).get();
         if (!byHash.empty) {
           const a = byHash.docs[0].data();
@@ -340,7 +340,7 @@ export function createPortalRouter() {
   router.post("/messages", requirePortal, rateLimit({ name: "portal-msg", max: 20, windowMs: 10 * 60_000, key: r => (r as PortalRequest).portal!.email }), async (req: PortalRequest, res) => {
     const claims = req.portal!;
     const text = String(req.body?.message || "").trim();
-    if (!text) return res.status(400).json({ error: "Message is empty." });
+    if (!text) return res.status(400).json({ error: "Type a message first." });
     const categories = ["general", "invoice_inquiry", "quote_question", "payment_proof", "urgent_support"];
     const category = categories.includes(req.body?.category) ? req.body.category : "general";
     const ref = getAdminDb().collection("support_messages").doc();

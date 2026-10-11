@@ -139,20 +139,20 @@ export default function ClientOverviewView({
         <div className="relative z-10 flex items-start justify-between gap-3">
           <div className="space-y-1">
             <div className="flex items-center gap-1.5 text-amber-300 text-[9.5px] font-bold tracking-wider uppercase">
-              <Sparkles className="w-3 h-3 fill-amber-300" /> Client Overview Workspace
+              <Sparkles className="w-3 h-3 fill-amber-300" /> Overview
             </div>
             <h3 className="text-base font-bold tracking-tight text-white font-display">
               Bula Vinaka, {clientAuth.clientName}
             </h3>
             <p className="text-[10px] text-white/80 leading-snug">
-              Welcome to your dedicated project, billing, and document management hub with <strong>{primaryBusiness.name}</strong>.
+              Your projects, invoices and documents with <strong>{primaryBusiness.name}</strong>.
             </p>
             <div className="pt-2 flex flex-wrap items-center gap-2 text-[9px] text-white/70">
               <span className="bg-white/15 px-2 py-0.5 rounded-full backdrop-blur-xs font-mono">
-                Client TIN: {clientProfile?.tin || '99-12345-0-0'}
+                Client TIN: {clientProfile?.tin || 'Not provided'}
               </span>
               <span className="bg-emerald-500/20 text-emerald-200 border border-emerald-400/30 px-2 py-0.5 rounded-full backdrop-blur-xs font-semibold flex items-center gap-1">
-                <ShieldCheck className="w-2.5 h-2.5" /> Portal Verified
+                <ShieldCheck className="w-2.5 h-2.5" /> Signed in
               </span>
             </div>
           </div>
@@ -169,7 +169,7 @@ export default function ClientOverviewView({
         <div className="bg-white p-3 rounded-xl border border-zinc-150 shadow-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[8.5px] text-zinc-400 font-bold uppercase tracking-wider">
-              Active Projects
+              Active projects
             </span>
             <div className="w-5 h-5 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
               <Briefcase className="w-3 h-3" />
@@ -193,7 +193,7 @@ export default function ClientOverviewView({
         }`}>
           <div className="flex items-center justify-between">
             <span className="text-[8.5px] font-bold uppercase tracking-wider text-zinc-400">
-              Pending Invoices
+              Unpaid invoices
             </span>
             <div className={`w-5 h-5 rounded-lg flex items-center justify-center ${
               outstandingTotal > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-50 text-emerald-600'
@@ -217,7 +217,7 @@ export default function ClientOverviewView({
         <div className="bg-white p-3 rounded-xl border border-zinc-150 shadow-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[8.5px] text-zinc-400 font-bold uppercase tracking-wider">
-              Settled to Date
+              Paid to date
             </span>
             <div className="w-5 h-5 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
               <CheckCircle2 className="w-3 h-3" />
@@ -232,7 +232,7 @@ export default function ClientOverviewView({
         <div className="bg-white p-3 rounded-xl border border-zinc-150 shadow-xs space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[8.5px] text-zinc-400 font-bold uppercase tracking-wider">
-              Active Retainers
+              Active retainers
             </span>
             <div className="w-5 h-5 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center">
               <Layers className="w-3 h-3" />
@@ -258,30 +258,30 @@ export default function ClientOverviewView({
             </div>
             <div>
               <h4 className="text-xs font-bold text-zinc-900 tracking-tight">
-                Active Projects & Engagements
+                Projects
               </h4>
               <span className="text-[9px] text-zinc-400 block">
-                Deliverables, progress tracking, and scheduled timelines
+                Progress, tasks and dates
               </span>
             </div>
           </div>
           <span className="text-[9px] font-mono font-bold bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-full">
-            {clientProjects.length} Project{clientProjects.length === 1 ? '' : 's'}
+            {clientProjects.length} project{clientProjects.length === 1 ? '' : 's'}
           </span>
         </div>
 
         {clientProjects.length === 0 ? (
           <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-6 text-center space-y-2">
             <Briefcase className="w-6 h-6 text-zinc-300 mx-auto" />
-            <p className="text-xs text-zinc-600 font-medium">No active projects currently listed for your account.</p>
+            <p className="text-xs text-zinc-600 font-medium">No active projects yet.</p>
             <p className="text-[10px] text-zinc-400 max-w-xs mx-auto">
-              Any agreed project milestones, deliverables, and timelines will be displayed here in real-time.
+              Projects you agree on, with their tasks and dates, will show here.
             </p>
             <button
               onClick={onNavigateToSupport}
               className="text-[10px] text-sky-600 font-bold hover:underline inline-flex items-center gap-1 mt-1"
             >
-              <MessageSquare className="w-3 h-3" /> Inquire about a new project engagement
+              <MessageSquare className="w-3 h-3" /> Ask about a new project
             </button>
           </div>
         ) : (
@@ -297,16 +297,16 @@ export default function ClientOverviewView({
               const progressPercent = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 50;
 
               // Status styles
-              let statusLabel = 'In Progress';
+              let statusLabel = 'In progress';
               let statusClasses = 'bg-sky-50 text-sky-700 border-sky-200';
               if (project.status === 'completed') {
                 statusLabel = 'Completed';
                 statusClasses = 'bg-emerald-50 text-emerald-700 border-emerald-200';
               } else if (project.status === 'not_started') {
-                statusLabel = 'Scheduled / Upcoming';
+                statusLabel = 'Upcoming';
                 statusClasses = 'bg-zinc-100 text-zinc-700 border-zinc-200';
               } else if (project.status === 'on_hold') {
-                statusLabel = 'On Hold';
+                statusLabel = 'On hold';
                 statusClasses = 'bg-amber-50 text-amber-700 border-amber-200';
               }
 
@@ -324,7 +324,7 @@ export default function ClientOverviewView({
                           {project.name}
                         </h5>
                         <span className="text-[9px] text-zinc-500 block truncate">
-                          Venture: <strong>{matchedBiz.name}</strong>
+                          Business: <strong>{matchedBiz.name}</strong>
                         </span>
                       </div>
                     </div>
@@ -343,7 +343,7 @@ export default function ClientOverviewView({
                   {/* Key Metrics Row */}
                   <div className="grid grid-cols-3 gap-2 bg-white p-2.5 rounded-lg border border-zinc-150 text-[9.5px]">
                     <div>
-                      <span className="text-[8px] text-zinc-400 font-bold uppercase block">Budget / Value</span>
+                      <span className="text-[8px] text-zinc-400 font-bold uppercase block">Value</span>
                       <span className="font-mono font-bold text-zinc-900 block mt-0.5">
                         FJD ${project.cost?.toLocaleString() || '0'}
                       </span>
@@ -351,7 +351,7 @@ export default function ClientOverviewView({
                     </div>
 
                     <div>
-                      <span className="text-[8px] text-zinc-400 font-bold uppercase block">Timeline Window</span>
+                      <span className="text-[8px] text-zinc-400 font-bold uppercase block">Dates</span>
                       <span className="font-medium text-zinc-800 block mt-0.5 truncate">
                         {formatDateDisplay(project.startDate)}
                       </span>
@@ -361,7 +361,7 @@ export default function ClientOverviewView({
                     <div>
                       <span className="text-[8px] text-zinc-400 font-bold uppercase block">Milestones</span>
                       <span className="font-semibold text-zinc-800 block mt-0.5">
-                        {doneTasks}/{totalTasks} Done
+                        {doneTasks}/{totalTasks} done
                       </span>
                       <span className="text-[7.5px] text-emerald-600 font-bold">{progressPercent}% complete</span>
                     </div>
@@ -370,7 +370,7 @@ export default function ClientOverviewView({
                   {/* Visual Progress Bar */}
                   <div className="space-y-1">
                     <div className="flex justify-between text-[8.5px] font-semibold text-zinc-500">
-                      <span>Milestone Completion</span>
+                      <span>Progress</span>
                       <span className="font-mono">{progressPercent}%</span>
                     </div>
                     <div className="w-full h-2 bg-zinc-200 rounded-full overflow-hidden">
@@ -388,12 +388,12 @@ export default function ClientOverviewView({
                   {project.tasks && project.tasks.length > 0 && (
                     <div className="space-y-1.5 pt-1">
                       <div className="flex items-center justify-between text-[9px] font-bold text-zinc-400 uppercase tracking-wider">
-                        <span>Scope Deliverables & Tasks</span>
+                        <span>Tasks</span>
                         <button
                           onClick={() => toggleProjectExpand(project.id)}
                           className="text-sky-600 hover:text-sky-800 flex items-center gap-0.5 capitalize text-[9px]"
                         >
-                          {isExpanded ? 'Collapse' : 'Show All'}
+                          {isExpanded ? 'Show less' : 'Show all'}
                           {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
                         </button>
                       </div>
@@ -421,7 +421,7 @@ export default function ClientOverviewView({
                               task.status === 'in_progress' ? 'bg-sky-50 text-sky-700 font-semibold' :
                               'bg-zinc-100 text-zinc-500'
                             }`}>
-                              {task.status === 'done' ? 'Done' : task.status === 'in_progress' ? 'Active' : 'Queued'}
+                              {task.status === 'done' ? 'Done' : task.status === 'in_progress' ? 'In progress' : 'To do'}
                             </span>
                           </div>
                         ))}
@@ -436,13 +436,13 @@ export default function ClientOverviewView({
                       className="text-[9.5px] font-bold text-zinc-700 hover:text-zinc-950 bg-white hover:bg-zinc-100 border border-zinc-200 px-2.5 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors"
                     >
                       <MessageSquare className="w-3 h-3 text-sky-600" />
-                      Inquire on Project
+                      Ask about project
                     </button>
                     <button
                       onClick={onNavigateToDocuments}
                       className="text-[9.5px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-1 transition-colors"
                     >
-                      View Associated Invoices <ArrowRight className="w-3 h-3" />
+                      View invoices <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 </div>
@@ -463,16 +463,16 @@ export default function ClientOverviewView({
             </div>
             <div>
               <h4 className="text-xs font-bold text-zinc-900 tracking-tight">
-                Pending Invoices & Remittance Requests
+                Unpaid invoices
               </h4>
               <span className="text-[9px] text-zinc-400 block">
-                Direct settlement via Vodafone M-Paisa, Digicel MyCash, or Fiji Bank Wire
+                Pay by M-PAiSA, MyCash or bank transfer
               </span>
             </div>
           </div>
           {pendingInvoices.length > 0 && (
             <span className="text-[9px] font-mono font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
-              FJD ${outstandingTotal.toFixed(2)} Due
+              FJD ${outstandingTotal.toFixed(2)} due
             </span>
           )}
         </div>
@@ -482,9 +482,9 @@ export default function ClientOverviewView({
             <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto">
               <Check className="w-4 h-4 stroke-[3]" />
             </div>
-            <h5 className="text-xs font-bold text-emerald-950">All Invoices Settled</h5>
+            <h5 className="text-xs font-bold text-emerald-950">All invoices paid</h5>
             <p className="text-[10px] text-emerald-800 leading-snug max-w-xs mx-auto">
-              You have no outstanding invoices due. Vinaka vakalevu for keeping your account current!
+              You have no unpaid invoices.
             </p>
           </div>
         ) : (
@@ -509,7 +509,7 @@ export default function ClientOverviewView({
                           <span className={`text-[7.5px] font-extrabold uppercase px-1.5 py-0.2 rounded ${
                             isOverdue ? 'bg-rose-100 text-rose-800 font-black' : 'bg-amber-100 text-amber-800'
                           }`}>
-                            {isOverdue ? 'Overdue' : 'Payment Due'}
+                            {isOverdue ? 'Overdue' : 'Due'}
                           </span>
                         </div>
                         <span className="text-[9px] text-zinc-500 block truncate">
@@ -550,14 +550,14 @@ export default function ClientOverviewView({
                       onClick={() => onSelectDocument(inv)}
                       className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 font-bold py-2 rounded-xl text-[10.5px] flex items-center justify-center gap-1.5 transition-colors"
                     >
-                      <Eye className="w-3.5 h-3.5 text-zinc-500" /> View Tax Invoice
+                      <Eye className="w-3.5 h-3.5 text-zinc-500" /> View invoice
                     </button>
                     <button
                       onClick={() => onPayInvoice(inv)}
                       className="flex-1 text-white font-bold py-2 rounded-xl text-[10.5px] shadow-xs flex items-center justify-center gap-1.5 transition-all active:scale-[0.98]"
                       style={{ backgroundColor: brandColor }}
                     >
-                      <CreditCard className="w-3.5 h-3.5" /> Pay / Submit Proof
+                      <CreditCard className="w-3.5 h-3.5" /> Pay or send proof
                     </button>
                   </div>
                 </div>
@@ -576,10 +576,10 @@ export default function ClientOverviewView({
             </div>
             <div>
               <h4 className="text-xs font-bold text-zinc-900 tracking-tight">
-                Document History Timeline
+                Document history
               </h4>
               <span className="text-[9px] text-zinc-400 block">
-                Chronological ledger of quotes, tax invoices, and payment receipts
+                Quotes, invoices and receipts, newest first
               </span>
             </div>
           </div>
@@ -604,7 +604,7 @@ export default function ClientOverviewView({
 
         {timelineDocuments.length === 0 ? (
           <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-6 text-center text-xs text-zinc-400">
-            No document history found for the selected filter.
+            No documents of this type yet.
           </div>
         ) : (
           <div className="relative pl-5 space-y-3 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-zinc-200">
@@ -662,7 +662,7 @@ export default function ClientOverviewView({
 
                     <div className="flex items-center justify-between text-[10px] text-zinc-600">
                       <span className="truncate pr-2 font-medium">
-                        {docItem.items?.[0]?.name || `${matchedBiz.name} Item`}
+                        {docItem.items?.[0]?.name || `${matchedBiz.name} item`}
                         {docItem.items?.length > 1 && ` (+${docItem.items.length - 1} more)`}
                       </span>
                       <span className="font-mono font-bold text-zinc-950 shrink-0">
@@ -671,9 +671,9 @@ export default function ClientOverviewView({
                     </div>
 
                     <div className="flex items-center justify-between text-[8.5px] text-zinc-400 pt-1 border-t border-zinc-200/50">
-                      <span>Issuer: <strong className="text-zinc-600 font-semibold">{matchedBiz.name}</strong></span>
+                      <span>From: <strong className="text-zinc-600 font-semibold">{matchedBiz.name}</strong></span>
                       <span className="text-sky-600 font-bold flex items-center gap-0.5 group-hover:underline">
-                        View Details <ChevronRight className="w-3 h-3" />
+                        View <ChevronRight className="w-3 h-3" />
                       </span>
                     </div>
                   </div>
@@ -688,7 +688,7 @@ export default function ClientOverviewView({
             onClick={onNavigateToDocuments}
             className="text-[10px] font-bold text-zinc-600 hover:text-zinc-900 bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 px-3 py-1.5 rounded-lg inline-flex items-center gap-1.5 transition-colors"
           >
-            <FileText className="w-3 h-3 text-zinc-400" /> Open Complete Document Registry
+            <FileText className="w-3 h-3 text-zinc-400" /> View all documents
           </button>
         </div>
       </div>

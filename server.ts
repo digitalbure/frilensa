@@ -305,7 +305,7 @@ Return a JSON array of objects corresponding to the input.
 Transactions:
 ${JSON.stringify(transactions)}`;
       } else {
-        return res.status(400).json({ error: "Missing transactions or textStatement" });
+        return res.status(400).json({ error: "Paste a statement or add transactions to categorize." });
       }
 
       // Execute with multi-model fallback chain to protect against temporary 503 high-demand spikes
@@ -346,7 +346,7 @@ ${JSON.stringify(transactions)}`;
         const fallback = fallbackCategorize(transactions || [], textStatement, rateNum);
         return res.json({ categorized: fallback, isFallback: true });
       } catch (fbErr) {
-        return res.status(500).json({ error: error.message || "Failed to categorize transactions" });
+        return res.status(500).json({ error: error.message || "Couldn't categorize these transactions. Please try again." });
       }
     }
   });
@@ -358,7 +358,7 @@ ${JSON.stringify(transactions)}`;
     const divisor = 1 + (rateNum / 100);
 
     if (!fileData) {
-      return res.status(400).json({ error: "Missing fileData" });
+      return res.status(400).json({ error: "Choose a receipt or invoice file to upload." });
     }
 
     // Parse data URL to extract base64 data and mimeType
@@ -463,7 +463,7 @@ Extract all billing and purchase details as a JSON object:
         const fallbackResult = parseInvoiceFallback(base64Data, fileName, rateNum);
         return res.json({ extracted: fallbackResult, isFallback: true, warning: error.message });
       } catch (fbErr) {
-        return res.status(500).json({ error: error.message || "Failed to process receipt" });
+        return res.status(500).json({ error: error.message || "Couldn't read this receipt. Please try again or enter it by hand." });
       }
     }
   });
@@ -483,7 +483,7 @@ Extract all billing and purchase details as a JSON object:
       } = req.body;
 
       if (!description && !vendor && !serviceType) {
-        return res.status(400).json({ error: "Please provide a description, vendor, or service type to categorize." });
+        return res.status(400).json({ error: "Add a description, vendor or service type first." });
       }
 
       const rateNum = Number(vatRate) || 12.5;
@@ -655,7 +655,7 @@ Rules:
         return {
           category: "Subcontractors",
           confidence: 94,
-          reason: "Production crew, camera operators, and talent for media shoots are classified under Subcontractors.",
+          reason: "Crew, camera operators and talent for shoots go under Subcontractors.",
           isVatClaimable: true,
           isTaxDeductible: true,
           recommendedVatRate: vatRate,
@@ -666,7 +666,7 @@ Rules:
       return {
         category: "Hardware & Equipment",
         confidence: 96,
-        reason: "Audio/visual production equipment and filming gear are classified under Hardware & Equipment (Production Assets).",
+        reason: "Audio, video and filming gear go under Hardware & Equipment.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -686,7 +686,7 @@ Rules:
       return {
         category: "Hardware & Equipment",
         confidence: 95,
-        reason: "Automotive replacement parts, fluids, and workshop equipment are classified under Hardware & Equipment.",
+        reason: "Vehicle parts, fluids and workshop tools go under Hardware & Equipment.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -706,7 +706,7 @@ Rules:
       return {
         category: "Hardware & Equipment",
         confidence: 93,
-        reason: "Building materials, site supplies, and trade tools are classified under Hardware & Equipment.",
+        reason: "Building materials, site supplies and trade tools go under Hardware & Equipment.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -726,7 +726,7 @@ Rules:
       return {
         category: "Software SaaS",
         confidence: 98,
-        reason: "Cloud platforms, developer software, and SaaS subscriptions are classified under Software SaaS (0% local VAT for overseas providers).",
+        reason: "Cloud services and software subscriptions go under Software SaaS (0% VAT for overseas providers).",
         isVatClaimable: false,
         isTaxDeductible: true,
         recommendedVatRate: 0,
@@ -744,7 +744,7 @@ Rules:
       return {
         category: "Internet & Utilities",
         confidence: 97,
-        reason: "Telecommunications, fibre broadband, and mobile connectivity are classified under Internet & Utilities.",
+        reason: "Phone, broadband and mobile data go under Internet & Utilities.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -761,7 +761,7 @@ Rules:
       return {
         category: "Electricity & Utilities",
         confidence: 99,
-        reason: "Utility electricity and water payments are classified under Electricity & Utilities.",
+        reason: "Electricity and water bills go under Electricity & Utilities.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -781,11 +781,11 @@ Rules:
       return {
         category: "Tax & Licensing",
         confidence: 95,
-        reason: "Statutory filing fees, regulatory licenses, and legal compliance are classified under Tax & Licensing.",
+        reason: "Filing fees, licences and legal costs go under Tax & Licensing.",
         isVatClaimable: false,
         isTaxDeductible: true,
         recommendedVatRate: 0,
-        suggestedTags: ["Statutory Compliance", "Legal & Licensing"],
+        suggestedTags: ["Tax", "Legal & Licensing"],
         alternativeCategories: ["Subcontractors", "Other Expense"]
       };
     }
@@ -800,11 +800,11 @@ Rules:
       return {
         category: "Travel & Transport",
         confidence: 94,
-        reason: "Travel fares, vehicular fuel, and transport logistics are classified under Travel & Transport.",
+        reason: "Fares, fuel and parking go under Travel & Transport.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
-        suggestedTags: ["Transport", "Travel Logistics"],
+        suggestedTags: ["Transport", "Travel"],
         alternativeCategories: ["Other Expense", "Meals & Entertainment"]
       };
     }
@@ -818,7 +818,7 @@ Rules:
       return {
         category: "Meals & Entertainment",
         confidence: 92,
-        reason: "Client hospitality, business catering, and project meal expenses are classified under Meals & Entertainment.",
+        reason: "Client meals, catering and project meals go under Meals & Entertainment.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -836,7 +836,7 @@ Rules:
       return {
         category: "Marketing & Ads",
         confidence: 94,
-        reason: "Commercial promotions, social media campaigns, and brand marketing are classified under Marketing & Ads.",
+        reason: "Ads, promotions and social media campaigns go under Marketing & Ads.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -853,7 +853,7 @@ Rules:
       return {
         category: "Subcontractors",
         confidence: 93,
-        reason: "Contractor fees and specialized third-party labor are classified under Subcontractors.",
+        reason: "Contractor and freelancer fees go under Subcontractors.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -871,7 +871,7 @@ Rules:
       return {
         category: "Office Supplies",
         confidence: 91,
-        reason: "General office stationery, consumables, and printing supplies are classified under Office Supplies.",
+        reason: "Stationery, printing and office consumables go under Office Supplies.",
         isVatClaimable: true,
         isTaxDeductible: true,
         recommendedVatRate: vatRate,
@@ -884,11 +884,11 @@ Rules:
     return {
       category: "Other Expense",
       confidence: 75,
-      reason: "General operational business expense under allowable Fiji business deductions.",
+      reason: "General business expense. Check the category before saving.",
       isVatClaimable: true,
       isTaxDeductible: true,
       recommendedVatRate: vatRate,
-      suggestedTags: ["Operational Expense"],
+      suggestedTags: ["General expense"],
       alternativeCategories: ["Office Supplies", "Hardware & Equipment"]
     };
   }
@@ -898,66 +898,66 @@ Rules:
     if (isSaaS) {
       return [
         {
-          title: "Core System Architecture & AWS Setup",
-          description: `Initial provisioning of secure cloud resources, Dockerizing application services, and configuring the staging environment.`,
+          title: "Hosting and setup",
+          description: `Set up cloud hosting, package the app services and configure a staging environment.`,
           cost: 1500,
           deliverables: [
-            "AWS VPC configuration with public/private subnets",
-            "CI/CD workflow deployment using GitHub Actions",
-            "Database schemas bootstrap for multi-tenant accounts"
+            "AWS network setup with public and private subnets",
+            "Automated build and deploy with GitHub Actions",
+            "Database setup for multiple customer accounts"
           ]
         },
         {
-          title: "Bula Gemini & FRCS Compliance APIs",
-          description: `Integration of Gemini classification model API endpoints to auto-audit income streams and map corresponding Fiji VAT structures.`,
+          title: "AI categorisation and VAT reporting",
+          description: `Connect an AI model to categorise income and expenses and work out the Fiji VAT on each.`,
           cost: 2500,
           deliverables: [
-            "JSON-schema compliance parser for BSP and ANZ ledger statements",
-            "FRCS standard VAT liability report calculation triggers",
-            "Error boundaries and offline fallback rulesets"
+            "Import for BSP and ANZ bank statements",
+            "VAT summary report",
+            "Error handling and an offline fallback"
           ]
         },
         {
-          title: "Interactive Client Portals & Real-time Feeds",
-          description: `Polished, responsive client-facing review dashboard leveraging Tailwind CSS with clean, high-contrast layouts.`,
+          title: "Client portal",
+          description: `A responsive dashboard where clients review their work, built with Tailwind CSS.`,
           cost: 2000,
           deliverables: [
-            "Customer login and customized token-based sharing flows",
-            "Itemized ledger breakdowns and print-friendly export functions",
-            "Interactive milestone tracking checklists"
+            "Customer login and shareable links",
+            "Itemised statements with print and export",
+            "Milestone checklists"
           ]
         }
       ];
     } else {
       return [
         {
-          title: "Phase 1: Brand Strategy & Tech Audit",
-          description: `Comprehensive discovery audit mapping requirements, core business goals, and local financial compliance targets.`,
+          title: "Phase 1: Discovery",
+          description: `Work through requirements, business goals and the local tax rules the project needs to follow.`,
           cost: 1200,
           deliverables: [
-            "Stakeholder advisory sessions & technical specifications roadmap",
-            "Information Architecture & mobile-first UI wireframes",
-            "Fiji TIN & FRCS compliance requirements map"
+            "Stakeholder workshops and a technical spec",
+            "Site structure and mobile-first wireframes",
+            "List of Fiji TIN and FRCS requirements"
           ]
         },
         {
-          title: "Phase 2: High-Fidelity UI & Core Systems Integration",
-          description: `Implementation of the core system modules, custom theme styling, client interactions, and local banking integration tools.`,
+          title: "Phase 2: Design and build",
+          description: `Build the main features, custom styling, client-facing screens and local bank integrations.`,
           cost: 3500,
           deliverables: [
-            "Custom component libraries styled with Tailwind CSS utility classes",
-            "Real-time offline reconciliation pipelines with integrated localStorage",
-            "Interactive rates playground and dynamic FJD surcharge calculator"
+            "Custom components styled with Tailwind CSS",
+            "Offline bank reconciliation that saves in the browser",
+            "Rates and FJD surcharge calculator"
           ]
         },
         {
-          title: "Phase 3: Automated Invoicing, Testing & Staff Handover",
-          description: `End-to-end user-acceptance audits, VAT ledger calibration, and hand-off guides with instructional workshops.`,
+          title: "Phase 3: Invoicing, testing and handover",
+          description: `User acceptance testing, VAT checks, handover guides and training sessions.`,
           cost: 1800,
           deliverables: [
-            "Automated PDF export controls for billing sheets",
-            "Unit test coverage for the Fiji VAT calculation engine",
-            "Developer handover checklist & interactive training sessions"
+            "PDF export for invoices",
+            "Unit tests for the Fiji VAT calculations",
+            "Handover checklist and training sessions"
           ]
         }
       ];
@@ -1159,7 +1159,7 @@ Always answer the user's questions with high specificity. Avoid generic placehol
         }
       });
 
-      const reply = response.text || "I apologize, I was unable to compile an advice response at this time. Please retry.";
+      const reply = response.text || "I couldn't come up with an answer just now. Please try again.";
       
       // Auto-extract memory candidate facts
       let newMemories: string[] = [];
@@ -1194,7 +1194,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
 
     } catch (error: any) {
       console.error("Gemini assistant error:", error);
-      return res.status(500).json({ error: error.message || "Failed to get AI advisor guidance" });
+      return res.status(500).json({ error: error.message || "The AI advisor isn't responding. Please try again." });
     }
   });
 
@@ -1258,24 +1258,24 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
 <body>
   <div class="container">
     <div class="header">
-      <h1>Frilensa AI Consultation Transcript</h1>
+      <h1>Frilensa AI advisor chat</h1>
       <p>Session: <strong>${escapeHtml(sessionTitle)}</strong> &bull; Business: <strong>${escapeHtml(businessName)}</strong></p>
     </div>
     <div class="meta-bar">
-      <span>Delivered to: <strong>${escapeHtml(recipientEmail)}</strong></span>
+      <span>Sent to: <strong>${escapeHtml(recipientEmail)}</strong></span>
       <span>${timestamp}</span>
     </div>
     <div class="content">
-      ${notes ? `<div style="background:#fffbeb; border:1px solid #fde68a; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#92400e;"><strong>User Note:</strong> ${escapeHtml(notes)}</div>` : ''}
+      ${notes ? `<div style="background:#fffbeb; border:1px solid #fde68a; padding:12px 16px; border-radius:8px; margin-bottom:20px; font-size:13px; color:#92400e;"><strong>Note:</strong> ${escapeHtml(notes)}</div>` : ''}
 
       ${memories && memories.length > 0 ? `
-      <div class="section-title">&#128161; Retained Long-Term Business Memories</div>
+      <div class="section-title">What the advisor remembers about your business</div>
       <div class="memory-box">
         ${memories.map((m: any) => `<div class="memory-item">&bull; ${escapeHtml(typeof m === 'string' ? m : m?.fact)}</div>`).join('')}
       </div>
       ` : ''}
 
-      <div class="section-title">&#128172; Dialogue Record (${messages.length} messages)</div>
+      <div class="section-title">Conversation (${messages.length} messages)</div>
       ${messages.map((m: any) => `
         <div class="message-card ${m.sender === 'user' ? 'user-msg' : 'ai-msg'}">
           <div class="sender-label ${m.sender === 'user' ? 'user-sender' : 'ai-sender'}">
@@ -1283,7 +1283,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
           </div>
           ${m.attachments && m.attachments.length > 0 ? `
             <div style="margin-bottom:6px;">
-              ${m.attachments.map((att: any) => `<span class="attachment-badge">&#128206; Attached: ${escapeHtml(att?.name)}</span>`).join(' ')}
+              ${m.attachments.map((att: any) => `<span class="attachment-badge">Attached: ${escapeHtml(att?.name)}</span>`).join(' ')}
             </div>
           ` : ''}
           <div class="msg-text">${escapeHtml(m.text || '')}</div>
@@ -1291,8 +1291,8 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       `).join('')}
     </div>
     <div class="footer">
-      Generated automatically by <strong>Frilensa</strong> (frilensa.com) &mdash; Pacific Invoicing, CRM & Tax Compliance.<br/>
-      Need to continue this consultation? Log in to your Frilensa workspace anytime.
+      Sent from <strong>Frilensa</strong> (frilensa.com).<br/>
+      To continue this chat, log in to Frilensa.
     </div>
   </div>
 </body>
@@ -1323,7 +1323,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
 
     } catch (error: any) {
       console.error("Email transcript error:", error);
-      return res.status(500).json({ error: error.message || "Failed to dispatch email transcript." });
+      return res.status(500).json({ error: error.message || "Couldn't send the transcript. Please try again." });
     }
   });
 
@@ -1343,13 +1343,13 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
           id: 'sendgrid',
           name: 'Twilio SendGrid API',
           active: hasSendGrid,
-          description: hasSendGrid ? 'Active & ready for direct transactional email delivery' : 'Requires SENDGRID_API_KEY in environment variables'
+          description: hasSendGrid ? 'Connected. Emails are sent through SendGrid.' : 'Needs SENDGRID_API_KEY in the server environment'
         },
         {
           id: 'preview_mode',
           name: 'Preview only',
           active: !hasSendGrid,
-          description: hasSendGrid ? 'Not used while SendGrid is configured' : 'Emails are NOT delivered until SendGrid is configured'
+          description: hasSendGrid ? 'Not used while SendGrid is configured' : 'Emails are not sent until SendGrid is set up'
         }
       ]
     });
@@ -1369,13 +1369,13 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
         recipient: recipientEmail,
         subject: result.subject,
         timestamp: result.timestamp,
-        deliveryNote: `Successfully delivered via Twilio SendGrid to ${recipientEmail}`,
+        deliveryNote: `Sent through SendGrid to ${recipientEmail}`,
         previewHtml: result.html,
         message: `${document.type.toUpperCase()} #${document.documentNumber} sent to ${recipientEmail}`
       });
     } catch (error: any) {
       console.error("Failed to send document email:", error);
-      return res.status(500).json({ error: error.message || "Failed to dispatch transactional document email." });
+      return res.status(500).json({ error: error.message || "Couldn't send this document. Please try again." });
     }
   });
 
@@ -1392,21 +1392,21 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       const fromEmail = process.env.SENDGRID_FROM_EMAIL?.trim() || "billing@frilensa.com";
       const fromName = process.env.SENDGRID_FROM_NAME?.trim() || businessName;
 
-      const subject = `Test Transactional Email from ${businessName} (Frilensa)`;
+      const subject = `Test email from ${businessName} (Frilensa)`;
       const html = `
 <!DOCTYPE html>
 <html>
 <body style="font-family: sans-serif; background-color: #f8fafc; padding: 24px; color: #0f172a;">
   <div style="max-width: 540px; margin: 0 auto; background: #ffffff; border-radius: 16px; padding: 24px; border: 1px solid #e2e8f0;">
-    <h2 style="color: #0284c7; margin-top: 0;">Transactional Email Service Connected!</h2>
-    <p>Bula! This test email confirms that your transactional email dispatch pipeline for <strong>${businessName}</strong> is properly configured.</p>
+    <h2 style="color: #0284c7; margin-top: 0;">Email is working</h2>
+    <p>This test email shows that Frilensa can send invoices and receipts for <strong>${businessName}</strong>.</p>
     <div style="background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 16px; color: #166534; font-size: 13px;">
-      &bull; <strong>Status:</strong> Operational<br/>
-      &bull; <strong>Provider:</strong> ${apiKey ? 'Twilio SendGrid REST API' : 'Simulated / Firebase Extension'}<br/>
-      &bull; <strong>Timestamp:</strong> ${new Date().toLocaleString('en-US', { timeZone: 'Pacific/Fiji' })} (Fiji Time)
+      &bull; <strong>Status:</strong> Sent<br/>
+      &bull; <strong>Provider:</strong> ${apiKey ? 'SendGrid' : 'Preview only (not sent)'}<br/>
+      &bull; <strong>Time:</strong> ${new Date().toLocaleString('en-US', { timeZone: 'Pacific/Fiji' })} (Fiji Time)
     </div>
     <p style="font-size: 12px; color: #64748b; margin-top: 20px;">
-      Generated by Frilensa (frilensa.com) &mdash; Pacific Invoicing & Tax Compliance.
+      Sent from Frilensa (frilensa.com).
     </p>
   </div>
 </body>
@@ -1420,14 +1420,14 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
           toEmail: recipientEmail,
           subject,
           htmlContent: html,
-          textContent: `Test transactional email from ${businessName} via Frilensa. Pipeline operational.`
+          textContent: `Test email from ${businessName} via Frilensa. Email is working.`
         });
 
         if (sgResult.success) {
           return res.json({
             success: true,
             provider: 'sendgrid',
-            message: `Test email successfully delivered to ${recipientEmail} via SendGrid!`,
+            message: `Test email sent to ${recipientEmail}`,
             messageId: sgResult.messageId
           });
         } else {
@@ -1442,13 +1442,13 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       return res.json({
         success: false,
         provider: 'simulated',
-        error: 'Email delivery is not configured.',
+        error: 'Email sending isn\'t set up.',
         message: `No email was sent. Add SENDGRID_API_KEY and SENDGRID_FROM_EMAIL to the server environment to deliver email.`,
         previewHtml: html
       });
 
     } catch (err: any) {
-      return res.status(500).json({ error: err.message || "Failed to send test email." });
+      return res.status(500).json({ error: err.message || "Couldn't send the test email. Please try again." });
     }
   });
 
@@ -1463,92 +1463,84 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       const isPdf = attName.toLowerCase().endsWith('.pdf') || firstAtt.type?.includes('pdf');
       const isImg = attName.toLowerCase().match(/\.(jpg|jpeg|png|webp)$/) || firstAtt.type?.includes('image');
 
-      return `### Document Analysis & Review for **${bizName}**
-      
-Bula! I have processed your uploaded document: **${attName}** (${isPdf ? "PDF Document" : isImg ? "Image Scan" : "Document"}).
+      return `### About your file: **${attName}**
 
-#### 1. Document Extraction & Key Findings:
-- **File Type Identified**: ${isPdf ? "Bank Statement or Financial Statement" : isImg ? "Tax Invoice or Receipt Voucher" : "Business Document"}
-- **Jurisdiction**: Fiji (FRCS / Local Fijian Banking Framework)
-- **Primary Observations**:
-  - Found itemized transaction data and vendor records.
-  - Standard Fiji VAT (12.5%) detected on taxable domestic entries.
-  - Overseas software subscriptions (e.g. AWS, GitHub, Google) noted as zero-rated for local VAT claim.
+The AI advisor isn't available right now, so I couldn't read this ${isPdf ? "PDF" : isImg ? "image" : "document"}. Please try again in a few minutes.
 
-#### 2. Recommended Next Steps:
-- **Bookkeeping**: You can record these items under **Expenses** in Frilensa to maintain an accurate P&L.
-- **FRCS Compliance**: Retain a digital copy for at least 7 years pursuant to Fiji Revenue and Customs Service regulations.
-
-Would you like me to extract specific line items or calculate the total claimable VAT input for this document?`;
+In the meantime, when you check it yourself:
+- Local purchases usually include Fiji VAT at 12.5%, which you may be able to claim back.
+- Overseas software subscriptions (such as AWS, GitHub or Google) usually have no Fiji VAT.
+- Add the items under **Expenses** in Frilensa so your profit and loss stays accurate.
+- Keep a copy of the file. FRCS expects records to be kept for at least 7 years.`;
     }
     
     if (msg.includes("tax") || msg.includes("compliance") || msg.includes("frca") || msg.includes("vat") || msg.includes("frcs") || msg.includes("fee") || msg.includes("ecal")) {
-      return `### Fiji Tax, Levies & Fee Compliance Guidance for **${bizName}**
-      
-Bula! Under the Fiji Revenue and Customs Service (FRCS) rules, here are the essential tax and compliance guidelines for local freelancers, service providers, and SaaS businesses:
+      return `### Fiji tax basics for **${bizName}**
 
-1. **Taxpayer Identification Number (TIN)**:
-   - It is legally mandatory to register your business with FRCS and get a business TIN before commencing any billing activities.
+The AI advisor isn't available right now, so here are the general points. Check anything important with FRCS or your accountant.
 
-2. **Value Added Tax (VAT & Levies)**:
-   - **Current Rate**: Fiji VAT is **12.5%** (supporting exact decimal adjustments).
-   - **Statutory Levies**: Prescribed businesses or tourism services may also apply the **5% ECAL (Environment & Climate Adaptation Levy)** or Service Turnover Tax (STT).
-   - **Registration Threshold**: If your gross annual turnover is or exceeds **FJD $300,000**, you **must** register for VAT with FRCS.
-   - **Custom Business & Service Fees**: You can also itemize custom handling fees (e.g. 5% agency service fee, $25 SaaS cloud maintenance, or 2.5% M-Paisa processing surcharge) on your tax invoices.
+1. **TIN**:
+   - Register with FRCS and get a TIN for your business before you start invoicing.
 
-3. **Tax Filing Requirements**:
-   - You must file personal or corporate income tax returns annually. It is highly recommended to set aside 20-25% of all income in a separate bank account.
-   - For subcontractors, look out for Provisional Tax (PT) withholding regulations where applicable.
+2. **VAT and levies**:
+   - **Rate**: Fiji VAT is **12.5%**.
+   - **Levies**: Some businesses, such as tourism services, may also need to charge the **5% ECAL (Environment & Climate Adaptation Levy)** or Service Turnover Tax (STT).
+   - **Registration threshold**: If your gross annual turnover is **FJD $300,000** or more, you must register for VAT with FRCS.
+   - **Your own fees**: You can list extra fees on your invoices (for example a 5% service fee, a $25 maintenance fee or a 2.5% M-Paisa surcharge).
 
-Would you like advice on setting up your custom fees, ECAL levy, or invoice records?`;
+3. **Tax returns**:
+   - File your personal or company income tax return every year. Many people set aside 20-25% of their income in a separate account.
+   - If you pay subcontractors, check whether Provisional Tax (PT) withholding applies.
+
+Ask again later for help with your fees, ECAL or invoices.`;
     }
 
     if (msg.includes("statement") || msg.includes("bookkeeping") || msg.includes("reconciliation") || msg.includes("cash") || msg.includes("account")) {
-      return `### Financial Management & Bookkeeping Practices for **${bizName}**
+      return `### Bookkeeping habits for **${bizName}**
 
-Bula! Maintaining pristine financial statements is crucial for your business's health. Here are the top bookkeeping habits for Fijian creative businesses:
+The AI advisor isn't available right now, so here are a few general tips:
 
-1. **Reconciliation Frequency**:
-   - Reconcile your bank statements (BSP, ANZ, Westpac, M-Paisa) weekly. Uploading statements will automatically categorize transactions and isolate your Fiji VAT portion (12.5%) for local supplies or telecom expenses.
+1. **Reconcile weekly**:
+   - Check your bank statements (BSP, ANZ, Westpac, M-Paisa) every week. When you upload a statement, Frilensa sorts the transactions into categories and works out the Fiji VAT (12.5%) on local purchases.
 
-2. **Separate Accounts**:
-   - Never mix personal and business funds. Use separate bank accounts and Vodafone M-Paisa merchant wallets specifically for business operations.
+2. **Keep accounts separate**:
+   - Don't mix personal and business money. Use a separate bank account and M-Paisa wallet for the business.
 
-3. **Overseas Expenses vs. Local Expenses**:
-   - Remember that global SaaS platforms (such as GitHub, Vercel, AWS, Figma) are not subject to local Fiji VAT. Set their VAT rate to 0% in your records.
-   - Local expenses carry the standard 12.5% VAT, which you should track for potential input tax credits.
+3. **Overseas and local expenses**:
+   - Overseas software (such as GitHub, Vercel, AWS or Figma) has no Fiji VAT. Set its VAT rate to 0% in your records.
+   - Local expenses include 12.5% VAT. Keep track of it, as you may be able to claim it back.
 
-How is your current cash flow tracking this quarter? I can help analyze your outstanding invoices.`;
+Ask again later for help with your outstanding invoices.`;
     }
 
     if (msg.includes("mrr") || msg.includes("churn") || msg.includes("saas") || msg.includes("recurring") || msg.includes("subscription")) {
-      return `### SaaS Subscription & Service Fee Best Practices
+      return `### Subscriptions and recurring fees
 
-Bula! Operating a SaaS platform or retainer model (like **${bizName}**) is a powerful way to generate scalable recurring revenue. Here are the core metrics and practices to focus on:
+The AI advisor isn't available right now, so here are a few general points for a subscription or retainer business like **${bizName}**:
 
-1. **Monthly Recurring Revenue (MRR)**:
-   - MRR is the lifeblood of subscription models. Focus on customer acquisition and tier optimization (e.g., offering Basic, Pro, and Premium packages).
+1. **Monthly recurring revenue (MRR)**:
+   - Track MRR every month. It grows when you add customers or move them to higher plans (for example Basic, Pro and Premium).
 
-2. **Handling & Payment Gateway Fees**:
-   - Factor in standard transaction charges (such as a 2.5% M-Paisa gateway surcharge or $15 platform cloud handling fee) to protect your margins.
+2. **Payment fees**:
+   - Include payment charges in your prices (such as a 2.5% M-Paisa surcharge or a $15 handling fee) so they don't eat into your margin.
 
-3. **Customer Lifetime Value (LTV)**:
-   - Ensure your LTV is at least **3x greater** than your Customer Acquisition Cost (CAC).
+3. **Customer lifetime value (LTV)**:
+   - Aim for an LTV at least **3 times** what it costs you to win a customer (CAC).
 
-Would you like to design a fee or subscription-pricing strategy for your products?`;
+Ask again later for help pricing your plans.`;
     }
 
-    return `### Bula! Welcome to your Frilensa AI Advisor (frilensa.com)
+    return `### Bula! I'm the Frilensa AI advisor
 
-I am your virtual Fijian & Pacific business mentor, specializing in helping you navigate compliance, statutory taxes (12.5% VAT, ECAL), custom service fees, bookkeeping, and financial management on Frilensa.
+The full advisor isn't available right now, so I can only give general answers. I can help with Fiji tax (12.5% VAT, ECAL), your own service fees, bookkeeping and cash flow.
 
-Here is how you can use me:
-* **"Explain Fiji VAT & ECAL rules"** — Get compliant with FRCS regulations.
-* **"How do I configure custom business fees?"** — Advice on service and handling surcharges.
-* **"How do I reconcile my ANZ statement?"** — Learn how to isolate your business expenses.
-* **Upload Documents & Receipts** — Attach bank statements or receipts for immediate OCR & tax extraction.
+Things you can ask:
+* **"Explain Fiji VAT and ECAL"**
+* **"How do I set up my own fees?"**
+* **"How do I reconcile my ANZ statement?"**
+* **Attach a statement or receipt** and I'll go through it when the advisor is back.
 
-Tell me about your business or ask any specific financial question!`;
+What would you like to know?`;
   }
 
   // Local rule-based classifier fallback

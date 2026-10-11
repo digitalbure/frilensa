@@ -39,25 +39,25 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
     borderColor: 'border-indigo-200',
     bgHeaderColor: 'bg-indigo-50/70',
     icon: <Sparkles className="w-3.5 h-3.5 text-indigo-600" />,
-    description: 'Initial inquiries, proposals & scoping'
+    description: 'Enquiries, proposals and scoping'
   },
   {
     id: 'in_progress',
-    title: 'In Progress',
+    title: 'In progress',
     badgeColor: 'bg-sky-100 text-sky-700 border-sky-200',
     borderColor: 'border-sky-200',
     bgHeaderColor: 'bg-sky-50/70',
     icon: <Clock className="w-3.5 h-3.5 text-sky-600" />,
-    description: 'Active design, development & delivery'
+    description: 'Work under way'
   },
   {
     id: 'pending_review',
-    title: 'Pending Review',
+    title: 'Pending review',
     badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
     borderColor: 'border-amber-200',
     bgHeaderColor: 'bg-amber-50/70',
     icon: <AlertCircle className="w-3.5 h-3.5 text-amber-600" />,
-    description: 'Client review, QA, feedback & sign-off'
+    description: 'Waiting on client review or sign-off'
   },
   {
     id: 'completed',
@@ -66,7 +66,7 @@ const KANBAN_COLUMNS: KanbanColumn[] = [
     borderColor: 'border-emerald-200',
     bgHeaderColor: 'bg-emerald-50/70',
     icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />,
-    description: 'Finished deliverables & invoiced'
+    description: 'Delivered and invoiced'
   }
 ];
 
@@ -183,7 +183,7 @@ export default function ProjectKanbanBoard({
                       </span>
                     </div>
                     <span className="text-[9px] text-slate-500 font-mono block">
-                      {baseCfg.symbol}{columnTotalValueInBase.toLocaleString()} base total
+                      {baseCfg.symbol}{columnTotalValueInBase.toLocaleString()} total
                     </span>
                   </div>
                 </div>
@@ -212,7 +212,7 @@ export default function ProjectKanbanBoard({
                       onClick={() => onNewProject(column.id)}
                       className="mt-2 text-[10px] text-sky-600 hover:text-sky-700 font-bold flex items-center gap-1 hover:underline cursor-pointer"
                     >
-                      <Plus className="w-3 h-3" /> Add Project
+                      <Plus className="w-3 h-3" /> Add project
                     </button>
                   </div>
                 ) : (
@@ -253,7 +253,7 @@ export default function ProjectKanbanBoard({
                               </span>
                               <div className="min-w-0">
                                 <span className="text-[9.5px] font-bold text-slate-400 truncate block">
-                                  {client ? client.name : 'Independent Project'}
+                                  {client ? client.name : 'No client'}
                                 </span>
                               </div>
                             </div>
@@ -263,7 +263,7 @@ export default function ProjectKanbanBoard({
                               <button
                                 type="button"
                                 onClick={() => setStatusMenuOpenProjId(isMenuOpen ? null : proj.id)}
-                                title="Change Stage"
+                                title="Change stage"
                                 className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors cursor-pointer"
                               >
                                 <MoreVertical className="w-3 h-3" />
@@ -272,7 +272,7 @@ export default function ProjectKanbanBoard({
                               {isMenuOpen && (
                                 <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-30 min-w-[140px] flex flex-col gap-0.5 animate-in fade-in zoom-in-95">
                                   <span className="text-[8.5px] font-extrabold text-slate-400 px-2 py-0.5 uppercase tracking-wider">
-                                    Move Stage:
+                                    Move to
                                   </span>
                                   {KANBAN_COLUMNS.map((c) => (
                                     <button
@@ -302,7 +302,7 @@ export default function ProjectKanbanBoard({
                                       }}
                                       className="text-left px-2 py-1 rounded-lg text-[10px] font-bold text-slate-600 hover:bg-slate-100 border-t border-slate-100 mt-1 cursor-pointer"
                                     >
-                                      Edit Details
+                                      Edit details
                                     </button>
                                   )}
                                 </div>
@@ -326,9 +326,9 @@ export default function ProjectKanbanBoard({
                           {hasRunningTimer && (
                             <div className="bg-sky-500 text-white rounded-lg p-1.5 flex items-center justify-between text-[9px] font-bold shadow-xs animate-pulse">
                               <span className="flex items-center gap-1">
-                                <Clock className="w-3 h-3 animate-spin" /> Timer Active
+                                <Clock className="w-3 h-3 animate-spin" /> Timer running
                               </span>
-                              <span>Tracking...</span>
+                              <span>Tracking…</span>
                             </div>
                           )}
 

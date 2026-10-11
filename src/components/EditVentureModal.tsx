@@ -76,7 +76,7 @@ export default function EditVentureModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      setStatusError('Venture Name is required.');
+      setStatusError('Enter a business name.');
       return;
     }
 
@@ -126,14 +126,14 @@ export default function EditVentureModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                  Edit Venture Profile & Entity
+                  Edit business
                 </h3>
                 <span className="text-[9px] font-mono font-bold bg-sky-500/20 text-sky-300 border border-sky-400/30 px-2 py-0.5 rounded-full uppercase">
                   {ventureConfig.shortLabel}
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
-                Update legal business name, Fiji FRCS TIN, banking credentials, and contact details
+                Business name, TIN, payment and contact details
               </p>
             </div>
           </div>
@@ -159,7 +159,7 @@ export default function EditVentureModal({
           <div>
             <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-2 flex items-center gap-1.5">
               <Tag className="w-3.5 h-3.5 text-sky-400" />
-              <span>Venture Archetype / Business Model</span>
+              <span>Business type</span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {ALL_VENTURE_TYPES.map((vType) => {
@@ -193,7 +193,7 @@ export default function EditVentureModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                Business / Brand Name <span className="text-rose-400">*</span>
+                Business name <span className="text-rose-400">*</span>
               </label>
               <div className="relative">
                 <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
@@ -210,7 +210,7 @@ export default function EditVentureModal({
 
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                Industry / Category Tag
+                Category
               </label>
               <input
                 type="text"
@@ -226,8 +226,8 @@ export default function EditVentureModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1 flex items-center justify-between">
-                <span>Fiji FRCS Business TIN</span>
-                <span className="text-[9px] text-emerald-400 font-normal">Official Tax ID</span>
+                <span>Business TIN</span>
+                <span className="text-[9px] text-emerald-400 font-normal">Issued by FRCS</span>
               </label>
               <div className="relative">
                 <ShieldCheck className="w-4 h-4 text-emerald-400 absolute left-3 top-2.5" />
@@ -243,7 +243,7 @@ export default function EditVentureModal({
 
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1 flex items-center justify-between">
-                <span>Company / Registration No.</span>
+                <span>Registration number</span>
                 <span className="text-[9px] text-slate-400 font-normal">ROC / BN / Lic.</span>
               </label>
               <input
@@ -260,7 +260,7 @@ export default function EditVentureModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                Business Email
+                Business email
               </label>
               <div className="relative">
                 <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -276,7 +276,7 @@ export default function EditVentureModal({
 
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                Business Phone
+                Business phone
               </label>
               <div className="relative">
                 <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -292,7 +292,7 @@ export default function EditVentureModal({
 
             <div>
               <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                Physical City / Address
+                Address
               </label>
               <div className="relative">
                 <MapPin className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
@@ -312,14 +312,14 @@ export default function EditVentureModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-white flex items-center gap-1.5">
                 <CreditCard className="w-4 h-4 text-sky-400" />
-                <span>Pacific Banking & Payment Settlement</span>
+                <span>Payment details</span>
               </span>
-              <span className="text-[10px] text-slate-400">Printed on invoice footers</span>
+              <span className="text-[10px] text-slate-400">Printed on invoices</span>
             </div>
 
             <div>
               <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">
-                Bank Account Details (BSP / Westpac / ANZ / BRED / HFC)
+                Bank account (BSP, Westpac, ANZ, BRED, HFC)
               </label>
               <textarea
                 rows={2}
@@ -334,7 +334,7 @@ export default function EditVentureModal({
               <div>
                 <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1 flex items-center gap-1">
                   <Smartphone className="w-3 h-3 text-rose-400" />
-                  <span>Vodafone M-Paisa Merchant / Mobile</span>
+                  <span>M-PAiSA number or merchant ID</span>
                 </label>
                 <input
                   type="text"
@@ -348,7 +348,7 @@ export default function EditVentureModal({
               <div>
                 <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1 flex items-center gap-1">
                   <Smartphone className="w-3 h-3 text-teal-400" />
-                  <span>Digicel MyCash Mobile Number</span>
+                  <span>MyCash number</span>
                 </label>
                 <input
                   type="text"
@@ -366,15 +366,15 @@ export default function EditVentureModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-white flex items-center gap-1.5">
                 <Palette className="w-4 h-4 text-amber-400" />
-                <span>Visual Branding & Theme Accent</span>
+                <span>Branding</span>
               </span>
-              <span className="text-[10px] text-slate-400">Reflected across top navigation & invoices</span>
+              <span className="text-[10px] text-slate-400">Used in the app header and on invoices</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">
-                  Brand Tagline / Slogan
+                  Tagline
                 </label>
                 <input
                   type="text"
@@ -387,7 +387,7 @@ export default function EditVentureModal({
 
               <div>
                 <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">
-                  Brand Logo Image
+                  Logo
                 </label>
                 <div className="flex items-center gap-2">
                   <input
@@ -403,7 +403,7 @@ export default function EditVentureModal({
                     className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 text-xs font-semibold text-sky-400 flex items-center gap-1.5 cursor-pointer transition-colors"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    <span>Upload Logo File</span>
+                    <span>Upload logo</span>
                   </button>
                   {logoUrl && (
                     <button
@@ -415,7 +415,7 @@ export default function EditVentureModal({
                     </button>
                   )}
                   {isExtractingColors && (
-                    <span className="text-[10px] text-amber-400 animate-pulse">Extracting palette...</span>
+                    <span className="text-[10px] text-amber-400 animate-pulse">Picking colors…</span>
                   )}
                 </div>
               </div>
@@ -423,7 +423,7 @@ export default function EditVentureModal({
 
             <div>
               <label className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1.5">
-                Venture Color Theme
+                Brand color
               </label>
               <div className="flex items-center gap-2 flex-wrap">
                 {PRESET_COLORS.map(c => (
@@ -472,7 +472,7 @@ export default function EditVentureModal({
             className="px-5 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 text-white text-xs font-bold transition-all shadow-md shadow-sky-500/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Check className="w-4 h-4" />
-            <span>Save Venture Profile</span>
+            <span>Save</span>
           </button>
         </div>
       </motion.div>

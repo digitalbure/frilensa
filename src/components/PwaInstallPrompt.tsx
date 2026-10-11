@@ -113,7 +113,7 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
       return (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-slate-950 px-3 py-1.5 text-[10px] font-bold flex items-center justify-center gap-1.5 shadow-md">
           <WifiOff className="w-3.5 h-3.5" />
-          <span>Offline Mode Active • Invoices & cached records safely stored locally</span>
+          <span>You're offline. Some things won't load until you reconnect.</span>
         </div>
       );
     }
@@ -126,7 +126,7 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
       {!isOnline && (
         <div className="fixed top-0 left-0 right-0 z-50 bg-amber-500 text-slate-950 px-3 py-1.5 text-[10px] font-bold flex items-center justify-center gap-1.5 shadow-md">
           <WifiOff className="w-3.5 h-3.5" />
-          <span>Offline Mode: You are working offline. Cached records remain fully accessible.</span>
+          <span>You're offline. Some things won't load until you reconnect.</span>
         </div>
       )}
 
@@ -141,8 +141,8 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
           >
             <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
             <div className="text-xs">
-              <p className="font-bold">App Installed Successfully!</p>
-              <p className="text-[10px] text-emerald-100">Frilensa (frilensa.com) is now ready on your home screen with offline support.</p>
+              <p className="font-bold">App installed</p>
+              <p className="text-[10px] text-emerald-100">Open Frilensa from your home screen.</p>
             </div>
           </motion.div>
         )}
@@ -160,20 +160,20 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
           >
             <div className="flex items-center justify-between gap-3">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-400 p-0.5 shadow-md flex items-center justify-center shrink-0">
-                <img src="/pwa-icon.svg" alt="App Icon" className="w-full h-full rounded-[10px]" />
+                <img src="/pwa-icon.svg" alt="Frilensa" className="w-full h-full rounded-[10px]" />
               </div>
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-bold text-white tracking-tight truncate">
-                    Install Frilensa App
+                    Install Frilensa
                   </h4>
                   <span className="text-[8px] bg-sky-500/20 text-sky-300 font-bold px-1.5 py-0.2 rounded-full border border-sky-400/30">
-                    PWA Fast
+                    Web app
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-300 line-clamp-1 mt-0.5">
-                  Full screen, offline access & instant push alerts on mobile.
+                  Opens full screen from your home screen.
                 </p>
               </div>
 
@@ -217,11 +217,11 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
 
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 p-0.5 shadow-md flex items-center justify-center shrink-0">
-                  <img src="/pwa-icon.svg" alt="App Icon" className="w-full h-full rounded-[14px]" />
+                  <img src="/pwa-icon.svg" alt="Frilensa" className="w-full h-full rounded-[14px]" />
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Install on iPhone / iPad</h3>
-                  <p className="text-[11px] text-slate-500">Run as a native app on your home screen</p>
+                  <p className="text-[11px] text-slate-500">Add Frilensa to your home screen</p>
                 </div>
               </div>
 
@@ -235,7 +235,7 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
                       Tap the <strong>Share</strong> button in Safari's bottom toolbar.
                     </p>
                     <div className="mt-1 inline-flex items-center gap-1 px-2 py-0.5 bg-white rounded-md border border-slate-200 text-[10px] text-slate-600 font-semibold">
-                      <Share2 className="w-3 h-3 text-sky-600" /> Share Icon
+                      <Share2 className="w-3 h-3 text-sky-600" /> Share
                     </div>
                   </div>
                 </div>
@@ -271,7 +271,7 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
                   onClick={() => setShowIosGuide(false)}
                   className="w-full bg-slate-900 hover:bg-slate-800 text-white rounded-xl py-2.5 text-xs font-bold shadow-md active:scale-98 transition-all"
                 >
-                  Got It, Thanks!
+                  Done
                 </button>
               </div>
             </motion.div>

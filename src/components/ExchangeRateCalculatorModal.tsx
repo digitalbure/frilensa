@@ -172,20 +172,20 @@ export default function ExchangeRateCalculatorModal({
       const cfg = getCurrencyConfig(targetCurrency);
       let text = '';
       if (calcMode === 'forward') {
-        text = `FX Conversion Summary:
-• Foreign Base: ${cfg.code} ${calculations.foreignAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-• Exchange Rate: 1 ${cfg.code} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency}
-• Converted Gross: ${homeCurrency} $${calculations.grossFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+        text = `Currency conversion:
+• Amount: ${cfg.code} ${calculations.foreignAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+• Exchange rate: 1 ${cfg.code} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency}
+• Converted: ${homeCurrency} $${calculations.grossFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
         if (includeBankFee && calculations.bankFee > 0) {
-          text += `\n• Bank Deduction/Fee: -${homeCurrency} $${calculations.bankFee.toFixed(2)}`;
-          text += `\n• Net Banked (${homeCurrency}): ${homeCurrency} $${calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-          text += `\n• Effective Realized Rate: 1 ${cfg.code} = ${calculations.effectiveRate.toFixed(4)} ${homeCurrency}`;
+          text += `\n• Bank fee: -${homeCurrency} $${calculations.bankFee.toFixed(2)}`;
+          text += `\n• Received: ${homeCurrency} $${calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+          text += `\n• Effective rate: 1 ${cfg.code} = ${calculations.effectiveRate.toFixed(4)} ${homeCurrency}`;
         }
       } else {
-        text = `Invoice Quotation Calculation (Target Net ${homeCurrency} $${calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}):
-• Required Foreign Quote: ${cfg.code} ${calculations.requiredForeign.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-• Exchange Rate Applied: 1 ${cfg.code} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency}
-• Gross Converted Equivalent: ${homeCurrency} $${calculations.grossFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+        text = `Quote to receive ${homeCurrency} $${calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}:
+• Quote: ${cfg.code} ${calculations.requiredForeign.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+• Exchange rate: 1 ${cfg.code} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency}
+• Converted: ${homeCurrency} $${calculations.grossFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
       }
 
       await navigator.clipboard.writeText(text);
@@ -221,11 +221,11 @@ export default function ExchangeRateCalculatorModal({
               <div className="flex items-center gap-2">
                 <h3 className="font-bold text-sm text-white">Exchange Rate Calculator</h3>
                 <span className="bg-sky-500/30 text-sky-200 border border-sky-400/30 text-[9px] font-extrabold px-2 py-0.5 rounded-full font-mono">
-                  FJD Hub
+                  FJD
                 </span>
               </div>
               <p className="text-[11px] text-slate-300 mt-0.5">
-                Convert foreign client currencies to local Fiji Dollars (FJD)
+                Convert foreign currency to Fiji dollars (FJD)
               </p>
             </div>
           </div>
@@ -252,7 +252,7 @@ export default function ExchangeRateCalculatorModal({
               }`}
             >
               <TrendingUp className="w-3.5 h-3.5 text-sky-600" />
-              <span>Foreign &rarr; FJD Value</span>
+              <span>Foreign &rarr; FJD</span>
             </button>
             <button
               type="button"
@@ -264,7 +264,7 @@ export default function ExchangeRateCalculatorModal({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-500" />
-              <span>Quote Needed for FJD</span>
+              <span>Work out a quote</span>
             </button>
           </div>
 
@@ -272,10 +272,10 @@ export default function ExchangeRateCalculatorModal({
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
               <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1">
-                <GlobeIcon className="w-3.5 h-3.5 text-sky-600" /> Target Foreign Currency
+                <GlobeIcon className="w-3.5 h-3.5 text-sky-600" /> Currency
               </label>
               <span className="text-[10px] text-slate-400">
-                Converting against <strong>{homeCurrency} (FJ$)</strong>
+                Converting to <strong>{homeCurrency} (FJ$)</strong>
               </span>
             </div>
 
@@ -287,7 +287,7 @@ export default function ExchangeRateCalculatorModal({
               >
                 {SUPPORTED_CURRENCIES.map((c) => (
                   <option key={c.code} value={c.code}>
-                    {c.flag} {c.code} ({c.symbol}) &mdash; {c.name} &bull; Approx 1 {c.code} = {c.approxFjdMultiplier} FJD
+                    {c.flag} {c.code} ({c.symbol}) &mdash; {c.name} &bull; about 1 {c.code} = {c.approxFjdMultiplier} FJD
                   </option>
                 ))}
               </select>
@@ -296,9 +296,9 @@ export default function ExchangeRateCalculatorModal({
             {/* Quick Popular Currency Chips */}
             <div className="space-y-1">
               <div className="flex items-center justify-between text-[9px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>{workingCurrencies && workingCurrencies.length > 0 ? 'Venture Working Currencies' : 'Popular Currencies'}</span>
+                <span>{workingCurrencies && workingCurrencies.length > 0 ? 'Your currencies' : 'Common currencies'}</span>
                 {customExchangeRates && Object.keys(customExchangeRates).length > 0 && (
-                  <span className="text-sky-600 font-semibold lowercase">custom contracted rates active</span>
+                  <span className="text-sky-600 font-semibold lowercase">using your saved rates</span>
                 )}
               </div>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pt-0.5">
@@ -341,8 +341,8 @@ export default function ExchangeRateCalculatorModal({
             <div className="space-y-1">
               <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
                 {calcMode === 'forward'
-                  ? `Base Amount (${targetConfig.code} ${targetConfig.symbol})`
-                  : `Desired In Hand (${homeCurrency} FJ$)`}
+                  ? `Amount (${targetConfig.code} ${targetConfig.symbol})`
+                  : `Amount you want (${homeCurrency} FJ$)`}
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400">
@@ -382,15 +382,15 @@ export default function ExchangeRateCalculatorModal({
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wider block">
-                  Exchange Rate
+                  Exchange rate
                 </label>
                 <button
                   type="button"
                   onClick={handleResetBenchmarkRate}
-                  title="Reset to current market benchmark"
+                  title="Reset to the default rate"
                   className="text-[9.5px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-0.5 cursor-pointer"
                 >
-                  <RotateCcw className="w-2.5 h-2.5" /> Benchmark
+                  <RotateCcw className="w-2.5 h-2.5" /> Reset
                 </button>
               </div>
 
@@ -427,7 +427,7 @@ export default function ExchangeRateCalculatorModal({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Landmark className="w-4 h-4 text-slate-600" />
-                <span className="font-bold text-slate-700 text-[11px]">Bank Wire Fee & Deductions</span>
+                <span className="font-bold text-slate-700 text-[11px]">Bank transfer fee</span>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -443,7 +443,7 @@ export default function ExchangeRateCalculatorModal({
             {includeBankFee && (
               <div className="pt-1.5 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2 animate-fade-in">
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 uppercase">Telegraphic Transfer Fee (FJD)</label>
+                  <label className="text-[10px] font-bold text-slate-500 uppercase">Transfer fee (FJD)</label>
                   <div className="relative mt-1">
                     <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">FJ$</span>
                     <input
@@ -457,7 +457,7 @@ export default function ExchangeRateCalculatorModal({
                   </div>
                 </div>
                 <div className="flex items-end pb-1 text-[10px] text-slate-500">
-                  <span>Standard TT fees in Fiji (ANZ / BSP / Westpac) range from FJ$10.00 to FJ$25.00 per wire.</span>
+                  <span>Banks in Fiji often charge FJ$10–25 per international transfer. Check with yours.</span>
                 </div>
               </div>
             )}
@@ -472,7 +472,7 @@ export default function ExchangeRateCalculatorModal({
             <div className="flex items-center justify-between text-sky-200 text-[10.5px] uppercase font-bold tracking-wider mb-2">
               <span className="flex items-center gap-1.5">
                 <DollarSign className="w-3.5 h-3.5 text-sky-400" />
-                {calcMode === 'forward' ? 'Final Converted Value (FJD)' : 'Required Foreign Invoice Quote'}
+                {calcMode === 'forward' ? 'Amount in FJD' : 'Amount to quote'}
               </span>
               <span className="bg-sky-400/20 text-sky-200 text-[9px] px-2 py-0.5 rounded-full font-mono">
                 {calculations.foreignCurrency} &harr; {homeCurrency}
@@ -500,7 +500,7 @@ export default function ExchangeRateCalculatorModal({
                     <span className="text-xs font-semibold text-slate-300 font-sans ml-1">{targetConfig.code}</span>
                   </div>
                   <p className="text-[11px] text-sky-200/80 mt-1">
-                    Quote to client so you receive exactly FJ$ {calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })} in Fiji
+                    Quote this to receive FJ$ {calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               )}
@@ -509,19 +509,19 @@ export default function ExchangeRateCalculatorModal({
             {/* Breakdown itemized list */}
             <div className="mt-4 pt-3 border-t border-white/10 space-y-1.5 text-[11px]">
               <div className="flex justify-between text-slate-300">
-                <span>Foreign Base Amount:</span>
+                <span>Foreign amount:</span>
                 <span className="font-mono font-bold text-white">
                   {targetConfig.code} {targetConfig.symbol}{calculations.foreignAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
               </div>
               <div className="flex justify-between text-slate-300">
-                <span>Applied Exchange Rate:</span>
+                <span>Exchange rate:</span>
                 <span className="font-mono text-sky-300">
                   1 {targetConfig.code} = {calculations.exchangeRate.toFixed(4)} FJD
                 </span>
               </div>
               <div className="flex justify-between text-slate-300">
-                <span>Gross FJD Converted:</span>
+                <span>In FJD:</span>
                 <span className="font-mono font-bold text-white">
                   FJ$ {calculations.grossFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                 </span>
@@ -530,15 +530,15 @@ export default function ExchangeRateCalculatorModal({
               {includeBankFee && calculations.bankFee > 0 && (
                 <>
                   <div className="flex justify-between text-rose-300">
-                    <span>Telegraphic Bank Fee:</span>
+                    <span>Bank fee:</span>
                     <span className="font-mono">- FJ$ {calculations.bankFee.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-emerald-300 font-bold pt-1 border-t border-white/10">
-                    <span>Net Banked in Fiji Account:</span>
+                    <span>You receive:</span>
                     <span className="font-mono">FJ$ {calculations.netFjd.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-slate-300 text-[10px]">
-                    <span>Effective Realized Rate:</span>
+                    <span>Effective rate:</span>
                     <span className="font-mono text-emerald-400">
                       1 {targetConfig.code} = {calculations.effectiveRate.toFixed(4)} FJD
                     </span>
@@ -552,9 +552,9 @@ export default function ExchangeRateCalculatorModal({
           <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2 text-left">
             <div className="flex items-center justify-between text-slate-600">
               <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1">
-                <Info className="w-3.5 h-3.5 text-sky-600" /> Pacific & Global FX Benchmarks
+                <Info className="w-3.5 h-3.5 text-sky-600" /> Reference rates
               </span>
-              <span className="text-[9.5px] text-slate-400">Indicative vs 1 FJD</span>
+              <span className="text-[9.5px] text-slate-400">Approximate, in FJD</span>
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 text-[10.5px]">
@@ -595,12 +595,12 @@ export default function ExchangeRateCalculatorModal({
             {copied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-700">Copied to Clipboard!</span>
+                <span className="text-emerald-700">Copied</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5 text-slate-500" />
-                <span>Copy Summary</span>
+                <span>Copy summary</span>
               </>
             )}
           </button>
@@ -623,7 +623,7 @@ export default function ExchangeRateCalculatorModal({
                 className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-emerald-600/20 cursor-pointer"
               >
                 <ArrowRightLeft className="w-3.5 h-3.5" />
-                <span>Apply to Expense ({homeCurrency} ${calculations.grossFjd.toFixed(2)})</span>
+                <span>Use for expense ({homeCurrency} ${calculations.grossFjd.toFixed(2)})</span>
               </button>
             )}
 
@@ -636,14 +636,14 @@ export default function ExchangeRateCalculatorModal({
                     amount: calcMode === 'forward' ? calculations.foreignAmount : calculations.requiredForeign,
                     exchangeRate: calculations.exchangeRate,
                     fjdEquivalent: calculations.grossFjd,
-                    notes: `Billed in ${targetCurrency} at benchmark rate 1 ${targetCurrency} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency} (Gross equiv: ${homeCurrency} $${calculations.grossFjd.toFixed(2)})`
+                    notes: `Billed in ${targetCurrency} at 1 ${targetCurrency} = ${calculations.exchangeRate.toFixed(4)} ${homeCurrency} (${homeCurrency} equivalent: $${calculations.grossFjd.toFixed(2)})`
                   });
                   onClose();
                 }}
                 className="bg-sky-600 hover:bg-sky-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-sky-600/20 cursor-pointer"
               >
                 <FilePlus className="w-3.5 h-3.5" />
-                <span>Draft Invoice in {targetCurrency}</span>
+                <span>Draft invoice in {targetCurrency}</span>
               </button>
             )}
 

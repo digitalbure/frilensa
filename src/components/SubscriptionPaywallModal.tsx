@@ -33,52 +33,49 @@ export default function SubscriptionPaywallModal({
       annualPrice: 0,
       badge: 'Current Plan',
       features: [
-        'Up to 5 Invoices per month',
-        'Up to 3 Active Clients',
-        '1 Business Venture Profile',
-        'Standard PDF Export',
-        'Community Support',
+        'Up to 5 invoices a month',
+        'Up to 3 active clients',
+        '1 business profile',
+        'PDF export',
+        'Community support',
       ],
       limits: 'Basic Features'
     },
     {
       id: 'pro' as PlanTier,
       name: 'Freelance Pro',
-      tagline: 'For active consultants, devs, & creatives',
+      tagline: 'For working consultants, developers and creatives',
       monthlyPrice: 25,
       annualPrice: 240, // $20/mo
       badge: 'Most Popular',
       popular: true,
       features: [
-        'Unlimited Invoices & Receipts',
-        'Up to 30 Clients & Projects',
-        '3 Business Venture Profiles',
-        'AI Receipt & Invoice OCR Scanner',
-        'Recurring Invoices & Retainer Contracts',
-        'Custom Business Logos & Color Branding',
-        'Escrow Wallet & Dispute Protection',
-        'Priority M-PAiSA & MyCash Integration',
-        'Standard Support'
+        'Unlimited invoices and receipts',
+        'Up to 30 clients and projects',
+        '3 business profiles',
+        'AI receipt and invoice scanning',
+        'Recurring invoices and retainers',
+        'Your own logo and brand colour',
+        'Escrow wallet',
+        'M-PAiSA and MyCash payments',
+        'Standard support'
       ],
       limits: 'High Quota'
     },
     {
       id: 'premium' as PlanTier,
       name: 'Agency Premium',
-      tagline: 'For studios, agencies, & growing teams',
+      tagline: 'For studios, agencies and teams',
       monthlyPrice: 50,
       annualPrice: 480, // $40/mo
       badge: 'Best Value',
       features: [
-        'Unlimited Everything (Invoices, Clients, Projects)',
-        'Up to 10 Multi-Venture Business Profiles',
-        'Dedicated Client Portal with Custom Subdomain',
-        'Multi-Currency Invoicing (FJD, AUD, USD, NZD)',
-        'Direct Fiji Bank Reconciliation Feeds',
-        'High-Volume 200/mo AI Smart Scans',
-        'Zero-Fee Escrow Platform Priority',
-        'Whitelabel Document Branding',
-        '24/7 VIP Phone & WhatsApp Support'
+        'Unlimited invoices, clients and projects',
+        'Up to 10 business profiles',
+        'Client portal',
+        'Invoices in FJD, AUD, USD and NZD',
+        'Bank statement import and reconciliation',
+        '200 AI scans a month'
       ],
       limits: 'Unlimited Scale'
     }
@@ -109,8 +106,8 @@ export default function SubscriptionPaywallModal({
               <Sparkles className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="font-black text-sm text-white">Frilensa Subscription & Plans</h3>
-              <p className="text-[10px] text-slate-400">Power your freelancing and agency business with Pacific-ready tools</p>
+              <h3 className="font-black text-sm text-white">Plans</h3>
+              <p className="text-[10px] text-slate-400">All plans are free during early access</p>
             </div>
           </div>
           <button
@@ -129,7 +126,7 @@ export default function SubscriptionPaywallModal({
             <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-3.5 flex items-center gap-3">
               <Zap className="w-5 h-5 text-amber-600 shrink-0" />
               <div>
-                <strong className="block text-xs">Upgrade Required</strong>
+                <strong className="block text-xs">Upgrade needed</strong>
                 <p className="text-[11px] text-amber-800">{reason}</p>
               </div>
             </div>
@@ -139,10 +136,10 @@ export default function SubscriptionPaywallModal({
               {/* Header Title & Billing Cycle Toggle */}
               <div className="text-center space-y-3 max-w-xl mx-auto">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                  Transparent Plans Built for Fiji & Pacific Creators
+                  Choose a plan
                 </h2>
                 <p className="text-slate-500 text-xs sm:text-sm">
-                  Accept M-PAiSA, generate FRCS compliant tax documents, safeguard funds with escrow, and scale your ventures.
+                  Invoices with Fiji VAT, M-PAiSA payments, escrow and room for more than one business.
                 </p>
 
                 {/* Monthly / Annual Toggle */}
@@ -153,7 +150,7 @@ export default function SubscriptionPaywallModal({
                       billingCycle === 'monthly' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
-                    Monthly Billing
+                    Monthly
                   </button>
                   <button
                     onClick={() => setBillingCycle('annual')}
@@ -161,7 +158,7 @@ export default function SubscriptionPaywallModal({
                       billingCycle === 'annual' ? 'bg-sky-600 text-white shadow-xs' : 'text-slate-500 hover:text-slate-800'
                     }`}
                   >
-                    <span>Annual Billing</span>
+                    <span>Annual</span>
                     <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-black ${
                       billingCycle === 'annual' ? 'bg-amber-400 text-slate-950' : 'bg-emerald-100 text-emerald-800'
                     }`}>
@@ -193,7 +190,7 @@ export default function SubscriptionPaywallModal({
                       {plan.popular && (
                         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sky-600 text-white font-black text-[9px] uppercase tracking-wider px-3 py-0.5 rounded-full shadow-sm flex items-center gap-1">
                           <Star className="w-2.5 h-2.5 fill-amber-300 text-amber-300" />
-                          Recommended for Pros
+                          Recommended
                         </div>
                       )}
 
@@ -221,7 +218,7 @@ export default function SubscriptionPaywallModal({
                           </div>
                           {billingCycle === 'annual' && planPrice > 0 && (
                             <p className="text-[10px] text-sky-700 font-semibold mt-0.5">
-                              Billed annually at FJD ${planPrice}/year (2 months free)
+                              FJD ${planPrice} a year (2 months free)
                             </p>
                           )}
                         </div>
@@ -252,7 +249,7 @@ export default function SubscriptionPaywallModal({
                               : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                           }`}
                         >
-                          {isCurrent ? 'Maintain Plan' : plan.id === 'free' ? 'Switch to Free' : 'Choose ' + plan.name}
+                          {isCurrent ? 'Keep plan' : plan.id === 'free' ? 'Switch to Free' : 'Choose ' + plan.name}
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -270,7 +267,7 @@ export default function SubscriptionPaywallModal({
 
         {/* Modal Bottom Bar */}
         <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-between items-center shrink-0">
-          <span className="text-[10px] text-slate-400">Frilensa SaaS Subscriptions • Suva, Fiji</span>
+          <span className="text-[10px] text-slate-400">Frilensa • Suva, Fiji</span>
           <button
             onClick={onClose}
             className="text-slate-600 hover:text-slate-900 font-bold px-4 py-1.5 rounded-xl text-xs transition-colors cursor-pointer"

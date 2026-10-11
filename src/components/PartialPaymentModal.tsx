@@ -41,7 +41,7 @@ export default function PartialPaymentModal({
     document.paymentDate || new Date().toISOString().split('T')[0]
   );
   const [notes, setNotes] = useState<string>(
-    document.paymentExchangeNotes || 'Partial milestone / deposit payment received.'
+    document.paymentExchangeNotes || 'Part payment received.'
   );
   const [attachments, setAttachments] = useState<PaymentAttachment[]>(() => {
     return document.paymentAttachments || [];
@@ -68,7 +68,7 @@ export default function PartialPaymentModal({
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (partialAmount <= 0) {
-      alert('Please enter a valid partial amount greater than 0.');
+      alert('Enter an amount greater than 0.');
       return;
     }
     onSavePartial(document.id, partialAmount, paymentMethod, paymentDate, notes, attachments);
@@ -90,7 +90,7 @@ export default function PartialPaymentModal({
               <Clock className="w-5 h-5 text-amber-100" />
             </span>
             <div>
-              <h3 className="text-sm font-black tracking-tight">Record Partial Payment</h3>
+              <h3 className="text-sm font-black tracking-tight">Record part payment</h3>
               <p className="text-[11px] text-amber-100/90 font-mono">
                 Invoice #{document.documentNumber} • {client?.name || 'Client'}
               </p>
@@ -109,7 +109,7 @@ export default function PartialPaymentModal({
           {/* Invoice Summary Box */}
           <div className="bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3.5 space-y-2">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-500 font-bold">Total Invoice Value:</span>
+              <span className="text-slate-500 font-bold">Invoice total:</span>
               <span className="font-mono font-black text-slate-800 text-sm">
                 {docCurrency} {currencyCfg.symbol}{totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
@@ -133,14 +133,14 @@ export default function PartialPaymentModal({
           {/* Quick Preset Buttons */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Quick Payment Share Presets
+              Quick amounts
             </label>
             <div className="grid grid-cols-4 gap-1.5">
               {[
-                { label: '25% Deposit', pct: 25 },
-                { label: '33% 1/3rd', pct: 33.333 },
-                { label: '50% Half', pct: 50 },
-                { label: '75% Stage 2', pct: 75 }
+                { label: '25%', pct: 25 },
+                { label: '33%', pct: 33.333 },
+                { label: '50%', pct: 50 },
+                { label: '75%', pct: 75 }
               ].map(preset => (
                 <button
                   key={preset.pct}
@@ -161,7 +161,7 @@ export default function PartialPaymentModal({
           {/* Partial Amount Input */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Amount Received ({docCurrency}) *
+              Amount received ({docCurrency}) *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-slate-400 font-bold">
@@ -185,7 +185,7 @@ export default function PartialPaymentModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                Payment Channel
+                Payment method
               </label>
               <select
                 value={paymentMethod}
@@ -206,7 +206,7 @@ export default function PartialPaymentModal({
 
             <div>
               <DateInput
-                label="Date Received"
+                label="Date received"
                 value={paymentDate}
                 onChange={setPaymentDate}
                 align="right"
@@ -221,13 +221,13 @@ export default function PartialPaymentModal({
           {/* Reference Notes */}
           <div>
             <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-              Payment Reference / Notes
+              Reference or notes
             </label>
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder="e.g. M-PAiSA Ref #98721, 50% mobilization deposit"
+              placeholder="e.g. M-PAiSA ref 98721, 50% deposit"
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500"
             />
           </div>
@@ -237,8 +237,8 @@ export default function PartialPaymentModal({
             <PaymentAttachmentWidget
               attachments={attachments}
               onChange={setAttachments}
-              title="Deposit / Partial Payment Slip"
-              description="Attach transfer receipt, remittance advice, or mobile wallet screenshot."
+              title="Proof of payment"
+              description="Attach a transfer receipt, remittance advice or wallet screenshot."
               allowCamera={true}
             />
           </div>
@@ -257,7 +257,7 @@ export default function PartialPaymentModal({
               className="px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-all shadow-md shadow-amber-600/20 flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Check className="w-3.5 h-3.5" />
-              Save Partial Status
+              Save payment
             </button>
           </div>
         </form>

@@ -166,7 +166,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
     const rowsToImport = editableRows.filter((_, idx) => selectedIndices.has(idx));
     if (rowsToImport.length === 0) {
       if (duplicateCount > 0 && selectedIndices.size === 0) {
-        alert('All transactions match existing ledger entries and were unselected to prevent double counting. Check individual items or click "Select All" if you wish to force import.');
+        alert('Every row is already in your ledger, so none are ticked. Tick the rows you want, or click "Select all anyway" to import them all.');
       }
       return;
     }
@@ -186,7 +186,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
       originalAmount: item.foreignAmount,
       exchangeRate: item.exchangeRate,
       netReceived: item.amount > 0 ? item.amount : undefined,
-      notes: item.balance !== undefined ? `Running BSP Balance: FJD $${item.balance.toFixed(2)}` : undefined
+      notes: item.balance !== undefined ? `Statement balance: FJD $${item.balance.toFixed(2)}` : undefined
     }));
 
     onImport(formatted);
@@ -198,7 +198,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
     if (!rawText.trim() && editableRows.length === 0) return;
 
     setIsClassifying(true);
-    setReassurance('Gemini 3.8 Flash is analyzing Fiji transactions, tax rules, and remittances...');
+    setReassurance('Categorising transactions with AI…');
 
     try {
       const res = await fetch('/api/bookkeeping/categorize', {
@@ -223,7 +223,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
           confidence: item.confidence || 95,
           bankName: item.bankName || 'BSP Fiji',
           vatAmount: item.vatAmount || 0,
-          notes: item.balance !== undefined ? `Running Balance: FJD $${item.balance.toFixed(2)}` : undefined
+          notes: item.balance !== undefined ? `Statement balance: FJD $${item.balance.toFixed(2)}` : undefined
         }));
 
         // If skip duplicates is active, filter out duplicates automatically
@@ -261,13 +261,13 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold tracking-tight">Fiji Bank Statement Reconciler</h3>
+                <h3 className="text-sm font-bold tracking-tight">Import bank statement</h3>
                 <span className="text-[10px] bg-emerald-500/20 text-emerald-300 font-semibold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                  BSP NetBank / CSV Ready
+                  CSV or text
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Seamlessly import statements from BSP Fiji, ANZ, Westpac, or M-Paisa
+                Import statements from BSP, ANZ, Westpac or M-PAiSA
               </p>
             </div>
           </div>
@@ -293,7 +293,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                 }`}
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
-                Paste Text / CSV
+                Paste text
               </button>
               <button
                 onClick={() => setActiveTab('upload')}
@@ -304,13 +304,13 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                 }`}
               >
                 <Upload className="w-3.5 h-3.5" />
-                Upload CSV File
+                Upload file
               </button>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-[10px] text-zinc-400 font-mono">
-                Live Data Parser (BSP, ANZ, Westpac, M-PAiSA)
+                Reads BSP, ANZ, Westpac and M-PAiSA formats
               </span>
               {rawText && (
                 <button
@@ -328,9 +328,9 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
           {activeTab === 'paste' && (
             <div className="space-y-2">
               <div className="flex justify-between items-center text-xs text-zinc-500">
-                <span>Paste statement lines or CSV exported from BSP NetBank:</span>
+                <span>Paste statement lines or a CSV export:</span>
                 <span className="font-mono text-[11px] text-zinc-400">
-                  Headers detected: Date, Description, Credit (FJD), Debit (FJD), Balance (FJD)
+                  Columns: Date, Description, Credit (FJD), Debit (FJD), Balance (FJD)
                 </span>
               </div>
               <textarea
@@ -367,10 +367,10 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                   <Upload className="w-6 h-6" />
                 </div>
                 <span className="text-sm font-semibold text-zinc-800">
-                  Drop your BSP CSV statement file here, or click to browse
+                  Drop a statement file here, or click to choose one
                 </span>
                 <span className="text-xs text-zinc-400 mt-1">
-                  Supports .csv, .tsv, .txt files exported directly from BSP Fiji NetBank
+                  .csv, .tsv or .txt exported from your bank
                 </span>
               </div>
             </div>
@@ -383,10 +383,10 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                 <div className="flex items-center gap-2">
                   <span className="inline-flex items-center gap-1.5 bg-emerald-100 text-emerald-800 text-xs font-bold px-2.5 py-1 rounded-full">
                     <Check className="w-3.5 h-3.5" />
-                    Detected: {parseResult.bankIdentified} Statement ({editableRows.length} transactions)
+                    {parseResult.bankIdentified} statement ({editableRows.length} transactions)
                   </span>
                   <span className="text-xs text-zinc-500">
-                    Fiji VAT Rate: <span className="font-semibold text-zinc-700">{defaultVatRate}%</span>
+                    VAT rate: <span className="font-semibold text-zinc-700">{defaultVatRate}%</span>
                   </span>
                 </div>
 
@@ -413,10 +413,9 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                   <div className="flex items-start gap-2">
                     <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold">Duplicate Guard Active:</span>{' '}
+                      <span className="font-bold">Possible duplicates:</span>{' '}
                       <span>
-                        Found <strong>{duplicateCount}</strong> entry that matches transactions already in your ledger.
-                        They have been unchecked to protect against double entries.
+                        <strong>{duplicateCount}</strong> already in your ledger, so they're unticked.
                       </span>
                     </div>
                   </div>
@@ -431,14 +430,14 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                           : 'bg-amber-100 hover:bg-amber-200 text-amber-900'
                       }`}
                     >
-                      Skip Duplicates ({duplicateCount})
+                      Skip duplicates ({duplicateCount})
                     </button>
                     <button
                       type="button"
                       onClick={handleSelectAll}
                       className="text-[11px] font-bold bg-white border border-amber-300 hover:bg-amber-50 text-amber-900 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
                     >
-                      Select All Anyway
+                      Select all anyway
                     </button>
                   </div>
                 </div>
@@ -512,7 +511,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                                     title={dupReason}
                                   >
                                     <AlertTriangle className="w-2.5 h-2.5 text-amber-700" />
-                                    Already in Ledger
+                                    Already in ledger
                                   </span>
                                 )}
                                 {row.isForeignCurrency && (
@@ -569,10 +568,10 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
             <div className="bg-amber-50/70 border border-amber-200/80 rounded-xl p-3 flex items-start gap-2.5 text-xs text-amber-900">
               <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
               <div className="space-y-1 leading-relaxed">
-                <span className="font-bold block">BSP Statement Format Guide:</span>
+                <span className="font-bold block">Statement format</span>
                 <p className="text-[11px] text-amber-800">
-                  BSP Fiji Internet Banking statements include columns: <code className="font-mono bg-amber-100/80 px-1 rounded">Date</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Description</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Credit (FJD)</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Debit (FJD)</code>, and <code className="font-mono bg-amber-100/80 px-1 rounded">Balance (FJD)</code>.
-                  You can paste table rows directly with or without headers, or upload the exported CSV file.
+                  Bank statements usually have these columns: <code className="font-mono bg-amber-100/80 px-1 rounded">Date</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Description</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Credit (FJD)</code>, <code className="font-mono bg-amber-100/80 px-1 rounded">Debit (FJD)</code>, and <code className="font-mono bg-amber-100/80 px-1 rounded">Balance (FJD)</code>.
+                  Paste the rows with or without headers, or upload the CSV file.
                 </p>
               </div>
             </div>
@@ -592,7 +591,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                 )}
               </span>
             ) : (
-              <span>Paste or upload a statement to preview transactions</span>
+              <span>Paste or upload a statement to see its transactions</span>
             )}
           </div>
 
@@ -613,7 +612,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
               className="px-4 py-2 text-xs font-semibold bg-white border border-zinc-300 hover:bg-zinc-100 text-zinc-800 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1.5 cursor-pointer shadow-xs"
             >
               <Check className="w-3.5 h-3.5 text-emerald-600" />
-              Quick Import ({selectedIndices.size})
+              Import ({selectedIndices.size})
             </button>
 
             {/* Gemini AI Powered Import */}
@@ -626,12 +625,12 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
               {isClassifying ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
-                  Analyzing...
+                  Categorising…
                 </>
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5 text-sky-400" />
-                  Analyze with Gemini AI ({selectedIndices.size})
+                  Import with AI categories ({selectedIndices.size})
                 </>
               )}
             </button>

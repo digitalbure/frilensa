@@ -55,10 +55,10 @@ export default function ClientShareModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                Client Portal Public Access
+                Share client portal
               </h3>
               <p className="text-xs text-slate-300 mt-0.5">
-                Direct passwordless portal link for <span className="text-sky-300 font-semibold">{client.name}</span>
+                Portal link for <span className="text-sky-300 font-semibold">{client.name}</span>
               </p>
             </div>
           </div>
@@ -75,7 +75,7 @@ export default function ClientShareModal({
           {/* Client Profile Header Pill */}
           <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="space-y-0.5">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Client Identity</span>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Client</span>
               <h4 className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Briefcase className="w-4 h-4 text-slate-500 shrink-0" />
                 <span>{client.name}</span>
@@ -83,12 +83,12 @@ export default function ClientShareModal({
               {(client.contactPerson || client.contactName) && (
                 <p className="text-xs text-slate-600 font-medium flex items-center gap-1">
                   <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span>Representative: {client.contactPerson || client.contactName}</span>
+                  <span>Contact: {client.contactPerson || client.contactName}</span>
                 </p>
               )}
               <p className="text-xs text-slate-500 font-mono flex items-center gap-1">
                 <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                <span>{client.email || 'No email specified'}</span>
+                <span>{client.email || 'No email'}</span>
               </p>
             </div>
 
@@ -100,11 +100,11 @@ export default function ClientShareModal({
               )}
               {client.accessToken ? (
                 <span className="bg-emerald-50 text-emerald-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Public Link Active
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Link active
                 </span>
               ) : (
                 <span className="bg-amber-50 text-amber-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200 flex items-center gap-1">
-                  <AlertTriangle className="w-3 h-3 text-amber-600" /> Link Not Generated
+                  <AlertTriangle className="w-3 h-3 text-amber-600" /> No link yet
                 </span>
               )}
             </div>
@@ -116,7 +116,7 @@ export default function ClientShareModal({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                    <Link2 className="w-3.5 h-3.5 text-sky-600" /> Direct Public Access URL
+                    <Link2 className="w-3.5 h-3.5 text-sky-600" /> Portal link
                   </label>
                   <span className="text-[10px] text-slate-400 font-mono">
                     Token: {client.accessToken.substring(0, 16)}...
@@ -143,12 +143,12 @@ export default function ClientShareModal({
                     {copiedClientId === client.id ? (
                       <>
                         <Check className="w-3.5 h-3.5" />
-                        <span>Copied!</span>
+                        <span>Copied</span>
                       </>
                     ) : (
                       <>
                         <Copy className="w-3.5 h-3.5" />
-                        <span>Copy Link</span>
+                        <span>Copy link</span>
                       </>
                     )}
                   </button>
@@ -168,10 +168,10 @@ export default function ClientShareModal({
                 <div className="space-y-1.5 text-center sm:text-left">
                   <h5 className="text-xs font-bold text-slate-900 flex items-center justify-center sm:justify-start gap-1.5">
                     <QrCode className="w-4 h-4 text-sky-600" />
-                    <span>Interactive Mobile QR Code</span>
+                    <span>QR code</span>
                   </h5>
                   <p className="text-[11px] text-slate-500 leading-relaxed">
-                    Your client can scan this QR code with any iPhone or Android camera to instantly view their project portal without entering credentials.
+                    Your client can scan this with a phone camera to open their portal without a password.
                   </p>
                   <div className="pt-1 flex flex-wrap gap-2 justify-center sm:justify-start">
                     <a
@@ -181,7 +181,7 @@ export default function ClientShareModal({
                       className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1 rounded-lg transition-all"
                     >
                       <ExternalLink className="w-3 h-3" />
-                      <span>Preview / Test Portal in New Tab</span>
+                      <span>Open portal in new tab</span>
                     </a>
                   </div>
                 </div>
@@ -190,29 +190,29 @@ export default function ClientShareModal({
               {/* 1-Click Send Channels */}
               <div className="space-y-2">
                 <label className="text-[11px] font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Send className="w-3.5 h-3.5 text-sky-600" /> Send Directly to Client
+                  <Send className="w-3.5 h-3.5 text-sky-600" /> Send to client
                 </label>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <a
                     href={`https://wa.me/?text=${encodeURIComponent(
-                      `Bula ${representative}!\n\nHere is your private access link to view your active projects, deliverables, quotes, and tax invoices:\n${portalUrl}\n\nVinaka!`
+                      `Bula ${representative},\n\nHere is your private link to see your projects, quotes and invoices:\n${portalUrl}\n\nThanks`
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
                   >
                     <MessageSquare className="w-4 h-4" />
-                    <span>Share via WhatsApp</span>
+                    <span>Send on WhatsApp</span>
                   </a>
 
                   <a
-                    href={`mailto:${client.email || ''}?subject=${encodeURIComponent(`Client Portal Access Link - ${client.name}`)}&body=${encodeURIComponent(
-                      `Bula ${representative},\n\nYou can access your personalized online client portal using the secure link below:\n\n${portalUrl}\n\nIn your portal, you can:\n- View and track ongoing project deliverables and milestones\n- Review, accept quotes, and download official PDF tax invoices\n- Settle balances online via M-Paisa, MyCash, or direct bank transfer\n- Message your consultant directly with inquiries or payment receipts\n\nVinaka vakalevu!`
+                    href={`mailto:${client.email || ''}?subject=${encodeURIComponent(`Your client portal link - ${client.name}`)}&body=${encodeURIComponent(
+                      `Bula ${representative},\n\nYou can open your client portal with this private link:\n\n${portalUrl}\n\nIn your portal you can:\n- See your projects and their progress\n- Review and accept quotes, and download invoices as PDFs\n- Pay by M-PAiSA, MyCash or bank transfer\n- Send us messages or proof of payment\n\nThanks`
                     )}`}
                     className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-3 rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-xs"
                   >
                     <Mail className="w-4 h-4" />
-                    <span>Send via Email</span>
+                    <span>Send by email</span>
                   </a>
                 </div>
               </div>
@@ -220,24 +220,24 @@ export default function ClientShareModal({
               {/* Features Accessible */}
               <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 space-y-2.5">
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-slate-600" /> Features Accessible by Client
+                  <ShieldCheck className="w-3.5 h-3.5 text-slate-600" /> What your client can see
                 </span>
                 <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Active Project Progress</span>
+                    <span>Project progress</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Invoices & PDF Receipts</span>
+                    <span>Invoices and PDF receipts</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>Live Inquiries & Chat</span>
+                    <span>Messages</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                    <span>M-Paisa & Bank Transfer</span>
+                    <span>M-PAiSA and bank transfer</span>
                   </div>
                 </div>
               </div>
@@ -251,7 +251,7 @@ export default function ClientShareModal({
                   className="text-xs text-slate-600 hover:text-slate-900 font-semibold py-1.5 px-3 rounded-lg hover:bg-slate-100 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${generatingLinkId === client.id ? 'animate-spin' : ''}`} />
-                  <span>Regenerate Token (Invalidate Old)</span>
+                  <span>New link (old one stops working)</span>
                 </button>
 
                 <button
@@ -260,7 +260,7 @@ export default function ClientShareModal({
                   className="text-xs text-rose-600 hover:text-rose-700 font-semibold py-1.5 px-3 rounded-lg hover:bg-rose-50 flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Revoke Access</span>
+                  <span>Revoke access</span>
                 </button>
               </div>
             </>
@@ -271,9 +271,9 @@ export default function ClientShareModal({
                 <Link className="w-7 h-7" />
               </div>
               <div className="max-w-sm mx-auto space-y-1">
-                <h4 className="text-sm font-bold text-slate-900">Generate Unique Portal Link</h4>
+                <h4 className="text-sm font-bold text-slate-900">Create a portal link</h4>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Create a secure, persistent public link for <strong>{client.name}</strong>. The client can use this link to access their project portal anytime without needing a password.
+                  Create a private link for <strong>{client.name}</strong>. They can use it to open their portal at any time without a password.
                 </p>
               </div>
 
@@ -286,12 +286,12 @@ export default function ClientShareModal({
                 {generatingLinkId === client.id ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Generating Secure Token...</span>
+                    <span>Creating link…</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-4 h-4" />
-                    <span>Generate Unique Access Link</span>
+                    <span>Create portal link</span>
                   </>
                 )}
               </button>
