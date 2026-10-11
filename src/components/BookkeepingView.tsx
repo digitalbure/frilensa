@@ -10,6 +10,7 @@ import { CRMData, Transaction, RateRule, ProductService, ExpenseRecord } from '.
 import { getVentureConfig, VENTURE_MODELS } from '../lib/ventureModels';
 import DateInput from './DateInput';
 import ExpenseLoggingModal from './ExpenseLoggingModal';
+import VatReturnView from './VatReturnView';
 import ProfitLossOverview from './ProfitLossOverview';
 import AiFinancialAdvisorModal from './AiFinancialAdvisorModal';
 import AiExpenseCategorizationModal from './AiExpenseCategorizationModal';
@@ -29,7 +30,7 @@ interface BookkeepingViewProps {
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {
   // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'reconciler' | 'ledger' | 'rates'
-  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'reconciler' | 'ledger' | 'rates'>('pnl');
+  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'rates'>('pnl');
 
   // Expense Logging Modal State
   const [showExpenseModal, setShowExpenseModal] = useState<boolean>(false);
@@ -1212,6 +1213,16 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           P&L and expenses
         </button>
         <button
+          onClick={() => setActiveSubTab('vat')}
+          className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
+            activeSubTab === 'vat'
+              ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/40'
+              : 'text-zinc-500 hover:text-zinc-900'
+          }`}
+        >
+          VAT return
+        </button>
+        <button
           onClick={() => setActiveSubTab('reconciler')}
           className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
             activeSubTab === 'reconciler'
@@ -1244,7 +1255,17 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       </div>
 
       <AnimatePresence mode="wait">
-        {activeSubTab === 'pnl' ? (
+        {activeSubTab === 'vat' ? (
+          <motion.div
+            key="vat-tab"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.15 }}
+          >
+            <VatReturnView data={data} />
+          </motion.div>
+        ) : activeSubTab === 'pnl' ? (
           <motion.div
             key="pnl-tab"
             initial={{ opacity: 0, y: 5 }}

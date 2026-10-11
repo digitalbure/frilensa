@@ -18,6 +18,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.7.0] - 2026-10-11
+
+### Added
+- **VAT return** in Bookkeeping: pick a period (month, quarter, half-year, year or custom dates), invoice or payments basis, and a business. It shows standard-rated and zero-rated sales, output VAT, credit notes, purchases with claimable VAT, input VAT, and net VAT payable or refundable, plus the invoices and expenses behind each figure.
+- It warns you about things to check before filing: a business with no TIN, claimable expenses with no VAT amount, drafts left out, foreign-currency sales and part payments. Download it as CSV, or print or save it as a PDF. Frilensa doesn't file the return for you.
+- **Exports for your accountant**: CSV files of invoices, quotes and receipts, invoice line items, expenses, bank transactions and clients (with amounts owed), for the period and business you choose.
+- Claude and the API can get the same VAT return figures (`get_vat_return`, `GET /api/v1/vat-return`).
+
+### Changed
+- Only expenses and bank transactions marked "VAT claimable" count towards input VAT in the VAT return. A credit note reduces the period it's issued in only when it cancels an invoice from an earlier period.
+
 ## [3.6.1] - 2026-10-11
 
 ### Fixed

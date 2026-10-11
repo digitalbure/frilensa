@@ -6,6 +6,7 @@ import { suggestDocumentNumber } from "../src/lib/documentNumbers";
 import { generateShareToken } from "../src/lib/documentLinks";
 import { getDocumentHomeValues } from "../src/lib/currencies";
 import { todayIn, addDays, daysBetween } from "../src/lib/retainers";
+import { computeVatReturn, vatPeriod } from "../src/lib/vatReturn";
 import type { ActivityLog, Client, CRMData, CRMDocument, ExpenseRecord } from "../src/types";
 
 // Operations behind the public API (/api/v1) and the MCP server (/mcp). Both call these, so they
@@ -125,6 +126,16 @@ export const summaryInput = {
   from: date.optional().describe("Start of period (YYYY-MM-DD). Default: 1 January this year"),
   to: date.optional().describe("End of period (YYYY-MM-DD). Default: today"),
   businessId: id.optional()
+};
+
+export const vatReturnInput = {
+  period: z.enum(["this_month", "last_month", "this_quarter", "last_quarter", "this_half", "last_half", "this_year", "last_year"]).optional()
+    .describe("A standard period. Default: last_month. Ignored when from and to are given"),
+  from: date.optional().describe("Start of a custom period (YYYY-MM-DD)"),
+  to: date.optional().describe("End of a custom period (YYYY-MM-DD)"),
+  basis: z.enum(["invoice", "payments"]).default("invoice").describe("Invoice basis (when invoiced) or payments basis (when paid)"),
+  businessId: id.optional().describe("Default: all businesses"),
+  includeLines: z.boolean().default(false).describe("Include the invoices, credit notes and expenses behind the figures")
 };
 
 export const createClientInput = {
@@ -311,6 +322,22 @@ export async function getSummary(uid: string, input: unknown) {
     outstanding: round2(outstanding),
     overdue: round2(overdue),
     vat: { collected: round2(outputVat), claimable: round2(inputVat), net: round2(outputVat - inputVat) }
+  };
+}
+
+/** VAT return figures for a period (same calculation as Bookkeeping → VAT return). */
+export async function getVatReturn(uid: string, input: unknown) {
+  const q = parse(vatReturnInput, input);
+  if ((q.from && !q.to) || (!q.from && q.to)) throw new ApiError(400, "Give both from and to, or a period.");
+  const range = q.from && q.to ? { from: q.from, to: q.to } : vatPeriod(q.period || "last_month", todayIn());
+  if (range.from > range.to) throw new ApiError(400, "from must be on or before to.");
+  const data = await load(uid);
+  if (q.businessId && !data.businesses.some(b => b.id === q.businessId)) throw new ApiError(404, "Business not found.");
+  const { lines, ...vat } = computeVatReturn(data, { ...range, basis: q.basis, businessId: q.businessId || null });
+  return {
+    ...vat,
+    note: "Prepared from the records in Frilensa. Check the figures before filing with FRCS; Frilensa doesn't file returns.",
+    ...(q.includeLines ? { lines: lines.slice(0, 500), lineCount: lines.length } : { lineCount: lines.length })
   };
 }
 

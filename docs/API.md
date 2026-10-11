@@ -49,6 +49,7 @@ Tools:
 | `list_expenses` | read | Expenses; filter by `from`/`to`, `category`, `businessId` |
 | `list_projects` | read | Projects with status, budget and open tasks |
 | `get_summary` | read | Cash-basis summary for a period: received, expenses, profit, outstanding, overdue, VAT collected vs claimable |
+| `get_vat_return` | read | VAT return figures for a period (standard periods or `from`/`to`, invoice or payments basis), with warnings; `includeLines` for the documents and expenses behind them |
 | `create_client` | drafts | Add a client |
 | `create_draft_document` | drafts | Draft quote or invoice for an existing client |
 | `add_expense` | drafts | Record an expense |
@@ -94,6 +95,7 @@ revoked key), 403 (read-only key), 404 (not found), 409 (conflict) or 429 (rate 
 | `POST /api/v1/expenses` | drafts | `{ date, vendor, amount, description?, category?, paymentMethod?, vatClaimable?, vatAmount?, currency?, businessId?, projectId?, notes? }` |
 | `GET /api/v1/projects` | read | |
 | `GET /api/v1/summary?from=&to=&businessId=` | read | Defaults to this year to date |
+| `GET /api/v1/vat-return?period=last_quarter&basis=invoice&businessId=&includeLines=true` | read | Or `from=&to=` for custom dates. Same figures as Bookkeeping → VAT return |
 
 Dates are `YYYY-MM-DD`. Unknown fields are rejected, so a typo can't be silently ignored.
 

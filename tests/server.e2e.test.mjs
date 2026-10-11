@@ -226,6 +226,13 @@ try {
     const bad = await mcp(aliceKey, 'tools/call', { name: 'get_document', arguments: { documentId: 'nope' } });
     assert.equal(bad.body.result.isError, true);
   });
+  await check('VAT return over the API and MCP', async () => {
+    const r = await j(await fetch(`${API}/api/v1/vat-return?from=2026-01-01&to=2026-12-31&includeLines=true`, { headers: keyAuth(aliceKey) }));
+    assert.equal(r.status, 200); assert.equal(r.body.basis, 'invoice'); assert.equal(typeof r.body.netVat, 'number'); assert.ok(Array.isArray(r.body.lines));
+    assert.equal((await fetch(`${API}/api/v1/vat-return?from=2026-12-01&to=2026-01-01`, { headers: keyAuth(aliceKey) })).status, 400);
+    const m = await mcp(aliceReadKey, 'tools/call', { name: 'get_vat_return', arguments: { period: 'this_year', basis: 'payments' } });
+    const body = JSON.parse(m.body.result.content[0].text); assert.equal(body.basis, 'payments'); assert.equal(body.lines, undefined);
+  });
   await check('MCP needs a valid key', async () => { assert.equal((await mcp('frk_notARealKeyAAAAAAAAAAAAAAAAAA', 'tools/list')).status, 401); });
   await check('revoked keys stop working', async () => {
     const list = await j(await fetch(`${API}/api/keys`, { headers: auth(A) }));

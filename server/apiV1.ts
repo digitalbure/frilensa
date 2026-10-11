@@ -26,7 +26,7 @@ function query(req: ApiRequest) {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(req.query)) {
     if (typeof v !== "string") continue;
-    out[k] = k === "limit" ? Number(v) : k === "overdue" ? v === "true" : v;
+    out[k] = k === "limit" ? Number(v) : k === "overdue" || k === "includeLines" ? v === "true" : v;
   }
   return out;
 }
@@ -50,6 +50,7 @@ export function createApiV1Router() {
   router.post("/expenses", ...draft, handle(req => api.addExpense(uid(req), req.apiKey!.name, req.body)));
   router.get("/projects", ...read, handle(req => api.listProjects(uid(req))));
   router.get("/summary", ...read, handle(req => api.getSummary(uid(req), query(req))));
+  router.get("/vat-return", ...read, handle(req => api.getVatReturn(uid(req), query(req))));
 
   return router;
 }

@@ -86,6 +86,12 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
     inputSchema: api.summaryInput, annotations: readOnly
   }, args => run(() => api.getSummary(uid, args)));
 
+  server.registerTool("get_vat_return", {
+    title: "VAT return",
+    description: "Figures for a VAT return in the home currency: standard-rated and zero-rated sales, output VAT, credit notes, purchases with claimable VAT, input VAT and net VAT payable or refundable, with warnings to check before filing. Choose a standard period (default last month) or from/to dates, and invoice or payments basis.",
+    inputSchema: api.vatReturnInput, annotations: readOnly
+  }, args => run(() => api.getVatReturn(uid, args)));
+
   if (key.scopes.includes("draft")) {
     const write = { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false };
 

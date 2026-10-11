@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.6.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.7.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -47,6 +47,7 @@ Status as of v3.6.0 (October 2026). Each feature is marked by whether it actuall
 
 ### Finance (bookkeeping)
 - ✅ P&L with category breakdown and VAT input/output summary.
+- ✅ VAT return for any period (invoice or payments basis) with warnings, CSV and print; CSV exports for accountants. *(3.7.0)*
 - ✅ Expense logging: manual, or camera/receipt OCR (Gemini, with a basic fallback parser).
 - ✅ Bank statement import (BSP/ANZ/Westpac/M-PAiSA text and CSV), with AI categorisation and VAT split.
 - ✅ Transaction reconciler with AI-suggested matches, duplicate audit and clean-up, ledger history with undo.
@@ -104,8 +105,8 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | 8 | ~~Scheduled jobs on the server~~ | Done in 3.4.0: daily retainer invoices and overdue reminders. | — |
 | 9 | **Online payment collection**: card payments (e.g. Stripe or Windcave), then M-PAiSA / MyCash merchant APIs where available; webhooks mark invoices paid | "Pay now" on an invoice is the biggest conversion lever. | L |
 | 10 | **Real subscription billing** using the same payment provider, enforced server-side | Plans are currently free and changeable by any user. | M |
-| 11 | **FRCS VAT return report**: output and input VAT by period, exportable for filing | Completes the "tax compliance" promise. | M |
-| 12 | **Accountant access and exports**: read-only invite, plus CSV / Xero-style exports of invoices, expenses and the ledger | Small businesses hand books to an accountant. | M |
+| 11 | ~~FRCS VAT return report~~ | Done in 3.7.0. | — |
+| 12 | **Accountant access**: read-only invite for an accountant (CSV exports done in 3.7.0) | Small businesses hand books to an accountant. | S–M |
 | 13 | **Email deliverability**: authenticate frilensa.com in SendGrid (SPF/DKIM/DMARC), and use a per-business reply-to | Invoices from an unauthenticated domain land in spam. | S |
 
 ### P2: scale, quality and operations
