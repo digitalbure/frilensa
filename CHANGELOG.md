@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.6.1] - 2026-10-11
+
+### Fixed
+- Adding Frilensa as a connector in Claude failed with "Couldn't register with Frilensa's sign-in service". The sign-in addresses Frilensa gave Claude came from a server setting that, on services first created in AI Studio, pointed to AI Studio's private address. They now use the address Claude connected to.
+- The deploy script now always sets the site address used in emails and links to `https://frilensa.com` (or `APP_URL=…` if given). Before, it kept an older value left by AI Studio.
+
 ## [3.6.0] - 2026-10-11
 
 ### Added

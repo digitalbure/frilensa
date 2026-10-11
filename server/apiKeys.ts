@@ -1,8 +1,7 @@
 import crypto from "crypto";
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, sha256, type AuthedRequest } from "./security";
-import { appUrl } from "./notify";
-import { verifyAccessToken } from "./oauth";
+import { verifyAccessToken, publicOrigin } from "./oauth";
 
 // Personal API keys for the public API and MCP server. Server-only collection (Firestore rules
 // deny browser access). Keys are stored as a SHA-256 hash; the key itself is shown once.
@@ -36,7 +35,7 @@ export function requireApiKey(scope: ApiScope = "read") {
   return async (req: ApiRequest, res: Response, next: NextFunction) => {
     const bearer = (req.headers.authorization || "").match(/^Bearer ([A-Za-z0-9_-]{20,90})$/)?.[1] || "";
     // Tells MCP clients (e.g. claude.ai) where to sign in with OAuth.
-    const challenge = () => res.setHeader("WWW-Authenticate", `Bearer resource_metadata="${appUrl("/.well-known/oauth-protected-resource")}"`);
+    const challenge = () => res.setHeader("WWW-Authenticate", `Bearer resource_metadata="${publicOrigin(req)}/.well-known/oauth-protected-resource"`);
     if (bearer.startsWith("fra_")) {
       try {
         const token = await verifyAccessToken(bearer);

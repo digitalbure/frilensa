@@ -241,7 +241,7 @@ try {
 
   // OAuth sign-in for MCP clients (claude.ai connectors)
   const REDIRECT = 'https://claude.ai/api/mcp/auth_callback';
-  const RESOURCE = 'https://frilensa.example/mcp';
+  const RESOURCE = `${API}/mcp`;
   const pkce = () => { const verifier = crypto.randomBytes(32).toString('base64url'); return { verifier, challenge: crypto.createHash('sha256').update(verifier).digest('base64url') }; };
   const form = o => ({ method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(o).toString() });
   let oauthClient;
@@ -255,13 +255,13 @@ try {
   await check('MCP tells clients where to sign in', async () => {
     const r = await fetch(`${API}/mcp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
     assert.equal(r.status, 401);
-    assert.match(r.headers.get('www-authenticate') || '', /resource_metadata="https:\/\/frilensa\.example\/\.well-known\/oauth-protected-resource"/);
+    assert.equal(r.headers.get('www-authenticate'), `Bearer resource_metadata="${API}/.well-known/oauth-protected-resource"`);
   });
   await check('OAuth discovery documents', async () => {
     const pr = await j(await fetch(`${API}/.well-known/oauth-protected-resource`));
-    assert.equal(pr.body.resource, RESOURCE); assert.deepEqual(pr.body.authorization_servers, ['https://frilensa.example']);
+    assert.equal(pr.body.resource, RESOURCE); assert.deepEqual(pr.body.authorization_servers, [API]);
     const as = await j(await fetch(`${API}/.well-known/oauth-authorization-server`));
-    assert.equal(as.body.token_endpoint, 'https://frilensa.example/oauth/token'); assert.deepEqual(as.body.code_challenge_methods_supported, ['S256']);
+    assert.equal(as.body.token_endpoint, `${API}/oauth/token`); assert.deepEqual(as.body.code_challenge_methods_supported, ['S256']);
     assert.ok(as.body.registration_endpoint);
   });
   await check('OAuth endpoints do not change CORS for the rest of the site', async () => {

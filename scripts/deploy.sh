@@ -16,6 +16,7 @@
 #   SERVICE=<cloud run service> REGION=<region> ADMIN_EMAILS=a@b.com,c@d.com
 #   IMAGE=<image already built by an earlier run>   (skips the Cloud Build step)
 #   SCHEDULER_REGION=<Cloud Scheduler location>     (defaults to REGION)
+#   APP_URL=<public address>                        (defaults to https://frilensa.com; used in emails and links)
 #   ALLOW_LOCAL_CHANGES=1   deploy this folder even if it differs from GitHub (not recommended)
 set -euo pipefail
 
@@ -165,7 +166,7 @@ JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
 
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL=https://frilensa.com" "JOBS_SECRET=$JOBS_SECRET"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---

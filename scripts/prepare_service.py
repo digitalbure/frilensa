@@ -6,9 +6,10 @@ Keeps every existing setting (env vars, secrets, scaling, service account, domai
   - removes annotations and the base-image runtime left by AI Studio's source deploys
     (they make gcloud reject a plain image),
   - removes read-only fields that `replace` doesn't accept,
-  - adds env vars passed as NAME=VALUE arguments when they aren't already set.
+  - adds env vars passed as NAME=VALUE arguments when they aren't already set,
+    and sets NAME:=VALUE ones whatever their current value.
 
-Usage: prepare_service.py SERVICE.json IMAGE OUT.json [NAME=VALUE ...]
+Usage: prepare_service.py SERVICE.json IMAGE OUT.json [NAME=VALUE | NAME:=VALUE ...]
 """
 import json
 import sys
@@ -62,8 +63,21 @@ def main() -> None:
     env = main_container.setdefault("env", [])
     existing = {e.get("name") for e in env}
     for pair in env_pairs:
-        name, _, value = pair.partition("=")
-        if name and name not in existing:
+        # NAME=VALUE adds the variable only if it's missing; NAME:=VALUE always sets it.
+        force = pair.find(":=") != -1 and pair.find(":=") == pair.find("=") - 1
+        name, _, value = pair.partition(":=" if force else "=")
+        if not name:
+            continue
+        if force:
+            current = next((e for e in env if e.get("name") == name), None)
+            if current is None:
+                env.append({"name": name, "value": value})
+                print(f"Adding env var {name}.")
+            elif current.get("value") != value or "valueFrom" in current:
+                print(f"Setting env var {name} to {value} (was {current.get('value', 'a secret reference')}).")
+                current.pop("valueFrom", None)
+                current["value"] = value
+        elif name not in existing:
             env.append({"name": name, "value": value})
             print(f"Adding env var {name}.")
 

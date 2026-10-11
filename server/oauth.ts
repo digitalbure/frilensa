@@ -1,7 +1,6 @@
 import crypto from "crypto";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, sha256, type AuthedRequest } from "./security";
-import { appUrl } from "./notify";
 import type { ApiScope } from "./apiKeys";
 
 // OAuth 2.1 authorization server for the MCP server, as the MCP authorization spec describes, so
@@ -23,8 +22,17 @@ const ACCESS_TTL_MS = 60 * 60_000;
 const REFRESH_TTL_MS = 30 * 24 * 60 * 60_000;
 const SCOPES: ApiScope[] = ["read", "draft"];
 
-export const mcpResourceUrl = () => appUrl("/mcp");
-const issuer = () => appUrl("");
+/**
+ * This server's public address as the client reached it (https://frilensa.com, or another domain or
+ * the Cloud Run URL). Discovery documents must name the address the client used, so this comes
+ * from the request rather than APP_URL. Anything but localhost is always https.
+ */
+export function publicOrigin(req: Request): string {
+  const host = req.get("host") || "frilensa.com";
+  const local = /^(localhost|127\.0\.0\.1)(:\d+)?$/.test(host);
+  return `${local ? req.protocol : "https"}://${host}`;
+}
+const mcpResourceUrl = (req: Request) => `${publicOrigin(req)}/mcp`;
 
 interface OAuthClient {
   clientName: string;
@@ -127,9 +135,9 @@ export function createOAuthRouter() {
   const router = express.Router();
   router.use(["/.well-known", "/oauth/register", "/oauth/token", "/oauth/revoke"], cors);
 
-  const protectedResource = (_req: Request, res: Response) => res.json({
-    resource: mcpResourceUrl(),
-    authorization_servers: [issuer()],
+  const protectedResource = (req: Request, res: Response) => res.json({
+    resource: mcpResourceUrl(req),
+    authorization_servers: [publicOrigin(req)],
     scopes_supported: SCOPES,
     bearer_methods_supported: ["header"],
     resource_name: "Frilensa"
@@ -137,12 +145,12 @@ export function createOAuthRouter() {
   router.get("/.well-known/oauth-protected-resource", protectedResource);
   router.get("/.well-known/oauth-protected-resource/mcp", protectedResource);
 
-  const authServer = (_req: Request, res: Response) => res.json({
-    issuer: issuer(),
-    authorization_endpoint: appUrl("/oauth/authorize"),
-    token_endpoint: appUrl("/oauth/token"),
-    registration_endpoint: appUrl("/oauth/register"),
-    revocation_endpoint: appUrl("/oauth/revoke"),
+  const authServer = (req: Request, res: Response) => res.json({
+    issuer: publicOrigin(req),
+    authorization_endpoint: `${publicOrigin(req)}/oauth/authorize`,
+    token_endpoint: `${publicOrigin(req)}/oauth/token`,
+    registration_endpoint: `${publicOrigin(req)}/oauth/register`,
+    revocation_endpoint: `${publicOrigin(req)}/oauth/revoke`,
     response_types_supported: ["code"],
     grant_types_supported: ["authorization_code", "refresh_token"],
     code_challenge_methods_supported: ["S256"],
@@ -154,7 +162,7 @@ export function createOAuthRouter() {
   router.get("/.well-known/openid-configuration", authServer);
 
   // Dynamic client registration. Clients are public (PKCE, no secret).
-  router.post("/oauth/register", rateLimit({ name: "oauth-register", max: 20, windowMs: 60 * 60_000, key: r => r.ip || "anon" }), async (req, res, next) => {
+  router.post("/oauth/register", rateLimit({ name: "oauth-register", max: 100, windowMs: 60 * 60_000, key: r => r.ip || "anon" }), async (req, res, next) => {
     try {
       const body = req.body || {};
       const redirectUris: unknown[] = Array.isArray(body.redirect_uris) ? body.redirect_uris : [];
@@ -292,7 +300,7 @@ export function createOAuthAppRouter() {
       if (p.code_challenge_method !== "S256" || typeof p.code_challenge !== "string" || !/^[A-Za-z0-9_-]{43,128}$/.test(p.code_challenge)) {
         return res.status(400).json({ error: "This app didn't send a valid PKCE code challenge." });
       }
-      if (p.resource && p.resource !== mcpResourceUrl()) return res.status(400).json({ error: "This request is for a different server." });
+      if (p.resource && p.resource !== mcpResourceUrl(req)) return res.status(400).json({ error: "This request is for a different server." });
       const requested = parseScopes(p.scope);
       if (!requested) return res.status(400).json({ error: "This app asked for permissions Frilensa doesn't offer." });
       // The user may narrow the access on the consent page, never widen it.
@@ -310,7 +318,7 @@ export function createOAuthAppRouter() {
       });
       await batch.commit();
       redirect.searchParams.set("code", code);
-      redirect.searchParams.set("iss", issuer());
+      redirect.searchParams.set("iss", publicOrigin(req));
       res.json({ redirectTo: redirect.toString() });
     } catch (err) {
       next(err);
