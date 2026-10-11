@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowDown, ArrowUp, CalendarCheck, Copy, Plus, Trash2 } from 'lucide-react';
 import type { Business, CRMData } from '../types';
-import { QUESTION_TYPES, rateCardServices, type BookingQuestion, type BookingQuestionType, type BookingSettings } from '../lib/bookings';
+import { QUESTION_TYPES, rateCardServices, type BookingQuestion, type BookingQuestionType, type BookingSettings, type DepositRule } from '../lib/bookings';
 
 interface BookingSettingsCardProps {
   data: CRMData;
@@ -28,7 +28,7 @@ export default function BookingSettingsCard({ data, onUpdateData }: BookingSetti
       ? { ...b, booking: { ...(b.booking || {}), ...patch }, updatedAt: new Date().toISOString() } as Business
       : b)
   });
-  const setService = (id: string, patch: { bookable?: boolean; minQuantity?: number; maxQuantity?: number }) =>
+  const setService = (id: string, patch: { bookable?: boolean; minQuantity?: number; maxQuantity?: number; deposit?: DepositRule }) =>
     save({ services: { ...(booking.services || {}), [id]: { ...(booking.services?.[id] || {}), ...patch } } });
   const setQuestions = (next: BookingQuestion[]) => save({ questions: next });
   const updateQ = (id: string, patch: Partial<BookingQuestion>) => setQuestions(questions.map(q => q.id === id ? { ...q, ...patch } : q));
@@ -81,7 +81,7 @@ export default function BookingSettingsCard({ data, onUpdateData }: BookingSetti
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
-              <thead><tr className="text-[10px] uppercase text-zinc-400 text-left"><th className="py-1 pr-2 font-bold">Service</th><th className="py-1 px-2 font-bold">Bookable</th><th className="py-1 px-2 font-bold">Min</th><th className="py-1 px-2 font-bold">Max</th></tr></thead>
+              <thead><tr className="text-[10px] uppercase text-zinc-400 text-left"><th className="py-1 pr-2 font-bold">Service</th><th className="py-1 px-2 font-bold">Bookable</th><th className="py-1 px-2 font-bold">Min</th><th className="py-1 px-2 font-bold">Max</th><th className="py-1 px-2 font-bold">Own deposit</th></tr></thead>
               <tbody>
                 {services.map(s => {
                   const c = booking.services?.[s.id] || {};
@@ -91,6 +91,7 @@ export default function BookingSettingsCard({ data, onUpdateData }: BookingSetti
                       <td className="py-1.5 px-2"><input type="checkbox" checked={c.bookable !== false} onChange={e => setService(s.id, { bookable: e.target.checked })} aria-label={`${s.name} can be booked`} /></td>
                       <td className="py-1.5 px-2"><input type="number" min={1} value={c.minQuantity ?? ''} placeholder={String(s.minQuantity || 1)} onChange={e => setService(s.id, { minQuantity: Number(e.target.value) || undefined })} className="w-16 border border-zinc-200 rounded px-1.5 py-1" aria-label={`${s.name} minimum`} /></td>
                       <td className="py-1.5 px-2"><input type="number" min={1} value={c.maxQuantity ?? ''} placeholder="Any" onChange={e => setService(s.id, { maxQuantity: Number(e.target.value) || undefined })} className="w-20 border border-zinc-200 rounded px-1.5 py-1" aria-label={`${s.name} maximum`} /></td>
+                      <td className="py-1.5 px-2"><DepositInput compact rule={c.deposit} onChange={deposit => setService(s.id, { deposit })} /></td>
                     </tr>
                   );
                 })}
@@ -165,6 +166,15 @@ export default function BookingSettingsCard({ data, onUpdateData }: BookingSetti
           ))}
         </ul>
         <button type="button" onClick={addQuestion} className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 text-[11px] font-bold cursor-pointer flex items-center gap-1"><Plus className="w-3.5 h-3.5" /> Add question</button>
+      </div>
+
+      <AvailabilityPanel booking={booking} save={save} />
+
+      {/* Deposit */}
+      <div className="space-y-1.5">
+        <p className="text-xs font-bold text-zinc-800">Deposit</p>
+        <p className="text-[11px] text-zinc-500">Asked for when you accept a booking: open the quote and press <strong>Create deposit invoice</strong>. The customer pays it with Pay now. A service can have its own deposit in the table above.</p>
+        <DepositInput rule={booking.deposit} onChange={deposit => save({ deposit })} />
       </div>
 
       {/* Messages */}
@@ -257,6 +267,77 @@ function BookingPagePanel({ business, booking, save }: { business: Business; boo
         </>
       )}
       {notice && <p className={`text-[11px] ${notice.ok ? 'text-emerald-700' : 'text-rose-600'}`}>{notice.text}</p>}
+    </div>
+  );
+}
+
+function DepositInput({ rule, onChange, compact }: { rule?: DepositRule; onChange: (r: DepositRule | undefined) => void; compact?: boolean }) {
+  const type = rule?.value ? rule.type : 'none';
+  return (
+    <span className="inline-flex items-center gap-1 text-xs">
+      <select value={type} onChange={e => e.target.value === 'none' ? onChange(undefined) : onChange({ type: e.target.value as DepositRule['type'], value: rule?.value || (e.target.value === 'percent' ? 30 : 100) })}
+        className="border border-zinc-200 rounded px-1.5 py-1 text-xs text-zinc-800" aria-label="Deposit type">
+        <option value="none">{compact ? 'Default' : 'No deposit'}</option>
+        <option value="percent">Percent</option>
+        <option value="fixed">{compact ? 'Fixed per unit' : 'Fixed amount'}</option>
+      </select>
+      {type !== 'none' && (
+        <input type="number" min={0} max={type === 'percent' ? 100 : undefined} step="any" value={rule?.value ?? ''}
+          onChange={e => onChange({ type: type as DepositRule['type'], value: Math.max(0, Number(e.target.value) || 0) })}
+          className="w-20 border border-zinc-200 rounded px-1.5 py-1 text-xs text-zinc-800" aria-label="Deposit amount" />
+      )}
+      {type === 'percent' && <span className="text-zinc-500">%</span>}
+    </span>
+  );
+}
+
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** When customers can book: working days, lead time, blocked dates and a daily limit. */
+function AvailabilityPanel({ booking, save }: { booking: BookingSettings; save: (p: Partial<BookingSettings>) => void }) {
+  const a = booking.availability || {};
+  const [newDate, setNewDate] = useState('');
+  const set = (patch: Partial<NonNullable<BookingSettings['availability']>>) => save({ availability: { ...a, ...patch } });
+  const days = a.workingDays && a.workingDays.length ? a.workingDays : [0, 1, 2, 3, 4, 5, 6];
+  const blocked = [...(a.blockedDates || [])].sort();
+  const num = 'w-16 border border-zinc-200 rounded px-1.5 py-1 text-xs text-zinc-800';
+  return (
+    <div className="space-y-2">
+      <label className="flex items-center gap-2 text-xs font-bold text-zinc-800">
+        <input type="checkbox" checked={Boolean(a.enabled)} onChange={e => set({ enabled: e.target.checked })} /> Limit when customers can book
+      </label>
+      {a.enabled && (
+        <div className="space-y-2.5 pl-5 text-xs text-zinc-700">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-zinc-500">Days you work:</span>
+            {WEEKDAYS.map((d, i) => (
+              <label key={d} className="flex items-center gap-1"><input type="checkbox" checked={days.includes(i)} onChange={e => set({ workingDays: e.target.checked ? [...days, i].sort() : days.filter(x => x !== i) })} /> {d}</label>
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <label className="flex items-center gap-1.5">Book at least <input type="number" min={0} max={365} value={a.leadDays ?? 0} onChange={e => set({ leadDays: Math.max(0, Number(e.target.value) || 0) })} className={num} /> days ahead</label>
+            <label className="flex items-center gap-1.5">At most <input type="number" min={0} value={a.maxPerDay ?? ''} placeholder="Any" onChange={e => set({ maxPerDay: Number(e.target.value) || undefined })} className={num} /> bookings a day</label>
+            <label className="flex items-center gap-1.5"><input type="checkbox" checked={Boolean(a.countPending)} onChange={e => set({ countPending: e.target.checked })} /> Count requests you haven't accepted yet</label>
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-500">Blocked dates:</span>
+              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="border border-zinc-200 rounded px-1.5 py-1 text-xs text-zinc-800" aria-label="Date to block" />
+              <button type="button" disabled={!newDate || blocked.includes(newDate)} onClick={() => { set({ blockedDates: [...blocked, newDate].sort() }); setNewDate(''); }} className="px-2 py-1 rounded border border-zinc-200 text-[11px] font-bold cursor-pointer disabled:opacity-40">Block</button>
+            </div>
+            {blocked.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {blocked.map(d => (
+                  <span key={d} className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-zinc-100 text-[11px]">{d}
+                    <button type="button" onClick={() => set({ blockedDates: blocked.filter(x => x !== d) })} className="text-zinc-500 cursor-pointer" aria-label={`Unblock ${d}`}>×</button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+          <p className="text-[11px] text-zinc-500">A day counts as booked once its quote is accepted. Apps and your booking page grey out days that are closed, too soon, blocked or full, and full dates are refused.</p>
+        </div>
+      )}
     </div>
   );
 }

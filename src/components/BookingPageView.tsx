@@ -15,6 +15,8 @@ interface BookingForm {
   afterMessage: string;
   services: { id: string; name: string; description: string; rate: number; unit: string; category: string; billingInterval: string; minQuantity: number; maxQuantity: number | null; vat: boolean }[];
   questions: (BookingQuestion & { help: string; required: boolean; options: string[]; appliesToServiceIds: string[] })[];
+  availability?: { enabled: false } | { enabled: true; earliestDate: string; latestDate: string; unavailableDates: string[]; fullDates: string[]; leadDays: number };
+  deposit?: { type: 'percent' | 'fixed'; value: number } | null;
 }
 
 interface BookingPageViewProps {
@@ -96,6 +98,16 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
   const subtotal = chosen.reduce((s, x) => s + x.rate * qty[x.id], 0);
   const vat = form.vatRate ? chosen.filter(s => s.vat).reduce((s, x) => s + x.rate * qty[x.id], 0) * form.vatRate / 100 : 0;
 
+  const avail = form.availability;
+  const unavailable = new Set(avail?.enabled ? avail.unavailableDates : []);
+  const full = new Set(avail?.enabled ? avail.fullDates : []);
+  const dateWhy = (v: string | undefined) => !v || !avail?.enabled ? null
+    : v < avail.earliestDate ? (avail.leadDays ? `Please book at least ${avail.leadDays} day${avail.leadDays === 1 ? '' : 's'} ahead.` : 'That date has passed.')
+    : v > avail.latestDate ? 'Bookings open up to a year ahead.'
+    : full.has(v) ? 'That date is fully booked. Please choose another.'
+    : unavailable.has(v) ? "That date isn't available. Please choose another." : null;
+  const dateBlocked = visibleQuestions.some(q => q.type === 'date' && dateWhy(answers[q.id]));
+
   const setQ = (s: BookingForm['services'][number], n: number) => {
     let v = Math.max(0, Math.round(n * 100) / 100);
     if (v > 0 && v < s.minQuantity) v = s.minQuantity;
@@ -139,7 +151,17 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
     switch (q.type) {
       case 'long_text': return <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}<textarea rows={3} required={q.required} maxLength={3000} value={v || ''} onChange={e => set(e.target.value)} className={field} /></label>;
       case 'number': return <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}<input type="number" step="any" inputMode="decimal" required={q.required} value={v ?? ''} onChange={e => set(e.target.value === '' ? '' : Number(e.target.value))} className={field} /></label>;
-      case 'date': return <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}<input type="date" required={q.required} value={v || ''} onChange={e => set(e.target.value)} className={field} /></label>;
+      case 'date': {
+        const why = dateWhy(v);
+        return (
+          <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}
+            <input type="date" required={q.required} value={v || ''} min={avail?.enabled ? avail.earliestDate : undefined} max={avail?.enabled ? avail.latestDate : undefined}
+              onChange={e => set(e.target.value)} aria-invalid={Boolean(why)} className={`${field} ${why ? 'border-rose-400' : ''}`} />
+            {why && <span className="block text-[11px] font-normal text-rose-600 mt-1" role="alert">{why}</span>}
+            {avail?.enabled && !why && avail.fullDates.length > 0 && <span className="block text-[11px] font-normal text-slate-500 mt-1">Some dates are already fully booked.</span>}
+          </label>
+        );
+      }
       case 'time': return <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}<input type="time" required={q.required} value={v || ''} onChange={e => set(e.target.value)} className={field} /></label>;
       case 'single_choice': return <label key={q.id} className="block text-xs font-semibold text-slate-700">{lbl}{help}<select required={q.required} value={v || ''} onChange={e => set(e.target.value)} className={field}><option value="">Choose…</option>{q.options.map(o => <option key={o}>{o}</option>)}</select></label>;
       case 'multi_choice': return (
@@ -250,12 +272,13 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
       <section className="text-xs text-slate-600 space-y-1 border-t border-slate-100 pt-4">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Terms</h2>
         <p>{form.vatRate > 0 ? `Prices exclude VAT (${form.vatRate}%).` : 'No VAT is charged.'} Quotes are valid for {form.terms.quoteValidDays} days. Invoices are due {form.terms.paymentTermsDays} days after issue.</p>
+        {form.deposit && <p>A {form.deposit.type === 'percent' ? `${form.deposit.value}%` : money(currency, form.deposit.value)} deposit is asked for to confirm a booking.</p>}
         {form.terms.text && <p className="whitespace-pre-line">{form.terms.text}</p>}
       </section>
 
       {siteKey && <div ref={turnstileRef} />}
       {formError && <p className="text-xs text-rose-600" role="alert">{formError}</p>}
-      <button type="submit" disabled={busy || (Boolean(siteKey) && !turnstileToken)} className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-sm font-bold cursor-pointer disabled:opacity-60" style={{ backgroundColor: brand }}>
+      <button type="submit" disabled={busy || dateBlocked || (Boolean(siteKey) && !turnstileToken)} className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-white text-sm font-bold cursor-pointer disabled:opacity-60" style={{ backgroundColor: brand }}>
         {busy ? 'Sending…' : 'Send booking request'}
       </button>
       {!embed && <p className="text-[11px] text-slate-400">Bookings by Frilensa</p>}

@@ -534,6 +534,7 @@ export interface CRMDocument {
   creditNoteNumber?: string; // Optional linked Credit Note (e.g. CN-2026-1001)
   originalInvoiceId?: string; // For credit notes and receipts: the invoice they relate to
   sourceQuoteId?: string; // On an invoice converted from a quote: that quote
+  isDeposit?: boolean; // A deposit invoice for that quote (the final invoice subtracts it)
   receiptId?: string; // On a paid invoice: the receipt issued for it
   remindersSent?: { level: 1 | 2 | 3; sentAt: string; to: string }[]; // Overdue reminders already emailed
   updatedAt?: string; // Last edit timestamp

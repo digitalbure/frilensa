@@ -158,6 +158,11 @@ drafts** key named after the app (for example "Soqo Stream") and give the develo
 }
 ```
 
+When the business limits bookings, the form also has `availability`
+(`{ "enabled": true, "earliestDate", "latestDate", "workingDays": [1,2,3,4,5], "leadDays", "maxPerDay", "unavailableDates": [...], "fullDates": [...], "blockedDates": [...] }`
+for the next 12 months; grey these out), and `deposit` (`{ "type": "percent" | "fixed", "value" }` or
+`null`) so the app can say "30% deposit to book".
+
 Question types: `short_text`, `long_text`, `number`, `date` (YYYY-MM-DD), `time` (HH:MM, 24-hour),
 `single_choice`, `multi_choice` (send an array), `yes_no` (send `true`/`false`). A question with
 `appliesToServiceIds` is only asked (and only required) when one of those services is chosen. The
@@ -191,6 +196,8 @@ built-in questions have fixed ids: `q_date`, `q_time`, `q_location`.
   value up to 500).
 - `eventDate`, `startTime`, `location` fill the built-in questions when they're on, and are kept anyway.
 - `source.url` must be https. It appears in the inbox as "Open in Soqo Stream".
+- A date that's closed, too soon, blocked or full is refused with `409` and a clear message (for
+  example "2027-03-28: That date is fully booked."). Resending a request already received returns it.
 - Unknown fields are rejected. Limits: the key's 120 a minute, plus 500 booking requests a day per key.
 - It doesn't email the customer, create documents or record payments. The business is emailed
   ("New booking request … via Soqo Stream").
@@ -211,19 +218,65 @@ Response: `201 { "id", "ref": "QR-1A2B3C", "status": "new", "estimate": 1380, "c
     "eventDate": "2027-03-28", "startTime": "10:00", "location": "…",
     "createdAt": "…", "updatedAt": "…",
     "quote": { "id": "…", "number": "QT-2027-0012", "status": "draft | sent | accepted | cancelled", "total": 1380, "currency": "FJD", "onlineUrl": "https://frilensa.com/?doc=…" },
-    "invoices": [{ "id": "…", "number": "INV-2027-0031", "status": "sent | partial | paid | cancelled", "total": 1380, "currency": "FJD", "amountPaid": 690, "balance": 690, "dueDate": "2027-03-14", "onlineUrl": "…" }]
+    "invoices": [{ "id": "…", "number": "INV-2027-0031", "kind": "deposit | invoice", "status": "sent | partial | paid | cancelled", "total": 1380, "currency": "FJD", "amountPaid": 690, "balance": 690, "dueDate": "2027-03-14", "onlineUrl": "…" }]
   }
 }
 ```
 
 `stage` is worked out by Frilensa when you read it, from the quote and the invoices made from it, so
 every app gets the same answer: dismissed → `dismissed`; quote cancelled → `cancelled`; every
-(non-draft) invoice paid → `paid`; some paid → `part_paid`; an invoice sent → `invoiced`; quote
+(non-draft) invoice paid, and more than just a deposit → `paid`; some paid → `part_paid`; an invoice sent → `invoiced`; quote
 accepted → `quote_accepted`; a quote exists → `quoted`; otherwise `new`. `onlineUrl` is only given
 for documents that have been sent; it's the page where the customer accepts the quote or pays the
 invoice (Pay now). `updatedAt` is the latest change to the request, its quote or its invoices.
 
 `channel` is where the request came from: `rate_card`, `directory`, `api`, `booking_page`, `widget`.
+
+**Deposits.** When the business asks for a deposit, it opens the accepted quote and presses
+**Create deposit invoice**. That invoice appears in `invoices` with `"kind": "deposit"`; once sent, its
+`onlineUrl` is the page where the customer pays it (Pay now), so an app can show it as "Pay deposit".
+The final invoice subtracts the deposit. A paid deposit alone makes the stage `part_paid`.
+
+### Webhooks
+
+Instead of polling, an app can be told the moment something happens. In **Settings → Webhooks** the
+user adds an https endpoint, chooses events, and copies the signing secret (`whsec_…`, shown once).
+
+| Event | When |
+| --- | --- |
+| `booking_request.created` | A booking request arrives on any channel |
+| `booking_request.stage_changed` | Its `stage` changes (quoted, quote accepted, invoiced, part paid, paid, dismissed, cancelled) |
+
+Each delivery is a `POST` with a JSON body:
+
+```json
+{ "id": "<delivery id>", "event": "booking_request.stage_changed", "createdAt": "…", "previousStage": "quoted", "bookingRequest": { "…": "same as GET /api/v1/booking-requests/{id}" } }
+```
+
+Headers: `Frilensa-Event`, `Frilensa-Delivery` (unique per delivery; use it to ignore repeats),
+`Frilensa-Timestamp`, and `Frilensa-Signature: t=<timestamp>,v1=<hex>`, where `v1` is
+HMAC-SHA256 with the secret over `"<timestamp>.<raw body>"`. Check it, and reject old timestamps:
+
+```js
+import crypto from 'crypto';
+function verify(rawBody, header, secret) {
+  const [, t, v1] = header.match(/^t=(\d+),v1=([0-9a-f]{64})$/) || [];
+  if (!t || Math.abs(Date.now() / 1000 - Number(t)) > 300) return false;
+  const expected = crypto.createHmac('sha256', secret).update(`${t}.${rawBody}`).digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(v1, 'hex'), Buffer.from(expected, 'hex'));
+}
+```
+
+Reply with any `2xx` within 10 seconds. Anything else is retried with backoff (1 minute, 5 minutes,
+30 minutes, 2 hours, 6 hours, 12 hours) for up to 24 hours. Settings shows recent deliveries and has a
+**Send test** button. Changes made on Frilensa's server (API bookings, quotes accepted online, PayPal
+payments) fire at once; changes the business makes in the app fire right after they're saved, and a
+daily check catches anything missed. Events can arrive more than once or out of order: use `stage`
+and `updatedAt` in the payload rather than counting events. Up to 10 endpoints per user.
+
+Routes (signed-in user): `GET/POST /api/webhooks`, `DELETE /api/webhooks/{id}`,
+`POST /api/webhooks/{id}/test`, `GET /api/webhooks/{id}/deliveries`, and
+`POST /api/events/document-changed` (the app calls it after saving documents).
 
 ### Without writing code: booking page and widget
 
@@ -266,7 +319,7 @@ their request ("We've got your booking request"); API requests never do.
 
 - Keys: `server/apiKeys.ts` (collection `api_keys`, server-only; document id is the SHA-256 of the key).
 - OAuth: `server/oauth.ts` (collections `oauth_clients`, `oauth_codes`, `oauth_grants`, `oauth_tokens`, server-only) and the consent page `src/components/OAuthConsent.tsx`.
-- Bookings: `server/bookings.ts` (requests in the server-only `quote_requests` collection), `server/bookingPage.ts` (hosted page, slugs in `booking_slugs`), `public/embed/booking.js` (widget) and `src/lib/bookings.ts` (questions, checking, stages).
+- Bookings: `server/bookings.ts` (requests in the server-only `quote_requests` collection), `server/bookingPage.ts` (hosted page, slugs in `booking_slugs`), `server/webhooks.ts` (`webhooks`, `webhook_deliveries`), `public/embed/booking.js` (widget) and `src/lib/bookings.ts` (questions, checking, stages).
 - Operations: `server/apiService.ts`, shared by `server/apiV1.ts` (REST) and `server/mcp.ts` (MCP).
 - Workspace reads and transactional writes: `server/workspace.ts`.
 - Tests: `tests/server.e2e.test.mjs` (keys, REST, MCP, scopes, isolation between users, revocation).

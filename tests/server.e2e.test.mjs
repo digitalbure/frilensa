@@ -151,9 +151,22 @@ const fakePaypal = http.createServer((req, res) => {
   });
 }).listen(3397);
 
+// Fake webhook receiver: records each delivery; can be told to fail.
+const hookHits = []; let hookFail = false;
+const fakeHooks = http.createServer((req, res) => {
+  let body = ''; req.on('data', d => body += d); req.on('end', () => {
+    hookHits.push({ headers: req.headers, body, failed: hookFail });
+    res.writeHead(hookFail ? 500 : 200); res.end('ok');
+  });
+}).listen(3396);
+const waitHook = async (match, ms = 5000) => {
+  for (let i = 0; i < ms / 100; i++) { const h = hookHits.find(x => !x.failed && match(JSON.parse(x.body))); if (h) return h; await new Promise(r => setTimeout(r, 100)); }
+  throw new Error('webhook not received');
+};
+
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -945,12 +958,109 @@ try {
     const r = await fetch(`${API}/embed/booking.js`);
     assert.equal(r.status, 200); assert.match(await r.text(), /data-frilensa-booking/);
   });
+
+  // --- Webhooks ---
+  const HOOK_URL = 'http://127.0.0.1:3396/hook';
+  let hookId, hookSecret, hookedReq;
+  await check('adding a webhook needs sign-in and an event, and shows the secret once', async () => {
+    assert.equal((await fetch(`${API}/api/webhooks`, { method: 'POST' })).status, 401);
+    assert.equal((await fetch(`${API}/api/webhooks`, { method: 'POST', headers: auth(C), body: JSON.stringify({ url: HOOK_URL, events: ['nope'] }) })).status, 400);
+    const r = await j(await fetch(`${API}/api/webhooks`, { method: 'POST', headers: auth(C), body: JSON.stringify({ url: HOOK_URL, events: ['booking_request.created', 'booking_request.stage_changed'] }) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); assert.match(r.body.secret, /^whsec_/);
+    hookId = r.body.webhook.id; hookSecret = r.body.secret;
+    const list = await j(await fetch(`${API}/api/webhooks`, { headers: auth(C) }));
+    assert.equal(list.body.webhooks.length, 1); assert.equal(JSON.stringify(list.body).includes(hookSecret), false);
+    const stored = await get(`webhooks/${hookId}`); assert.ok(stored.secret.startsWith('v1.')); assert.equal(stored.secret.includes(hookSecret), false);
+  });
+  await check('a test delivery is signed with the secret', async () => {
+    const r = await j(await fetch(`${API}/api/webhooks/${hookId}/test`, { method: 'POST', headers: auth(C) }));
+    assert.equal(r.body.delivery.status, 'delivered', JSON.stringify(r.body));
+    const hit = hookHits.at(-1);
+    const [, t, v1] = hit.headers['frilensa-signature'].match(/^t=(\d+),v1=([0-9a-f]{64})$/);
+    const expected = (await import('crypto')).createHmac('sha256', hookSecret).update(`${t}.${hit.body}`).digest('hex');
+    assert.equal(v1, expected); assert.equal(hit.headers['frilensa-event'], 'booking_request.created'); assert.equal(JSON.parse(hit.body).test, true);
+  });
+  await check("someone else can't test or delete the webhook", async () => {
+    assert.equal((await fetch(`${API}/api/webhooks/${hookId}/test`, { method: 'POST', headers: auth(B) })).status, 404);
+    assert.equal((await fetch(`${API}/api/webhooks/${hookId}`, { method: 'DELETE', headers: auth(B) })).status, 404);
+  });
+  await check('a new booking request fires booking_request.created with the progress object', async () => {
+    await withDocs([]);
+    const r = await j(await post(carolKey, booking({ source: { app: 'Soqo Stream', reference: 'SQB-HOOK01' } })));
+    assert.equal(r.status, 201, JSON.stringify(r.body)); hookedReq = r.body.id;
+    const hit = await waitHook(b => b.event === 'booking_request.created' && b.bookingRequest?.id === hookedReq);
+    const body = JSON.parse(hit.body); assert.equal(body.bookingRequest.stage, 'new'); assert.equal(body.bookingRequest.source.reference, 'SQB-HOOK01');
+  });
+  await check('stage changes fire booking_request.stage_changed (server and browser changes)', async () => {
+    await fetch(`${API}/api/rate-cards/requests/${hookedReq}`, { method: 'PATCH', headers: auth(C), body: JSON.stringify({ status: 'quoted', documentId: 'hq1' }) });
+    let hit = await waitHook(b => b.event === 'booking_request.stage_changed' && b.bookingRequest?.id === hookedReq && b.bookingRequest.stage === 'quoted');
+    assert.equal(JSON.parse(hit.body).previousStage, 'new');
+    await withDocs([{ ...bq('accepted'), id: 'hq1' }]);
+    await fetch(`${API}/api/events/document-changed`, { method: 'POST', headers: auth(C), body: '{}' });
+    hit = await waitHook(b => b.event === 'booking_request.stage_changed' && b.bookingRequest?.id === hookedReq && b.bookingRequest.stage === 'quote_accepted');
+    assert.equal(JSON.parse(hit.body).previousStage, 'quoted');
+    const before = hookHits.length;
+    await fetch(`${API}/api/events/document-changed`, { method: 'POST', headers: auth(C), body: '{}' });
+    await new Promise(r => setTimeout(r, 500));
+    assert.equal(hookHits.filter((h, i) => i >= before && JSON.parse(h.body).bookingRequest?.id === hookedReq).length, 0, 'no event when nothing moved');
+  });
+  await check('failed deliveries are retried by the daily job', async () => {
+    hookFail = true;
+    await withDocs([{ ...bq('accepted'), id: 'hq1' }, { ...bi('sent'), id: 'hi1', sourceQuoteId: 'hq1' }]);
+    await fetch(`${API}/api/events/document-changed`, { method: 'POST', headers: auth(C), body: '{}' });
+    await new Promise(r => setTimeout(r, 800));
+    const deliveries = (await j(await fetch(`${API}/api/webhooks/${hookId}/deliveries`, { headers: auth(C) }))).body.deliveries;
+    const pending = deliveries.find(d => d.status === 'pending');
+    assert.ok(pending, JSON.stringify(deliveries)); assert.equal(pending.attempts, 1); assert.match(pending.lastError, /500/);
+    hookFail = false;
+    const doc = await get(`webhook_deliveries/${pending.id}`);
+    await put(`webhook_deliveries/${pending.id}`, { ...doc, nextAttemptAt: '2000-01-01T00:00:00.000Z' });
+    const job = await j(await fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: { 'X-Job-Secret': 'e2e-jobs-secret' } }));
+    assert.equal(job.status, 200); assert.ok(job.body.retried >= 1, JSON.stringify(job.body));
+    await waitHook(b => b.event === 'booking_request.stage_changed' && b.bookingRequest?.id === hookedReq && b.bookingRequest.stage === 'invoiced');
+    const after = (await j(await fetch(`${API}/api/webhooks/${hookId}/deliveries`, { headers: auth(C) }))).body.deliveries.find(d => d.id === pending.id);
+    assert.equal(after.status, 'delivered'); assert.equal(after.attempts, 2);
+  });
+  await check('webhook deliveries are not readable from the browser', async () => {
+    assert.equal((await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/webhooks/${hookId}`, { headers: { Authorization: `Bearer ${C.token}` } })).status, 403);
+  });
+  await check('deleting a webhook stops deliveries', async () => {
+    assert.equal((await fetch(`${API}/api/webhooks/${hookId}`, { method: 'DELETE', headers: auth(C) })).status, 200);
+    assert.equal((await j(await fetch(`${API}/api/webhooks`, { headers: auth(C) }))).body.webhooks.length, 0);
+  });
+
+  // --- Availability and deposits ---
+  const isoPlus = n => { const d = new Date(`${fijiToday}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+  const dow = iso => new Date(`${iso}T00:00:00Z`).getUTCDay();
+  const nextDow = (from, want) => { for (let i = from; i < from + 14; i++) if (dow(isoPlus(i)) === want) return isoPlus(i); };
+  const monday = nextDow(10, 1), tuesday = nextDow(10, 2), saturday = nextDow(10, 6);
+  const withAvailability = availability => { const ws = carolWs(''); ws.businesses[0].booking = { ...carolBooking, availability, deposit: { type: 'percent', value: 30 } }; ws.documents = carolDocs; return put(`consultants/${C.uid}`, ws); };
+  const dated = (date, ref) => booking({ answers: [{ questionId: 'q_date', value: date }, { questionId: 'q_aud', value: 50 }, { questionId: 'q_prints', value: false }], source: { app: 'Soqo Stream', reference: ref } });
+  await check('the booking form lists unavailable dates and the deposit', async () => {
+    await withAvailability({ enabled: true, workingDays: [1, 2, 3, 4, 5], leadDays: 3, blockedDates: [tuesday], maxPerDay: 1, countPending: true });
+    const f = (await j(await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.equal(f.availability.enabled, true); assert.equal(f.availability.earliestDate, isoPlus(3));
+    assert.ok(f.availability.unavailableDates.includes(tuesday)); assert.ok(f.availability.unavailableDates.includes(saturday)); assert.ok(f.availability.unavailableDates.includes(isoPlus(1)));
+    assert.ok(!f.availability.unavailableDates.includes(monday));
+    assert.deepEqual(f.deposit, { type: 'percent', value: 30 });
+  });
+  await check('booking requests on unavailable dates are refused', async () => {
+    const blocked = await j(await post(carolKey, dated(tuesday, 'AV-1'))); assert.equal(blocked.status, 409); assert.match(blocked.body.error, /isn't available/);
+    const weekend = await j(await post(carolKey, dated(saturday, 'AV-2'))); assert.equal(weekend.status, 409); assert.match(weekend.body.error, /day of the week/);
+    const soon = await j(await post(carolKey, dated(isoPlus(1), 'AV-3'))); assert.equal(soon.status, 409); assert.match(soon.body.error, /at least 3 days/);
+    assert.equal((await post(carolKey, dated(monday, 'AV-4'))).status, 201);
+    const full = await j(await post(carolKey, dated(monday, 'AV-5'))); assert.equal(full.status, 409); assert.match(full.body.error, /fully booked/);
+    assert.equal((await post(carolKey, dated(monday, 'AV-4'))).status, 200, 'a repeat of an accepted booking still returns it');
+    const f = (await j(await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.ok(f.availability.fullDates.includes(monday));
+  });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.
   try { process.kill(-server.pid, 'SIGTERM'); } catch {}
   fakeSendGrid.close();
   fakeClaude.close();
   fakePaypal.close();
+  fakeHooks.close();
 }
 for (const r of results) console.log(r.join('  '));
 const failed = results.filter(r => r[0] === 'FAIL').length;

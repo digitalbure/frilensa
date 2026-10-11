@@ -281,7 +281,7 @@ Reimbursed costs are left out of profit and loss and listed separately in the VA
     id: 'services-rate-card',
     title: 'Services, rate card and default terms',
     summary: 'Keep a catalogue of services and rates, share a rate card, take booking requests from your rate card, apps and websites, choose what can be booked and what to ask, and set default terms for each business.',
-    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'booking page', 'widget', 'embed', 'website', 'book now', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
+    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'booking page', 'widget', 'embed', 'website', 'book now', 'availability', 'blocked dates', 'deposit', 'deposit invoice', 'webhook', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
     body: `Everything here is in **Finance → Services**, for the active business.
 
 ### Your catalogue
@@ -307,6 +307,12 @@ Under **Bookings for** your business:
 No developer? Under **Booking page and website widget**, choose an address (for example frilensa.com/book/your-business) and press **Turn on booking page**. Share the link anywhere. Customers pick services, answer your questions, see an estimate and send a booking request.
 
 To put a **Book now** button on your own website, press **Copy code** and paste it into your site where you want the button (most website builders have an "embed" or "HTML" block). The booking page opens over your site. You can preselect a service or change the button's words and colour; the settings show how.
+
+### Availability
+Tick **Limit when customers can book** to choose the days you work, how far ahead people must book, dates you're away (**Blocked dates**) and the most bookings you take a day. A day counts as booked once its quote is accepted; tick **Count requests you haven't accepted yet** to count new requests too. Your booking page and connected apps grey out days that aren't available, and full days are refused.
+
+### Deposits
+Under **Deposit**, ask for a percentage or a fixed amount. A service can have its own deposit in the services table (a percentage of that line, or a fixed amount per unit). Open an accepted quote in **Billing** and press **Create deposit invoice**: it makes a draft invoice for the deposit, which the customer pays with Pay now once you send it. When you later press **Convert to invoice**, the final invoice subtracts the deposit.
 
 Tick **Email the customer a copy of their request** to send them a short "We've got your booking request" email with their answers and your after-booking message, in your business's name. **Turn off** stops the page and the button working. When the page is on, your rate card shows a **Book now** button too.
 
@@ -499,6 +505,9 @@ You can have up to 10 keys. **Revoke** stops a key working immediately. Treat ke
 
 ### Take bookings from your own website or app
 A developer building your booking page or app needs a **Read and create drafts** key (name it after the app, for example "Soqo Stream") and your **Business id** from **Finance → Services → Bookings**. The app reads your booking form (bookable services, prices and questions), sends booking requests, and can check how far each one has got: quoted, quote accepted, invoiced, part paid or paid. Prices always come from Frilensa. Requests land in your inbox like any other booking. The app's documentation is at frilensa.com in docs/API.md.
+
+### Webhooks
+Under **Settings → Webhooks**, a developer can add an address that Frilensa tells straight away when a booking arrives or moves on (quoted, accepted, invoiced, paid). Copy the signing secret when it's shown; it isn't shown again. **Send test** checks the address works, and **Recent deliveries** shows what was sent. Failed deliveries are retried for 24 hours.
 
 Nothing reached through a key or connector can send anything to your clients, mark anything paid, or edit or delete existing records. Drafts stay hidden from clients until you send them from Frilensa. Every change shows in your activity log with the key's or app's name.`
   },

@@ -24,15 +24,28 @@ export interface BookingQuestion {
 
 export interface BookingSettings {
   /** Per service: whether it can be booked (default yes, if it's on the rate card) and quantity limits. */
-  services?: Record<string, { bookable?: boolean; minQuantity?: number; maxQuantity?: number }>;
+  services?: Record<string, { bookable?: boolean; minQuantity?: number; maxQuantity?: number; deposit?: DepositRule }>;
   /** Built-in questions, switched on or off. Their answers also fill eventDate, startTime and location. */
   builtIn?: { date?: boolean; dateRequired?: boolean; time?: boolean; timeRequired?: boolean; location?: boolean; locationRequired?: boolean };
   questions?: BookingQuestion[];
   intro?: string;
   afterMessage?: string;
+  /** When customers can book. Off: any date. */
+  availability?: {
+    enabled?: boolean;
+    workingDays?: number[]; // 0 = Sunday … 6 = Saturday; default every day
+    leadDays?: number; // book at least this many days ahead
+    blockedDates?: string[]; // YYYY-MM-DD
+    maxPerDay?: number; // bookings per day (accepted quotes, plus pending requests if countPending)
+    countPending?: boolean;
+  };
+  /** Deposit asked for when a booking is accepted. Services can have their own. */
+  deposit?: DepositRule;
   /** Hosted booking page at /book/<slug> (and the website widget that opens it). */
   page?: { enabled?: boolean; slug?: string; ackEmail?: boolean };
 }
+
+export interface DepositRule { type: 'percent' | 'fixed'; value: number }
 
 export const BUILT_IN_IDS = { date: 'q_date', time: 'q_time', location: 'q_location' } as const;
 
@@ -218,7 +231,8 @@ export function bookingProgress(request: { status?: string; documentId?: string;
   let stage: BookingStage;
   if (request.status === 'dismissed') stage = 'dismissed';
   else if (quote?.status === 'cancelled') stage = 'cancelled';
-  else if (live.length && live.every(i => i.status === 'paid')) stage = 'paid';
+  // A paid deposit on its own is part paid: the rest is still to be invoiced.
+  else if (live.length && live.every(i => i.status === 'paid') && live.some(i => !i.isDeposit)) stage = 'paid';
   else if (live.some(i => i.status === 'paid' || i.status === 'partial')) stage = 'part_paid';
   else if (live.length) stage = 'invoiced';
   else if (quote?.status === 'accepted') stage = 'quote_accepted';
@@ -237,4 +251,83 @@ export function bookingDetailsBlock(r: { details?: { label: string; value: strin
   if (r.startTime && !has(/time/i)) lines.unshift({ label: 'Start time', value: r.startTime });
   if (r.eventDate && !has(/date/i)) lines.unshift({ label: 'Date', value: r.eventDate });
   return lines.length ? `Booking details\n${lines.map(l => `- ${l.label}: ${l.value}`).join('\n')}` : '';
+}
+
+// ---------- Availability ----------
+
+const addDaysIso = (iso: string, n: number) => {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + n);
+  return d.toISOString().slice(0, 10);
+};
+const weekday = (iso: string) => new Date(`${iso}T00:00:00Z`).getUTCDay();
+
+/** Stages that hold a date: accepted quotes and beyond, plus waiting requests when the business counts them. */
+export function holdsDate(stage: BookingStage, countPending?: boolean) {
+  return ['quote_accepted', 'invoiced', 'part_paid', 'paid'].includes(stage) || (Boolean(countPending) && (stage === 'new' || stage === 'quoted'));
+}
+
+/** Why a date can't be booked, or null if it can. `counts` is bookings already holding each date. */
+export function dateProblem(settings: BookingSettings | undefined, counts: Map<string, number>, today: string, date: string): string | null {
+  const a = settings?.availability;
+  if (!a?.enabled) return null;
+  const earliest = addDaysIso(today, Math.max(0, Math.round(Number(a.leadDays) || 0)));
+  if (date < earliest) return a.leadDays ? `Please book at least ${a.leadDays} day${a.leadDays === 1 ? '' : 's'} ahead.` : 'That date has passed.';
+  if (date > addDaysIso(today, 366)) return 'Bookings open up to a year ahead.';
+  const days = a.workingDays && a.workingDays.length ? a.workingDays : [0, 1, 2, 3, 4, 5, 6];
+  if (!days.includes(weekday(date))) return "That day of the week isn't available.";
+  if ((a.blockedDates || []).includes(date)) return "That date isn't available.";
+  if (a.maxPerDay && (counts.get(date) || 0) >= a.maxPerDay) return 'That date is fully booked.';
+  return null;
+}
+
+/** Dates in the next 12 months that can't be booked (non-working days, too soon, blocked or full). */
+export function unavailableDates(settings: BookingSettings | undefined, counts: Map<string, number>, today: string) {
+  const a = settings?.availability;
+  if (!a?.enabled) return { enabled: false as const };
+  const out: { date: string; reason: 'too_soon' | 'closed' | 'blocked' | 'full' }[] = [];
+  const earliest = addDaysIso(today, Math.max(0, Math.round(Number(a.leadDays) || 0)));
+  const days = a.workingDays && a.workingDays.length ? a.workingDays : [0, 1, 2, 3, 4, 5, 6];
+  const last = addDaysIso(today, 365);
+  for (let d = today; d <= last; d = addDaysIso(d, 1)) {
+    if (d < earliest) out.push({ date: d, reason: 'too_soon' });
+    else if (!days.includes(weekday(d))) out.push({ date: d, reason: 'closed' });
+    else if ((a.blockedDates || []).includes(d)) out.push({ date: d, reason: 'blocked' });
+    else if (a.maxPerDay && (counts.get(d) || 0) >= a.maxPerDay) out.push({ date: d, reason: 'full' });
+  }
+  return {
+    enabled: true as const, earliestDate: earliest, latestDate: last, workingDays: days, leadDays: Number(a.leadDays) || 0,
+    maxPerDay: a.maxPerDay || null, unavailableDates: out.map(x => x.date),
+    fullDates: out.filter(x => x.reason === 'full').map(x => x.date), blockedDates: out.filter(x => x.reason === 'blocked').map(x => x.date)
+  };
+}
+
+// ---------- Deposits ----------
+
+/**
+ * Deposit for a quote, before VAT. Lines from a service with its own rule use it (percent of the
+ * line, or a fixed amount per unit); the rest use the business rule (percent of those lines, or a
+ * fixed amount once). Null when no rule applies.
+ */
+export function depositFor(settings: BookingSettings | undefined, items: { itemId?: string; total: number; quantity: number; kind?: string }[]) {
+  const per = settings?.services || {};
+  const biz = settings?.deposit && settings.deposit.value > 0 ? settings.deposit : null;
+  let amount = 0, any = false, rest = 0, restCount = 0;
+  for (const it of items) {
+    if (it.kind === 'reimbursement') continue;
+    const rule = it.itemId ? per[it.itemId]?.deposit : undefined;
+    if (rule && rule.value > 0) {
+      any = true;
+      amount += rule.type === 'percent' ? it.total * Math.min(100, rule.value) / 100 : rule.value * it.quantity;
+    } else { rest += it.total; restCount++; }
+  }
+  if (biz && restCount) { any = true; amount += biz.type === 'percent' ? rest * Math.min(100, biz.value) / 100 : biz.value; }
+  if (!any) return null;
+  const subtotal = items.filter(i => i.kind !== 'reimbursement').reduce((s, i) => s + i.total, 0);
+  return Math.round(Math.min(amount, subtotal) * 100) / 100;
+}
+
+export function depositLabel(rule?: DepositRule | null) {
+  if (!rule || !(rule.value > 0)) return '';
+  return rule.type === 'percent' ? `${rule.value}% deposit` : `deposit of ${rule.value}`;
 }

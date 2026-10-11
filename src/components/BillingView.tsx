@@ -16,7 +16,7 @@ import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/docum
 import { documentPublicUrl, generateShareToken } from '../lib/documentLinks';
 import { applyConfirmedPayment, addReceiptForInvoice, applyPartialPayment } from '../lib/payments';
 import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
-import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses } from '../lib/invoiceTotals';
+import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses, recalcDocumentTotals } from '../lib/invoiceTotals';
 import { openOwnFile } from '../lib/files';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
@@ -27,6 +27,7 @@ import PaymentAttachmentWidget from './PaymentAttachmentWidget';
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
 import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
+import { depositFor } from '../lib/bookings';
 
 interface BillingViewProps {
   data: CRMData;
@@ -301,7 +302,17 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       const business = data.businesses.find(b => b.id === doc.businessId) || activeBusiness;
       const defaults = documentDefaults(business, 'invoice', today);
       const now = new Date().toISOString();
+      // Deposits already invoiced for this quote come off the final invoice.
+      const deposits = data.documents.filter(d => d.type === 'invoice' && d.isDeposit && d.sourceQuoteId === doc.id && d.status !== 'cancelled');
+      const finalItems = [...doc.items, ...deposits.map((dep, i) => ({
+        id: `item-less-deposit-${Date.now()}-${i}`, name: `Less deposit (invoice #${dep.documentNumber})`, description: '',
+        quantity: 1, rate: -dep.subtotal, total: -dep.subtotal
+      }))];
+      const finalTotals = deposits.length
+        ? recalcDocumentTotals(doc, finalItems, data.userProfile.enableTax === false)
+        : { items: doc.items, subtotal: doc.subtotal, vatRate: doc.vatRate, vatAmount: doc.vatAmount, appliedTaxes: doc.appliedTaxes, appliedFees: doc.appliedFees, taxTotal: doc.taxTotal, feeTotal: doc.feeTotal, total: doc.total };
       const newInv: CRMDocument = {
+        isTaxExempt: doc.isTaxExempt,
         id: `doc-${Date.now()}`,
         type: 'invoice',
         documentNumber: suggestDocumentNumber('invoice', doc.businessId),
@@ -311,18 +322,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         currency: doc.currency,
         issueDate: today,
         dueDate: defaults.dueDate,
-        items: doc.items,
-        subtotal: doc.subtotal,
-        vatRate: doc.vatRate,
-        vatAmount: doc.vatAmount,
-        isTaxExempt: doc.isTaxExempt,
-        appliedTaxes: doc.appliedTaxes,
-        appliedFees: doc.appliedFees,
-        taxTotal: doc.taxTotal,
-        feeTotal: doc.feeTotal,
-        total: doc.total,
+        ...finalTotals,
         status: 'draft',
-        notes: `${defaults.notes}\nFor quote #${doc.documentNumber}.`,
+        notes: `${defaults.notes}\nFor quote #${doc.documentNumber}.${deposits.length ? ` Less the deposit${deposits.length > 1 ? 's' : ''} already invoiced.` : ''}`,
         paymentMethod: doc.paymentMethod,
         industrySector: doc.industrySector,
         jobRefLabel: doc.jobRefLabel, jobRefValue: doc.jobRefValue,
@@ -349,6 +351,46 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       onUpdateData(next);
       if (receipt) setSelectedDoc(receipt);
     }
+  };
+
+  // A deposit invoice for a quote, from the business's (or services') deposit rules.
+  const depositAmount = (quote: CRMDocument) => {
+    const business = data.businesses.find(b => b.id === quote.businessId) || activeBusiness;
+    return quote.type === 'quote' ? depositFor(business?.booking, quote.items) : null;
+  };
+  const handleCreateDepositInvoice = (quote: CRMDocument) => {
+    const deposit = depositAmount(quote);
+    if (!deposit) return;
+    const business = data.businesses.find(b => b.id === quote.businessId) || activeBusiness;
+    const today = new Date().toISOString().split('T')[0];
+    const defaults = documentDefaults(business, 'invoice', today);
+    const pct = quote.subtotal > 0 ? Math.round(deposit / quote.subtotal * 1000) / 10 : 0;
+    const items = [{ id: `item-deposit-${Date.now()}`, name: `Deposit for quote #${quote.documentNumber}`, description: `${pct}% of ${quote.currency || data.userProfile.defaultCurrency || 'FJD'} ${quote.subtotal.toFixed(2)} before VAT`, quantity: 1, rate: deposit, total: deposit }];
+    const totals = recalcDocumentTotals({ ...quote, appliedFees: undefined }, items, data.userProfile.enableTax === false);
+    const inv: CRMDocument = {
+      id: `doc-${Date.now()}`,
+      type: 'invoice',
+      documentNumber: suggestDocumentNumber('invoice', quote.businessId),
+      businessId: quote.businessId,
+      clientId: quote.clientId,
+      projectId: quote.projectId,
+      currency: quote.currency,
+      issueDate: today,
+      dueDate: defaults.dueDate,
+      ...totals,
+      isTaxExempt: quote.isTaxExempt,
+      status: 'draft',
+      notes: `Deposit to confirm the booking in quote #${quote.documentNumber}. The rest is invoiced later.`,
+      sourceQuoteId: quote.id,
+      isDeposit: true,
+      shareToken: generateShareToken(),
+      updatedAt: new Date().toISOString()
+    };
+    Object.keys(inv).forEach(k => (inv as any)[k] === undefined && delete (inv as any)[k]);
+    onUpdateData({ ...data, documents: [inv, ...data.documents] });
+    setSelectedDoc(inv);
+    setShareToast(`Deposit invoice ${inv.documentNumber} created as a draft. Send it so the client can pay with Pay now.`);
+    setTimeout(() => setShareToast(null), 5000);
   };
 
   // Direct Document Status Quick Change & Toggle
@@ -3105,7 +3147,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                 {/* Visual conversion banner */}
                 {selectedDoc.type !== 'receipt' && selectedDoc.type !== 'credit_note' && selectedDoc.status !== 'paid' && selectedDoc.status !== 'cancelled'
-                  && !(selectedDoc.type === 'quote' && data.documents.some(d => d.sourceQuoteId === selectedDoc.id)) && (
+                  && !(selectedDoc.type === 'quote' && data.documents.some(d => d.sourceQuoteId === selectedDoc.id && !d.isDeposit)) && (
                   <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex items-center justify-between text-xs text-amber-800">
                     <span className="font-semibold flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -3119,6 +3161,21 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     </button>
                   </div>
                 )}
+
+                {/* Deposit for a booking */}
+                {selectedDoc.type === 'quote' && (selectedDoc.status === 'sent' || selectedDoc.status === 'accepted') && depositAmount(selectedDoc) && (() => {
+                  const existing = data.documents.find(d => d.isDeposit && d.sourceQuoteId === selectedDoc.id && d.status !== 'cancelled');
+                  return (
+                    <div className="bg-violet-50 border border-violet-100 p-3 rounded-2xl flex items-center justify-between gap-2 text-xs text-violet-900">
+                      <span className="font-semibold">{existing ? `Deposit invoice #${existing.documentNumber} (${existing.status})` : `Deposit: ${selectedDoc.currency || data.userProfile.defaultCurrency || 'FJD'} ${depositAmount(selectedDoc)!.toFixed(2)} before VAT`}</span>
+                      {existing ? (
+                        <button onClick={() => setSelectedDoc(existing)} className="bg-white border border-violet-200 font-bold py-1 px-2.5 rounded-lg text-[10px] cursor-pointer">Open</button>
+                      ) : (
+                        <button onClick={() => handleCreateDepositInvoice(selectedDoc)} className="bg-violet-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] hover:bg-violet-700 cursor-pointer">Create deposit invoice</button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Make this a recurring retainer quick action banner */}
                 {selectedDoc.type === 'invoice' && (

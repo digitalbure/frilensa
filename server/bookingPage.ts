@@ -3,7 +3,7 @@ import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { readWorkspace } from "./workspace";
 import { notifyEmail, later } from "./notify";
-import { bookingFormFor, saveBookingRequest } from "./bookings";
+import { bookingFormWithAvailability, checkDate, saveBookingRequest } from "./bookings";
 import { bookableServices, bookingQuestions, checkBooking, BookingError } from "../src/lib/bookings";
 import { formatMoney } from "../src/lib/payNow";
 
@@ -99,7 +99,7 @@ export function createPublicBookingRouter() {
     const found = await loadPage(String(req.params.slug));
     if (!found) return res.status(404).json({ error: "This booking page isn't available. Contact the business directly." });
     res.setHeader("Cache-Control", "no-store");
-    res.json({ form: bookingFormFor(found.data, found.business), formToken: formToken(found.business.booking!.page!.slug!), turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null });
+    res.json({ form: await bookingFormWithAvailability(found.uid, found.data, found.business), formToken: formToken(found.business.booking!.page!.slug!), turnstileSiteKey: process.env.TURNSTILE_SITE_KEY || null });
   }));
 
   router.post("/:slug/request", rateLimit({ name: "book-page-send", max: Number(process.env.BOOKING_PAGE_IP_LIMIT ?? 5), windowMs: 60 * 60_000, key: req => req.ip || "anon" }), asyncHandler(async (req, res) => {
@@ -128,6 +128,8 @@ export function createPublicBookingRouter() {
     }
     const message = String(body.message || "").trim().slice(0, 3000);
     if (checked.items.length === 0 && !message && checked.details.length === 0) throw new PageError(400, "Choose at least one service or tell them what you need.");
+    const problem = await checkDate(uid, data, business, checked.eventDate);
+    if (problem) throw new PageError(409, problem);
     if (!underDailyCap(`${uid}:${business.id}`)) throw new PageError(429, "This business has had a lot of booking requests today. Please contact them directly.");
 
     const embed = body.embed === true;

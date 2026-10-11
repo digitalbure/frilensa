@@ -6,7 +6,8 @@ import { appUrl, notifyConsultant, later } from "./notify";
 import { ApiError, parse } from "./apiService";
 import { publicCard } from "./rateCards";
 import { emitEvent } from "./webhooks";
-import { bookableServices, bookingQuestions, bookingProgress, checkBooking, BookingError, type BookingInput, type CheckedBooking } from "../src/lib/bookings";
+import { bookableServices, bookingQuestions, bookingProgress, checkBooking, BookingError, dateProblem, holdsDate, unavailableDates, type BookingInput, type CheckedBooking } from "../src/lib/bookings";
+import { todayIn } from "../src/lib/retainers";
 import type { Business, CRMData, CRMDocument } from "../src/types";
 
 // Booking requests from every channel (rate card, directory, apps through the API, and later the
@@ -55,6 +56,36 @@ export function bookingFormFor(data: CRMData, business: Business) {
     }))
   };
 }
+
+/** Bookings already holding each date for a business (for availability). */
+export async function heldDates(uid: string, data: CRMData, business: Business) {
+  const counts = new Map<string, number>();
+  if (!business.booking?.availability?.enabled) return counts;
+  const snap = await getAdminDb().collection(REQUESTS).where("uid", "==", uid).limit(2000).get();
+  for (const doc of snap.docs) {
+    const r = doc.data();
+    if (r.businessId !== business.id || !r.eventDate) continue;
+    if (holdsDate(bookingProgress(r, data.documents).stage, business.booking.availability.countPending)) counts.set(r.eventDate, (counts.get(r.eventDate) || 0) + 1);
+  }
+  return counts;
+}
+
+/** The booking form plus availability for the next 12 months and the deposit rule. */
+export async function bookingFormWithAvailability(uid: string, data: CRMData, business: Business) {
+  return {
+    ...bookingFormFor(data, business),
+    availability: unavailableDates(business.booking, await heldDates(uid, data, business), todayIn()),
+    deposit: business.booking?.deposit && business.booking.deposit.value > 0 ? business.booking.deposit : null
+  };
+}
+
+/** Refuses a date that's blocked, closed, too soon or full. */
+export async function checkDate(uid: string, data: CRMData, business: Business, date?: string) {
+  if (!date || !business.booking?.availability?.enabled) return null;
+  return dateProblem(business.booking, await heldDates(uid, data, business), todayIn(), date);
+}
+
+export const idempotentId = (uid: string, app: string, reference: string) => `bk_${sha256(`${uid}|${app}|${reference}`).slice(0, 40)}`;
 
 // ---------- API input ----------
 
@@ -115,7 +146,7 @@ export interface NewBooking {
 export async function saveBookingRequest(b: NewBooking): Promise<{ created: boolean; request: any }> {
   const db = getAdminDb();
   const ref = b.source?.app && b.source?.reference
-    ? db.collection(REQUESTS).doc(`bk_${sha256(`${b.uid}|${b.source.app}|${b.source.reference}`).slice(0, 40)}`)
+    ? db.collection(REQUESTS).doc(idempotentId(b.uid, b.source.app, b.source.reference))
     : db.collection(REQUESTS).doc();
   const now = new Date().toISOString();
   const request = {
@@ -175,7 +206,7 @@ export async function saveBookingRequest(b: NewBooking): Promise<{ created: bool
 export async function getBookingForm(uid: string, input: unknown) {
   const q = parse(bookingFormInput, input);
   const data = await load(uid);
-  return bookingFormFor(data, pickBusiness(data, q.businessId));
+  return bookingFormWithAvailability(uid, data, pickBusiness(data, q.businessId));
 }
 
 export async function createBookingRequest(uid: string, apiKey: { id: string; name: string }, input: unknown) {
@@ -192,6 +223,13 @@ export async function createBookingRequest(uid: string, apiKey: { id: string; na
   if (checked.items.length === 0 && !q.message && checked.details.length === 0) {
     throw new ApiError(400, "Add at least one bookable service, an answer or a message.");
   }
+  // A repeat of a booking already received returns it, whatever has been booked since.
+  if (q.source?.app && q.source.reference) {
+    const prev = (await getAdminDb().collection(REQUESTS).doc(idempotentId(uid, q.source.app, q.source.reference)).get()).data();
+    if (prev) return { created: false, body: { id: prev.id, ref: prev.ref, status: prev.status, estimate: prev.estimate, currency: prev.currency } };
+  }
+  const problem = await checkDate(uid, data, business, checked.eventDate);
+  if (problem) throw new ApiError(409, `${checked.eventDate}: ${problem}`);
   const { created, request } = await saveBookingRequest({
     uid, data, business, checked,
     contact: { name: q.name, email: q.email.trim(), phone: q.phone, company: q.company, message: q.message },
@@ -221,7 +259,7 @@ export function bookingView(r: any, documents: CRMDocument[]) {
     invoices: invoices.map(i => {
       const amountPaid = i.status === "paid" ? i.total : i.status === "partial" ? (i.partiallyPaidAmount || 0) : 0;
       return {
-        id: i.id, number: i.documentNumber, status: i.status, total: i.total, currency: i.currency || r.currency || "FJD",
+        id: i.id, number: i.documentNumber, kind: i.isDeposit ? "deposit" : "invoice", status: i.status, total: i.total, currency: i.currency || r.currency || "FJD",
         amountPaid, balance: Math.max(0, Math.round((i.total - amountPaid) * 100) / 100), dueDate: i.dueDate || null, onlineUrl: docLink(i)
       };
     })

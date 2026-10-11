@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.14.0] - 2026-10-11
+
+### Added
+- **Webhooks** in **Settings**: tell your website or app the moment a booking arrives or moves on (quoted, quote accepted, invoiced, part paid, paid). Each delivery is signed, and failed ones are retried for 24 hours. You can send a test and see recent deliveries.
+- **Availability** for bookings:
+  - Choose the days you work, how far ahead people must book, dates you're away, and the most bookings you take a day.
+  - Your booking page and connected apps grey out days that aren't available, and bookings on full days are refused.
+- **Deposits:** ask for a percentage or a fixed amount, for the business or per service.
+  - Open an accepted quote and press **Create deposit invoice**, then send it so the customer can pay it with Pay now.
+  - The final invoice subtracts the deposit.
+  - Apps see the deposit invoice and its payment link.
+
+### Changed
+- A booking with only its deposit paid shows as part paid, not paid.
+
 ## [3.13.0] - 2026-10-11
 
 ### Added
