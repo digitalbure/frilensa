@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import PayNowPanel from './PayNowPanel';
+import { tradingAsLine } from '../lib/businessName';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, CheckCircle2, Clock, CreditCard, ArrowUpRight, Phone, Mail, 
@@ -872,6 +873,11 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         <div>
                           <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">From</span>
                           <p className="font-bold text-zinc-900">{docBiz.name || selectedDoc.businessName}</p>
+                          {(() => {
+                            const own = businesses.find(b => b.id === selectedDoc.businessId);
+                            const line = tradingAsLine(own ? own : { name: selectedDoc.businessName, legalName: selectedDoc.businessLegalName });
+                            return line ? <p className="text-zinc-700">{line}</p> : null;
+                          })()}
                           {(docBiz.tin || selectedDoc.businessTin) && (
                             <p className="font-mono text-[9.5px]">TIN: {docBiz.tin || selectedDoc.businessTin}</p>
                           )}

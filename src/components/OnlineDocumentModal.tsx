@@ -1,3 +1,4 @@
+import { tradingAsLine } from '../lib/businessName';
 import React, { useState } from 'react';
 import { documentPublicUrl } from '../lib/documentLinks';
 import { motion, AnimatePresence } from 'motion/react';
@@ -258,6 +259,7 @@ export default function OnlineDocumentModal({
                 <span>
                   TIN: <span className="font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-sky-900">{business.tin || userProfile.tin}</span>
                 </span>
+                {tradingAsLine(business) && <span className="basis-full text-slate-700">{tradingAsLine(business)}</span>}
                 {business.registrationNumber && (
                   <span>
                     Reg #: <span className="font-mono font-bold bg-slate-100 px-1.5 py-0.5 rounded text-slate-800">{business.registrationNumber}</span>

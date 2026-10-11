@@ -23,7 +23,7 @@ function publicView(d: any) {
     consultantId, consultantEmail, shareToken, clientEmail,
     businessName, businessColorTheme, businessLogoType, businessLogoSymbol, businessLogoText,
     businessLogoUrl, businessBrandSlogan, businessAddress, businessEmail, businessPhone,
-    businessTin, businessBankDetails, businessMPaisaId, businessMyCashId,
+    businessTin, businessBankDetails, businessMPaisaId, businessMyCashId, businessLegalName, businessRegistrationNumber,
     clientName, ...document
   } = d;
   return {
@@ -34,7 +34,7 @@ function publicView(d: any) {
       colorTheme: businessColorTheme || "#0284c7",
       logoType: businessLogoType, logoSymbol: businessLogoSymbol, logoText: businessLogoText, logoUrl: businessLogoUrl,
       brandSlogan: businessBrandSlogan, address: businessAddress, email: businessEmail, phone: businessPhone,
-      tin: businessTin, bankDetails: businessBankDetails, mPaisaId: businessMPaisaId, myCashId: businessMyCashId
+      tin: businessTin, legalName: businessLegalName || "", registrationNumber: businessRegistrationNumber || "", bankDetails: businessBankDetails, mPaisaId: businessMPaisaId, myCashId: businessMyCashId
     }
   };
 }

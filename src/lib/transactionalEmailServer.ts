@@ -1,4 +1,7 @@
 import { CRMDocument, Business, Client, UserProfile } from '../types';
+import { tradingAsLine } from './businessName';
+
+const escapeText = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 export interface SendDocumentEmailPayload {
   document: CRMDocument;
@@ -85,7 +88,7 @@ ${business.tin ? `TIN: ${business.tin}\n` : ''}Reference: ${verificationHash}
 
 Vinaka vaka levu for your business.
 ${business.name}
-----------------------------------------------------------------------
+${tradingAsLine(business) ? `${tradingAsLine(business)}\n` : ''}----------------------------------------------------------------------
 Sent using Frilensa (frilensa.com)
 `.trim();
 
@@ -294,6 +297,7 @@ Sent using Frilensa (frilensa.com)
       <div class="header-banner">
         <h1 class="biz-title">${business.name}</h1>
         <p class="biz-subtitle">${business.tagline || ''}</p>
+        ${tradingAsLine(business) ? `<p class="biz-subtitle">${escapeText(tradingAsLine(business))}</p>` : ''}
         <div>
           <span class="badge-pill">
             ${docTypeLabel.toUpperCase()} #${document.documentNumber}

@@ -54,6 +54,8 @@ export function buildFlatDocumentRow(
     businessEmail: business?.email || '',
     businessPhone: business?.phone || '',
     businessTin: business?.tin || '',
+    businessLegalName: business?.legalName || '',
+    businessRegistrationNumber: business?.registrationNumber || '',
     businessBankDetails: business?.bankDetails || '',
     businessMPaisaId: (business as any)?.mPaisaId || '',
     businessMyCashId: (business as any)?.myCashId || '',

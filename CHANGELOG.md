@@ -18,6 +18,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.15.0] - 2026-10-11
+
+### Added
+- **Duplicate a project** to set up a similar job quickly. Use **Duplicate** in an open project, or the copy icon on a project card in Grid view.
+  - The copy keeps the client, scope, tasks and settings.
+  - It starts today, with its end date and task due dates moved by the same amount.
+  - Its tasks start again as to-do, with no tracked time.
+- **Trading names.** When a business is a registered business name rather than a separate company (for example SLEDIEN Pte Ltd trading as Vibrant), fill in **Registered owner** in the business's details. Quotes, invoices, receipts, PDFs, emails, the online invoice and the client portal then show "SLEDIEN Pte Ltd trading as Vibrant", and the registration number shows on the online invoice too.
+
+### Fixed
+- **Edit project** did nothing inside an open project. The form only appeared after going back to the list. It now opens straight away.
+
 ## [3.14.0] - 2026-10-11
 
 ### Added

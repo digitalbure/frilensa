@@ -5,6 +5,7 @@ import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import type { Business, Client } from '../types';
 import { publicFileUrl } from '../lib/files';
 import PayNowPanel from './PayNowPanel';
+import { tradingAsLine } from '../lib/businessName';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -136,10 +137,12 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
           <div className="space-y-1">
             <h1 className="text-lg font-bold text-slate-900">{business.name}</h1>
             {business.brandSlogan && <p className="text-xs text-slate-500">{business.brandSlogan}</p>}
+            {tradingAsLine(business) && <p className="text-xs text-slate-700">{tradingAsLine(business)}</p>}
             <div className="text-xs text-slate-500 space-y-0.5">
               {business.address && <p>{business.address}</p>}
               {(business.email || business.phone) && <p>{[business.email, business.phone].filter(Boolean).join(' · ')}</p>}
               {business.tin && <p>TIN: {business.tin}</p>}
+              {business.registrationNumber && <p>Reg #: {business.registrationNumber}</p>}
             </div>
           </div>
           <div className="sm:text-right space-y-1">

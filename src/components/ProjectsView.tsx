@@ -4,7 +4,7 @@ import {
   Trash2, Edit3, Clock, CheckCircle2, Circle, Play, AlertCircle, 
   User, ChevronRight, Search, Percent, ListTodo, LayoutGrid, Kanban, Columns,
   ArrowUpDown, Link2, FileText, Info, RefreshCw, Coins, Globe, Clapperboard,
-  Code, Scale, Wrench, Hammer, Sparkles, Layers, Wand2
+  Code, Scale, Wrench, Hammer, Sparkles, Layers, Wand2, Copy
 } from 'lucide-react';
 import { CRMData, Project, Task, Client, Business } from '../types';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount, convertCurrency, resolveProjectCurrency } from '../lib/currencies';
@@ -246,6 +246,42 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       setSelectedProjectId(newProjId);
     }
     setShowAddProjectModal(false);
+  };
+
+  // Duplicate a project to set up a similar one quickly: same client, scope, tasks and settings,
+  // with tasks reset to to-do, no tracked time, and dates moved to start today.
+  const handleDuplicateProject = (proj: Project, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const today = new Date().toISOString().split('T')[0];
+    const dayMs = 24 * 60 * 60 * 1000;
+    const shiftDays = proj.startDate ? Math.round((new Date(`${today}T00:00:00Z`).getTime() - new Date(`${proj.startDate}T00:00:00Z`).getTime()) / dayMs) : 0;
+    const shift = (d?: string) => {
+      if (!d || !/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+      const x = new Date(`${d}T00:00:00Z`);
+      x.setUTCDate(x.getUTCDate() + shiftDays);
+      return x.toISOString().slice(0, 10);
+    };
+    const stamp = Date.now();
+    const id = `proj-${stamp}`;
+    const copy: Project = {
+      ...proj,
+      id,
+      name: `${proj.name} (copy)`,
+      status: 'not_started',
+      startDate: today,
+      endDate: shift(proj.endDate) || proj.endDate,
+      tasks: (proj.tasks || []).map((t, i) => {
+        const { timerStartedAt, ...rest } = t;
+        return { ...rest, id: `task-${stamp}-${i}`, projectId: id, status: 'todo' as const, trackedHours: 0, dueDate: shift(t.dueDate) };
+      }),
+      scopeSections: (proj.scopeSections || []).map((sec, i) => ({ ...sec, id: `scope-${stamp}-${i}`, deliverables: [...(sec.deliverables || [])] })),
+      customJobFields: proj.customJobFields ? proj.customJobFields.map(f => ({ ...f })) : undefined
+    };
+    (copy as any).updatedAt = new Date().toISOString();
+    onUpdateData({ ...data, projects: [...projects, copy] });
+    setSelectedProjectId(null);
+    // Open the copy so the name, client and dates can be changed straight away.
+    handleOpenEdit(copy, e);
   };
 
   // Handle Project Delete
@@ -1042,6 +1078,261 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
   const activeBiz = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
 
+  // The new/edit project form, shown over both the list and an open project.
+  const projectModal = showAddProjectModal && (
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
+            <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-100 shadow-xl overflow-hidden max-h-[92vh] flex flex-col">
+              <div className="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="w-4 h-4 text-sky-400" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider">
+                    {editingProject ? 'Edit project' : 'New project'}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setShowAddProjectModal(false)}
+                  className="text-white/60 hover:text-white transition-colors cursor-pointer text-xs"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <form onSubmit={handleProjectSubmit} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1 text-slate-700">
+                
+                {/* Industry Workflow Template Selector (Only when creating) */}
+                {!editingProject && (
+                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2">
+                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
+                      <span>Start from a template</span>
+                      <span className="text-[9px] text-sky-600 font-normal">Fills in scope and tasks</span>
+                    </label>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setProjIndustrySector('custom');
+                        }}
+                        className={`p-2 rounded-lg text-left border text-xs font-semibold transition-all cursor-pointer ${
+                          projIndustrySector === 'custom'
+                            ? 'bg-white border-slate-900 text-slate-900 shadow-2xs ring-1 ring-slate-900'
+                            : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
+                        }`}
+                      >
+                        <div className="text-[10.5px] font-bold">Blank</div>
+                        <div className="text-[9px] text-slate-400 font-normal">Start from scratch</div>
+                      </button>
+
+                      {INDUSTRY_PRESETS.slice(0, 5).map((preset) => (
+                        <button
+                          key={preset.id}
+                          type="button"
+                          onClick={() => {
+                            setProjIndustrySector(preset.id);
+                            setProjName(preset.sampleProject.name);
+                            setProjDesc(preset.sampleProject.description);
+                            setProjCost(preset.sampleProject.defaultCost);
+                            setProjRateType(preset.sampleProject.rateType);
+                          }}
+                          className={`p-2 rounded-lg text-left border text-xs font-semibold transition-all cursor-pointer ${
+                            projIndustrySector === preset.id
+                              ? 'bg-sky-50 border-sky-500 text-sky-950 shadow-2xs ring-1 ring-sky-500'
+                              : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
+                          }`}
+                        >
+                          <div className="text-[10.5px] font-bold truncate">{preset.name.split(',')[0]}</div>
+                          <div className="text-[9px] text-slate-400 font-normal truncate">{preset.badge}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={projName}
+                    onChange={(e) => setProjName(e.target.value)}
+                    placeholder="e.g. Office fit-out"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
+                  <textarea
+                    value={projDesc}
+                    onChange={(e) => setProjDesc(e.target.value)}
+                    placeholder="What the job covers and what you'll deliver"
+                    rows={2}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 resize-none"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <DateInput
+                    label="Start date"
+                    required
+                    value={projStartDate}
+                    onChange={setProjStartDate}
+                    placeholder="Select start date"
+                    align="left"
+                    customPresets={[
+                      { label: 'Today', special: 'today' },
+                      { label: '+1 week', daysOffset: 7 },
+                      { label: '+1 month', monthsOffset: 1 },
+                    ]}
+                  />
+                  <DateInput
+                    label="End date"
+                    required
+                    min={projStartDate}
+                    value={projEndDate}
+                    onChange={setProjEndDate}
+                    placeholder="Select end date"
+                    align="right"
+                    customPresets={[
+                      { label: '+2 weeks', daysOffset: 14 },
+                      { label: '+1 month', monthsOffset: 1 },
+                      { label: '+3 months', monthsOffset: 3 },
+                      { label: 'End of month', special: 'end_of_month' },
+                    ]}
+                  />
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Currency</label>
+                    <select
+                      value={projCurrency}
+                      onChange={(e) => setProjCurrency(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-xs mt-1 focus:outline-none focus:border-slate-500 font-bold"
+                    >
+                      {SUPPORTED_CURRENCIES.map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.flag} {c.code}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget *</label>
+                    <input
+                      type="number"
+                      required
+                      min={0}
+                      value={projCost || ''}
+                      onChange={(e) => setProjCost(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2.5 text-xs mt-1 focus:outline-none focus:border-slate-500 font-mono font-bold"
+                    />
+                  </div>
+                  <div className="col-span-1">
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rate type *</label>
+                    <select
+                      value={projRateType}
+                      onChange={(e) => setProjRateType(e.target.value as any)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-xs mt-1 focus:outline-none focus:border-slate-500"
+                    >
+                      <option value="flat">Fixed price</option>
+                      <option value="hourly">Hourly</option>
+                      <option value="monthly">Retainer</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Real-time Multi-Currency Conversion Hint */}
+                {projCurrency !== data.userProfile.defaultCurrency && (
+                  <div className="bg-sky-50 border border-sky-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px]">
+                    <div className="flex items-center gap-1.5 text-sky-800">
+                      <span className="text-sm">{getCurrencyConfig(projCurrency).flag}</span>
+                      <span>
+                        In {data.userProfile.defaultCurrency}: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString()}</strong>
+                      </span>
+                    </div>
+                    <span className="text-[9px] text-sky-600 font-mono">
+                      (Rate: ~{convertCurrency(1, projCurrency, data.userProfile.defaultCurrency).rate} {data.userProfile.defaultCurrency}/{projCurrency})
+                    </span>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
+                    <select
+                      value={projClientId}
+                      onChange={(e) => {
+                        const newClientId = e.target.value;
+                        setProjClientId(newClientId);
+                        if (newClientId) {
+                          const clientObj = data.clients.find(c => c.id === newClientId);
+                          if (clientObj?.currency) {
+                            setProjCurrency(clientObj.currency);
+                          }
+                        }
+                      }}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
+                    >
+                      <option value="">No client</option>
+                      {data.clients.map(c => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} {c.currency ? `(${c.currency})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</label>
+                    <select
+                      value={projStatus}
+                      onChange={(e) => setProjStatus(e.target.value as any)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 font-semibold"
+                    >
+                      <option value="lead">Lead</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="pending_review">Pending review</option>
+                      <option value="completed">Completed</option>
+                      <option value="on_hold">On hold</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Business</label>
+                  <select
+                    value={projBizId}
+                    onChange={(e) => setProjBizId(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
+                  >
+                    {data.businesses.map(b => (
+                      <option key={b.id} value={b.id}>
+                        {b.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddProjectModal(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
+                  >
+                    {editingProject ? 'Save changes' : 'Create project'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+
   // Render drill down view if a project is selected
   if (selectedProject) {
     const associatedClient = data.clients.find(c => c.id === selectedProject.clientId);
@@ -1065,12 +1356,20 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             <ArrowLeft className="w-3.5 h-3.5" /> Back to projects
           </button>
 
-          <button
-            onClick={(e) => handleOpenEdit(selectedProject, e)}
-            className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 bg-white border border-sky-200 rounded-xl py-2 px-3.5 shadow-2xs transition-all cursor-pointer"
-          >
-            <Edit3 className="w-3.5 h-3.5" /> Edit project
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => handleDuplicateProject(selectedProject, e)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 bg-white border border-slate-200 rounded-xl py-2 px-3.5 shadow-2xs transition-all cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" /> Duplicate
+            </button>
+            <button
+              onClick={(e) => handleOpenEdit(selectedProject, e)}
+              className="flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:bg-sky-50 bg-white border border-sky-200 rounded-xl py-2 px-3.5 shadow-2xs transition-all cursor-pointer"
+            >
+              <Edit3 className="w-3.5 h-3.5" /> Edit project
+            </button>
+          </div>
         </div>
 
         {/* Project Detailed Header Card */}
@@ -2285,6 +2584,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             </div>
           </div>
         )}
+
+        {projectModal}
       </div>
     );
   }
@@ -2485,6 +2786,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                           <Edit3 className="w-3.5 h-3.5" />
                         </button>
                         <button
+                          onClick={(e) => handleDuplicateProject(proj, e)}
+                          className="p-1.5 text-slate-400 hover:text-sky-700 hover:bg-sky-50 rounded-md transition-all"
+                          title="Duplicate project"
+                          aria-label={`Duplicate ${proj.name}`}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                        <button
                           onClick={(e) => handleDeleteProject(proj.id, e)}
                           className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
                         >
@@ -2533,260 +2842,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         </div>
       )}
 
-        {/* Creation / Edit Project Modal */}
-        {showAddProjectModal && (
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-            <div className="bg-white w-full max-w-lg rounded-2xl border border-slate-100 shadow-xl overflow-hidden max-h-[92vh] flex flex-col">
-              <div className="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0">
-                <div className="flex items-center gap-2">
-                  <Wand2 className="w-4 h-4 text-sky-400" />
-                  <h3 className="text-xs font-bold uppercase tracking-wider">
-                    {editingProject ? 'Edit project' : 'New project'}
-                  </h3>
-                </div>
-                <button 
-                  onClick={() => setShowAddProjectModal(false)}
-                  className="text-white/60 hover:text-white transition-colors cursor-pointer text-xs"
-                >
-                  Cancel
-                </button>
-              </div>
-
-              <form onSubmit={handleProjectSubmit} className="p-4 sm:p-5 space-y-3.5 overflow-y-auto flex-1 text-slate-700">
-                
-                {/* Industry Workflow Template Selector (Only when creating) */}
-                {!editingProject && (
-                  <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-3 space-y-2">
-                    <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider flex items-center justify-between">
-                      <span>Start from a template</span>
-                      <span className="text-[9px] text-sky-600 font-normal">Fills in scope and tasks</span>
-                    </label>
-
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setProjIndustrySector('custom');
-                        }}
-                        className={`p-2 rounded-lg text-left border text-xs font-semibold transition-all cursor-pointer ${
-                          projIndustrySector === 'custom'
-                            ? 'bg-white border-slate-900 text-slate-900 shadow-2xs ring-1 ring-slate-900'
-                            : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
-                        }`}
-                      >
-                        <div className="text-[10.5px] font-bold">Blank</div>
-                        <div className="text-[9px] text-slate-400 font-normal">Start from scratch</div>
-                      </button>
-
-                      {INDUSTRY_PRESETS.slice(0, 5).map((preset) => (
-                        <button
-                          key={preset.id}
-                          type="button"
-                          onClick={() => {
-                            setProjIndustrySector(preset.id);
-                            setProjName(preset.sampleProject.name);
-                            setProjDesc(preset.sampleProject.description);
-                            setProjCost(preset.sampleProject.defaultCost);
-                            setProjRateType(preset.sampleProject.rateType);
-                          }}
-                          className={`p-2 rounded-lg text-left border text-xs font-semibold transition-all cursor-pointer ${
-                            projIndustrySector === preset.id
-                              ? 'bg-sky-50 border-sky-500 text-sky-950 shadow-2xs ring-1 ring-sky-500'
-                              : 'bg-white/70 border-slate-200 text-slate-600 hover:bg-white'
-                          }`}
-                        >
-                          <div className="text-[10.5px] font-bold truncate">{preset.name.split(',')[0]}</div>
-                          <div className="text-[9px] text-slate-400 font-normal truncate">{preset.badge}</div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project name *</label>
-                  <input
-                    type="text"
-                    required
-                    value={projName}
-                    onChange={(e) => setProjName(e.target.value)}
-                    placeholder="e.g. Office fit-out"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
-                  <textarea
-                    value={projDesc}
-                    onChange={(e) => setProjDesc(e.target.value)}
-                    placeholder="What the job covers and what you'll deliver"
-                    rows={2}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 resize-none"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <DateInput
-                    label="Start date"
-                    required
-                    value={projStartDate}
-                    onChange={setProjStartDate}
-                    placeholder="Select start date"
-                    align="left"
-                    customPresets={[
-                      { label: 'Today', special: 'today' },
-                      { label: '+1 week', daysOffset: 7 },
-                      { label: '+1 month', monthsOffset: 1 },
-                    ]}
-                  />
-                  <DateInput
-                    label="End date"
-                    required
-                    min={projStartDate}
-                    value={projEndDate}
-                    onChange={setProjEndDate}
-                    placeholder="Select end date"
-                    align="right"
-                    customPresets={[
-                      { label: '+2 weeks', daysOffset: 14 },
-                      { label: '+1 month', monthsOffset: 1 },
-                      { label: '+3 months', monthsOffset: 3 },
-                      { label: 'End of month', special: 'end_of_month' },
-                    ]}
-                  />
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Currency</label>
-                    <select
-                      value={projCurrency}
-                      onChange={(e) => setProjCurrency(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-xs mt-1 focus:outline-none focus:border-slate-500 font-bold"
-                    >
-                      {SUPPORTED_CURRENCIES.map(c => (
-                        <option key={c.code} value={c.code}>
-                          {c.flag} {c.code}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget *</label>
-                    <input
-                      type="number"
-                      required
-                      min={0}
-                      value={projCost || ''}
-                      onChange={(e) => setProjCost(Number(e.target.value))}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2.5 text-xs mt-1 focus:outline-none focus:border-slate-500 font-mono font-bold"
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rate type *</label>
-                    <select
-                      value={projRateType}
-                      onChange={(e) => setProjRateType(e.target.value as any)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-xs mt-1 focus:outline-none focus:border-slate-500"
-                    >
-                      <option value="flat">Fixed price</option>
-                      <option value="hourly">Hourly</option>
-                      <option value="monthly">Retainer</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Real-time Multi-Currency Conversion Hint */}
-                {projCurrency !== data.userProfile.defaultCurrency && (
-                  <div className="bg-sky-50 border border-sky-200/80 rounded-xl p-2.5 flex items-center justify-between text-[10px]">
-                    <div className="flex items-center gap-1.5 text-sky-800">
-                      <span className="text-sm">{getCurrencyConfig(projCurrency).flag}</span>
-                      <span>
-                        In {data.userProfile.defaultCurrency}: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString()}</strong>
-                      </span>
-                    </div>
-                    <span className="text-[9px] text-sky-600 font-mono">
-                      (Rate: ~{convertCurrency(1, projCurrency, data.userProfile.defaultCurrency).rate} {data.userProfile.defaultCurrency}/{projCurrency})
-                    </span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
-                    <select
-                      value={projClientId}
-                      onChange={(e) => {
-                        const newClientId = e.target.value;
-                        setProjClientId(newClientId);
-                        if (newClientId) {
-                          const clientObj = data.clients.find(c => c.id === newClientId);
-                          if (clientObj?.currency) {
-                            setProjCurrency(clientObj.currency);
-                          }
-                        }
-                      }}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
-                    >
-                      <option value="">No client</option>
-                      {data.clients.map(c => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} {c.currency ? `(${c.currency})` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</label>
-                    <select
-                      value={projStatus}
-                      onChange={(e) => setProjStatus(e.target.value as any)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 font-semibold"
-                    >
-                      <option value="lead">Lead</option>
-                      <option value="in_progress">In progress</option>
-                      <option value="pending_review">Pending review</option>
-                      <option value="completed">Completed</option>
-                      <option value="on_hold">On hold</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Business</label>
-                  <select
-                    value={projBizId}
-                    onChange={(e) => setProjBizId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
-                  >
-                    {data.businesses.map(b => (
-                      <option key={b.id} value={b.id}>
-                        {b.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="pt-2 border-t border-slate-100 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddProjectModal(false)}
-                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-xl text-xs transition-all cursor-pointer"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
-                  >
-                    {editingProject ? 'Save changes' : 'Create project'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
+        {projectModal}
 
       {/* Task Detail & Reference Management Modal */}
       {detailTask && (

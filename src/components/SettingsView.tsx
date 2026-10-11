@@ -136,6 +136,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
   const [bizName, setBizName] = useState('');
   const [bizTin, setBizTin] = useState('');
   const [bizRegNumber, setBizRegNumber] = useState('');
+  const [bizLegalName, setBizLegalName] = useState('');
   const [bizAddress, setBizAddress] = useState('');
   const [bizEmail, setBizEmail] = useState('');
   const [bizPhone, setBizPhone] = useState('');
@@ -262,6 +263,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       setBizName(biz.name || '');
       setBizTin(biz.tin || '');
       setBizRegNumber(biz.registrationNumber || '');
+      setBizLegalName(biz.legalName || '');
       setBizAddress(biz.address || '');
       setBizEmail(biz.email || '');
       setBizPhone(biz.phone || '');
@@ -373,6 +375,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           name: bizName,
           tin: bizTin,
           registrationNumber: bizRegNumber.trim() || undefined,
+          legalName: bizLegalName.trim(),
           address: bizAddress,
           email: bizEmail,
           phone: bizPhone,
@@ -963,6 +966,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 font-mono text-zinc-850"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Registered owner (if this is a business name)</label>
+            <input
+              type="text"
+              value={bizLegalName}
+              onChange={(e) => setBizLegalName(e.target.value)}
+              placeholder="e.g. SLEDIEN Pte Ltd"
+              maxLength={120}
+              className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 text-zinc-850"
+            />
+            <p className="text-[10px] text-zinc-500 mt-1">
+              Fill this in when the name above is a business name registered to a company or person, not a separate company. Quotes, invoices and receipts then show "{bizLegalName.trim() || 'SLEDIEN Pte Ltd'} trading as {bizName.trim() || 'Vibrant'}". Use the owner's TIN above, and the business name registration number.
+            </p>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

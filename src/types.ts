@@ -244,6 +244,7 @@ export interface Business {
   name: string;
   tin: string;
   registrationNumber?: string; // Company / Business Registration Number (e.g. ROC / BN / Reg No)
+  legalName?: string; // When this is a registered business name: the company or person that owns it (shown as "<legalName> trading as <name>")
   address: string;
   email: string;
   phone: string;

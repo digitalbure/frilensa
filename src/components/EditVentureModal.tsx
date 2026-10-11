@@ -23,6 +23,7 @@ export default function EditVentureModal({
   const [name, setName] = useState(business.name || '');
   const [tin, setTin] = useState(business.tin || '');
   const [registrationNumber, setRegistrationNumber] = useState(business.registrationNumber || '');
+  const [legalName, setLegalName] = useState(business.legalName || '');
   const [address, setAddress] = useState(business.address || '');
   const [email, setEmail] = useState(business.email || '');
   const [phone, setPhone] = useState(business.phone || '');
@@ -85,6 +86,7 @@ export default function EditVentureModal({
       name: name.trim(),
       tin: tin.trim() || '10-00000-0-0',
       registrationNumber: registrationNumber.trim() || undefined,
+      legalName: legalName.trim(),
       address: address.trim() || 'Suva, Fiji',
       email: email.trim() || 'contact@example.com',
       phone: phone.trim() || '+679 000 0000',
@@ -254,6 +256,19 @@ export default function EditVentureModal({
                 className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white font-mono placeholder-slate-500 focus:outline-none focus:border-sky-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="text-[10.5px] uppercase tracking-wider font-bold text-slate-300 block mb-1">Registered owner (if this is a business name)</label>
+            <input
+              type="text"
+              placeholder="e.g. SLEDIEN Pte Ltd"
+              value={legalName}
+              maxLength={120}
+              onChange={(e) => setLegalName(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"
+            />
+            <p className="text-[10px] text-slate-400 mt-1">For a registered business name owned by a company or person. Documents show "{legalName.trim() || 'SLEDIEN Pte Ltd'} trading as {name.trim() || 'this name'}", with the owner's TIN.</p>
           </div>
 
           {/* Contact Details (Email, Phone, Address) */}

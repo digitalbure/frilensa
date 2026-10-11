@@ -18,7 +18,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: 'businesses',
     title: 'Set up your businesses',
     summary: 'Add a business, switch between businesses, and fill in the details shown on your documents.',
-    keywords: ['business', 'venture', 'workspace', 'switch', 'TIN', 'bank details', 'M-PAiSA', 'MyCash', 'logo', 'brand', 'primary', 'profile', 'getting started'],
+    keywords: ['business', 'venture', 'workspace', 'switch', 'TIN', 'bank details', 'M-PAiSA', 'MyCash', 'logo', 'brand', 'primary', 'profile', 'getting started', 'trading as', 'T/A', 'business name', 'registered owner'],
     body: `Frilensa keeps each business (or brand) separately: its own details, clients' documents, numbering, services, rate card and terms. The business you have selected is the active business, and new quotes, invoices and expenses use it.
 
 ### Switch business
@@ -36,6 +36,9 @@ Open **Home → Edit profile**, or go to **Settings → Businesses** and press *
 - Billing email, phone and address.
 - Bank details, your M-PAiSA number or merchant ID, and your MyCash number. These appear under "How to pay" on invoices, PDFs and the online invoice, with the invoice number as the payment reference.
 - Logo and brand colour (**Home → Edit logo**, or **Settings → Businesses → Logo and colors**).
+
+### A business name you trade under
+If the name is a registered business name owned by your company or by you, rather than a separate company (for example SLEDIEN Pte Ltd registered "Vibrant" as a business name), set it up as a business called Vibrant and fill in **Registered owner (if this is a business name)** with "SLEDIEN Pte Ltd". Quotes, invoices, receipts, PDFs, emails and the online invoice then show "SLEDIEN Pte Ltd trading as Vibrant" under the name. Use the owner's TIN, and put the business name registration number in **Registration number**. You can add a business like this for each name you trade under, each with its own branding, numbering and bank details.
 
 Mark one business as the main one with **Set as primary** on **Home**. It's used by default for new documents.
 
@@ -323,11 +326,14 @@ Under **Terms for** your business, set **Invoices due after (days)**, **Quotes v
     id: 'projects-tasks',
     title: 'Projects and tasks',
     summary: 'Plan jobs with a scope, track tasks and time, and bill tracked hours.',
-    keywords: ['project', 'job', 'task', 'to do', 'kanban', 'board', 'timer', 'time tracking', 'hours', 'bill hours', 'scope', 'scope of work', 'deliverables', 'due date', 'priority'],
+    keywords: ['project', 'job', 'task', 'to do', 'duplicate', 'copy project', 'edit project', 'kanban', 'board', 'timer', 'time tracking', 'hours', 'bill hours', 'scope', 'scope of work', 'deliverables', 'due date', 'priority'],
     body: `### Create a project
 Go to **Projects** and press **New project**. Start from a template (it fills in scope and tasks) or **Blank**. Enter the **Project name**, dates, currency, **Budget**, **Rate type** (fixed price, hourly or retainer), client, status and business.
 
 Projects show on a **Board** with columns for leads, in progress, pending review and completed. Drag a project to change its status, or switch to **Grid**.
+
+### Edit or duplicate a project
+Open a project and press **Edit project** to change its name, dates, budget, client or status. Press **Duplicate** (or the copy icon on a project in **Grid**) to set up a similar job: the copy keeps the client, scope, tasks and settings, starts today with its dates moved to match, and its tasks start again as to-do with no tracked time. The copy opens so you can rename it straight away.
 
 ### Inside a project
 Open a project to see three tabs:

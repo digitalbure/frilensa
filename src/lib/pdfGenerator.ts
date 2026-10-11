@@ -1,4 +1,5 @@
 import { jsPDF } from 'jspdf';
+import { tradingAsLine } from './businessName';
 import QRCode from 'qrcode';
 import { documentPublicUrl } from './documentLinks';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
@@ -272,6 +273,17 @@ export function generateDocumentPdf(
   const splitBizName = doc.splitTextToSize(businessName, maxBizTextWidth);
   doc.text(splitBizName, bizTextStartX, leftY + 4.5);
   leftY += Math.max(12, (splitBizName.length * 4.8) + 2);
+
+  // Registered business name: "SLEDIEN Pte Ltd trading as Vibrant"
+  const tradingAs = tradingAsLine(business);
+  if (tradingAs) {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(slate700[0], slate700[1], slate700[2]);
+    const lines = doc.splitTextToSize(tradingAs, 100);
+    doc.text(lines, leftColX, leftY);
+    leftY += lines.length * 3.8;
+  }
 
   // Business Address
   doc.setFont('helvetica', 'normal');

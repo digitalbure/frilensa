@@ -28,6 +28,7 @@ import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
 import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 import { depositFor } from '../lib/bookings';
+import { tradingAsLine } from '../lib/businessName';
 
 interface BillingViewProps {
   data: CRMData;
@@ -3233,6 +3234,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             )}
                             <h3 className="font-extrabold text-slate-800 text-sm">{docBiz?.name || data.userProfile.name}</h3>
                           </div>
+                          {tradingAsLine(docBiz) && <p className="text-slate-600 text-[10px]">{tradingAsLine(docBiz)}</p>}
                           <p className="text-slate-400 text-[10px]">{docBiz?.address || ''}</p>
                           <p className="text-slate-400 text-[10px]">TIN: <span className="font-mono font-bold text-slate-700">{docBiz?.tin || data.userProfile.tin}</span></p>
                         </div>

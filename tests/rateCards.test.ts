@@ -41,3 +41,12 @@ assert.equal(r2.client.contactPerson, "Dee");
 assert.equal(r2.data.clients.length, 2);
 
 console.log("rate card and terms checks passed");
+
+// Registered business names.
+{
+  const { tradingAsLine } = await import("../src/lib/businessName");
+  assert.equal(tradingAsLine({ name: "Vibrant", legalName: "SLEDIEN Pte Ltd" }), "SLEDIEN Pte Ltd trading as Vibrant");
+  assert.equal(tradingAsLine({ name: "Vibrant" }), "");
+  assert.equal(tradingAsLine({ name: "Vibrant", legalName: " vibrant " }), "", "same name: nothing to add");
+  console.log("trading name checks passed");
+}

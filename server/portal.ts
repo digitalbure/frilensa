@@ -21,7 +21,7 @@ function normEmail(value: unknown) {
 
 const PUBLIC_BUSINESS_FIELDS = [
   "id", "name", "colorTheme", "logoType", "logoSymbol", "logoText", "logoUrl", "brandSlogan",
-  "address", "email", "phone", "tin", "bankDetails", "mPaisaId", "myCashId", "currency", "isPrimary"
+  "address", "email", "phone", "tin", "legalName", "registrationNumber", "bankDetails", "mPaisaId", "myCashId", "currency", "isPrimary"
 ];
 const PUBLIC_CLIENT_FIELDS = ["id", "name", "email", "phone", "company", "address", "currency", "tin", "subscriptions"];
 const PUBLIC_SERVICE_FIELDS = ["id", "name", "description", "rate", "unit", "category", "currency", "billingCycle", "isSubscription"];

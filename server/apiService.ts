@@ -35,7 +35,7 @@ const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${crypto
 // ---------- Public shapes ----------
 
 function businessView(b: any) {
-  return { id: b.id, name: b.name, currency: b.currency || null, tin: b.tin || null, isPrimary: Boolean(b.isPrimary) };
+  return { id: b.id, name: b.name, legalName: b.legalName || null, tradingAs: b.legalName ? `${b.legalName} trading as ${b.name}` : null, currency: b.currency || null, tin: b.tin || null, isPrimary: Boolean(b.isPrimary) };
 }
 
 function clientView(c: Client) {
