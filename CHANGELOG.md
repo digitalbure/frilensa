@@ -18,6 +18,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.6.0] - 2026-10-11
+
+### Added
+- **Add Frilensa to Claude on the web, desktop and phone.** In Claude, go to Settings → Connectors → Add custom connector and paste `https://frilensa.com/mcp`. Claude sends you to Frilensa to sign in and choose what it can do (read and create drafts, or read only). No key needed.
+- **Connected apps** in Settings → API keys and AI assistants: see which apps are connected and when they were last used, and disconnect any of them.
+
+### Security
+- Sign-in follows the OAuth standard used by MCP clients, with PKCE. Access lasts an hour and renews automatically. A renewal code used twice ends the connection, in case it was stolen. Nothing is stored except hashes.
+
 ## [3.5.0] - 2026-10-11
 
 ### Added

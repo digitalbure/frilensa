@@ -5,7 +5,8 @@ Each Frilensa user can connect their own tools to their own workspace:
 - **MCP server** for AI assistants such as Claude: `https://frilensa.com/mcp`
 - **REST API** for scripts and automation tools: `https://frilensa.com/api/v1`
 
-Both use a personal API key from **Settings → API keys and AI assistants**, sent as a header:
+Claude on the web, desktop and phone connects with OAuth sign-in (see below). Everything else uses a
+personal API key from **Settings → API keys and AI assistants**, sent as a header:
 
 ```
 Authorization: Bearer frk_…
@@ -52,9 +53,28 @@ Tools:
 | `create_draft_document` | drafts | Draft quote or invoice for an existing client |
 | `add_expense` | drafts | Record an expense |
 
-Connectors added from the claude.ai website need sign-in with OAuth, which isn't available yet;
-use a client that supports headers (Claude Code, the Claude API's MCP connector, or a local
-bridge such as `mcp-remote` for Claude Desktop).
+### Claude on the web, desktop and phone (OAuth)
+
+In Claude, open **Settings → Connectors → Add custom connector** and enter `https://frilensa.com/mcp`.
+Claude opens Frilensa to sign in; the user chooses **Read and create drafts** or **Read only** and
+presses Allow. No key is needed. The connection appears under **Connected apps** in Settings, where
+it can be disconnected.
+
+This follows the MCP authorization spec:
+
+| Endpoint | Purpose |
+| --- | --- |
+| `GET /.well-known/oauth-protected-resource` | Protected resource metadata (RFC 9728); `/mcp` returns 401 with `WWW-Authenticate: Bearer resource_metadata="…"` pointing here |
+| `GET /.well-known/oauth-authorization-server` | Authorization server metadata (RFC 8414) |
+| `POST /oauth/register` | Dynamic client registration (RFC 7591). Public clients; redirect URIs must be https, or http on localhost |
+| `GET /oauth/authorize` | Consent page in the web app (sign-in with the user's Frilensa account) |
+| `POST /oauth/token` | `authorization_code` (PKCE S256 required) and `refresh_token` grants |
+| `POST /oauth/revoke` | Token revocation (RFC 7009); revoking either token ends the connection |
+
+Scopes: `read`, `draft` (the user can narrow, never widen, what the app asked for). Access tokens
+last 1 hour; refresh tokens 30 days and rotate on every use. Using a refresh token twice ends the
+connection, in case it was stolen. Codes last 10 minutes and work once. All codes and tokens are
+stored only as hashes. OAuth access tokens work on `/mcp` and `/api/v1` with the same limits as keys.
 
 ## REST API
 
@@ -86,6 +106,7 @@ curl -H "Authorization: Bearer frk_…" "https://frilensa.com/api/v1/documents?o
 ## For developers
 
 - Keys: `server/apiKeys.ts` (collection `api_keys`, server-only; document id is the SHA-256 of the key).
+- OAuth: `server/oauth.ts` (collections `oauth_clients`, `oauth_codes`, `oauth_grants`, `oauth_tokens`, server-only) and the consent page `src/components/OAuthConsent.tsx`.
 - Operations: `server/apiService.ts`, shared by `server/apiV1.ts` (REST) and `server/mcp.ts` (MCP).
 - Workspace reads and transactional writes: `server/workspace.ts`.
 - Tests: `tests/server.e2e.test.mjs` (keys, REST, MCP, scopes, isolation between users, revocation).

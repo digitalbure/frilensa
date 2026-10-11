@@ -298,3 +298,34 @@ export async function createApiKey(name: string, access: 'read' | 'draft'): Prom
 export async function revokeApiKey(id: string): Promise<void> {
   await readJson(await fetch(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' }));
 }
+
+// ---------- OAuth (connecting apps such as claude.ai) ----------
+
+export interface OAuthConnection {
+  id: string;
+  name: string;
+  scopes: ('read' | 'draft')[];
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export async function getOAuthClient(clientId: string, redirectUri: string): Promise<{ clientName: string; redirectHost: string }> {
+  const qs = new URLSearchParams({ client_id: clientId, redirect_uri: redirectUri });
+  return readJson(await fetch(`/api/oauth/client?${qs}`));
+}
+
+export async function approveOAuth(params: Record<string, string>): Promise<{ redirectTo: string }> {
+  return readJson(await fetch('/api/oauth/approve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  }));
+}
+
+export async function listOAuthConnections(): Promise<OAuthConnection[]> {
+  return (await readJson(await fetch('/api/oauth/connections'))).connections;
+}
+
+export async function removeOAuthConnection(id: string): Promise<void> {
+  await readJson(await fetch(`/api/oauth/connections/${encodeURIComponent(id)}`, { method: 'DELETE' }));
+}

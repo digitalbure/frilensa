@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { KeyRound, Copy, Trash2, Check } from 'lucide-react';
-import { listApiKeys, createApiKey, revokeApiKey, type ApiKeyInfo } from '../lib/api';
+import { listApiKeys, createApiKey, revokeApiKey, listOAuthConnections, removeOAuthConnection, type ApiKeyInfo, type OAuthConnection } from '../lib/api';
 
 /** Settings card: personal API keys for the Frilensa API and MCP server (AI assistants). */
 export default function ApiKeysCard() {
   const [keys, setKeys] = useState<ApiKeyInfo[] | null>(null);
+  const [connections, setConnections] = useState<OAuthConnection[] | null>(null);
   const [name, setName] = useState('');
   const [access, setAccess] = useState<'draft' | 'read'>('draft');
   const [newKey, setNewKey] = useState<string | null>(null);
@@ -15,7 +16,10 @@ export default function ApiKeysCard() {
   const origin = typeof window !== 'undefined' ? window.location.origin : 'https://frilensa.com';
   const mcpUrl = `${origin}/mcp`;
 
-  const refresh = () => listApiKeys().then(setKeys).catch(err => setError(err.message));
+  const refresh = () => {
+    listApiKeys().then(setKeys).catch(err => setError(err.message));
+    listOAuthConnections().then(setConnections).catch(() => setConnections([]));
+  };
   useEffect(() => { refresh(); }, []);
 
   const copy = async (text: string, label: string) => {
@@ -48,6 +52,16 @@ export default function ApiKeysCard() {
     try {
       await revokeApiKey(key.id);
       await refresh();
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const handleDisconnect = async (c: OAuthConnection) => {
+    if (!window.confirm(`Disconnect ${c.name}? It loses access straight away.`)) return;
+    try {
+      await removeOAuthConnection(c.id);
+      refresh();
     } catch (err: any) {
       setError(err.message);
     }
@@ -128,8 +142,39 @@ export default function ApiKeysCard() {
       )}
       {keys && keys.length === 0 && !newKey && <p className="text-[11px] text-zinc-400">No keys yet.</p>}
 
+      <div className="p-3 rounded-lg bg-white border border-zinc-200 space-y-1.5">
+        <p className="text-[11px] font-semibold text-zinc-800">Claude on the web, desktop or phone</p>
+        <p className="text-[11px] text-zinc-600">
+          In Claude, open Settings → Connectors → Add custom connector, and paste{' '}
+          <code className="font-mono bg-zinc-50 px-1 rounded">{mcpUrl}</code>{' '}
+          <button type="button" onClick={() => copy(mcpUrl, 'url')} className="text-[10px] font-bold underline cursor-pointer">{copied === 'url' ? 'Copied' : 'Copy'}</button>.
+          Claude sends you here to sign in and choose what it can do. No key needed.
+        </p>
+      </div>
+
+      {connections && connections.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold text-zinc-800">Connected apps</p>
+          <ul className="divide-y divide-zinc-100 border border-zinc-100 rounded-lg">
+            {connections.map(c => (
+              <li key={c.id} className="flex items-center justify-between gap-2 px-3 py-2">
+                <div className="min-w-0">
+                  <span className="block text-[11px] font-semibold text-zinc-800 truncate">{c.name}</span>
+                  <span className="block text-[10px] text-zinc-500">
+                    {c.scopes.includes('draft') ? 'Read and drafts' : 'Read only'} · {c.lastUsedAt ? `Last used ${new Date(c.lastUsedAt).toLocaleDateString()}` : 'Not used yet'}
+                  </span>
+                </div>
+                <button type="button" onClick={() => handleDisconnect(c)} className="shrink-0 text-[11px] font-semibold text-rose-700 hover:text-rose-800 cursor-pointer">
+                  Disconnect
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <details className="text-[11px] text-zinc-600">
-        <summary className="cursor-pointer font-semibold text-zinc-800">How to connect</summary>
+        <summary className="cursor-pointer font-semibold text-zinc-800">Connect with an API key (Claude Code, scripts)</summary>
         <div className="mt-2 space-y-2">
           <p><span className="font-semibold">AI assistants (MCP):</span> server URL <code className="font-mono bg-zinc-50 px-1 rounded">{mcpUrl}</code>, with the header <code className="font-mono bg-zinc-50 px-1 rounded">Authorization: Bearer YOUR_KEY</code>.</p>
           <p>Claude Code:</p>

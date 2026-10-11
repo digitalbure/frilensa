@@ -15,6 +15,7 @@ import { createJobsRouter, createAutomationRouter } from "./server/jobs";
 import { createApiKeysRouter } from "./server/apiKeys";
 import { createApiV1Router } from "./server/apiV1";
 import { createMcpRouter } from "./server/mcp";
+import { createOAuthRouter, createOAuthAppRouter } from "./server/oauth";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -210,6 +211,11 @@ async function startServer() {
   app.use("/api/keys", express.json({ limit: "10kb" }), createApiKeysRouter());
   app.use("/api/v1", express.json({ limit: "200kb" }), createApiV1Router());
   app.use("/mcp", express.json({ limit: "200kb" }), createMcpRouter());
+  // OAuth sign-in for MCP clients such as claude.ai (discovery, registration, tokens), and the
+  // consent page's approve call. The consent page itself (/oauth/authorize) is part of the web app.
+  app.use(["/oauth", "/.well-known"], express.json({ limit: "20kb" }), express.urlencoded({ extended: false, limit: "20kb" }));
+  app.use(createOAuthRouter());
+  app.use("/api/oauth", express.json({ limit: "10kb" }), createOAuthAppRouter());
 
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));

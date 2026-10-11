@@ -1,6 +1,8 @@
 import crypto from "crypto";
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, sha256, type AuthedRequest } from "./security";
+import { appUrl } from "./notify";
+import { verifyAccessToken } from "./oauth";
 
 // Personal API keys for the public API and MCP server. Server-only collection (Firestore rules
 // deny browser access). Keys are stored as a SHA-256 hash; the key itself is shown once.
@@ -32,10 +34,29 @@ const lastUseWrites = new Map<string, number>();
 /** Requires `Authorization: Bearer frk_…` and the given scope. */
 export function requireApiKey(scope: ApiScope = "read") {
   return async (req: ApiRequest, res: Response, next: NextFunction) => {
-    const match = (req.headers.authorization || "").match(/^Bearer (frk_[A-Za-z0-9_-]{20,80})$/);
-    if (!match) return res.status(401).json({ error: "Send your Frilensa API key as: Authorization: Bearer frk_…" });
+    const bearer = (req.headers.authorization || "").match(/^Bearer ([A-Za-z0-9_-]{20,90})$/)?.[1] || "";
+    // Tells MCP clients (e.g. claude.ai) where to sign in with OAuth.
+    const challenge = () => res.setHeader("WWW-Authenticate", `Bearer resource_metadata="${appUrl("/.well-known/oauth-protected-resource")}"`);
+    if (bearer.startsWith("fra_")) {
+      try {
+        const token = await verifyAccessToken(bearer);
+        if (!token) {
+          challenge();
+          return res.status(401).json({ error: "This sign-in has expired or was removed. Connect Frilensa again." });
+        }
+        if (!token.scopes.includes(scope)) return res.status(403).json({ error: "This connection is read-only." });
+        req.apiKey = token;
+        return next();
+      } catch (err) {
+        return next(err);
+      }
+    }
+    if (!bearer.startsWith("frk_")) {
+      challenge();
+      return res.status(401).json({ error: "Send your Frilensa API key as: Authorization: Bearer frk_…" });
+    }
     try {
-      const id = sha256(match[1]);
+      const id = sha256(bearer);
       const snap = await getAdminDb().collection(KEYS).doc(id).get();
       const key = snap.data() as ApiKeyRecord | undefined;
       if (!key || key.revokedAt) return res.status(401).json({ error: "This API key isn't valid or has been revoked." });

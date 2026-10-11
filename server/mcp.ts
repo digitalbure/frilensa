@@ -5,6 +5,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import pkg from "../package.json";
 import { requireApiKey, apiRateLimit, type ApiRequest } from "./apiKeys";
 import { ipLimit } from "./apiV1";
+import { cors } from "./oauth";
 import { WorkspaceMissing } from "./workspace";
 import * as api from "./apiService";
 
@@ -112,6 +113,7 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
 
 export function createMcpRouter() {
   const router = express.Router();
+  router.use(cors);
 
   router.post("/", ipLimit, requireApiKey("read"), apiRateLimit, async (req: ApiRequest, res: Response) => {
     const server = buildServer(req.apiKey!);

@@ -40,6 +40,7 @@ import { isPlatformAdmin } from './lib/admin';
 import { ensureShareTokens } from './lib/documentLinks';
 import { normalizeDocuments } from './lib/normalizeDocuments';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
+import OAuthConsent from './components/OAuthConsent';
 import { inboxDocumentCount } from './lib/inbox';
 
 type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
@@ -65,6 +66,8 @@ export default function App() {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const isSignedIn = Boolean(authUser && authUser.emailVerified);
+  // Connecting an app such as Claude: /oauth/authorize?client_id=… (see server/oauth.ts).
+  const isOAuthAuthorize = window.location.pathname === '/oauth/authorize';
 
   // Client portal session (issued and verified by the server)
   const [portalSession, setPortalSession] = useState<PortalSession | null>(() => loadPortalSession());
@@ -449,6 +452,11 @@ export default function App() {
   if (!isSignedIn) {
     return (
       <>
+        {isOAuthAuthorize && (
+          <div className="fixed top-3 inset-x-3 z-[999] mx-auto max-w-md rounded-xl bg-slate-900 text-white text-xs font-semibold px-4 py-3 shadow-lg text-center">
+            Sign in to Frilensa to finish connecting.
+          </div>
+        )}
         {portalLinkError && (
           <div className="fixed top-3 inset-x-3 z-[999] mx-auto max-w-md rounded-xl bg-rose-600 text-white text-xs font-semibold px-4 py-3 shadow-lg">
             {portalLinkError}
@@ -465,6 +473,10 @@ export default function App() {
         <PwaInstallPrompt />
       </>
     );
+  }
+
+  if (isOAuthAuthorize) {
+    return <OAuthConsent email={authUser?.email} onSignOut={handleSignOut} />;
   }
 
   // Wait for the cloud copy before deciding a returning user on a new device needs onboarding.

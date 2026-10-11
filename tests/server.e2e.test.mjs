@@ -3,6 +3,7 @@
 import { spawn } from 'node:child_process';
 import http from 'node:http';
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 const P = 'frilensa-e2e', AUTH = 'http://127.0.0.1:9099', FS = 'http://127.0.0.1:8085', API = 'http://127.0.0.1:3300';
 const results = [];
 const check = async (name, fn) => { try { await fn(); results.push(['PASS', name]); } catch (e) { results.push(['FAIL', name, e.message]); } };
@@ -236,6 +237,116 @@ try {
   await check('API key records are not readable from the browser', async () => {
     const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/api_keys`, { headers: { Authorization: `Bearer ${A.token}` } });
     assert.equal(r.status, 403);
+  });
+
+  // OAuth sign-in for MCP clients (claude.ai connectors)
+  const REDIRECT = 'https://claude.ai/api/mcp/auth_callback';
+  const RESOURCE = 'https://frilensa.example/mcp';
+  const pkce = () => { const verifier = crypto.randomBytes(32).toString('base64url'); return { verifier, challenge: crypto.createHash('sha256').update(verifier).digest('base64url') }; };
+  const form = o => ({ method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: new URLSearchParams(o).toString() });
+  let oauthClient;
+  const authorize = async (u, extra = {}) => {
+    const { verifier, challenge } = pkce();
+    const r = await j(await fetch(`${API}/api/oauth/approve`, { method: 'POST', headers: auth(u), body: JSON.stringify({ response_type: 'code', client_id: oauthClient, redirect_uri: REDIRECT, state: 'st8', code_challenge: challenge, code_challenge_method: 'S256', scope: 'read draft', resource: RESOURCE, decision: 'allow', ...extra }) }));
+    const url = r.body.redirectTo ? new URL(r.body.redirectTo) : null;
+    return { r, url, code: url?.searchParams.get('code'), verifier };
+  };
+  const exchange = (code, verifier) => fetch(`${API}/oauth/token`, form({ grant_type: 'authorization_code', code, code_verifier: verifier, client_id: oauthClient, redirect_uri: REDIRECT })).then(j);
+  await check('MCP tells clients where to sign in', async () => {
+    const r = await fetch(`${API}/mcp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    assert.equal(r.status, 401);
+    assert.match(r.headers.get('www-authenticate') || '', /resource_metadata="https:\/\/frilensa\.example\/\.well-known\/oauth-protected-resource"/);
+  });
+  await check('OAuth discovery documents', async () => {
+    const pr = await j(await fetch(`${API}/.well-known/oauth-protected-resource`));
+    assert.equal(pr.body.resource, RESOURCE); assert.deepEqual(pr.body.authorization_servers, ['https://frilensa.example']);
+    const as = await j(await fetch(`${API}/.well-known/oauth-authorization-server`));
+    assert.equal(as.body.token_endpoint, 'https://frilensa.example/oauth/token'); assert.deepEqual(as.body.code_challenge_methods_supported, ['S256']);
+    assert.ok(as.body.registration_endpoint);
+  });
+  await check('OAuth endpoints do not change CORS for the rest of the site', async () => {
+    const r = await fetch(`${API}/api/health`); assert.equal(r.headers.get('access-control-allow-origin'), null);
+  });
+  await check('dynamic client registration', async () => {
+    const bad = await fetch(`${API}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ redirect_uris: ['http://evil.example/cb'] }) });
+    assert.equal(bad.status, 400);
+    const r = await j(await fetch(`${API}/oauth/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ client_name: 'Claude', redirect_uris: [REDIRECT] }) }));
+    assert.equal(r.status, 201); assert.match(r.body.client_id, /^frc_/); oauthClient = r.body.client_id;
+  });
+  await check('consent page checks the client and redirect address', async () => {
+    const ok = await j(await fetch(`${API}/api/oauth/client?${new URLSearchParams({ client_id: oauthClient, redirect_uri: REDIRECT })}`));
+    assert.equal(ok.body.clientName, 'Claude'); assert.equal(ok.body.redirectHost, 'claude.ai');
+    assert.equal((await fetch(`${API}/api/oauth/client?${new URLSearchParams({ client_id: oauthClient, redirect_uri: 'https://evil.example/cb' })}`)).status, 400);
+  });
+  await check('approving needs a signed-in user and PKCE', async () => {
+    assert.equal((await fetch(`${API}/api/oauth/approve`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
+    const noPkce = await authorize(A, { code_challenge: '', code_challenge_method: 'plain' });
+    assert.equal(noPkce.r.status, 400);
+    const wrongResource = await authorize(A, { resource: 'https://other.example/mcp' });
+    assert.equal(wrongResource.r.status, 400);
+  });
+  let oauthTokens;
+  await check('authorization code flow issues tokens', async () => {
+    const { url, code, verifier } = await authorize(A);
+    assert.equal(url.origin + url.pathname, REDIRECT); assert.equal(url.searchParams.get('state'), 'st8');
+    const t = await exchange(code, verifier);
+    assert.equal(t.status, 200); assert.match(t.body.access_token, /^fra_/); assert.match(t.body.refresh_token, /^frr_/); assert.equal(t.body.scope, 'read draft');
+    oauthTokens = t.body;
+    assert.equal((await exchange(code, verifier)).status, 400, 'codes are single use');
+  });
+  await check('wrong PKCE verifier is refused', async () => {
+    const { code } = await authorize(A);
+    const t = await exchange(code, pkce().verifier);
+    assert.equal(t.status, 400); assert.equal(t.body.error, 'invalid_grant');
+  });
+  await check('OAuth token works with MCP and the API', async () => {
+    const tools = await mcp(oauthTokens.access_token, 'tools/list');
+    assert.ok(tools.body.result.tools.some(t => t.name === 'create_draft_document'));
+    const acct = await mcp(oauthTokens.access_token, 'tools/call', { name: 'get_account', arguments: {} });
+    assert.equal(JSON.parse(acct.body.result.content[0].text).businesses[0].name, 'Alice Studio');
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth(oauthTokens.access_token) })).status, 200);
+  });
+  await check('refresh tokens rotate, and reuse ends the connection', async () => {
+    const r1 = await j(await fetch(`${API}/oauth/token`, form({ grant_type: 'refresh_token', refresh_token: oauthTokens.refresh_token, client_id: oauthClient })));
+    assert.equal(r1.status, 200); assert.notEqual(r1.body.refresh_token, oauthTokens.refresh_token);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth(r1.body.access_token) })).status, 200);
+    const reuse = await j(await fetch(`${API}/oauth/token`, form({ grant_type: 'refresh_token', refresh_token: oauthTokens.refresh_token, client_id: oauthClient })));
+    assert.equal(reuse.status, 400);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth(r1.body.access_token) })).status, 401, 'stolen refresh token revokes the connection');
+  });
+  await check('read-only consent limits the connection', async () => {
+    const { code, verifier } = await authorize(A, { access: 'read' });
+    const t = (await exchange(code, verifier)).body;
+    assert.equal(t.scope, 'read');
+    const names = (await mcp(t.access_token, 'tools/list')).body.result.tools.map(x => x.name);
+    assert.ok(!names.includes('create_draft_document'));
+    assert.equal((await fetch(`${API}/api/v1/clients`, { method: 'POST', headers: keyAuth(t.access_token), body: JSON.stringify({ name: 'X' }) })).status, 403);
+  });
+  await check('connected apps can be listed and disconnected', async () => {
+    const { code, verifier } = await authorize(A);
+    const t = (await exchange(code, verifier)).body;
+    const list = await j(await fetch(`${API}/api/oauth/connections`, { headers: auth(A) }));
+    assert.ok(list.body.connections.length >= 1 && list.body.connections.every(c => c.name === 'Claude'));
+    const newest = list.body.connections[0];
+    assert.equal((await fetch(`${API}/api/oauth/connections/${newest.id}`, { method: 'DELETE', headers: auth(B) })).status, 404, "can't remove someone else's");
+    assert.equal((await fetch(`${API}/api/oauth/connections/${newest.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth(t.access_token) })).status, 401);
+  });
+  await check('OAuth tokens are per user', async () => {
+    const { code, verifier } = await authorize(B);
+    const t = (await exchange(code, verifier)).body;
+    const r = await j(await fetch(`${API}/api/v1/clients`, { headers: keyAuth(t.access_token) }));
+    assert.ok(r.body.clients.every(c => c.name !== 'Reef Cafe'));
+  });
+  await check('denying sends the user back with access_denied', async () => {
+    const { url } = await authorize(A, { decision: 'deny' });
+    assert.equal(url.searchParams.get('error'), 'access_denied'); assert.equal(url.searchParams.get('code'), null);
+  });
+  await check('OAuth records are not readable from the browser', async () => {
+    for (const c of ['oauth_clients', 'oauth_grants', 'oauth_tokens', 'oauth_codes']) {
+      const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${c}`, { headers: { Authorization: `Bearer ${A.token}` } });
+      assert.equal(r.status, 403, c);
+    }
   });
   // Daily automation job
   const jobs = (secret) => fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: secret ? { 'X-Job-Secret': secret } : {} });
