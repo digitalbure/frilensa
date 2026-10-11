@@ -378,7 +378,7 @@ export default function EditVentureModal({
                 </label>
                 <input
                   type="text"
-                  placeholder='e.g. "Creative Digital Media & Software Engineering"'
+                  placeholder="e.g. Graphic design and web development"
                   value={brandSlogan}
                   onChange={(e) => setBrandSlogan(e.target.value)}
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-sky-500"

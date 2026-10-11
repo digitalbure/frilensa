@@ -1203,7 +1203,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
     try {
       const {
         recipientEmail,
-        sessionTitle = "Frilensa AI Consultation",
+        sessionTitle = "Frilensa AI advisor chat",
         businessName = "Fiji Business",
         messages = [],
         memories = [],
@@ -1212,7 +1212,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       } = req.body;
 
       if (!isEmail(recipientEmail)) {
-        return res.status(400).json({ error: "A valid recipient email is required." });
+        return res.status(400).json({ error: "Enter a valid recipient email address." });
       }
       const sendgridKey = process.env.SENDGRID_API_KEY?.trim();
       if (!sendgridKey) {
@@ -1225,7 +1225,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
         timeStyle: "medium"
       });
 
-      const emailSubject = customSubject || `Frilensa AI Consultation Transcript: ${sessionTitle} (${new Date().toLocaleDateString()})`;
+      const emailSubject = customSubject || `Frilensa AI advisor chat: ${sessionTitle} (${new Date().toLocaleDateString()})`;
 
       const htmlContent = `
 <!DOCTYPE html>
@@ -1309,7 +1309,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
         textContent: messages.map((m: any) => `${m.sender === 'user' ? 'You' : 'Advisor'}: ${m.text || ''}`).join("\n\n")
       });
       if (!sgResult.success) {
-        return res.status(502).json({ error: `Email could not be delivered: ${sgResult.error}` });
+        return res.status(502).json({ error: `Couldn't send the email: ${sgResult.error}` });
       }
 
       return res.json({
@@ -1385,7 +1385,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
       const { recipientEmail } = req.body;
       const businessName = escapeHtml(String(req.body.businessName || "Frilensa").slice(0, 120));
       if (!isEmail(recipientEmail)) {
-        return res.status(400).json({ error: "A valid recipient email is required." });
+        return res.status(400).json({ error: "Enter a valid recipient email address." });
       }
 
       const apiKey = process.env.SENDGRID_API_KEY?.trim();
@@ -1465,7 +1465,7 @@ Return a JSON array of short, clear factual statements (e.g. ["Uses BSP Fiji acc
 
       return `### About your file: **${attName}**
 
-The AI advisor isn't available right now, so I couldn't read this ${isPdf ? "PDF" : isImg ? "image" : "document"}. Please try again in a few minutes.
+The AI advisor isn't available right now, so I couldn't read this ${isPdf ? "PDF" : isImg ? "image" : "document"}. Please try again later.
 
 In the meantime, when you check it yourself:
 - Local purchases usually include Fiji VAT at 12.5%, which you may be able to claim back.
@@ -1538,7 +1538,7 @@ Things you can ask:
 * **"Explain Fiji VAT and ECAL"**
 * **"How do I set up my own fees?"**
 * **"How do I reconcile my ANZ statement?"**
-* **Attach a statement or receipt** and I'll go through it when the advisor is back.
+* **Attach a statement or receipt** (this needs the full advisor)
 
 What would you like to know?`;
   }

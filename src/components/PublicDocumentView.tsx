@@ -87,7 +87,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
       setData({ ...data, document: { ...d, status: 'accepted' } });
       setNotice({ text: `Quote accepted. ${business.name || 'The business'} will see it in Frilensa.`, ok: true });
     } catch (err: any) {
-      setNotice({ text: err?.message || 'Could not accept the quote.', ok: false });
+      setNotice({ text: err?.message || 'Couldn’t accept the quote. Try again.', ok: false });
     } finally {
       setBusy(false);
     }
@@ -100,9 +100,9 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
       await reportPublicPayment(token!, { method: payMethod, reference: payRef });
       setData({ ...data, document: { ...d, clientPaymentReport: { method: payMethod, reference: payRef, reportedAt: new Date().toISOString(), status: 'pending' } } });
       setShowPayForm(false);
-      setNotice({ text: 'Thanks! Your payment was reported and will be confirmed once received.', ok: true });
+      setNotice({ text: 'Thanks. Your payment was reported. The business will confirm it once it arrives.', ok: true });
     } catch (err: any) {
-      setNotice({ text: err?.message || 'Could not report the payment.', ok: false });
+      setNotice({ text: err?.message || 'Couldn’t report the payment. Try again.', ok: false });
     } finally {
       setBusy(false);
     }
@@ -194,7 +194,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
 
         {d.type === 'invoice' && d.status !== 'paid' && d.clientPaymentReport?.status === 'rejected' && !notice && (
           <div className="rounded-xl px-4 py-3 text-xs font-semibold bg-rose-50 text-rose-700">
-            Your reported payment (ref {d.clientPaymentReport.reference}) couldn't be matched.{d.clientPaymentReport.rejectionReason ? ` ${d.clientPaymentReport.rejectionReason}` : ''} Please check the details and report it again.
+            Your reported payment (ref {d.clientPaymentReport.reference}) couldn't be matched.{d.clientPaymentReport.rejectionReason ? ` ${d.clientPaymentReport.rejectionReason}` : ''} Check the details and report it again.
           </div>
         )}
 

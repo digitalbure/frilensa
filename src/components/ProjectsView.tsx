@@ -2636,23 +2636,23 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 )}
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project Name *</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project name *</label>
                   <input
                     type="text"
                     required
                     value={projName}
                     onChange={(e) => setProjName(e.target.value)}
-                    placeholder="e.g., Commercial Video Campaign / Office Fitout / Court Matter"
+                    placeholder="e.g. Office fit-out"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project Description & Scope Summary</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Description</label>
                   <textarea
                     value={projDesc}
                     onChange={(e) => setProjDesc(e.target.value)}
-                    placeholder="Define the scope, goals, milestones, and deliverables for this job..."
+                    placeholder="What the job covers and what you'll deliver"
                     rows={2}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 resize-none"
                   />
@@ -2660,7 +2660,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <DateInput
-                    label="Start Date"
+                    label="Start date"
                     required
                     value={projStartDate}
                     onChange={setProjStartDate}
@@ -2668,12 +2668,12 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     align="left"
                     customPresets={[
                       { label: 'Today', special: 'today' },
-                      { label: '+1 Week', daysOffset: 7 },
-                      { label: '+1 Month', monthsOffset: 1 },
+                      { label: '+1 week', daysOffset: 7 },
+                      { label: '+1 month', monthsOffset: 1 },
                     ]}
                   />
                   <DateInput
-                    label="End Date"
+                    label="End date"
                     required
                     min={projStartDate}
                     value={projEndDate}
@@ -2681,10 +2681,10 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     placeholder="Select end date"
                     align="right"
                     customPresets={[
-                      { label: '+2 Weeks', daysOffset: 14 },
-                      { label: '+1 Month', monthsOffset: 1 },
-                      { label: '+3 Months', monthsOffset: 3 },
-                      { label: 'End of Mo.', special: 'end_of_month' },
+                      { label: '+2 weeks', daysOffset: 14 },
+                      { label: '+1 month', monthsOffset: 1 },
+                      { label: '+3 months', monthsOffset: 3 },
+                      { label: 'End of month', special: 'end_of_month' },
                     ]}
                   />
                 </div>
@@ -2705,7 +2705,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     </select>
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget / Fee *</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget *</label>
                     <input
                       type="number"
                       required
@@ -2716,13 +2716,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     />
                   </div>
                   <div className="col-span-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rate Type *</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rate type *</label>
                     <select
                       value={projRateType}
                       onChange={(e) => setProjRateType(e.target.value as any)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2 text-xs mt-1 focus:outline-none focus:border-slate-500"
                     >
-                      <option value="flat">Flat Price</option>
+                      <option value="flat">Fixed price</option>
                       <option value="hourly">Hourly</option>
                       <option value="monthly">Retainer</option>
                     </select>
@@ -2735,7 +2735,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <div className="flex items-center gap-1.5 text-sky-800">
                       <span className="text-sm">{getCurrencyConfig(projCurrency).flag}</span>
                       <span>
-                        Home Base Equivalent: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString()}</strong>
+                        In {data.userProfile.defaultCurrency}: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString()}</strong>
                       </span>
                     </div>
                     <span className="text-[9px] text-sky-600 font-mono">
@@ -2746,7 +2746,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client Link</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Client</label>
                     <select
                       value={projClientId}
                       onChange={(e) => {
@@ -2761,7 +2761,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500"
                     >
-                      <option value="">-- No Client --</option>
+                      <option value="">No client</option>
                       {data.clients.map(c => (
                         <option key={c.id} value={c.id}>
                           {c.name} {c.currency ? `(${c.currency})` : ''}
@@ -2770,23 +2770,23 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Project Status</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Status</label>
                     <select
                       value={projStatus}
                       onChange={(e) => setProjStatus(e.target.value as any)}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 focus:outline-none focus:border-slate-500 font-semibold"
                     >
-                      <option value="lead">Lead / Proposal</option>
-                      <option value="in_progress">In Progress / Active</option>
-                      <option value="pending_review">Pending Review / QA</option>
-                      <option value="completed">Completed / Signed Off</option>
-                      <option value="on_hold">On Hold</option>
+                      <option value="lead">Lead</option>
+                      <option value="in_progress">In progress</option>
+                      <option value="pending_review">Pending review</option>
+                      <option value="completed">Completed</option>
+                      <option value="on_hold">On hold</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Associated Venture</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Business</label>
                   <select
                     value={projBizId}
                     onChange={(e) => setProjBizId(e.target.value)}
@@ -2812,7 +2812,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     type="submit"
                     className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-bold py-2 rounded-xl text-xs transition-all shadow-sm cursor-pointer"
                   >
-                    {editingProject ? 'Save Changes' : 'Create Project'}
+                    {editingProject ? 'Save changes' : 'Create project'}
                   </button>
                 </div>
               </form>
@@ -2827,7 +2827,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             {/* Modal Header */}
             <div className="bg-slate-900 text-white p-4 flex justify-between items-center shrink-0">
               <div className="min-w-0 flex-1 pr-4">
-                <span className="text-[9px] font-extrabold uppercase tracking-widest text-sky-400">Task Detail & Reference Hub</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-widest text-sky-400">Task details</span>
                 <h3 className="text-sm font-bold truncate mt-0.5">
                   {detailTask.title}
                 </h3>
@@ -2849,7 +2849,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 {/* Task Properties Box */}
                 <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-100 space-y-3">
                   <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center gap-1.5">
-                    <Info className="w-3.5 h-3.5 text-slate-400" /> Task Info & State
+                    <Info className="w-3.5 h-3.5 text-slate-400" /> Details
                   </h4>
 
                   {/* Edit Title */}
@@ -2869,7 +2869,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <textarea
                       value={detailTask.description || ''}
                       onChange={(e) => handleUpdateTaskDetail({ ...detailTask, description: e.target.value })}
-                      placeholder="Add description or goal criteria..."
+                      placeholder="Add a description"
                       rows={2}
                       className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-slate-400 resize-none font-sans"
                     />
@@ -2884,8 +2884,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         onChange={(e) => handleUpdateTaskDetail({ ...detailTask, status: e.target.value as any })}
                         className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-slate-400"
                       >
-                        <option value="todo">To Do</option>
-                        <option value="in_progress">In Progress</option>
+                        <option value="todo">To do</option>
+                        <option value="in_progress">In progress</option>
                         <option value="done">Completed</option>
                       </select>
                     </div>
@@ -2898,29 +2898,29 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         onChange={(e) => handleUpdateTaskDetail({ ...detailTask, priority: e.target.value as any })}
                         className="w-full bg-white border border-slate-200 rounded-lg py-1 px-2 text-xs focus:outline-none focus:border-slate-400"
                       >
-                        <option value="low">🟢 Low</option>
-                        <option value="medium">🟡 Medium</option>
-                        <option value="high">🔴 High</option>
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
                       </select>
                     </div>
                   </div>
 
                   {/* Due Date */}
                   <DateInput
-                    label="Due Date"
+                    label="Due date"
                     value={detailTask.dueDate || ''}
                     onChange={(newDate) => handleUpdateTaskDetail({ ...detailTask, dueDate: newDate })}
-                    placeholder="Set task deadline..."
+                    placeholder="Set due date"
                   />
 
                   {/* Time tracking summary */}
                   <div className="bg-white p-2.5 rounded-lg border border-slate-150">
-                    <span className="text-[7.5px] font-extrabold uppercase text-slate-400 tracking-wider">Time Spent Log</span>
+                    <span className="text-[7.5px] font-extrabold uppercase text-slate-400 tracking-wider">Time tracked</span>
                     <div className="flex items-center justify-between mt-1">
                       <div className="flex items-center gap-1.5">
                         <Clock className={`w-3.5 h-3.5 ${detailTask.timerStartedAt ? 'text-emerald-500 animate-pulse' : 'text-slate-400'}`} />
                         <span className="text-xs font-bold font-mono text-slate-800">
-                          {detailTask.timerStartedAt ? 'Timer running...' : `${(detailTask.trackedHours || 0).toFixed(2)} hrs`}
+                          {detailTask.timerStartedAt ? 'Timer running…' : `${(detailTask.trackedHours || 0).toFixed(2)} hrs`}
                         </span>
                       </div>
                     </div>
@@ -2931,7 +2931,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 <div className="space-y-3 flex flex-col justify-between">
                   <div className="space-y-2.5">
                     <h4 className="text-[10px] font-black uppercase text-slate-500 tracking-wider flex items-center justify-between">
-                      <span>Attachments & Links</span>
+                      <span>Notes and links</span>
                       <span className="bg-slate-100 px-1.5 py-0.5 rounded text-[8px] text-slate-500 font-mono">
                         {(detailTask.references || []).length} items
                       </span>
@@ -2942,8 +2942,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       {(!detailTask.references || detailTask.references.length === 0) ? (
                         <div className="text-center py-6 px-4 border border-dashed border-slate-200 rounded-xl bg-slate-50/50">
                           <Link2 className="w-5 h-5 text-slate-300 mx-auto mb-1" />
-                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider leading-relaxed">No references attached</p>
-                          <p className="text-[8px] text-slate-400 max-w-[160px] mx-auto leading-normal mt-0.5">Attach specs, requirements, or links below for quick reference.</p>
+                          <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider leading-relaxed">No notes or links yet</p>
+                          <p className="text-[8px] text-slate-400 max-w-[160px] mx-auto leading-normal mt-0.5">Add a note or link below.</p>
                         </div>
                       ) : (
                         detailTask.references.map((ref) => (
@@ -2979,7 +2979,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                               type="button"
                               onClick={() => handleRemoveReference(ref.id)}
                               className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-all shrink-0"
-                              title="Delete Reference"
+                              title="Delete"
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
@@ -2991,7 +2991,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                   {/* Add New Reference Form */}
                   <form onSubmit={handleAddReference} className="border-t border-slate-100 pt-3 space-y-2 shrink-0">
-                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Add Reference Attachment</span>
+                    <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">Add a note or link</span>
                     
                     {/* Segmented type tab selector */}
                     <div className="grid grid-cols-2 gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-150/50">
@@ -3004,7 +3004,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
-                        📝 Note Card
+                        Note
                       </button>
                       <button
                         type="button"
@@ -3015,7 +3015,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                             : 'text-slate-500 hover:text-slate-800'
                         }`}
                       >
-                        🔗 Web Link
+                        Link
                       </button>
                     </div>
 
@@ -3023,7 +3023,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       <input
                         type="text"
                         required
-                        placeholder="Reference Title (e.g. Figma Redesign, Feedback)"
+                        placeholder="Title (e.g. Client feedback)"
                         value={refTitle}
                         onChange={(e) => setRefTitle(e.target.value)}
                         className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1 px-2.5 text-xs focus:outline-none focus:border-slate-400"
@@ -3033,7 +3033,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         <input
                           type="text"
                           required
-                          placeholder="Link URL (e.g. figma.com/file/..., google.com)"
+                          placeholder="URL (e.g. figma.com/file/…)"
                           value={refContent}
                           onChange={(e) => setRefContent(e.target.value)}
                           className="w-full bg-slate-50 border border-slate-200 rounded-lg py-1 px-2.5 text-xs focus:outline-none focus:border-slate-400 font-mono"
@@ -3041,7 +3041,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       ) : (
                         <textarea
                           required
-                          placeholder="Note Content (type your note or cheat sheet here...)"
+                          placeholder="Write your note"
                           value={refContent}
                           onChange={(e) => setRefContent(e.target.value)}
                           rows={2}
@@ -3054,7 +3054,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       type="submit"
                       className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-1.5 rounded-lg text-xs transition-all tracking-wide flex items-center justify-center gap-1 active:scale-[0.98]"
                     >
-                      <Plus className="w-3.5 h-3.5" /> Attach Reference
+                      <Plus className="w-3.5 h-3.5" /> Add
                     </button>
                   </form>
                 </div>
@@ -3070,7 +3070,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                 onClick={() => setDetailTask(null)}
                 className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-sm"
               >
-                Close Reference Hub
+                Close
               </button>
             </div>
           </div>

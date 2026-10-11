@@ -338,11 +338,11 @@ export default function AuthView({
       if (err?.code === 'auth/email-already-in-use') {
         setError('An account with this email already exists. Sign in instead.');
       } else if (err?.code === 'auth/invalid-email') {
-        setError('Please enter a valid email address.');
+        setError('Enter a valid email address.');
       } else if (err?.code === 'auth/weak-password') {
         setError('Choose a stronger password (at least 6 characters).');
       } else {
-        setError(err?.message || 'Could not create your account. Please try again.');
+        setError(err?.message || 'Couldn’t create your account. Try again.');
       }
     } finally {
       setLoading(false);

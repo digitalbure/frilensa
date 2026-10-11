@@ -20,7 +20,7 @@ export function sendgridConfigured() {
 export async function sendDocumentEmail(payload: SendDocumentEmailPayload): Promise<DocumentEmailResult> {
   const { document, business, client, recipientEmail, ccConsultant, consultantEmail, attachPdfBase64, pdfFilename } = payload;
   if (!document || !business || !isEmail(recipientEmail)) {
-    return { ok: false, status: 400, error: "A document, business and valid recipient email are required." };
+    return { ok: false, status: 400, error: "Enter a valid recipient email address and try again." };
   }
   const apiKey = process.env.SENDGRID_API_KEY?.trim();
   if (!apiKey) {
@@ -55,7 +55,7 @@ export async function sendDocumentEmail(payload: SendDocumentEmailPayload): Prom
   });
   if (!result.success) {
     console.warn(`[SendGrid] Dispatch failed: ${result.error}`);
-    return { ok: false, status: 502, error: `Email could not be delivered: ${result.error}` };
+    return { ok: false, status: 502, error: `Couldn't send the email: ${result.error}` };
   }
   return { ok: true, messageId: result.messageId || `msg-${Date.now()}`, subject, html, timestamp: new Date().toISOString() };
 }

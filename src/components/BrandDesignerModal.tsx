@@ -36,7 +36,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
     { hex: '#7c3aed', name: 'Pacific Amethyst' },
     { hex: '#db2777', name: 'Hibiscus Pink' },
     { hex: '#ea580c', name: 'Savusavu Sunset' },
-    { hex: '#18181b', name: 'Executive Obsidian' },
+    { hex: '#18181b', name: 'Charcoal' },
   ];
 
   const SYMBOLS = [

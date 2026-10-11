@@ -22,45 +22,45 @@ import firebaseConfig from '../../firebase-applet-config.json';
 
 const CATEGORY_PRESETS: Record<string, { label: string; value: string; isPreset: boolean }[]> = {
   boutique: [
-    { label: 'Size Chart Link', value: 'https://shop.bula.fj/sizes', isPreset: true },
-    { label: 'Production Lead Time', value: '7 Business Days', isPreset: true },
-    { label: 'Social Shop Handle', value: '@BulaClothingFiji', isPreset: true },
-    { label: 'Standard Local Delivery', value: 'FJD $5.00 via Post Fiji', isPreset: true }
+    { label: 'Size chart link', value: 'https://shop.bula.fj/sizes', isPreset: true },
+    { label: 'Production lead time', value: '7 business days', isPreset: true },
+    { label: 'Shop social handle', value: '@BulaClothingFiji', isPreset: true },
+    { label: 'Local delivery', value: 'FJD $5.00 via Post Fiji', isPreset: true }
   ],
   plumber: [
-    { label: 'Plumbing License Registration #', value: 'PL-2026-991', isPreset: true },
-    { label: 'Emergency Dispatch Phone', value: '+679 888 1234', isPreset: true },
-    { label: 'Emergency Surcharge', value: 'FJD $50.00 flat after-hours', isPreset: true },
-    { label: 'Standard Diagnostic Fee', value: 'FJD $30.00', isPreset: true }
+    { label: 'Plumbing licence number', value: 'PL-2026-991', isPreset: true },
+    { label: 'Emergency phone', value: '+679 888 1234', isPreset: true },
+    { label: 'Emergency surcharge', value: 'FJD $50.00 flat, after hours', isPreset: true },
+    { label: 'Call-out diagnostic fee', value: 'FJD $30.00', isPreset: true }
   ],
   mc: [
-    { label: 'Audio & Stage Requirements', value: '2 Wireless Mics, XLR Out', isPreset: true },
-    { label: 'Non-Refundable Booking Deposit', value: '25% on confirmation', isPreset: true },
-    { label: 'Sound Check Setup Time', value: '45 Minutes before door opens', isPreset: true },
-    { label: 'Overtime Hourly Surcharge', value: 'FJD $100.00 / hour', isPreset: true }
+    { label: 'Audio and stage needs', value: '2 wireless mics, XLR out', isPreset: true },
+    { label: 'Non-refundable deposit', value: '25% on confirmation', isPreset: true },
+    { label: 'Sound check', value: '45 minutes before doors open', isPreset: true },
+    { label: 'Overtime rate', value: 'FJD $100.00 / hour', isPreset: true }
   ],
   band: [
-    { label: 'Band Technical Rider Link', value: 'https://band.bula.fj/rider.pdf', isPreset: true },
-    { label: 'Number of Band Members', value: '5 Musicians', isPreset: true },
-    { label: 'Performance Duration', value: '3 Sets of 45 Mins', isPreset: true },
-    { label: 'Meals & Beverages Rider', value: 'Hot buffet & water provided', isPreset: true }
+    { label: 'Technical rider link', value: 'https://band.bula.fj/rider.pdf', isPreset: true },
+    { label: 'Band members', value: '5 musicians', isPreset: true },
+    { label: 'Performance length', value: '3 sets of 45 minutes', isPreset: true },
+    { label: 'Meals and drinks', value: 'Hot buffet and water provided', isPreset: true }
   ],
   production: [
-    { label: 'Primary Gear Package', value: 'Sony FX3 + Wireless DJI Audio', isPreset: true },
-    { label: 'Shoot Duration', value: 'Standard 8-Hour Production Day', isPreset: true },
-    { label: 'Backup & Storage Policy', value: 'Redundant SSD, 30-Day Retention', isPreset: true },
-    { label: 'On-Set Crew Size', value: '3 Operators (Camera, Light, Audio)', isPreset: true }
+    { label: 'Main gear', value: 'Sony FX3 + DJI wireless audio', isPreset: true },
+    { label: 'Shoot length', value: '8-hour day', isPreset: true },
+    { label: 'Footage backup', value: 'Two SSD copies, kept 30 days', isPreset: true },
+    { label: 'Crew size', value: '3 (camera, lighting, audio)', isPreset: true }
   ],
   taxi: [
-    { label: 'Vehicle Plate Number', value: 'LT-1002', isPreset: true },
-    { label: 'LTA Permit Number', value: 'LTA-TX-2026-441', isPreset: true },
-    { label: 'Base Fare Charge', value: 'FJD $2.00 starting flag', isPreset: true },
-    { label: 'Per-Kilometer Distance Rate', value: 'FJD $1.50 / km', isPreset: true },
-    { label: 'Preferred Taxi Stand', value: 'Suva Town Market Stand', isPreset: true }
+    { label: 'Plate number', value: 'LT-1002', isPreset: true },
+    { label: 'LTA permit number', value: 'LTA-TX-2026-441', isPreset: true },
+    { label: 'Flag fall', value: 'FJD $2.00', isPreset: true },
+    { label: 'Rate per km', value: 'FJD $1.50 / km', isPreset: true },
+    { label: 'Taxi stand', value: 'Suva Town Market Stand', isPreset: true }
   ],
   general: [
-    { label: 'Payment Terms', value: '7 Days net billing', isPreset: true },
-    { label: 'Support Email', value: 'support@venture.fj', isPreset: true }
+    { label: 'Payment terms', value: '7 days', isPreset: true },
+    { label: 'Support email', value: 'support@venture.fj', isPreset: true }
   ]
 };
 
@@ -223,7 +223,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
   const handleSendTestEmail = async () => {
     if (!testEmailRecipient || !testEmailRecipient.includes('@')) {
-      triggerStatus('Please enter a valid email address to send test dispatch.', 'error');
+      triggerStatus('Enter an email address to send the test to.', 'error');
       return;
     }
     setIsTestingEmail(true);
@@ -233,16 +233,16 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       const res = await sendTestEmail(testEmailRecipient.trim(), activeBiz?.name || 'Frilensa');
       setTestEmailResult(res);
       if (res.success) {
-        triggerStatus(`Test email dispatched successfully to ${testEmailRecipient}!`, 'success');
+        triggerStatus(`Test email sent to ${testEmailRecipient}`, 'success');
       } else {
-        triggerStatus(res.message || 'Test email returned error', 'error');
+        triggerStatus(res.message || 'The test email could not be sent.', 'error');
       }
     } catch (err: any) {
       setTestEmailResult({
         success: false,
-        message: err.message || 'Failed to dispatch test email.'
+        message: err.message || 'The test email could not be sent. Try again.'
       });
-      triggerStatus(err.message || 'Failed to dispatch test email', 'error');
+      triggerStatus(err.message || 'The test email could not be sent. Try again.', 'error');
     } finally {
       setIsTestingEmail(false);
     }
@@ -325,7 +325,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       businesses: updatedBusinesses
     });
 
-    triggerStatus('Prefix and auto-numbering configurations updated successfully!', 'success');
+    triggerStatus('Numbering saved', 'success');
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
@@ -349,13 +349,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       userProfile: updatedProfile
     });
 
-    triggerStatus('Fiji preferences, contact details, and consultant settings updated successfully!', 'success');
+    triggerStatus('Settings saved', 'success');
   };
 
   const handleSaveBusinessProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bizName || !bizTin) {
-      triggerStatus('Business Name and TIN are required!', 'error');
+      triggerStatus('Enter a business name and TIN.', 'error');
       return;
     }
 
@@ -418,12 +418,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       businesses: updatedBusinesses
     });
 
-    triggerStatus('Business profile specifications saved successfully!', 'success');
+    triggerStatus('Business saved', 'success');
   };
 
   const handleAddSocial = () => {
     if (!newSocialHandle.trim()) {
-      triggerStatus('Please provide a social handle, phone number, or URL.', 'error');
+      triggerStatus('Enter a handle, phone number or link.', 'error');
       return;
     }
     const newSocialItem: BusinessSocial = {
@@ -434,63 +434,63 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
     setBizSocials([...bizSocials, newSocialItem]);
     setNewSocialHandle('');
     setShowAddSocial(false);
-    triggerStatus(`Added ${getSocialConfig(newSocialPlatform).label} channel! Click Save to apply.`, 'success');
+    triggerStatus(`Added ${getSocialConfig(newSocialPlatform).label}. Save the business to keep it.`, 'success');
   };
 
   const handleRemoveSocial = (index: number) => {
     const updated = bizSocials.filter((_, idx) => idx !== index);
     setBizSocials(updated);
-    triggerStatus('Social channel removed. Remember to save changes.', 'success');
+    triggerStatus('Removed. Save the business to keep this change.', 'success');
   };
 
   const handleApplyCategoryPresets = (categoryKey: string) => {
     const presets = CATEGORY_PRESETS[categoryKey] || [];
     setBizCustomFields(presets);
     setBizCategory(categoryKey);
-    triggerStatus(`Applied default custom parameters for standard Fiji ${categoryKey}!`, 'success');
+    triggerStatus(`Loaded the ${categoryKey} fields`, 'success');
   };
 
   const handleAddCustomField = () => {
     if (!newCustomLabel.trim()) {
-      triggerStatus('Custom parameter label cannot be empty.', 'error');
+      triggerStatus('Enter a field name.', 'error');
       return;
     }
     const exists = bizCustomFields.some(cf => cf.label.toLowerCase() === newCustomLabel.trim().toLowerCase());
     if (exists) {
-      triggerStatus('Parameter label already exists.', 'error');
+      triggerStatus('A field with that name already exists.', 'error');
       return;
     }
     setBizCustomFields([...bizCustomFields, { label: newCustomLabel.trim(), value: newCustomValue.trim(), isPreset: false }]);
     setNewCustomLabel('');
     setNewCustomValue('');
-    triggerStatus('Custom parameter added! Make sure to save.', 'success');
+    triggerStatus('Field added. Save the business to keep it.', 'success');
   };
 
   const handleRemoveCustomField = (index: number) => {
     const filtered = bizCustomFields.filter((_, idx) => idx !== index);
     setBizCustomFields(filtered);
-    triggerStatus('Parameter removed. Save changes to persist.', 'success');
+    triggerStatus('Field removed. Save the business to keep this change.', 'success');
   };
 
   const handleAddWorkingCurrency = (code: string) => {
     const upper = code.trim().toUpperCase();
     if (!upper) return;
     if (bizWorkingCurrencies.includes(upper)) {
-      triggerStatus(`${upper} is already in your working currencies`, 'error');
+      triggerStatus(`${upper} is already in your currencies`, 'error');
       return;
     }
     setBizWorkingCurrencies([...bizWorkingCurrencies, upper]);
-    triggerStatus(`Added ${upper} to accepted working currencies for this venture! Remember to click Save.`, 'success');
+    triggerStatus(`Added ${upper}. Save the business to keep it.`, 'success');
     setSelectedCurrencyToAdd('');
   };
 
   const handleRemoveWorkingCurrency = (code: string) => {
     if (code === bizCurrency) {
-      triggerStatus(`Cannot remove base ledger currency (${bizCurrency}) from working currencies`, 'error');
+      triggerStatus(`${bizCurrency} is your base currency, so it can't be removed.`, 'error');
       return;
     }
     if (bizWorkingCurrencies.length <= 1) {
-      triggerStatus('At least one working currency must remain active for the venture', 'error');
+      triggerStatus('Keep at least one currency.', 'error');
       return;
     }
     setBizWorkingCurrencies(bizWorkingCurrencies.filter(c => c !== code));
@@ -499,7 +499,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       delete updatedRates[code];
       setBizCustomExchangeRates(updatedRates);
     }
-    triggerStatus(`Removed ${code} from working currencies. Remember to save changes.`, 'success');
+    triggerStatus(`Removed ${code}. Save the business to keep this change.`, 'success');
   };
 
   const handleSelectRateOverrideCode = (code: string) => {
@@ -512,14 +512,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
   const handleSaveCustomRateOverride = () => {
     const rate = parseFloat(customRateInput);
     if (isNaN(rate) || rate <= 0) {
-      triggerStatus('Please enter a valid positive exchange rate override', 'error');
+      triggerStatus('Enter an exchange rate above 0.', 'error');
       return;
     }
     setBizCustomExchangeRates({
       ...bizCustomExchangeRates,
       [editingRateCode]: rate
     });
-    triggerStatus(`Custom rate saved: 1 ${editingRateCode} = ${rate.toFixed(4)} ${bizCurrency}! Click Save Venture to persist.`, 'success');
+    triggerStatus(`Rate set: 1 ${editingRateCode} = ${rate.toFixed(4)} ${bizCurrency}. Save the business to keep it.`, 'success');
   };
 
   const handleResetCustomRate = (code: string) => {
@@ -530,7 +530,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
     if (editingRateCode === code) {
       setCustomRateInput(benchmarkRate.toFixed(4));
     }
-    triggerStatus(`Reset ${code} to market benchmark (${benchmarkRate.toFixed(4)} ${bizCurrency})`, 'info');
+    triggerStatus(`${code} reset to the default rate (${benchmarkRate.toFixed(4)} ${bizCurrency})`, 'info');
   };
 
   const triggerStatus = (text: string, type: 'success' | 'error' | 'info') => {
@@ -544,9 +544,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
     try {
       const dataStr = JSON.stringify(data, null, 2);
       navigator.clipboard.writeText(dataStr);
-      triggerStatus('CRM Data copied to clipboard! Paste it safely in a notes app or file.', 'success');
+      triggerStatus('Backup copied. Paste it into a file or notes app and keep it somewhere safe.', 'success');
     } catch (err) {
-      triggerStatus('Failed to copy CRM data automatically.', 'error');
+      triggerStatus('Couldn\'t copy the backup. Use Download backup instead.', 'error');
     }
   };
 
@@ -563,9 +563,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
-      triggerStatus('Workspace backup JSON downloaded successfully!', 'success');
+      triggerStatus('Backup downloaded', 'success');
     } catch (err) {
-      triggerStatus('Failed to download backup file.', 'error');
+      triggerStatus('The backup couldn\'t be downloaded. Try again.', 'error');
     }
   };
 
@@ -582,12 +582,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           const merged = mergeCRMData(data, parsed);
           onUpdateData(merged);
           saveLocalBackup(merged);
-          triggerStatus('Database backup file imported and merged successfully!', 'success');
+          triggerStatus('Backup imported and merged with your data', 'success');
         } else {
-          triggerStatus('Invalid backup file format.', 'error');
+          triggerStatus('That file isn\'t a Frilensa backup.', 'error');
         }
       } catch (err) {
-        triggerStatus('Failed to parse JSON file.', 'error');
+        triggerStatus('That file couldn\'t be read. Check it\'s a Frilensa backup (.json).', 'error');
       }
     };
     reader.readAsText(file);
@@ -597,21 +597,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
   const handleRestoreAutoBackup = () => {
     const backup = loadLocalBackup();
     if (!backup || !backup.businesses || backup.businesses.length === 0) {
-      triggerStatus('No previous local auto-backup snapshot found.', 'error');
+      triggerStatus('No automatic backup found on this device.', 'error');
       return;
     }
-    if (confirm('Restore and merge workspace records (including transactions) from local auto-backup?')) {
+    if (confirm('Restore records (including transactions) from the automatic backup on this device? They\'ll be merged with your current data.')) {
       const merged = mergeCRMData(data, backup);
       onUpdateData(merged);
       saveLocalBackup(merged);
       const txCount = merged.transactions?.length || 0;
-      triggerStatus(`Successfully restored ${txCount} transaction(s) from local backup!`, 'success');
+      triggerStatus(`Restored ${txCount} transaction(s) from the backup`, 'success');
     }
   };
 
   const handleImportData = () => {
     if (!importJson) {
-      triggerStatus('Please paste your JSON backup data first.', 'error');
+      triggerStatus('Paste your backup first.', 'error');
       return;
     }
 
@@ -623,12 +623,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         saveLocalBackup(merged);
         setImportJson('');
         setShowBackupArea(false);
-        triggerStatus('Database backup restored and safely merged!', 'success');
+        triggerStatus('Backup restored and merged with your data', 'success');
       } else {
-        triggerStatus('Invalid backup format. Essential properties are missing.', 'error');
+        triggerStatus('That isn\'t a complete Frilensa backup.', 'error');
       }
     } catch (err) {
-      triggerStatus('Could not parse database backup string. Ensure it is valid JSON.', 'error');
+      triggerStatus('That backup couldn\'t be read. Check you pasted all of it.', 'error');
     }
   };
 

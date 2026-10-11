@@ -337,7 +337,7 @@ export default function App() {
         clearInterval(interval);
         handleSignOut();
         setLogoutReason(
-          `You were automatically signed out after ${inactivityTimeoutMinutes} minute${inactivityTimeoutMinutes === 1 ? '' : 's'} of inactivity to protect your account.`
+          `You were automatically signed out after ${inactivityTimeoutMinutes} minute${inactivityTimeoutMinutes === 1 ? '' : 's'} of inactivity.`
         );
         setShowInactivityWarning(false);
       } else if (remainingSec <= 60) {
@@ -538,13 +538,13 @@ export default function App() {
           <div className="bg-amber-400 text-slate-950 px-4 py-2 text-[10px] font-bold flex items-center justify-between shadow-inner shrink-0 z-20">
             <div className="flex items-center gap-1.5 truncate">
               <span className="h-1.5 w-1.5 bg-slate-950 rounded-full animate-pulse"></span>
-              <p className="truncate">Administrative Sandbox: Impersonating <span className="underline font-black">{impersonationTenant}</span></p>
+              <p className="truncate">Viewing as <span className="underline font-black">{impersonationTenant}</span></p>
             </div>
             <button
               onClick={handleExitImpersonation}
               className="bg-slate-950 hover:bg-slate-900 text-amber-400 font-extrabold px-2.5 py-1 rounded-lg text-[9px] uppercase tracking-widest shrink-0 transition-all active:scale-95 cursor-pointer"
             >
-              Exit Sandbox
+              Stop viewing
             </button>
           </div>
         )}
@@ -660,9 +660,9 @@ export default function App() {
               </div>
               
               <div>
-                <h3 className="text-base font-black text-slate-900 tracking-tight">Inactivity Session Warning</h3>
+                <h3 className="text-base font-black text-slate-900 tracking-tight">Are you still there?</h3>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  You have been idle. To protect your financial and client data, you will be automatically signed out in:
+                  You've been inactive for a while. You'll be signed out in:
                 </p>
                 <div className="mt-3 flex items-center justify-center gap-1.5 font-mono text-3xl font-black text-amber-600">
                   <span>{inactivityCountdown}</span>
@@ -685,7 +685,7 @@ export default function App() {
                   className="py-2.5 px-3 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <LogOut className="w-3.5 h-3.5" />
-                  Sign Out
+                  Sign out
                 </button>
                 <button
                   type="button"
@@ -693,7 +693,7 @@ export default function App() {
                   className="py-2.5 px-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                  Stay Logged In
+                  Stay signed in
                 </button>
               </div>
             </motion.div>

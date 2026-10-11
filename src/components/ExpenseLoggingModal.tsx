@@ -117,17 +117,17 @@ export default function ExpenseLoggingModal({
 
   // Fiji Standard Categories
   const expenseCategories = [
-    { name: 'Office Supplies', icon: '🏢', label: 'Office Supplies & Stationery' },
-    { name: 'Internet & Utilities', icon: '🌐', label: 'Internet, Fibre & Mobile Data' },
-    { name: 'Software SaaS', icon: '💻', label: 'Software, SaaS & Cloud Hosting' },
-    { name: 'Travel & Transport', icon: '✈️', label: 'Travel, Fuel, Taxis & Flights' },
-    { name: 'Meals & Entertainment', icon: '☕', label: 'Meals & Client Hospitality' },
-    { name: 'Electricity & Utilities', icon: '⚡', label: 'EFL Electricity & Water Utilities' },
-    { name: 'Hardware & Equipment', icon: '🛠️', label: 'Hardware, Computers & Tools' },
-    { name: 'Tax & Licensing', icon: '⚖️', label: 'FRCS Taxes, Licenses & Legal' },
-    { name: 'Subcontractors', icon: '👥', label: 'Subcontractors & Freelancers' },
-    { name: 'Marketing & Ads', icon: '📣', label: 'Marketing, Ads & Domain Hosting' },
-    { name: 'Other Expense', icon: '📦', label: 'Other Operational Expenses' }
+    { name: 'Office Supplies', icon: '🏢', label: 'Office supplies & stationery' },
+    { name: 'Internet & Utilities', icon: '🌐', label: 'Internet & mobile data' },
+    { name: 'Software SaaS', icon: '💻', label: 'Software & cloud hosting' },
+    { name: 'Travel & Transport', icon: '✈️', label: 'Travel, fuel, taxis & flights' },
+    { name: 'Meals & Entertainment', icon: '☕', label: 'Meals & client hospitality' },
+    { name: 'Electricity & Utilities', icon: '⚡', label: 'Electricity & water' },
+    { name: 'Hardware & Equipment', icon: '🛠️', label: 'Hardware, computers & tools' },
+    { name: 'Tax & Licensing', icon: '⚖️', label: 'Taxes, licences & legal' },
+    { name: 'Subcontractors', icon: '👥', label: 'Subcontractors & freelancers' },
+    { name: 'Marketing & Ads', icon: '📣', label: 'Marketing, ads & domains' },
+    { name: 'Other Expense', icon: '📦', label: 'Other expenses' }
   ];
 
   // Common Fiji Vendors presets for rapid tap-to-fill
@@ -201,7 +201,7 @@ export default function ExpenseLoggingModal({
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API is not supported in this browser. Please use the file upload option.');
+        throw new Error('This browser can't use the camera. Upload a photo or PDF instead.');
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -220,7 +220,7 @@ export default function ExpenseLoggingModal({
       setIsCameraActive(true);
     } catch (err: any) {
       console.error('Camera access error:', err);
-      setCameraError(err.message || 'Unable to access camera. Please check permissions.');
+      setCameraError(err.message || 'Couldn't open the camera. Check that this site is allowed to use it.');
       setIsCameraActive(false);
     }
   };
@@ -391,15 +391,15 @@ export default function ExpenseLoggingModal({
         const dateDisplay = ext.date || '';
 
         setOcrSuccessMessage(
-          `✨ Extracted: ${vendorDisplay} ${amountDisplay ? `• ${amountDisplay}` : ''} ${dateDisplay ? `• ${dateDisplay}` : ''} (${ext.confidence || 90}% confidence)`
+          `Read: ${vendorDisplay} ${amountDisplay ? `• ${amountDisplay}` : ''} ${dateDisplay ? `• ${dateDisplay}` : ''} (${ext.confidence || 90}% confidence)`
         );
       } else {
-        throw new Error(dataRes.error || 'No document details could be extracted');
+        throw new Error(dataRes.error || 'No details found in this file');
       }
     } catch (e: any) {
       console.warn('OCR parsing error:', e);
       setOcrErrorMessage(
-        `Unable to automatically read text from this file (${e.message || 'Service busy'}). Document attached; you can enter vendor & amount below.`
+        `Couldn't read this file (${e.message || 'service busy'}). It's still attached, so enter the vendor and amount below.`
       );
     } finally {
       setIsProcessingOcr(false);
@@ -510,7 +510,7 @@ export default function ExpenseLoggingModal({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendor.trim() || !amount || parseFloat(amount) <= 0) {
-      alert('Please provide a valid vendor name and expense amount.');
+      alert('Enter a vendor and an amount above zero.');
       return;
     }
 
@@ -564,10 +564,10 @@ export default function ExpenseLoggingModal({
             </div>
             <div>
               <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                {initialExpense ? 'Edit Business Expense' : 'Log Business Expense'}
+                {initialExpense ? 'Edit expense' : 'Add expense'}
               </h3>
               <p className="text-[10px] text-slate-400">
-                Fiji Tax Compliant • Claimable Input VAT & Deductions
+                Input VAT and tax deductions
               </p>
             </div>
           </div>
@@ -598,7 +598,7 @@ export default function ExpenseLoggingModal({
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            <span>Manual Form</span>
+            <span>Enter details</span>
           </button>
           <button
             type="button"
@@ -615,7 +615,7 @@ export default function ExpenseLoggingModal({
             }`}
           >
             <Camera className="w-3.5 h-3.5" />
-            <span>Camera & OCR Scan</span>
+            <span>Scan receipt</span>
           </button>
         </div>
 
@@ -646,7 +646,7 @@ export default function ExpenseLoggingModal({
                   </div>
                   <div className="absolute top-2 left-2 bg-black/60 backdrop-blur-md px-2 py-0.5 rounded text-[9px] font-mono text-emerald-400 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-                    LIVE CAMERA SCANNER
+                    CAMERA
                   </div>
                 </div>
 
@@ -657,7 +657,7 @@ export default function ExpenseLoggingModal({
                     className="bg-slate-800 hover:bg-slate-700 text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                   >
                     <FlipHorizontal className="w-3.5 h-3.5" />
-                    Flip Camera
+                    Flip camera
                   </button>
 
                   <button
@@ -666,7 +666,7 @@ export default function ExpenseLoggingModal({
                     className="flex-1 bg-rose-600 hover:bg-rose-500 text-white py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-lg active:scale-95 cursor-pointer"
                   >
                     <Camera className="w-4 h-4" />
-                    Snap & Extract Receipt
+                    Take photo
                   </button>
 
                   <button
@@ -687,8 +687,8 @@ export default function ExpenseLoggingModal({
                         <FileText className="w-6 h-6" />
                       </div>
                       <div className="flex-1 min-w-0 text-left">
-                        <p className="text-xs font-bold text-white truncate">{receiptFileName || 'Invoice Document.pdf'}</p>
-                        <p className="text-[10px] text-slate-400">PDF Document Attached • Processed with AI Vision</p>
+                        <p className="text-xs font-bold text-white truncate">{receiptFileName || 'Receipt.pdf'}</p>
+                        <p className="text-[10px] text-slate-400">PDF attached</p>
                       </div>
                       <a
                         href={receiptImage}
@@ -704,7 +704,7 @@ export default function ExpenseLoggingModal({
                     <div className="max-h-48 flex items-center justify-center">
                       <img 
                         src={receiptImage} 
-                        alt="Receipt Attachment" 
+                        alt="Receipt" 
                         className="max-h-44 rounded-xl object-contain"
                       />
                     </div>
@@ -719,7 +719,7 @@ export default function ExpenseLoggingModal({
                       setOcrErrorMessage(null);
                     }}
                     className="absolute top-3 right-3 bg-rose-600 hover:bg-rose-500 text-white p-1.5 rounded-lg shadow-md cursor-pointer"
-                    title="Remove Attachment"
+                    title="Remove receipt"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -732,7 +732,7 @@ export default function ExpenseLoggingModal({
                     className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Camera className="w-3.5 h-3.5" />
-                    Live Camera
+                    Camera
                   </button>
                   <button
                     type="button"
@@ -740,7 +740,7 @@ export default function ExpenseLoggingModal({
                     className="flex-1 bg-slate-800 hover:bg-slate-700 text-white py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Upload className="w-3.5 h-3.5" />
-                    Replace PDF / Image
+                    Replace file
                   </button>
                   <button
                     type="button"
@@ -751,10 +751,10 @@ export default function ExpenseLoggingModal({
                     }}
                     disabled={isProcessingOcr}
                     className="bg-sky-600/80 hover:bg-sky-500 text-white py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
-                    title="Re-run AI extraction"
+                    title="Read the receipt again"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isProcessingOcr ? 'animate-spin' : ''}`} />
-                    Re-scan
+                    Read again
                   </button>
                 </div>
               </div>
@@ -780,7 +780,7 @@ export default function ExpenseLoggingModal({
                 {cameraError && (
                   <div className="bg-rose-950/80 border border-rose-800 text-rose-300 p-3 rounded-xl text-xs text-left">
                     <p className="font-bold flex items-center gap-1">
-                      <AlertCircle className="w-3.5 h-3.5" /> Camera Access Notice
+                      <AlertCircle className="w-3.5 h-3.5" /> Camera unavailable
                     </p>
                     <p className="text-[10px] mt-1">{cameraError}</p>
                   </div>
@@ -802,8 +802,8 @@ export default function ExpenseLoggingModal({
                     <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
                       <Camera className="w-5 h-5" />
                     </div>
-                    <span className="text-xs font-black">Snap Photo</span>
-                    <span className="text-[9px] text-rose-100">Live snapshot of physical docket</span>
+                    <span className="text-xs font-black">Take photo</span>
+                    <span className="text-[9px] text-rose-100">Photograph a paper receipt</span>
                   </button>
 
                   <button
@@ -814,11 +814,11 @@ export default function ExpenseLoggingModal({
                     <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center">
                       <Upload className="w-5 h-5 text-sky-400" />
                     </div>
-                    <span className="text-xs font-black">Upload PDF / Image</span>
-                    <span className="text-[9px] text-slate-400">PDF Invoices, screenshots, PNG, JPG</span>
+                    <span className="text-xs font-black">Upload file</span>
+                    <span className="text-[9px] text-slate-400">PDF, PNG, JPG or screenshot</span>
                   </button>
                 </div>
-                <p className="text-[10px] text-slate-500">Drag & drop your PDF invoice or screenshot here</p>
+                <p className="text-[10px] text-slate-500">Or drop a file here</p>
               </div>
             )}
 
@@ -845,7 +845,7 @@ export default function ExpenseLoggingModal({
             {isProcessingOcr && (
               <div className="bg-sky-950/80 border border-sky-800 p-2.5 rounded-xl flex items-center gap-2 text-sky-300 text-xs">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400 shrink-0" />
-                <span>Bula Gemini Vision AI is reading invoice / docket & extracting details...</span>
+                <span>Reading the receipt…</span>
               </div>
             )}
 
@@ -872,9 +872,9 @@ export default function ExpenseLoggingModal({
           <div className="space-y-1.5">
             <div className="flex justify-between items-center">
               <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider">
-                Quick Vendor Presets (Fiji & Pacific)
+                Common vendors
               </label>
-              <span className="text-[9px] text-slate-400">Tap to auto-populate</span>
+              <span className="text-[9px] text-slate-400">Tap to fill in</span>
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {commonFijiVendors.map((v) => (
@@ -898,7 +898,7 @@ export default function ExpenseLoggingModal({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-500 block">
-                Vendor / Payee Name <span className="text-rose-500">*</span>
+                Vendor <span className="text-rose-500">*</span>
               </label>
               <input
                 type="text"
@@ -911,7 +911,7 @@ export default function ExpenseLoggingModal({
             </div>
 
             <DateInput
-              label="Expense Date"
+              label="Date"
               required
               value={date}
               onChange={setDate}
@@ -920,7 +920,7 @@ export default function ExpenseLoggingModal({
               customPresets={[
                 { label: 'Today', special: 'today' },
                 { label: 'Yesterday', daysOffset: -1 },
-                { label: '-7 Days', daysOffset: -7 },
+                { label: '7 days ago', daysOffset: -7 },
               ]}
             />
           </div>
@@ -931,7 +931,7 @@ export default function ExpenseLoggingModal({
               <div className="flex items-center gap-1.5">
                 <Coins className="w-3.5 h-3.5 text-amber-500" />
                 <span className="text-[10px] font-black uppercase text-slate-600 tracking-wider">
-                  Payment Currency & Conversion
+                  Currency
                 </span>
               </div>
 
@@ -946,7 +946,7 @@ export default function ExpenseLoggingModal({
                   }`}
                 >
                   <Globe className="w-3 h-3" />
-                  <span>{isForeignCurrency ? 'Foreign FX Active' : 'Convert Foreign Currency'}</span>
+                  <span>{isForeignCurrency ? 'Foreign currency' : 'Paid in another currency?'}</span>
                 </button>
 
                 {isForeignCurrency && (
@@ -954,9 +954,9 @@ export default function ExpenseLoggingModal({
                     type="button"
                     onClick={() => setShowFxCalculatorModal(true)}
                     className="text-[9px] font-bold text-slate-600 hover:text-sky-700 bg-white border border-slate-200 px-1.5 py-0.5 rounded-lg flex items-center gap-0.5 cursor-pointer"
-                    title="Open Full Foreign Exchange Calculator"
+                    title="Open exchange rate calculator"
                   >
-                    <Calculator className="w-2.5 h-2.5" /> FX Calc
+                    <Calculator className="w-2.5 h-2.5" /> Calculator
                   </button>
                 )}
               </div>
@@ -968,10 +968,10 @@ export default function ExpenseLoggingModal({
                 <div className="flex items-center justify-between text-[9px]">
                   <span className="font-bold text-sky-900 uppercase tracking-wide flex items-center gap-1">
                     <ArrowRightLeft className="w-3 h-3 text-sky-600" />
-                    International Expense Currency Conversion
+                    Currency conversion
                   </span>
                   <span className="text-sky-700 font-mono">
-                    Converts to {baseCurrency} Ledger
+                    Converts to {baseCurrency}
                   </span>
                 </div>
 
@@ -979,7 +979,7 @@ export default function ExpenseLoggingModal({
                   {/* Foreign Currency Picker */}
                   <div>
                     <label className="text-[8.5px] font-black uppercase text-slate-500 block mb-0.5">
-                      Paid In Currency
+                      Paid in
                     </label>
                     <select
                       value={expenseCurrency}
@@ -987,19 +987,19 @@ export default function ExpenseLoggingModal({
                       className="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-xs font-bold text-slate-800 cursor-pointer"
                     >
                       {workingCurrencies.length > 0 && (
-                        <optgroup label="Venture Working Currencies">
+                        <optgroup label="Your currencies">
                           {workingCurrencies.filter(c => c !== baseCurrency).map(code => {
                             const cfg = getCurrencyConfig(code);
                             const custom = customExchangeRates[code];
                             return (
                               <option key={`biz-${code}`} value={code}>
-                                ⭐ {cfg.flag} {code} {custom ? `[Fixed: ${custom}]` : ''}
+                                {cfg.flag} {code} {custom ? `(your rate: ${custom})` : ''}
                               </option>
                             );
                           })}
                         </optgroup>
                       )}
-                      <optgroup label="All World Currencies">
+                      <optgroup label="All currencies">
                         {SUPPORTED_CURRENCIES.filter(c => c.code !== baseCurrency).map(c => (
                           <option key={c.code} value={c.code}>
                             {c.flag} {c.code} &mdash; {c.name}
@@ -1012,7 +1012,7 @@ export default function ExpenseLoggingModal({
                   {/* Foreign Amount Paid */}
                   <div>
                     <label className="text-[8.5px] font-black uppercase text-slate-500 block mb-0.5">
-                      Foreign Amount ({getCurrencyConfig(expenseCurrency).symbol || '$'})
+                      Amount paid ({getCurrencyConfig(expenseCurrency).symbol || '$'})
                     </label>
                     <div className="relative">
                       <span className="absolute left-2.5 top-1.5 text-xs font-mono font-bold text-slate-400">
@@ -1050,7 +1050,7 @@ export default function ExpenseLoggingModal({
 
                 {/* Quick Switcher Chips from Venture Currencies */}
                 <div className="flex items-center gap-1 flex-wrap pt-0.5">
-                  <span className="text-[8.5px] font-bold text-slate-400 uppercase mr-0.5">Quick Currencies:</span>
+                  <span className="text-[8.5px] font-bold text-slate-400 uppercase mr-0.5">Currencies:</span>
                   {(workingCurrencies.filter(c => c !== baseCurrency).length > 0
                     ? workingCurrencies.filter(c => c !== baseCurrency)
                     : ['USD', 'AUD', 'NZD', 'EUR', 'GBP']
@@ -1089,7 +1089,7 @@ export default function ExpenseLoggingModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-500 block">
-                Total Amount ({baseCurrency}) <span className="text-rose-500">*</span>
+                Amount ({baseCurrency}) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2 text-xs font-mono font-bold text-slate-400">
@@ -1117,7 +1117,7 @@ export default function ExpenseLoggingModal({
               </div>
               {isForeignCurrency && (
                 <span className="text-[8.5px] text-slate-400 block">
-                  Converted into home ledger from {expenseCurrency}.
+                  Converted from {expenseCurrency}.
                 </span>
               )}
             </div>
@@ -1125,7 +1125,7 @@ export default function ExpenseLoggingModal({
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-[9px] font-black uppercase text-slate-500 block">
-                  Expense Category <span className="text-rose-500">*</span>
+                  Category <span className="text-rose-500">*</span>
                 </label>
                 <button
                   type="button"
@@ -1134,7 +1134,7 @@ export default function ExpenseLoggingModal({
                   className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 px-2 py-0.5 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <Sparkles className={`w-3 h-3 ${isSuggestingCategory ? 'animate-spin' : ''}`} />
-                  {isSuggestingCategory ? 'Analyzing...' : 'AI Suggest'}
+                  {isSuggestingCategory ? 'Thinking…' : 'Suggest'}
                 </button>
               </div>
               <select
@@ -1144,7 +1144,7 @@ export default function ExpenseLoggingModal({
               >
                 {expenseCategories.map(cat => (
                   <option key={cat.name} value={cat.name}>
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -1154,12 +1154,12 @@ export default function ExpenseLoggingModal({
           {/* Description */}
           <div className="space-y-1">
             <label className="text-[9px] font-black uppercase text-slate-500 block">
-              Item Description / Service Scope
+              Description
             </label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="e.g. Arri Alexa mini camera hire for coral reef shoot, or Figma organization seat"
+                placeholder="e.g. Camera hire for reef shoot, or Figma seat"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-800 focus:outline-none focus:border-slate-900"
@@ -1167,7 +1167,7 @@ export default function ExpenseLoggingModal({
               {isSuggestingCategory && (
                 <div className="absolute right-3 top-2.5 flex items-center gap-1 text-[10px] font-bold text-amber-600 animate-pulse">
                   <Sparkles className="w-3 h-3 animate-spin" />
-                  <span>AI Thinking...</span>
+                  <span>Thinking…</span>
                 </div>
               )}
             </div>
@@ -1179,19 +1179,19 @@ export default function ExpenseLoggingModal({
               <div className="flex items-start justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <div className="w-6 h-6 rounded-lg bg-amber-500/10 border border-amber-300 text-amber-700 flex items-center justify-center text-xs">
-                    ✨
+                    <Sparkles className="w-3 h-3" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-[11px] font-black text-slate-900">
-                        AI Recommended: <span className="text-amber-700">{aiSuggestion.category}</span>
+                        Suggested: <span className="text-amber-700">{aiSuggestion.category}</span>
                       </span>
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
-                        {aiSuggestion.confidence}% Match
+                        {aiSuggestion.confidence}% match
                       </span>
                       {aiSuggestion.isFallback && (
                         <span className="text-[9px] font-semibold text-slate-500">
-                          (Rule Heuristic)
+                          (rule-based)
                         </span>
                       )}
                     </div>
@@ -1207,7 +1207,7 @@ export default function ExpenseLoggingModal({
                     onClick={() => applyAiCategorySuggestion()}
                     className="shrink-0 text-[10px] font-bold bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg shadow-xs transition-colors"
                   >
-                    Apply Suggestion
+                    Use this
                   </button>
                 ) : (
                   <span className="shrink-0 inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-lg">
@@ -1220,7 +1220,7 @@ export default function ExpenseLoggingModal({
               <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-amber-200/40 text-[10px]">
                 {aiSuggestion.suggestedTags && aiSuggestion.suggestedTags.length > 0 && (
                   <div className="flex items-center gap-1">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">Context:</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">Tags:</span>
                     {aiSuggestion.suggestedTags.map(tag => (
                       <span key={tag} className="bg-white/80 text-slate-600 px-1.5 py-0.5 rounded border border-slate-200 text-[9px]">
                         {tag}
@@ -1231,7 +1231,7 @@ export default function ExpenseLoggingModal({
 
                 {aiSuggestion.alternativeCategories && aiSuggestion.alternativeCategories.length > 0 && (
                   <div className="flex items-center gap-1 ml-auto">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase">Alternatives:</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase">Or:</span>
                     {aiSuggestion.alternativeCategories.map(alt => (
                       <button
                         key={alt}
@@ -1256,7 +1256,7 @@ export default function ExpenseLoggingModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-500 block">
-                Payment Method
+                Payment method
               </label>
               <select
                 value={paymentMethod}
@@ -1265,29 +1265,29 @@ export default function ExpenseLoggingModal({
               >
                 <option value="Vodafone M-PAiSA">Vodafone M-PAiSA</option>
                 <option value="Digicel MyCash">Digicel MyCash</option>
-                <option value="Cash">Cash / Petty Cash</option>
-                <option value="BSP Fiji">BSP Fiji Account</option>
-                <option value="ANZ Fiji">ANZ Fiji Account</option>
-                <option value="Westpac Fiji">Westpac Fiji Account</option>
+                <option value="Cash">Cash</option>
+                <option value="BSP Fiji">BSP Fiji</option>
+                <option value="ANZ Fiji">ANZ Fiji</option>
+                <option value="Westpac Fiji">Westpac Fiji</option>
                 <option value="HFC Bank">HFC Bank</option>
-                <option value="Credit Card">Credit / Debit Card</option>
-                <option value="Bank Transfer">Direct Bank Wire</option>
+                <option value="Credit Card">Credit or debit card</option>
+                <option value="Bank Transfer">Bank transfer</option>
               </select>
             </div>
 
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-500 block">
-                Assign to Client / Project (Optional)
+                Project (optional)
               </label>
               <select
                 value={selectedProjectId}
                 onChange={(e) => setSelectedProjectId(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-900"
               >
-                <option value="">General Overhead (No Project)</option>
+                <option value="">No project</option>
                 {(data.projects || []).map(p => (
                   <option key={p.id} value={p.id}>
-                    📁 {p.name}
+                    {p.name}
                   </option>
                 ))}
               </select>
@@ -1299,10 +1299,10 @@ export default function ExpenseLoggingModal({
             <div className="flex items-center justify-between">
               <span className="text-[9.5px] font-black uppercase text-slate-700 flex items-center gap-1.5">
                 <Building className="w-3.5 h-3.5 text-sky-600" />
-                Fiji Tax & FRCS Deductions
+                VAT and income tax
               </span>
               <span className="text-[9px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-200">
-                {currentVatRate}% VAT Rate
+                {currentVatRate}% VAT
               </span>
             </div>
 
@@ -1315,9 +1315,9 @@ export default function ExpenseLoggingModal({
                   className="rounded text-sky-600 focus:ring-0 cursor-pointer"
                 />
                 <div>
-                  <span className="font-bold text-slate-800 text-[11px] block">Claim VAT Input Credit</span>
+                  <span className="font-bold text-slate-800 text-[11px] block">Claim input VAT</span>
                   <span className="text-[9px] text-slate-500 block">
-                    Claimable VAT: <strong className="font-mono text-emerald-600">${calculatedVat.toFixed(2)}</strong>
+                    VAT to claim: <strong className="font-mono text-emerald-600">${calculatedVat.toFixed(2)}</strong>
                   </span>
                 </div>
               </label>
@@ -1330,9 +1330,9 @@ export default function ExpenseLoggingModal({
                   className="rounded text-sky-600 focus:ring-0 cursor-pointer"
                 />
                 <div>
-                  <span className="font-bold text-slate-800 text-[11px] block">Tax Deductible Expense</span>
+                  <span className="font-bold text-slate-800 text-[11px] block">Tax deductible</span>
                   <span className="text-[9px] text-slate-500 block">
-                    Allowed under Fiji Income Tax Act
+                    Reduces your taxable income
                   </span>
                 </div>
               </label>
@@ -1350,10 +1350,10 @@ export default function ExpenseLoggingModal({
                 />
                 <div className="truncate">
                   <span className="text-xs font-bold text-slate-800 block truncate">
-                    {receiptFileName || 'Receipt Attachment'}
+                    {receiptFileName || 'Receipt'}
                   </span>
                   <span className="text-[9px] text-emerald-600 font-bold block">
-                    ✓ Photo attached to audit trail
+                    ✓ Receipt attached
                   </span>
                 </div>
               </div>
@@ -1373,7 +1373,7 @@ export default function ExpenseLoggingModal({
           {/* Additional Notes */}
           <div className="space-y-1">
             <label className="text-[9px] font-black uppercase text-slate-500 block">
-              Internal Notes / Reference
+              Notes
             </label>
             <textarea
               rows={2}
@@ -1403,7 +1403,7 @@ export default function ExpenseLoggingModal({
             className="flex-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white py-2.5 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Check className="w-4 h-4" />
-            <span>{initialExpense ? 'Update Expense' : 'Save Expense Entry'}</span>
+            <span>{initialExpense ? 'Save changes' : 'Save expense'}</span>
           </button>
         </div>
       </motion.div>

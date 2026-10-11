@@ -32,7 +32,7 @@ export default class ScreenErrorBoundary extends Component<Props, { error: Error
         <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
         <h2 className="mt-3 text-sm font-bold text-slate-800">This screen couldn't be shown</h2>
         <p className="mt-1 text-xs text-slate-500">
-          Your data is safe. Try again, or go back to the dashboard. If it keeps happening, send us this message:
+          Your data is safe. Try again, or go back to Home. If it keeps happening, send us this message:
         </p>
         <p className="mt-3 text-[11px] font-mono text-slate-600 bg-slate-50 rounded-lg p-2 break-words">{error.message}</p>
         <div className="mt-4 flex justify-center gap-2">
@@ -52,7 +52,7 @@ export default class ScreenErrorBoundary extends Component<Props, { error: Error
               }}
               className="text-xs font-bold px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white cursor-pointer"
             >
-              Go to dashboard
+              Go to Home
             </button>
           )}
         </div>

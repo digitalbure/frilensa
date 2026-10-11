@@ -226,7 +226,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   // Validation
   const validateCurrentStep = (): string | null => {
     if (step === 1) {
-      if (!accountType) return 'Choose Free or Business to continue.';
+      if (!accountType) return 'Choose freelancer or business to continue.';
     }
 
     if (accountType === 'free') {

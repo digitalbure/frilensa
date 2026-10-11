@@ -21,8 +21,8 @@ export default function PaymentAttachmentWidget({
   attachments = [],
   onChange,
   readOnly = false,
-  title = "Payment Records & Proof Attachments",
-  description = "Attach wire transfer slips, M-Paisa screenshots, bank confirmations, or remittance advice.",
+  title = "Proof of payment",
+  description = "Attach transfer slips, M-PAiSA screenshots, bank confirmations or remittance advice.",
   allowCamera = true,
   maxFiles = 10,
   maxSizeMb = 12
@@ -46,14 +46,14 @@ export default function PaymentAttachmentWidget({
     const fileArray = Array.from(files);
 
     if (attachments.length + fileArray.length > maxFiles) {
-      setErrorMsg(`Maximum ${maxFiles} payment records allowed.`);
+      setErrorMsg(`You can attach up to ${maxFiles} files.`);
       return;
     }
 
     fileArray.forEach(file => {
       // Validate file size
       if (file.size > maxSizeMb * 1024 * 1024) {
-        setErrorMsg(`File "${file.name}" exceeds the ${maxSizeMb}MB limit.`);
+        setErrorMsg(`"${file.name}" is larger than ${maxSizeMb}MB. Choose a smaller file.`);
         return;
       }
 
@@ -74,7 +74,7 @@ export default function PaymentAttachmentWidget({
         onChange([...attachments, newAttachment]);
       };
       reader.onerror = () => {
-        setErrorMsg(`Failed to read file ${file.name}.`);
+        setErrorMsg(`Couldn't read ${file.name}. Try again or choose another file.`);
       };
       reader.readAsDataURL(file);
     });
@@ -122,7 +122,7 @@ export default function PaymentAttachmentWidget({
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Camera API is not supported in this browser. Please use manual upload.');
+        throw new Error('This browser can\'t use the camera. Upload a file instead.');
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -141,7 +141,7 @@ export default function PaymentAttachmentWidget({
       setIsCameraActive(true);
     } catch (err: any) {
       console.error('Camera access error:', err);
-      setCameraError(err.message || 'Unable to access device camera.');
+      setCameraError(err.message || 'Couldn\'t open the camera. Check camera permissions or upload a file instead.');
       setIsCameraActive(false);
     }
   };
@@ -180,8 +180,8 @@ export default function PaymentAttachmentWidget({
       size: Math.round((dataUrl.length * 3) / 4),
       dataUrl: dataUrl,
       uploadedAt: new Date().toISOString(),
-      uploadedBy: 'Camera Snapshot',
-      caption: 'Direct Camera Payment Proof'
+      uploadedBy: 'Camera',
+      caption: 'Camera photo'
     };
 
     onChange([...attachments, newAttachment]);
@@ -226,10 +226,10 @@ export default function PaymentAttachmentWidget({
                 type="button"
                 onClick={() => startCamera('environment')}
                 className="bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-700 font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer"
-                title="Capture receipt using camera"
+                title="Take a photo of the receipt"
               >
                 <Camera className="w-3 h-3" />
-                <span>Snap Proof</span>
+                <span>Take photo</span>
               </button>
             )}
             <button
@@ -238,7 +238,7 @@ export default function PaymentAttachmentWidget({
               className="bg-slate-900 hover:bg-slate-800 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
             >
               <Upload className="w-3 h-3" />
-              <span>Upload Record</span>
+              <span>Upload</span>
             </button>
             <input
               ref={fileInputRef}
@@ -260,7 +260,7 @@ export default function PaymentAttachmentWidget({
         <div className="bg-slate-950 rounded-2xl p-3 text-white space-y-2 relative overflow-hidden border border-slate-800">
           <div className="flex items-center justify-between text-xs pb-1 border-b border-slate-800">
             <span className="font-bold flex items-center gap-1.5 text-sky-400">
-              <Camera className="w-3.5 h-3.5 animate-pulse" /> Live Camera Payment Record Capture
+              <Camera className="w-3.5 h-3.5 animate-pulse" /> Camera
             </span>
             <div className="flex items-center gap-1">
               <button
@@ -300,7 +300,7 @@ export default function PaymentAttachmentWidget({
               onClick={capturePhoto}
               className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black px-6 py-2 rounded-xl text-xs flex items-center gap-1.5 shadow-lg active:scale-95 cursor-pointer"
             >
-              <CheckCircle2 className="w-4 h-4" /> Capture Payment Slip
+              <CheckCircle2 className="w-4 h-4" /> Capture
             </button>
           </div>
         </div>
@@ -346,17 +346,17 @@ export default function PaymentAttachmentWidget({
             <Upload className="w-5 h-5 text-sky-600" />
           </div>
           <p className="text-xs font-bold text-slate-800">
-            Drag & drop payment slips, receipts, or screenshots here
+            Drop payment slips, receipts or screenshots here, or tap to choose
           </p>
           <p className="text-[10px] text-slate-400 mt-0.5">
-            Supports Images (JPG, PNG), PDF documents, Bank TT slips (up to {maxSizeMb}MB)
+            JPG, PNG or PDF, up to {maxSizeMb}MB
           </p>
           <div className="mt-2.5 flex items-center justify-center gap-2">
             <span className="text-[9.5px] font-bold text-sky-700 bg-sky-100/70 px-2 py-0.5 rounded-md">
-              M-Paisa SMS / Transfer Proof
+              M-PAiSA SMS or transfer
             </span>
             <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md">
-              Bank TT Slip / Wire Receipt
+              Bank TT slip or receipt
             </span>
           </div>
         </div>
@@ -412,7 +412,7 @@ export default function PaymentAttachmentWidget({
                           type="text"
                           value={captionInput}
                           onChange={(e) => setCaptionInput(e.target.value)}
-                          placeholder="Attachment label / reference..."
+                          placeholder="Label or reference"
                           className="w-full text-xs font-bold bg-white border border-sky-400 rounded px-1.5 py-0.5 focus:outline-none"
                           autoFocus
                           onKeyDown={(e) => {
@@ -472,7 +472,7 @@ export default function PaymentAttachmentWidget({
                       href={att.dataUrl}
                       download={att.name}
                       className="p-1 rounded text-slate-400 hover:text-emerald-600 hover:bg-slate-100 transition-colors cursor-pointer"
-                      title="Download record"
+                      title="Download"
                     >
                       <Download className="w-3.5 h-3.5" />
                     </a>
@@ -499,7 +499,7 @@ export default function PaymentAttachmentWidget({
                 onClick={() => fileInputRef.current?.click()}
                 className="text-[10px] font-bold text-sky-700 hover:text-sky-900 flex items-center gap-1 cursor-pointer"
               >
-                <Plus className="w-3 h-3" /> Add another payment record
+                <Plus className="w-3 h-3" /> Add another file
               </button>
             </div>
           )}
@@ -564,7 +564,7 @@ export default function PaymentAttachmentWidget({
                   <FileText className="w-16 h-16 text-rose-500 mb-3" />
                   <h5 className="font-bold text-slate-800 text-sm mb-1">{previewItem.name}</h5>
                   <p className="text-xs text-slate-500 max-w-sm mb-4">
-                    PDF Document preview. You can open it in a new window or download it for your records.
+                    Open the PDF in a new tab or download it.
                   </p>
                   <div className="flex gap-2">
                     <a
@@ -573,7 +573,7 @@ export default function PaymentAttachmentWidget({
                       rel="noopener noreferrer"
                       className="bg-sky-600 hover:bg-sky-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex items-center gap-1.5 cursor-pointer"
                     >
-                      <ExternalLink className="w-3.5 h-3.5" /> Open in New Tab
+                      <ExternalLink className="w-3.5 h-3.5" /> Open in new tab
                     </a>
                     <a
                       href={previewItem.dataUrl}
@@ -588,13 +588,13 @@ export default function PaymentAttachmentWidget({
                 <div className="text-center p-8 bg-white rounded-xl border border-slate-200">
                   <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-2" />
                   <p className="text-xs font-bold text-slate-700 mb-1">{previewItem.name}</p>
-                  <p className="text-[10px] text-slate-400 mb-3">{previewItem.type || 'Document file'}</p>
+                  <p className="text-[10px] text-slate-400 mb-3">{previewItem.type || 'File'}</p>
                   <a
                     href={previewItem.dataUrl}
                     download={previewItem.name}
                     className="bg-slate-900 text-white font-bold px-4 py-2 rounded-xl text-xs inline-flex items-center gap-1.5 cursor-pointer"
                   >
-                    <Download className="w-3.5 h-3.5" /> Download Document
+                    <Download className="w-3.5 h-3.5" /> Download
                   </a>
                 </div>
               )}
@@ -602,13 +602,13 @@ export default function PaymentAttachmentWidget({
 
             {/* Preview Footer */}
             <div className="p-3 bg-white border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-              <span>{previewItem.caption ? `Label: "${previewItem.caption}"` : 'Official payment settlement attachment'}</span>
+              <span>{previewItem.caption ? `Label: "${previewItem.caption}"` : 'Proof of payment'}</span>
               <button
                 type="button"
                 onClick={() => setPreviewItem(null)}
                 className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold px-4 py-1.5 rounded-lg text-xs cursor-pointer"
               >
-                Close Preview
+                Close
               </button>
             </div>
           </div>

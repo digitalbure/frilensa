@@ -49,9 +49,9 @@ export function generateDocumentEmailHtml(payload: SendDocumentEmailPayload): { 
   const subject = customSubject?.trim() || defaultSubject;
 
   const brandColor = business.colorTheme || '#0284c7'; // Default Pacific sky
-  const clientName = client?.name || 'Valued Client';
+  const clientName = client?.name || 'Client';
   const issueDateFormatted = document.issueDate || new Date().toISOString().split('T')[0];
-  const dueDateFormatted = document.dueDate || 'Upon Receipt';
+  const dueDateFormatted = document.dueDate || 'On receipt';
   
   // The "view online" link is always built here from the document's share token; a URL supplied
   // by the browser (onlinePortalUrl) is ignored so emails can't be made to link elsewhere.
@@ -66,27 +66,27 @@ export function generateDocumentEmailHtml(payload: SendDocumentEmailPayload): { 
   const textContent = `
 ${business.name.toUpperCase()} - ${docTypeLabel.toUpperCase()} #${document.documentNumber}
 ----------------------------------------------------------------------
-Bula ${clientName},
+Bula ${client?.name || 'there'},
 
-${customMessage ? customMessage + '\n\n' : ''}Please find your ${docTypeLabel} #${document.documentNumber} from ${business.name}.
+${customMessage ? customMessage + '\n\n' : ''}Here is your ${docTypeLabel} #${document.documentNumber} from ${business.name}.
 
-Document Summary:
+Summary:
 - Document: ${docTypeLabel} #${document.documentNumber}
-- Issue Date: ${issueDateFormatted}
-- Due Date / Terms: ${dueDateFormatted}
-- Total Amount: ${totalFormatted}
+- Issue date: ${issueDateFormatted}
+- Due date: ${dueDateFormatted}
+- Total: ${totalFormatted}
 - Status: ${document.status.toUpperCase()}
 
-View Online & Pay Securely:
+View and pay online:
 ${portalUrl}
 
-${business.bankDetails ? `Payment Instructions:\n${business.bankDetails}\n` : ''}
-${business.tin ? `FRCS TIN: ${business.tin}\n` : ''}Digital Verification Hash: ${verificationHash}
+${business.bankDetails ? `Payment details:\n${business.bankDetails}\n` : ''}
+${business.tin ? `TIN: ${business.tin}\n` : ''}Reference: ${verificationHash}
 
-Vinaka vaka levu for your business!
+Vinaka vaka levu for your business.
 ${business.name}
 ----------------------------------------------------------------------
-Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
+Sent using Frilensa (frilensa.com)
 `.trim();
 
   // HTML Email Template
@@ -293,7 +293,7 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
       <!-- Top Banner -->
       <div class="header-banner">
         <h1 class="biz-title">${business.name}</h1>
-        <p class="biz-subtitle">${business.tagline || 'Pacific Freelance & Business Consulting'}</p>
+        <p class="biz-subtitle">${business.tagline || ''}</p>
         <div>
           <span class="badge-pill">
             ${docTypeLabel.toUpperCase()} #${document.documentNumber}
@@ -303,9 +303,9 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
 
       <!-- Main Body -->
       <div class="body-content">
-        <div class="greeting">Bula ${clientName},</div>
+        <div class="greeting">Bula ${client?.name || 'there'},</div>
         <p style="font-size: 13.5px; line-height: 1.6; color: #334155; margin-top: 0;">
-          Please find details of your ${docTypeLabel.toLowerCase()} #${document.documentNumber} from <strong>${business.name}</strong> below. A full official PDF copy is attached for your records.
+          Here are the details of your ${docTypeLabel.toLowerCase()} #${document.documentNumber} from <strong>${business.name}</strong>.
         </p>
 
         ${customMessage ? `
@@ -319,16 +319,16 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
         <table class="summary-grid" cellpadding="0" cellspacing="0" border="0" style="width: 100%;">
           <tr>
             <td style="width: 50%; vertical-align: top; padding: 6px;">
-              <div class="meta-label">Billed To</div>
+              <div class="meta-label">Billed to</div>
               <div class="meta-value">${clientName}</div>
               ${client?.email ? `<div style="font-size: 11px; color: #64748b; margin-top: -6px; margin-bottom: 8px;">${client.email}</div>` : ''}
               ${client?.tin ? `<div style="font-size: 11px; color: #64748b;">TIN: <strong>${client.tin}</strong></div>` : ''}
             </td>
             <td style="width: 50%; vertical-align: top; padding: 6px;">
-              <div class="meta-label">Issue Date</div>
+              <div class="meta-label">Issue date</div>
               <div class="meta-value">${issueDateFormatted}</div>
               
-              <div class="meta-label">Due Date</div>
+              <div class="meta-label">Due date</div>
               <div class="meta-value">${dueDateFormatted}</div>
             </td>
           </tr>
@@ -339,7 +339,7 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
           <thead>
             <tr>
               <th style="width: 55%;">Description</th>
-              <th style="width: 20%; text-align: right;">Qty & Rate</th>
+              <th style="width: 20%; text-align: right;">Qty &times; rate</th>
               <th style="width: 25%; text-align: right;">Amount</th>
             </tr>
           </thead>
@@ -393,7 +393,7 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
 
             <tr>
               <td style="font-size: 15px; font-weight: 900; color: #0f172a; padding-top: 8px; border-top: 2px solid #cbd5e1;">
-                TOTAL AMOUNT:
+                Total:
               </td>
               <td style="text-align: right; font-family: monospace; font-size: 16px; font-weight: 900; color: ${brandColor}; padding-top: 8px; border-top: 2px solid #cbd5e1;">
                 ${totalFormatted}
@@ -404,13 +404,13 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
 
         <!-- Call to action button -->
         <a href="${portalUrl}" target="_blank" class="btn-portal">
-          &#128279; View & Pay Online via Secure Client Portal
+          View and pay online
         </a>
 
         <!-- Payment Instructions & Mobile Money -->
         ${business.bankDetails ? `
           <div class="instructions-box">
-            <h5>Fiji Banking & Payment Details</h5>
+            <h5>Payment details</h5>
             <p style="margin: 0; white-space: pre-line; font-family: monospace; font-size: 11.5px; color: #1e293b;">
               ${business.bankDetails}
             </p>
@@ -419,17 +419,17 @@ Powered by Frilensa (frilensa.com) - Pacific Invoicing & Tax Compliance
 
         ${document.notes ? `
           <div style="font-size: 12px; color: #64748b; margin-bottom: 20px; line-height: 1.5;">
-            <strong>Terms & Notes:</strong> ${document.notes}
+            <strong>Notes:</strong> ${document.notes}
           </div>
         ` : ''}
       </div>
 
       <!-- Footer Bar -->
       <div class="footer-bar">
-        <strong>${business.name}</strong> &bull; ${business.address || 'Suva, Fiji Islands'}<br/>
-        ${business.tin ? `FRCS Taxpayer Identification Number (TIN): <strong>${business.tin}</strong> &bull; ` : ''}
-        Hash: <span style="font-family: monospace;">${verificationHash}</span><br/>
-        Official invoice & receipt delivery orchestrated via <strong>Frilensa</strong> &bull; <a href="https://frilensa.com" style="color: #0284c7; text-decoration: none;">frilensa.com</a>
+        <strong>${business.name}</strong> &bull; ${business.address || 'Fiji'}<br/>
+        ${business.tin ? `TIN: <strong>${business.tin}</strong> &bull; ` : ''}
+        Ref: <span style="font-family: monospace;">${verificationHash}</span><br/>
+        Sent using <strong>Frilensa</strong> &bull; <a href="https://frilensa.com" style="color: #0284c7; text-decoration: none;">frilensa.com</a>
       </div>
 
     </div>

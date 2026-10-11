@@ -17,7 +17,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
     { id: 'billing' as const, label: 'Billing', icon: Layers },
     { id: 'clients' as const, label: 'Clients', icon: Users },
     { id: 'services' as const, label: 'Finance', icon: Briefcase },
-    { id: 'assistant' as const, label: 'AI', icon: Sparkles },
+    { id: 'assistant' as const, label: 'Assistant', icon: Sparkles },
     { id: 'settings' as const, label: 'Settings', icon: Settings },
   ];
 

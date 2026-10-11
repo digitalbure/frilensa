@@ -801,7 +801,7 @@ export default function ProfitLossOverview({
                     <span className="font-mono text-emerald-600">-${pnlStats.inputVat.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
-                    <span>Net VAT payable to FRCS</span>
+                    <span>Net VAT payable / (credit)</span>
                     <span className="font-mono text-sky-800">${pnlStats.netVatPayable.toFixed(2)}</span>
                   </div>
                 </div>

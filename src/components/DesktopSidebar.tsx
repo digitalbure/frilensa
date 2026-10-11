@@ -85,7 +85,7 @@ export default function DesktopSidebar({
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
     { id: 'services' as const, label: 'Finance', icon: Briefcase, badge: undefined },
     { id: 'directory' as const, label: 'Directory', icon: Globe, badge: undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-    { id: 'assistant' as const, label: 'AI assistant', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
+    { id: 'assistant' as const, label: 'Assistant', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
     { id: 'settings' as const, label: 'Settings', icon: Settings, badge: undefined },
   ];
 

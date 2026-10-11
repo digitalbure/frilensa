@@ -78,7 +78,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
       description: adjustType === 'percent' 
         ? `Changed ${affectedCount} rates by ${percentDelta >= 0 ? '+' : ''}${percentDelta}% in category '${targetCategory}'.`
         : adjustType === 'flat'
-        ? `Added ${flatDelta >= 0 ? '+' : ''}${currencyConfig.symbol}${flatDelta} to ${affectedCount} items.`
+        ? `Changed ${affectedCount} items by ${flatDelta >= 0 ? '+' : ''}${currencyConfig.symbol}${flatDelta}.`
         : `Set ${affectedCount} items to a ${targetMargin}% gross margin.`,
       timestamp: new Date().toISOString(),
       entityType: 'service' as const,

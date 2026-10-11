@@ -219,7 +219,7 @@ export default function ExchangeRateCalculatorModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm text-white">Exchange Rate Calculator</h3>
+                <h3 className="font-bold text-sm text-white">Exchange rate calculator</h3>
                 <span className="bg-sky-500/30 text-sky-200 border border-sky-400/30 text-[9px] font-extrabold px-2 py-0.5 rounded-full font-mono">
                   FJD
                 </span>

@@ -549,7 +549,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
                             <button
                               onClick={() => handleRemoveRow(idx)}
                               className="text-zinc-400 hover:text-rose-600 p-1 rounded transition-colors cursor-pointer"
-                              title="Remove item"
+                              title="Remove row"
                             >
                               <X className="w-3.5 h-3.5" />
                             </button>

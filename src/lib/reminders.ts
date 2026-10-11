@@ -87,8 +87,8 @@ export function reminderMessage(plan: PlannedReminder): { subject: string; headi
         heading: `Invoice ${d.documentNumber} is overdue`,
         lines: [
           greeting,
-          `Just a friendly reminder that invoice ${d.documentNumber} for ${amount} was due on ${d.dueDate}.`,
-          'If you have already paid, thank you, and please ignore this email or let us know the payment reference.',
+          `This is a reminder that invoice ${d.documentNumber} for ${amount} was due on ${d.dueDate}.`,
+          'If you have already paid, thank you. Please ignore this email or send us the payment reference.',
           `Vinaka, ${biz}`
         ]
       };

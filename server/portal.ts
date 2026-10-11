@@ -262,7 +262,7 @@ export function createPortalRouter() {
             return res.json(sessionResponse({ consultantId: l.consultantId, clientId: client.id, email, clientName: client.name || "" }));
           }
         }
-        return res.status(401).json({ error: "This portal link is invalid or has been revoked." });
+        return res.status(401).json({ error: "This portal link isn't valid any more. Ask your consultant for a new one." });
       }
 
       const email = normEmail(req.body?.email);
