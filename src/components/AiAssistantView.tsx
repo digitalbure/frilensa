@@ -1,3 +1,4 @@
+import MarkdownText from './MarkdownText';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -601,60 +602,7 @@ Send your message again to retry.`,
     );
   }, [sessions, historySearch]);
 
-  // Markdown renderer
-  const renderMarkdown = (text: string) => {
-    const lines = text.split('\n');
-    return lines.map((line, i) => {
-      const cleanLine = line.trim();
-      
-      if (cleanLine.startsWith('####')) {
-        return <h4 key={i} className="text-[11px] font-black text-slate-800 mt-2 mb-1 tracking-tight">{cleanLine.replace('####', '').trim()}</h4>;
-      }
-      if (cleanLine.startsWith('###')) {
-        return <h3 key={i} className="text-xs font-black text-slate-900 mt-2.5 mb-1 tracking-tight">{cleanLine.replace('###', '').trim()}</h3>;
-      }
-      if (cleanLine.startsWith('##')) {
-        return <h2 key={i} className="text-sm font-black text-slate-900 mt-3.5 mb-1.5 tracking-tight">{cleanLine.replace('##', '').trim()}</h2>;
-      }
-      if (cleanLine.startsWith('#')) {
-        return <h1 key={i} className="text-base font-black text-slate-900 mt-4 mb-2 tracking-tight">{cleanLine.replace('#', '').trim()}</h1>;
-      }
-      
-      if (cleanLine.startsWith('* ') || cleanLine.startsWith('- ')) {
-        const content = cleanLine.substring(2);
-        return (
-          <ul key={i} className="list-disc list-inside text-[11px] text-slate-700 pl-2 my-0.5 leading-relaxed">
-            <li>{parseBoldText(content)}</li>
-          </ul>
-        );
-      }
-      
-      const numMatch = cleanLine.match(/^\d+\.\s(.*)/);
-      if (numMatch) {
-        return (
-          <ol key={i} className="list-decimal list-inside text-[11px] text-slate-700 pl-2 my-0.5 leading-relaxed">
-            <li>{parseBoldText(numMatch[1])}</li>
-          </ol>
-        );
-      }
-      
-      if (cleanLine === '') {
-        return <div key={i} className="h-1.5" />;
-      }
-      
-      return <p key={i} className="text-[11px] text-slate-700 leading-relaxed my-1">{parseBoldText(line)}</p>;
-    });
-  };
-
-  const parseBoldText = (text: string) => {
-    const parts = text.split(/(\*\*.*?\*\*)/g);
-    return parts.map((part, index) => {
-      if (part.startsWith('**') && part.endsWith('**')) {
-        return <strong key={index} className="font-extrabold text-slate-950">{part.slice(2, -2)}</strong>;
-      }
-      return part;
-    });
-  };
+  const renderMarkdown = (text: string) => <MarkdownText text={text} />;
 
   const suggestions = [
     { label: "Bank statements", icon: FileText, prompt: "How do I import and reconcile my ANZ or BSP bank statement in Frilensa?" },

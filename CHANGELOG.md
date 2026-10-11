@@ -18,6 +18,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.4.2] - 2026-10-11
+
+### Fixed
+- **Dashboard figures are real.** The industry cards (SaaS, retainers, creators, coaching, trades, tourism, digital products) now show figures worked out from your own invoices, retainers, subscriptions, projects and clients. Invented numbers are gone: a fixed 2.4% churn, 82% capacity, minimum counts (at least 3 retainers, 24 guests…), sample averages and made-up revenue splits. Where there's no data yet, the card shows "—".
+- "Zero-rated exports" no longer appears just because no VAT was charged; it now says "No VAT on paid invoices".
+- Projects that haven't started (or are leads or in review) are no longer labelled "On hold" on the dashboard.
+- **The AI advisor in Bookkeeping now really asks the AI**, using your profit and VAT figures. It used to show a fixed template whatever you asked. If the AI isn't set up on the server, the answer is labelled as a general answer.
+- Badges show the real state: "Email verified" only when your sign-in email is verified, plan badge only on a paid plan, "Online"/"Offline" from your actual connection, and email "Active"/"Not set up" from the server's email settings. The email screen says when email can't be sent.
+
+### Removed
+- The phone "verification" step in business onboarding. No text message was ever sent; any visitor could pass it with a fixed code. Your phone number is still saved from the details step.
+
 ## [3.4.1] - 2026-10-11
 
 ### Changed

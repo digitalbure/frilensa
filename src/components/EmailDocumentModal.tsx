@@ -195,19 +195,19 @@ export default function EmailDocumentModal({
           <div className="flex items-center gap-1.5 font-medium">
             <ShieldCheck className="w-4 h-4 text-sky-600" />
             <span>
-              {config?.sendgridConfigured ? (
-                <>Sent by email from Frilensa</>
-              ) : (
-                <>Sent by email from Frilensa</>
-              )}
+              {config && !config.sendgridConfigured
+                ? <>Email isn't set up on the server yet, so this can't be sent. Download the PDF and send it yourself.</>
+                : <>Sent by email from Frilensa</>}
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Ready
-            </span>
+            {config && (
+              <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full border ${config.sendgridConfigured ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-amber-100 text-amber-800 border-amber-200'}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${config.sendgridConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                {config.sendgridConfigured ? 'Ready' : 'Not set up'}
+              </span>
+            )}
           </div>
         </div>
 

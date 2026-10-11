@@ -102,15 +102,6 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   const [bankAccount, setBankAccount] = useState('');
   const [bankBranch, setBankBranch] = useState('Suva Main Branch');
 
-  // Phone OTP Verification
-  const [isPhoneVerified, setIsPhoneVerified] = useState<boolean>(true);
-  const [otpDigits, setOtpDigits] = useState<string[]>(['8', '8', '4', '2', '1', '9']);
-  const [generatedOtp, setGeneratedOtp] = useState<string>('884219');
-  const [resendCooldown, setResendCooldown] = useState<number>(30);
-  const [canResend, setCanResend] = useState<boolean>(false);
-  const [otpNotice, setOtpNotice] = useState<string | null>(null);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Services list
   const [servicesList, setServicesList] = useState<Array<{ name: string; rate: number; unit: string; description: string }>>([
@@ -148,80 +139,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Calculate total steps based on account type
-  const totalSteps = accountType === 'free' ? 4 : 6;
-
-  // OTP Timer countdown
-  useEffect(() => {
-    let timer: any;
-    if (resendCooldown > 0) {
-      timer = setTimeout(() => {
-        setResendCooldown(prev => prev - 1);
-      }, 1000);
-    } else {
-      setCanResend(true);
-    }
-    return () => clearTimeout(timer);
-  }, [resendCooldown]);
-
-  const handleSendOtp = () => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(code);
-    setResendCooldown(30);
-    setCanResend(false);
-    setOtpNotice(`Code sent to ${phone || 'your phone'}`);
-    setOtpError(null);
-  };
-
-  const handleOtpChange = (index: number, value: string) => {
-    const cleanVal = value.replace(/\D/g, '');
-    if (cleanVal.length > 1) {
-      const pasted = cleanVal.slice(0, 6).split('');
-      const newDigits = [...otpDigits];
-      pasted.forEach((char, i) => {
-        if (i < 6) newDigits[i] = char;
-      });
-      setOtpDigits(newDigits);
-      const nextIdx = Math.min(pasted.length, 5);
-      otpInputRefs.current[nextIdx]?.focus();
-      return;
-    }
-
-    const newDigits = [...otpDigits];
-    newDigits[index] = cleanVal;
-    setOtpDigits(newDigits);
-    setOtpError(null);
-
-    if (cleanVal && index < 5) {
-      otpInputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  const handleVerifyOtp = () => {
-    const entered = otpDigits.join('');
-    if (entered.length < 6) {
-      setOtpError('Enter all 6 digits of the code.');
-      return;
-    }
-
-    if (entered === generatedOtp || entered === '884219' || entered === '123456') {
-      setIsPhoneVerified(true);
-      setOtpError(null);
-      setOtpNotice('Phone number verified');
-      setTimeout(() => {
-        setStep(prev => prev + 1);
-      }, 500);
-    } else {
-      setOtpError('That code doesn’t match. Try again or use Auto-fill.');
-    }
-  };
-
-  const handleAutoFillOtp = () => {
-    const digits = generatedOtp.split('');
-    setOtpDigits(digits);
-    setOtpError(null);
-    setIsPhoneVerified(true);
-    setOtpNotice('Code filled in and verified');
-  };
+  const totalSteps = accountType === 'free' ? 4 : 5;
 
   // Validation
   const validateCurrentStep = (): string | null => {
@@ -240,9 +158,6 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
         if (!businessName.trim()) return 'Enter your business name.';
         if (!businessTin.trim()) return 'Enter your TIN.';
         if (!fullName.trim()) return 'Enter the owner or contact name.';
-      }
-      if (step === 3 && !isPhoneVerified) {
-        return 'Enter the code to confirm your phone number.';
       }
     }
     return null;
@@ -349,7 +264,6 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
       defaultVatRate: (accountType === 'business' && isVatRegistered) ? Number(vatRate) : 0,
       enableTax: accountType === 'business' ? isVatRegistered : false,
       phone: phone.trim(),
-      phoneVerified: isPhoneVerified,
       city: city,
       industry: industry,
       accountType: accountType,
@@ -857,70 +771,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           )}
 
           {/* ========================================================================= */}
-          {/* BUSINESS PATH: STEP 3 (PHONE & SECURITY VERIFICATION)                     */}
+          {/* BUSINESS PATH: STEP 3 (COMMERCIAL PAYMENTS & BANKING)                     */}
           {/* ========================================================================= */}
           {accountType === 'business' && step === 3 && (
-            <div className="space-y-4 text-center py-2">
-              <div className="w-14 h-14 rounded-2xl bg-sky-100 text-sky-700 flex items-center justify-center mx-auto mb-2">
-                <Smartphone className="w-7 h-7" />
-              </div>
-
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900">Confirm your phone number</h3>
-                <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                  Enter the 6-digit code for <span className="font-mono font-bold text-slate-800">{phone}</span>
-                </p>
-              </div>
-
-              {otpNotice && (
-                <div className="p-2.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-medium max-w-sm mx-auto">
-                  {otpNotice}
-                </div>
-              )}
-
-              {otpError && (
-                <div className="p-2.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl text-xs font-medium max-w-sm mx-auto">
-                  {otpError}
-                </div>
-              )}
-
-              <div className="flex justify-center gap-2 my-4">
-                {otpDigits.map((digit, idx) => (
-                  <input
-                    key={idx}
-                    ref={(el) => (otpInputRefs.current[idx] = el)}
-                    type="text"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => handleOtpChange(idx, e.target.value)}
-                    className="w-10 h-12 text-center text-lg font-mono font-bold bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-slate-900 focus:bg-white focus:outline-none"
-                  />
-                ))}
-              </div>
-
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  type="button"
-                  onClick={handleAutoFillOtp}
-                  className="text-xs text-teal-700 bg-teal-50 border border-teal-200 font-bold px-3 py-1.5 rounded-xl hover:bg-teal-100 cursor-pointer"
-                >
-                  Auto-fill code ({generatedOtp})
-                </button>
-                <button
-                  type="button"
-                  onClick={handleVerifyOtp}
-                  className="text-xs text-white bg-slate-900 font-bold px-4 py-1.5 rounded-xl hover:bg-slate-800 cursor-pointer"
-                >
-                  Confirm code
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ========================================================================= */}
-          {/* BUSINESS PATH: STEP 4 (COMMERCIAL PAYMENTS & BANKING)                     */}
-          {/* ========================================================================= */}
-          {accountType === 'business' && step === 4 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-900">Bank and mobile money</h3>
@@ -989,9 +842,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           )}
 
           {/* ========================================================================= */}
-          {/* BUSINESS PATH: STEP 5 (VAT & INVOICING BRANDING)                          */}
+          {/* BUSINESS PATH: STEP 4 (VAT & INVOICING BRANDING)                          */}
           {/* ========================================================================= */}
-          {accountType === 'business' && step === 5 && (
+          {accountType === 'business' && step === 4 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-900">VAT and invoice settings</h3>
@@ -1083,9 +936,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
           )}
 
           {/* ========================================================================= */}
-          {/* BUSINESS PATH: STEP 6 (SERVICES & FIRST CLIENT)                           */}
+          {/* BUSINESS PATH: STEP 5 (SERVICES & FIRST CLIENT)                           */}
           {/* ========================================================================= */}
-          {accountType === 'business' && step === 6 && (
+          {accountType === 'business' && step === 5 && (
             <div className="space-y-4">
               <div className="border-b border-slate-100 pb-3">
                 <h3 className="text-base font-extrabold text-slate-900">Services and first client</h3>

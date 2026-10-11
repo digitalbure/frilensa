@@ -109,7 +109,7 @@ export default function MultiCurrencyBreakdownModal({
                   ${stats.totalVatCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[9.5px] text-emerald-300 mt-1 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Zero-rated exports (0%)
+                  <ShieldCheck className="w-3 h-3" /> On paid invoices
                 </span>
               </div>
             </div>

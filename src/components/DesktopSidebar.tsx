@@ -9,6 +9,7 @@ import {
 import { CRMData, Business, VentureType } from '../types';
 import { VENTURE_MODELS, ALL_VENTURE_TYPES, getVentureConfig } from '../lib/ventureModels';
 import EditVentureModal from './EditVentureModal';
+import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 interface DesktopSidebarProps {
   activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
@@ -31,6 +32,8 @@ export default function DesktopSidebar({
   onOpenQuickPulse,
   onOpenFxCalc
 }: DesktopSidebarProps) {
+  const online = useOnlineStatus();
+  const plan = crmData.platformSettings?.activePlan || 'free';
   const [showBizDropdown, setShowBizDropdown] = useState(false);
   const [showAddBizModal, setShowAddBizModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
@@ -142,13 +145,15 @@ export default function DesktopSidebar({
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-extrabold text-white text-base tracking-tight font-display">Frilensa</span>
-              <span className="text-[8px] bg-sky-500/20 text-sky-300 font-extrabold px-1.5 py-0.5 rounded border border-sky-400/30 uppercase tracking-widest font-mono">
-                PRO
-              </span>
+              {plan !== 'free' && (
+                <span className="text-[8px] bg-sky-500/20 text-sky-300 font-extrabold px-1.5 py-0.5 rounded border border-sky-400/30 uppercase tracking-widest font-mono">
+                  {plan}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Synced</span>
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+              <span>{online ? 'Online' : 'Offline'}</span>
             </div>
           </div>
         </div>

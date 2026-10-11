@@ -129,91 +129,85 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
     );
   }, [data.documents, data.transactions, data.activeBusinessId, activeBusiness?.currency, activeBusiness?.customExchangeRates, data.userProfile.defaultCurrency]);
 
-  // Calculate SaaS and Specialized Venture Metrics
+  // Industry dashboard figures. Every number is computed from this workspace; null means "no data yet".
   const ventureMetrics = React.useMemo(() => {
+    const bizServiceIds = data.services.filter(s => s.businessId === data.activeBusinessId).map(s => s.id);
     let activeSubsCount = 0;
     let mrr = 0;
-    
-    // Find services belonging to this active business
-    const bizServices = data.services.filter(s => s.businessId === data.activeBusinessId);
-    const bizServiceIds = bizServices.map(s => s.id);
-    
     data.clients.forEach(client => {
-      if (client.subscriptions) {
-        client.subscriptions.forEach(sub => {
-          if (sub.status === 'active' && (bizServiceIds.includes(sub.serviceId) || !sub.serviceId)) {
-            activeSubsCount++;
-            mrr += sub.price || 0;
-          }
-        });
-      }
+      (client.subscriptions || []).forEach(sub => {
+        if (sub.status === 'active' && (bizServiceIds.includes(sub.serviceId) || !sub.serviceId)) {
+          activeSubsCount++;
+          mrr += sub.price || 0;
+        }
+      });
     });
 
-    const arr = mrr * 12;
-    const arpu = activeSubsCount > 0 ? mrr / activeSubsCount : (mrr > 0 ? mrr : 120);
-    const churn = 2.4; // Average churn index
-    const ltv = arpu * (100 / churn);
+    // Monthly equivalent of each active retainer for this business.
+    const perMonth = { monthly: 1, quarterly: 1 / 3, 'bi-weekly': 26 / 12, annual: 1 / 12 } as const;
+    const retainers = (data.recurringInvoices || []).filter(r => r.businessId === data.activeBusinessId && r.status === 'active');
+    const retainerMonthly = retainers.reduce((sum, r) => {
+      const amount = r.items && r.items.length > 0 ? r.items.reduce((t, it) => t + (it.total || it.quantity * it.rate || 0), 0) : (r.amount || 0);
+      return sum + amount * perMonth[r.interval || 'monthly'];
+    }, 0);
 
-    // Digital Products Metrics
-    const gmv = stats.totalPaid;
-    const unitsSold = Math.max(stats.totalItemsQuantity, stats.paidInvoicesCount * 2);
-    const aov = stats.paidInvoicesCount > 0 ? stats.totalPaid / stats.paidInvoicesCount : 75;
-
-    // Retainer / MSP Metrics
-    const activeRetainers = Math.max(activeSubsCount, 3);
-    const allocatedHours = activeRetainers * 20; // Avg 20h per retainer
-    const capacityUtilization = 82; // 82% hours pool delivered
-    const overageRevenue = stats.totalPaid * 0.18;
-
-    // Creator / Media Metrics
-    const bookedShoots = Math.max(activeProjects.length, 4);
-    const avgDayRate = stats.paidInvoicesCount > 0 ? stats.totalPaid / Math.max(stats.paidInvoicesCount, 1) : 850;
-    const licensingRevenue = stats.totalPaid * 0.35;
-
-    // Coaching Metrics
-    const activeClients = Math.max(data.clients.length, 5);
-    const sessionsCompleted = Math.max(activeProjects.length * 3, 12);
-    const avgPackageValue = stats.totalInvoiced > 0 ? stats.totalInvoiced / Math.max(data.clients.length, 1) : 650;
-
-    // Trade & Field Services Metrics
-    const workOrders = Math.max(stats.paidInvoicesCount, 8);
-    const avgJobValue = stats.totalPaid > 0 ? stats.totalPaid / Math.max(workOrders, 1) : 240;
-    const partsMarkup = stats.totalPaid * 0.42;
-
-    // Hospitality & Tourism Metrics
-    const guestBookings = Math.max(stats.totalItemsQuantity, 24);
-    const avgGuestYield = stats.totalPaid > 0 ? stats.totalPaid / Math.max(guestBookings, 1) : 185;
-    const depositVolume = stats.totalPending * 0.5;
+    const bizDocs = data.documents.filter(d => d.businessId === data.activeBusinessId && (d.type === 'invoice' || d.type === 'quote'));
+    const clientsWithWork = new Set(bizDocs.map(d => d.clientId).filter(Boolean)).size;
+    const projectsInProgress = activeProjects.filter(p => p.status === 'in_progress').length;
+    const avgPaidInvoice = stats.paidInvoicesCount > 0 ? stats.totalPaid / stats.paidInvoicesCount : null;
 
     return {
       activeSubsCount,
       mrr,
-      arr,
-      arpu,
-      churn,
-      ltv,
-      gmv,
-      unitsSold,
-      aov,
-      activeRetainers,
-      allocatedHours,
-      capacityUtilization,
-      overageRevenue,
-      bookedShoots,
-      avgDayRate,
-      licensingRevenue,
-      activeClients,
-      sessionsCompleted,
-      avgPackageValue,
-      workOrders,
-      avgJobValue,
-      partsMarkup,
-      guestBookings,
-      avgGuestYield,
-      depositVolume,
-      bizServices
+      arr: mrr * 12,
+      arpu: activeSubsCount > 0 ? mrr / activeSubsCount : null,
+      activeRetainers: retainers.length,
+      retainerMonthly,
+      clientsWithWork,
+      projectsInProgress,
+      avgPaidInvoice,
+      avgPerClient: clientsWithWork > 0 ? stats.totalInvoiced / clientsWithWork : null,
+      unitsSold: stats.totalItemsQuantity
     };
-  }, [data, data.activeBusinessId, stats, activeProjects]);
+  }, [data.services, data.clients, data.recurringInvoices, data.documents, data.activeBusinessId, stats, activeProjects]);
+
+  type KpiCard = { label: string; value: number | null; money?: boolean; unit?: string; note: string };
+  const ventureCards: { icon: React.ElementType; gradient: string; cards: KpiCard[] } | null = (() => {
+    const m = ventureMetrics;
+    const paid: KpiCard = { label: 'Paid invoices', value: stats.paidInvoicesCount, unit: 'invoices', note: `${data.userProfile.defaultCurrency} ${stats.totalPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })} received` };
+    const avg: KpiCard = { label: 'Average paid invoice', value: m.avgPaidInvoice, money: true, note: 'Across paid invoices' };
+    const outstanding: KpiCard = { label: 'Outstanding', value: stats.totalPending, money: true, note: 'Sent, not yet paid' };
+    switch (activeBusiness?.type) {
+      case 'saas': return { icon: TrendingUp, gradient: 'from-emerald-600 to-teal-700', cards: [
+        { label: 'Monthly recurring (MRR)', value: m.mrr, money: true, note: `ARR: ${data.userProfile.defaultCurrency} ${m.arr.toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr` },
+        { label: 'Active subscribers', value: m.activeSubsCount, unit: 'accounts', note: m.arpu === null ? 'Add subscriptions on client profiles' : `ARPU: ${data.userProfile.defaultCurrency} ${m.arpu.toFixed(0)}/mo` },
+        outstanding ] };
+      case 'digital_products': return { icon: ShoppingBag, gradient: 'from-emerald-600 to-teal-700', cards: [
+        { label: 'Sales received', value: stats.totalPaid, money: true, note: 'Paid invoices' },
+        { label: 'Units sold', value: m.unitsSold, unit: 'units', note: 'Quantity on paid invoices' },
+        { ...avg, label: 'Average order value' } ] };
+      case 'retainer_msp': return { icon: Clock, gradient: 'from-amber-500 to-amber-700', cards: [
+        { label: 'Active retainers', value: m.activeRetainers, unit: 'contracts', note: 'From Billing → Retainers' },
+        { label: 'Retainer income', value: m.retainerMonthly, money: true, note: 'Per month, before VAT' },
+        outstanding ] };
+      case 'creator_media': return { icon: Camera, gradient: 'from-rose-500 to-pink-700', cards: [
+        { label: 'Projects in progress', value: m.projectsInProgress, unit: 'projects', note: 'From Projects' },
+        avg, outstanding ] };
+      case 'coaching': return { icon: GraduationCap, gradient: 'from-purple-600 to-indigo-700', cards: [
+        { label: 'Clients billed', value: m.clientsWithWork, unit: 'clients', note: 'With a quote or invoice' },
+        { label: 'Average per client', value: m.avgPerClient, money: true, note: 'Invoiced per client' },
+        outstanding ] };
+      case 'trade_services': return { icon: Wrench, gradient: 'from-amber-600 to-orange-700', cards: [
+        { ...paid, label: 'Paid jobs', unit: 'jobs' },
+        { ...avg, label: 'Average job value' },
+        outstanding ] };
+      case 'hospitality_tourism': return { icon: Palmtree, gradient: 'from-teal-600 to-emerald-700', cards: [
+        { ...paid, label: 'Paid bookings', unit: 'bookings' },
+        { ...avg, label: 'Average booking' },
+        { ...outstanding, note: 'Deposits and balances due' } ] };
+      default: return null;
+    }
+  })();
 
   // Global Search Calculations
   const searchResults = useMemo(() => {
@@ -693,7 +687,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                     {proj.name}
                                   </p>
                                   <p className="text-[9px] text-slate-400">
-                                    {proj.status === 'in_progress' ? 'In progress' : proj.status === 'completed' ? '✓ Completed' : 'On hold'}
+                                    {({ lead: 'Lead', not_started: 'Not started', in_progress: 'In progress', pending_review: 'In review', completed: '✓ Completed', on_hold: 'On hold' } as Record<string, string>)[proj.status] || 'In progress'}
                                   </p>
                                 </div>
                               </div>
@@ -1098,315 +1092,38 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
         {activeBusiness?.type && activeBusiness.type !== 'studio' && saasViewTab === 'kpi' ? (
           /* Venture KPIs Grid */
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
-            {/* SaaS Model */}
-            {activeBusiness.type === 'saas' && (
-              <>
-                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md shadow-emerald-600/10 relative overflow-hidden">
+            {ventureCards && ventureCards.cards.map((card, i) => {
+              const Icon = ventureCards.icon;
+              const shown = card.value === null
+                ? '—'
+                : card.money
+                  ? card.value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                  : card.value.toLocaleString();
+              return i === 0 ? (
+                <div key={card.label} className={`bg-gradient-to-br ${ventureCards.gradient} rounded-2xl p-4 text-white shadow-md relative overflow-hidden`}>
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <TrendingUp className="w-24 h-24" />
+                    <Icon className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Monthly recurring (MRR)</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">{card.label}</span>
                   <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xs opacity-90">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-extrabold tracking-tight">
-                      {ventureMetrics.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
+                    {card.money && card.value !== null && <span className="text-xs opacity-90">{data.userProfile.defaultCurrency}</span>}
+                    <span className="text-xl font-extrabold tracking-tight">{shown}</span>
+                    {card.unit && card.value !== null && <span className="text-xs opacity-90 ml-1">{card.unit}</span>}
                   </div>
-                  <span className="text-[9px] opacity-75 mt-2 block flex items-center gap-1">
-                    <Layers className="w-3 h-3" /> ARR: {data.userProfile.defaultCurrency} {ventureMetrics.arr.toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr
-                  </span>
+                  <span className="text-[9px] opacity-85 mt-2 block">{card.note}</span>
                 </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative overflow-hidden">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Active subscribers</span>
+              ) : (
+                <div key={card.label} className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">{card.label}</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeSubsCount}</span>
-                    <span className="text-xs text-slate-500 ml-1">accounts</span>
+                    {card.money && card.value !== null && <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>}
+                    <span className="text-xl font-bold tracking-tight">{shown}</span>
+                    {card.unit && card.value !== null && <span className="text-xs text-slate-500 ml-1">{card.unit}</span>}
                   </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <Users className="w-3 h-3 text-emerald-500" /> ARPU: {data.userProfile.defaultCurrency} {ventureMetrics.arpu.toFixed(0)}/mo
-                  </span>
+                  <span className="text-[9px] text-slate-400 mt-2 block">{card.note}</span>
                 </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Customer lifetime value</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.ltv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <Percent className="w-3 h-3 text-indigo-500" /> Churn (est.): {ventureMetrics.churn}%
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Digital Products Model */}
-            {activeBusiness.type === 'digital_products' && (
-              <>
-                <div className="bg-gradient-to-br from-emerald-600 to-teal-700 rounded-2xl p-4 text-white shadow-md shadow-emerald-600/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <ShoppingBag className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Gross sales (GMV)</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xs opacity-90">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-extrabold tracking-tight">
-                      {ventureMetrics.gmv.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] opacity-75 mt-2 block flex items-center gap-1">
-                    <Check className="w-3 h-3" /> Direct digital sales
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Units sold</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.unitsSold}</span>
-                    <span className="text-xs text-slate-500 ml-1">downloads</span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <ShoppingBag className="w-3 h-3 text-emerald-500" /> Templates and assets
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average order value</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.aov.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <Percent className="w-3 h-3 text-sky-500" /> Per order
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Retainer & MSP Model */}
-            {activeBusiness.type === 'retainer_msp' && (
-              <>
-                <div className="bg-gradient-to-br from-amber-500 to-amber-700 rounded-2xl p-4 text-white shadow-md shadow-amber-500/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <Clock className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active retainers</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeRetainers}</span>
-                    <span className="text-xs opacity-90 ml-1">contracts</span>
-                  </div>
-                  <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {ventureMetrics.allocatedHours} hrs committed
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Hours used (est.)</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.capacityUtilization}%</span>
-                  </div>
-                  <span className="text-[9px] text-emerald-600 mt-2 block font-semibold">
-                    Of committed hours
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Overage billing</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.overageRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-amber-600 mt-2 block">
-                    Hours over the monthly allowance
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Media & Creator Model */}
-            {activeBusiness.type === 'creator_media' && (
-              <>
-                <div className="bg-gradient-to-br from-rose-500 to-pink-700 rounded-2xl p-4 text-white shadow-md shadow-rose-500/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <Camera className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Booked shoots</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.bookedShoots}</span>
-                    <span className="text-xs opacity-90 ml-1">production days</span>
-                  </div>
-                  <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> Scheduled
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average day rate</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-extrabold tracking-tight">
-                      {ventureMetrics.avgDayRate.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block">
-                    Per shoot day
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Licensing</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.licensingRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-rose-600 mt-2 block font-semibold">
-                    Usage rights and buyouts
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Coaching & Training Model */}
-            {activeBusiness.type === 'coaching' && (
-              <>
-                <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-4 text-white shadow-md shadow-purple-600/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <GraduationCap className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active clients</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeClients}</span>
-                    <span className="text-xs opacity-90 ml-1">clients</span>
-                  </div>
-                  <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Users className="w-3 h-3" /> In a programme
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Sessions completed</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.sessionsCompleted}</span>
-                    <span className="text-xs text-slate-500 ml-1">calls</span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block">
-                    One-on-one and group
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average package</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.avgPackageValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-purple-600 mt-2 block font-semibold">
-                    Per client
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Trades & Field Services Model */}
-            {activeBusiness.type === 'trade_services' && (
-              <>
-                <div className="bg-gradient-to-br from-amber-600 to-orange-700 rounded-2xl p-4 text-white shadow-md shadow-amber-600/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <Wrench className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Completed jobs</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.workOrders}</span>
-                    <span className="text-xs opacity-90 ml-1">jobs</span>
-                  </div>
-                  <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Labour and site visits
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average job value</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-extrabold tracking-tight">
-                      {ventureMetrics.avgJobValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block">
-                    Labour, call-out and parts
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Materials and parts</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.partsMarkup.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-amber-700 mt-2 block font-semibold">
-                    Hardware and consumables
-                  </span>
-                </div>
-              </>
-            )}
-
-            {/* Tourism & Hospitality Model */}
-            {activeBusiness.type === 'hospitality_tourism' && (
-              <>
-                <div className="bg-gradient-to-br from-teal-600 to-emerald-700 rounded-2xl p-4 text-white shadow-md shadow-teal-600/10 relative overflow-hidden">
-                  <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
-                    <Palmtree className="w-24 h-24" />
-                  </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Guests hosted</span>
-                  <div className="mt-1 flex items-baseline gap-1">
-                    <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.guestBookings}</span>
-                    <span className="text-xs opacity-90 ml-1">passengers</span>
-                  </div>
-                  <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Palmtree className="w-3 h-3" /> Day tours and charters
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average spend per guest</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-extrabold tracking-tight">
-                      {ventureMetrics.avgGuestYield.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-slate-400 mt-2 block">
-                    Tickets, lunch and extras
-                  </span>
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Deposits</span>
-                  <div className="mt-1 flex items-baseline gap-1 text-slate-800">
-                    <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
-                    <span className="text-xl font-bold tracking-tight">
-                      {ventureMetrics.depositVolume.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                    </span>
-                  </div>
-                  <span className="text-[9px] text-teal-600 mt-2 block font-semibold">
-                    For upcoming bookings
-                  </span>
-                </div>
-              </>
-            )}
+              );
+            })}
 
             {/* 4th Card - VAT Estimation across all specialized models */}
             <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
@@ -1418,7 +1135,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </span>
               </div>
               <span className="text-[9px] text-emerald-600 font-semibold mt-2 block flex items-center gap-1">
-                <Check className="w-2.5 h-2.5" /> {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? 'Zero-rated exports (0%)' : 'Estimate'}
+                <Check className="w-2.5 h-2.5" /> {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? 'No VAT on paid invoices' : 'Estimate'}
               </span>
             </div>
           </div>
@@ -1505,7 +1222,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
               {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? (
                 <span className="text-[9px] text-emerald-600 font-semibold mt-2 block flex items-center gap-1">
-                  <Check className="w-2.5 h-2.5" /> Zero-rated exports (0%)
+                  <Check className="w-2.5 h-2.5" /> No VAT on paid invoices
                 </span>
               ) : (
                 <span className="text-[9px] text-teal-600 font-semibold mt-2 block flex items-center gap-1">

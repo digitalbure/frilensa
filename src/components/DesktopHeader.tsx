@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { CRMData } from '../types';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 interface DesktopHeaderProps {
   activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
@@ -24,6 +25,7 @@ export default function DesktopHeader({
   onSearchClick,
   onManualCloudSync
 }: DesktopHeaderProps) {
+  const online = useOnlineStatus();
   const [syncing, setSyncing] = useState(false);
   const [syncedJustNow, setSyncedJustNow] = useState(false);
   const activeBusiness = crmData.businesses?.find(b => b.id === crmData.activeBusinessId) || crmData.businesses?.[0];
@@ -162,8 +164,8 @@ export default function DesktopHeader({
             <span className="text-[11px] font-bold text-slate-800 block truncate max-w-[120px]">
               {activeBusiness?.name}
             </span>
-            <span className="text-[9px] text-emerald-600 font-bold block flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Online
+            <span className={`text-[9px] font-bold block flex items-center gap-1 ${online ? 'text-emerald-600' : 'text-amber-600'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-500' : 'bg-amber-500'}`}></span> {online ? 'Online' : 'Offline'}
             </span>
           </div>
         </div>

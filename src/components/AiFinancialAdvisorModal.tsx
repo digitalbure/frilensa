@@ -5,6 +5,7 @@ import {
   Send, Calculator, FileCheck, Check, RefreshCw, ChevronRight, HelpCircle
 } from 'lucide-react';
 import { CRMData, Transaction, ExpenseRecord } from '../types';
+import MarkdownText from './MarkdownText';
 
 interface AiFinancialAdvisorModalProps {
   isOpen: boolean;
@@ -33,7 +34,7 @@ export default function AiFinancialAdvisorModal({
 }: AiFinancialAdvisorModalProps) {
   const [query, setQuery] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [responseHtml, setResponseHtml] = useState<string | null>(null);
+  const [reply, setReply] = useState<{ text: string; isFallback?: boolean; failed?: boolean } | null>(null);
 
   const activeBusiness = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
   const currentVatRate = data.userProfile.defaultVatRate ?? 12.5;
@@ -49,7 +50,7 @@ export default function AiFinancialAdvisorModal({
     },
     {
       title: 'Cut costs',
-      prompt: `Our highest business spending category is currently "${pnlStats.topExpenseCategory}". How can a Fiji freelancer or agency reduce costs in this area and claim Section 21 tax deductions?`
+      prompt: `Our highest business spending category is currently "${pnlStats.topExpenseCategory}". How can a Fiji freelancer or agency reduce costs in this area, and which of these costs are usually tax-deductible?`
     },
     {
       title: 'Tax deductions',
@@ -62,92 +63,43 @@ export default function AiFinancialAdvisorModal({
     if (!textToAsk.trim()) return;
 
     setIsAnalyzing(true);
-    setResponseHtml(null);
+    setReply(null);
+
+    const figures = [
+      `Period: ${pnlStats.periodLabel}`,
+      `Revenue: FJD ${pnlStats.totalRevenue.toFixed(2)}`,
+      `Expenses: FJD ${pnlStats.totalExpenses.toFixed(2)}`,
+      `Net profit: FJD ${pnlStats.netProfit.toFixed(2)} (${pnlStats.profitMargin.toFixed(1)}% margin)`,
+      `Output VAT: FJD ${pnlStats.outputVat.toFixed(2)}, input VAT: FJD ${pnlStats.inputVat.toFixed(2)}, net VAT: FJD ${pnlStats.netVatPayable.toFixed(2)}`,
+      `Largest expense category: ${pnlStats.topExpenseCategory}`
+    ].join('\n');
 
     try {
-      const activeBiz = data.businesses.find(b => b.id === data.activeBusinessId);
-      const res = await fetch('/api/bookkeeping/categorize', {
+      const res = await fetch('/api/ai/assistant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          transactions: [
-            {
-              id: 'stat',
-              date: new Date().toISOString().split('T')[0],
-              description: `P&L Analysis Query: ${textToAsk}. Financial Summary: Revenue=$${pnlStats.totalRevenue}, Expenses=$${pnlStats.totalExpenses}, Net=$${pnlStats.netProfit}, OutputVAT=$${pnlStats.outputVat}, InputVAT=$${pnlStats.inputVat}`,
-              amount: pnlStats.netProfit,
-              bankName: 'Frilensa Financial Engine'
-            }
-          ],
-          vatRate: currentVatRate
+          message: `${textToAsk}\n\nMy figures from Frilensa:\n${figures}\n\nKeep the answer short and practical.`,
+          history: [],
+          memories: [],
+          attachments: [],
+          businessContext: {
+            name: activeBusiness?.name,
+            type: activeBusiness?.type,
+            tin: activeBusiness?.tin,
+            address: activeBusiness?.address,
+            defaultVatRate: currentVatRate
+          }
         })
       });
-
-      // Provide clear contextual advisory
-      setTimeout(() => {
-        setIsAnalyzing(false);
-        setResponseHtml(generateLocalAdvisory(textToAsk));
-      }, 700);
-
-    } catch (e) {
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok || typeof body.reply !== 'string') throw new Error(body?.error || 'No reply');
+      setReply({ text: body.reply, isFallback: Boolean(body.isFallback) });
+    } catch {
+      setReply({ text: "The AI advisor didn't respond. Check your connection and try again.", failed: true });
+    } finally {
       setIsAnalyzing(false);
-      setResponseHtml(generateLocalAdvisory(textToAsk));
     }
-  };
-
-  const generateLocalAdvisory = (prompt: string): string => {
-    const bizName = activeBusiness?.name || 'your business';
-    const isVat = prompt.toLowerCase().includes('vat');
-    const isCost = prompt.toLowerCase().includes('reduc') || prompt.toLowerCase().includes('expense');
-    const isPnl = prompt.toLowerCase().includes('margin') || prompt.toLowerCase().includes('p&l') || prompt.toLowerCase().includes('profit');
-
-    if (isVat) {
-      return `
-        <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-          <p class="font-bold text-slate-900 text-sm">VAT position (${pnlStats.periodLabel}):</p>
-          <div class="p-3 bg-sky-50 border border-sky-200 rounded-xl space-y-1">
-            <div class="flex justify-between"><span>Output VAT (sales):</span> <strong class="font-mono text-slate-900">FJD $${pnlStats.outputVat.toFixed(2)}</strong></div>
-            <div class="flex justify-between"><span>Input VAT (claimable):</span> <strong class="font-mono text-emerald-600">-FJD $${pnlStats.inputVat.toFixed(2)}</strong></div>
-            <div class="flex justify-between border-t border-sky-200 pt-1 font-bold"><span>Net VAT payable to FRCS:</span> <strong class="font-mono text-sky-900">FJD $${pnlStats.netVatPayable.toFixed(2)}</strong></div>
-          </div>
-          <ul class="list-disc pl-4 space-y-1">
-            <li><strong>Input tax credits:</strong> Keep a tax invoice showing the supplier's TIN for each claimable expense over $20.</li>
-            <li><strong>M-PAiSA and MyCash payments:</strong> Keep the SMS confirmation and reference number as proof of payment.</li>
-            <li><strong>How often to file:</strong> If annual turnover is under FJD $300,000, you may be able to file VAT returns quarterly or annually. Check with FRCS.</li>
-          </ul>
-        </div>
-      `;
-    }
-
-    if (isCost) {
-      return `
-        <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-          <p class="font-bold text-slate-900 text-sm">Cutting costs at ${bizName}:</p>
-          <p>Your biggest expense category is <strong>${pnlStats.topExpenseCategory}</strong>. Total expenses: FJD $${pnlStats.totalExpenses.toFixed(2)}.</p>
-          <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-            <p class="font-bold text-amber-900">Things to try:</p>
-            <ul class="list-disc pl-4 space-y-1 text-amber-950">
-              <li>Move phone and internet plans to a fixed business rate to lower monthly costs.</li>
-              <li>Check your software subscriptions for ones you pay for twice.</li>
-              <li>Mark all allowable travel and equipment expenses as tax-deductible under Section 21 of the Fiji Income Tax Act.</li>
-            </ul>
-          </div>
-        </div>
-      `;
-    }
-
-    return `
-      <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-        <p class="font-bold text-slate-900 text-sm">Profit and loss (${pnlStats.periodLabel}):</p>
-        <div class="grid grid-cols-2 gap-2 p-3 bg-slate-100 rounded-xl text-[11px]">
-          <div><span class="text-slate-500 block">Revenue:</span><strong class="text-slate-900 font-mono text-xs">FJD $${pnlStats.totalRevenue.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Expenses:</span><strong class="text-rose-600 font-mono text-xs">FJD $${pnlStats.totalExpenses.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Net profit:</span><strong class="${pnlStats.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-mono text-xs">FJD $${pnlStats.netProfit.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Net margin:</span><strong class="text-indigo-600 font-mono text-xs">${pnlStats.profitMargin.toFixed(1)}%</strong></div>
-        </div>
-        <p>Consider putting <strong>20% of net profit</strong> into a separate account for provisional tax and quarterly FRCS payments.</p>
-      </div>
-    `;
   };
 
   if (!isOpen) return null;
@@ -236,11 +188,16 @@ export default function AiFinancialAdvisorModal({
                 Working out your figures…
               </p>
             </div>
-          ) : responseHtml ? (
+          ) : reply ? (
             <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 animate-fade-in">
-              <div 
-                dangerouslySetInnerHTML={{ __html: responseHtml }}
-              />
+              {reply.isFallback && (
+                <p className="text-[10px] font-semibold text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1">
+                  The AI service isn't set up on the server, so this is a general answer.
+                </p>
+              )}
+              <div className={reply.failed ? 'text-xs text-rose-700' : ''}>
+                <MarkdownText text={reply.text} />
+              </div>
               <div className="flex justify-end pt-1">
                 <button
                   type="button"

@@ -19,6 +19,8 @@ import AutomationSettingsCard from './AutomationSettingsCard';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount } from '../lib/currencies';
 import { getEmailServiceConfig, sendTestEmail, EmailServiceConfig } from '../lib/emailService';
 import firebaseConfig from '../../firebase-applet-config.json';
+import { auth } from '../lib/firebase';
+import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 const CATEGORY_PRESETS: Record<string, { label: string; value: string; isPreset: boolean }[]> = {
   boutique: [
@@ -213,6 +215,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
   // Transactional Email Service configuration state
   const [emailConfig, setEmailConfig] = useState<EmailServiceConfig | null>(null);
+  const online = useOnlineStatus();
   const [testEmailRecipient, setTestEmailRecipient] = useState(data.userProfile.email || '');
   const [isTestingEmail, setIsTestingEmail] = useState(false);
   const [testEmailResult, setTestEmailResult] = useState<{ success: boolean; message: string; provider?: string } | null>(null);
@@ -686,7 +689,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div>
           <div className="flex items-center justify-between">
             <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Email *</label>
-            {data.userProfile.emailVerified !== false && (
+            {auth.currentUser?.emailVerified && (auth.currentUser.email || '').toLowerCase() === email.trim().toLowerCase() && (
               <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
                 <CheckCircle className="w-2.5 h-2.5" /> Email verified
               </span>
@@ -704,11 +707,6 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div>
           <div className="flex items-center justify-between">
             <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Mobile number</label>
-            {data.userProfile.phoneVerified !== false && (
-              <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
-                <CheckCircle className="w-2.5 h-2.5" /> Phone verified
-              </span>
-            )}
           </div>
           <input
             type="tel"
@@ -2195,9 +2193,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             <Cloud className="w-4 h-4 text-sky-600" />
             <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-800">Cloud sync</span>
           </div>
-          <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            Connected
+          <span className={`text-[8px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider flex items-center gap-1 ${online ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${online ? 'bg-emerald-500' : 'bg-amber-500'}`}></span>
+            {online ? 'Online' : 'Offline'}
           </span>
         </div>
 
@@ -2468,10 +2466,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               Sending invoices, receipts and quotes
             </h3>
           </div>
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-            Active
-          </span>
+          {emailConfig && (
+            <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${emailConfig.sendgridConfigured ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-800 border-amber-200'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${emailConfig.sendgridConfigured ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+              {emailConfig.sendgridConfigured ? 'Active' : 'Not set up'}
+            </span>
+          )}
         </div>
 
         <p className="text-[11px] text-zinc-500 leading-relaxed">
