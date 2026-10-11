@@ -7,9 +7,10 @@ Keeps every existing setting (env vars, secrets, scaling, service account, domai
     (they make gcloud reject a plain image),
   - removes read-only fields that `replace` doesn't accept,
   - adds env vars passed as NAME=VALUE arguments when they aren't already set,
-    and sets NAME:=VALUE ones whatever their current value.
+    sets NAME:=VALUE ones whatever their current value,
+    and points NAME@=SECRET ones at the latest version of a Secret Manager secret.
 
-Usage: prepare_service.py SERVICE.json IMAGE OUT.json [NAME=VALUE | NAME:=VALUE ...]
+Usage: prepare_service.py SERVICE.json IMAGE OUT.json [NAME=VALUE | NAME:=VALUE | NAME@=SECRET ...]
 """
 import json
 import sys
@@ -63,6 +64,18 @@ def main() -> None:
     env = main_container.setdefault("env", [])
     existing = {e.get("name") for e in env}
     for pair in env_pairs:
+        if "@=" in pair and pair.find("@=") < pair.find("=") + 1:
+            name, _, secret = pair.partition("@=")
+            ref = {"secretKeyRef": {"name": secret, "key": "latest"}}
+            current = next((e for e in env if e.get("name") == name), None)
+            if current is None:
+                env.append({"name": name, "valueFrom": ref})
+                print(f"Adding env var {name} from secret {secret}.")
+            elif current.get("valueFrom") != ref:
+                print(f"Setting env var {name} to secret {secret}.")
+                current.pop("value", None)
+                current["valueFrom"] = ref
+            continue
         # NAME=VALUE adds the variable only if it's missing; NAME:=VALUE always sets it.
         force = pair.find(":=") != -1 and pair.find(":=") == pair.find("=") - 1
         name, _, value = pair.partition(":=" if force else "=")

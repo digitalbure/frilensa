@@ -82,6 +82,7 @@ export default function AiFinancialAdvisorModal({
           message: `${textToAsk}\n\nMy figures from Frilensa:\n${figures}\n\nKeep the answer short and practical.`,
           history: [],
           memories: [],
+          skipMemory: true,
           attachments: [],
           businessContext: {
             name: activeBusiness?.name,
@@ -93,6 +94,10 @@ export default function AiFinancialAdvisorModal({
         })
       });
       const body = await res.json().catch(() => ({}));
+      if (body?.unavailable) {
+        setReply({ text: "The assistant isn't set up on this server yet.", failed: true });
+        return;
+      }
       if (!res.ok || typeof body.reply !== 'string') throw new Error(body?.error || 'No reply');
       setReply({ text: body.reply, isFallback: Boolean(body.isFallback) });
     } catch {

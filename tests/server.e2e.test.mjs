@@ -87,13 +87,34 @@ const carolWs = rateCardToken => ({
     { id: 's4', name: 'Other business item', rate: 7, unit: 'Item', businessId: 'cb2' },
     { id: 's5', name: 'Prints', rate: 20, unit: 'Item', isTaxable: false }
   ],
-  documents: [], projects: []
+  documents: [], projects: [{ id: 'p1', name: 'Wedding shoot', status: 'in_progress', businessId: 'cb1', tasks: [{ id: 't0', projectId: 'p1', title: 'Scout venue', status: 'done' }] }]
 });
 await put(`consultants/${C.uid}`, carolWs(''));
 
+// Fake Anthropic API: scripted replies for the assistant test; records each request.
+const claudeCalls = [];
+const reply = (content, stop_reason = 'end_turn') => ({ id: 'msg_test', type: 'message', role: 'assistant', model: 'test', content, stop_reason, stop_sequence: null, usage: { input_tokens: 1, output_tokens: 1 } });
+const fakeClaude = http.createServer((req, res) => {
+  let body = ''; req.on('data', d => body += d); req.on('end', () => {
+    const r = JSON.parse(body || '{}'); claudeCalls.push(r);
+    const last = r.messages[r.messages.length - 1];
+    const results = Array.isArray(last.content) ? last.content.filter(c => c.type === 'tool_result') : [];
+    let out;
+    if (!r.tools) out = reply([{ type: 'text', text: '["Sends clients proofs within a week of a shoot"]' }]);
+    else if (results.length === 0) out = reply([{ type: 'tool_use', id: 'tu1', name: 'list_projects', input: {} }], 'tool_use');
+    else if (results[0].tool_use_id === 'tu1') out = reply([
+      { type: 'text', text: 'Adding that.' },
+      { type: 'tool_use', id: 'tu2', name: 'propose_task', input: { projectId: 'p1', title: 'Send proofs', dueDate: '2026-10-16', priority: 'high' } },
+      { type: 'tool_use', id: 'tu3', name: 'propose_task', input: { projectId: 'nope', title: 'Bad' } }
+    ], 'tool_use');
+    else out = reply([{ type: 'text', text: 'I proposed a task for you to confirm.' }]);
+    res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(out));
+  });
+}).listen(3398);
+
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -234,7 +255,8 @@ try {
     const full = (await mcp(aliceKey, 'tools/list')).body.result.tools.map(t => t.name);
     assert.ok(full.includes('list_documents') && full.includes('create_draft_document'));
     const ro = (await mcp(aliceReadKey, 'tools/list')).body.result.tools.map(t => t.name);
-    assert.ok(ro.includes('get_summary') && !ro.includes('create_draft_document') && !ro.includes('add_expense'));
+    assert.ok(ro.includes('get_summary') && ro.includes('list_tasks') && !ro.includes('create_draft_document') && !ro.includes('add_expense') && !ro.includes('create_task'));
+    assert.ok(full.includes('create_task'));
   });
   await check('MCP tools read and write the workspace', async () => {
     const r = await mcp(aliceKey, 'tools/call', { name: 'list_documents', arguments: { type: 'quote' } });
@@ -554,10 +576,58 @@ try {
     await fetch(`${API}/api/rate-cards/${card2}`, { method: 'DELETE', headers: auth(C) });
     assert.equal((await fetch(`${RC}/${card2}`)).status, 404);
   });
+
+  // --- in-app assistant (Claude) ---
+  let assistantRes;
+  await check('assistant needs sign-in', async () => { assert.equal((await fetch(`${API}/api/ai/assistant`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401); });
+  await check('assistant looks things up and proposes without saving', async () => {
+    const r = await j(await fetch(`${API}/api/ai/assistant`, { method: 'POST', headers: auth(C), body: JSON.stringify({ message: 'Add a task to send the wedding proofs by Friday please', history: [{ sender: 'ai', text: 'Welcome' }], memories: ['Works weekends'] }) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); assistantRes = r.body;
+    assert.equal(r.body.reply, 'I proposed a task for you to confirm.');
+    assert.equal(r.body.proposals.length, 1, 'the invalid proposal is refused');
+    assert.equal(r.body.proposals[0].kind, 'task'); assert.equal(r.body.proposals[0].title, 'Add task: Send proofs');
+    assert.ok(r.body.proposals[0].details.includes('Project: Wedding shoot'));
+    assert.deepEqual(r.body.newMemories, ['Sends clients proofs within a week of a shoot']);
+    const ws = await get(`consultants/${C.uid}`);
+    assert.equal(ws.projects[0].tasks.length, 1, 'nothing saved before confirming');
+  });
+  await check('assistant gets the help articles, tools, memories and a user-first history', async () => {
+    const first = claudeCalls.find(c => c.tools);
+    assert.ok(first.system[0].text.includes('# Help articles'));
+    assert.equal(first.system[0].cache_control.type, 'ephemeral');
+    assert.ok(first.system[1].text.includes('Works weekends'));
+    assert.equal(first.messages[0].role, 'user', 'leading assistant greeting dropped');
+    const names = first.tools.map(t => t.name);
+    for (const n of ['list_clients', 'get_document', 'list_tasks', 'get_vat_return', 'propose_task', 'propose_draft_document']) assert.ok(names.includes(n), n);
+    assert.ok(!names.some(n => /send|email|payment|delete/.test(n)), 'no tools that send, pay or delete');
+    const afterProjects = claudeCalls.find(c => c.messages.at(-1).content?.[0]?.tool_use_id === 'tu1');
+    assert.ok(afterProjects.messages.at(-1).content[0].content.includes('Wedding shoot'));
+    const afterPropose = claudeCalls.find(c => c.messages.at(-1).content?.[0]?.tool_use_id === 'tu2');
+    assert.equal(afterPropose.messages.at(-1).content[1].is_error, true);
+  });
+  await check('confirming saves the task with an activity entry', async () => {
+    const p = assistantRes.proposals[0];
+    const r = await j(await fetch(`${API}/api/ai/assistant/confirm`, { method: 'POST', headers: auth(C), body: JSON.stringify({ kind: p.kind, input: p.input }) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); assert.equal(r.body.task.title, 'Send proofs');
+    const ws = await get(`consultants/${C.uid}`);
+    const t = ws.projects[0].tasks.find(x => x.title === 'Send proofs');
+    assert.equal(t.status, 'todo'); assert.equal(t.dueDate, '2026-10-16'); assert.equal(t.priority, 'high');
+    assert.ok(ws.activityLogs[0].description.includes('via the assistant'));
+  });
+  await check('confirm validates its input and kind', async () => {
+    assert.equal((await fetch(`${API}/api/ai/assistant/confirm`, { method: 'POST', headers: auth(C), body: JSON.stringify({ kind: 'payment', input: {} }) })).status, 400);
+    assert.equal((await fetch(`${API}/api/ai/assistant/confirm`, { method: 'POST', headers: auth(C), body: JSON.stringify({ kind: 'task', input: { projectId: 'p1', title: 'x', status: 'done' } }) })).status, 400);
+    assert.equal((await fetch(`${API}/api/ai/assistant/confirm`, { method: 'POST', headers: auth(B), body: JSON.stringify({ kind: 'task', input: { projectId: 'p1', title: 'x' } }) })).status, 404, "can't add to someone else's project");
+  });
+  await check('assistant status reports it is set up', async () => {
+    const r = await j(await fetch(`${API}/api/ai/assistant/status`, { headers: auth(C) }));
+    assert.equal(r.body.configured, true); assert.ok(r.body.helpArticles >= 10);
+  });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.
   try { process.kill(-server.pid, 'SIGTERM'); } catch {}
   fakeSendGrid.close();
+  fakeClaude.close();
 }
 for (const r of results) console.log(r.join('  '));
 const failed = results.filter(r => r[0] === 'FAIL').length;

@@ -14,7 +14,8 @@ import {
   AiConversationSession, 
   AiChatMessage, 
   AiAttachment, 
-  AiMemoryItem 
+  AiMemoryItem,
+  AiProposal
 } from '../types';
 
 interface AiAssistantViewProps {
@@ -23,6 +24,9 @@ interface AiAssistantViewProps {
 }
 
 export default function AiAssistantView({ data, onUpdateData }: AiAssistantViewProps) {
+  // Latest workspace, for updates made after an await (the server's writes arrive through the live listener).
+  const dataRef = useRef(data);
+  dataRef.current = data;
   // Active business context
   const activeBusiness = useMemo(() => {
     return data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
@@ -117,21 +121,16 @@ export default function AiAssistantView({ data, onUpdateData }: AiAssistantViewP
   const getInitialWelcomeMessage = (bizName?: string): AiChatMessage => ({
     id: `msg-welcome-${Date.now()}`,
     sender: 'ai',
-    text: `### Frilensa AI Advisor
+    text: `### Assistant
 
-Ask me about running **${bizName || activeBusiness?.name || 'your business'}**: invoicing, VAT, bookkeeping or pricing.
+Ask me anything about running **${bizName || activeBusiness?.name || 'your business'}** or using Frilensa.
 
-From your records:
-* Active clients: **${summaryContext.clientsCount}**
-* Outstanding invoices: **FJD $${summaryContext.totalPending}**
-${activeBusiness?.type === 'saas' ? `* Monthly recurring revenue (MRR): **FJD $${summaryContext.mrr}**` : ''}
+* **How-to questions**: "How do I send a rate card?" I answer from Frilensa's help articles.
+* **Your figures**: "Who owes me money?", "What did I spend on fuel last quarter?" I look them up in your records.
+* **Getting things done**: "Add a task to follow up with Coral Coast on Friday", "Draft an invoice for 10 hours of design". I set it up and you press **Confirm** before anything is saved.
+* **Files**: attach a receipt, invoice or bank statement (photo, PDF or CSV) and I'll read it.
 
-**What I can do:**
-1. **Remember things**: I keep notes on your business preferences, payment methods and tax details between chats.
-2. **Read documents**: Attach bank statements, receipts or contracts and I'll pull out the transactions and line items and check the VAT (12.5%).
-3. **Email a transcript**: When you're done, email yourself the chat and its action items.
-
-What can I help with?`,
+I never send anything to clients or record payments. You do that in Frilensa.`,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
 
@@ -433,11 +432,10 @@ What can I help with?`,
         body: JSON.stringify(payload)
       });
 
+      const replyData = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error('Advisor API response error');
+        throw Object.assign(new Error(replyData?.error || 'The assistant did not respond'), { unavailable: Boolean(replyData?.unavailable), status: res.status });
       }
-
-      const replyData = await res.json();
 
       const aiMsg: AiChatMessage = {
         id: `msg-ai-${Date.now()}`,
@@ -445,7 +443,10 @@ What can I help with?`,
         text: replyData.reply,
         isFallback: replyData.isFallback,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        memoryExtracted: replyData.newMemories && replyData.newMemories.length > 0 ? replyData.newMemories : undefined
+        memoryExtracted: replyData.newMemories && replyData.newMemories.length > 0 ? replyData.newMemories : undefined,
+        proposals: Array.isArray(replyData.proposals) && replyData.proposals.length > 0
+          ? replyData.proposals.map((p: AiProposal) => ({ ...p, status: 'pending' as const }))
+          : undefined
       };
 
       // Save AI reply and new memories
@@ -456,19 +457,19 @@ What can I help with?`,
         messages: finalMessages
       };
 
-      const finalConversations = (data.aiConversations || []).map(s => 
+      const finalConversations = (dataRef.current.aiConversations || []).map(s => 
         s.id === currentSession.id ? finalSession : s
       );
 
       // Extract new memories if present
-      let updatedMemories = data.aiMemories || [];
+      let updatedMemories = dataRef.current.aiMemories || [];
       if (replyData.newMemories && replyData.newMemories.length > 0) {
         const newAdditions: AiMemoryItem[] = replyData.newMemories
           .map((f: string) => f.trim())
           .filter((f: string) => f.length > 8 && !updatedMemories.some(m => m.fact.toLowerCase() === f.toLowerCase()))
           .map((fact: string) => ({
             id: `mem-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
-            businessId: data.activeBusinessId,
+            businessId: dataRef.current.activeBusinessId,
             fact,
             category: 'workflow' as const,
             confidence: 90,
@@ -481,7 +482,7 @@ What can I help with?`,
 
       if (onUpdateData) {
         onUpdateData({
-          ...data,
+          ...dataRef.current,
           aiConversations: finalConversations,
           aiMemories: updatedMemories
         });
@@ -492,15 +493,9 @@ What can I help with?`,
       const fallbackAiMsg: AiChatMessage = {
         id: `msg-err-${Date.now()}`,
         sender: 'ai',
-        text: `### The AI advisor didn't respond
-        
-This is usually a connection problem. In the meantime, a few basics for ${activeBusiness?.name}:
-
-1. **VAT**: Charge **${data.userProfile.defaultVatRate ?? 12.5}% VAT** on local tax invoices.
-2. **Records**: Keep all invoices, M-PAiSA statements and bank statements for 7 years.
-3. **Reconciliation**: Import and match bank statements in Bookkeeping.
-
-Send your message again to retry.`,
+        text: err?.unavailable
+          ? `### The assistant isn't set up yet\n\nIt needs an Anthropic API key on the server. If you run this Frilensa, add the key and deploy again (the deploy script asks for it).`
+          : `### The assistant didn't respond\n\n${err?.status === 429 ? 'You have reached the limit of questions for this hour. Try again later.' : err?.status === 503 ? 'It is busy right now. Send your message again in a minute.' : 'This is usually a connection problem. Send your message again to retry.'}`,
         isFallback: true,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -512,18 +507,60 @@ Send your message again to retry.`,
         messages: finalMessages
       };
 
-      const finalConversations = (data.aiConversations || []).map(s => 
+      const finalConversations = (dataRef.current.aiConversations || []).map(s => 
         s.id === currentSession.id ? finalSession : s
       );
 
       if (onUpdateData) {
         onUpdateData({
-          ...data,
+          ...dataRef.current,
           aiConversations: finalConversations
         });
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Confirm or dismiss something the assistant proposed. The server saves it; the workspace
+  // listener brings the new record into the app.
+  const setProposal = (messageId: string, proposalId: string, patch: Partial<AiProposal>) => {
+    if (!onUpdateData || !currentSession) return;
+    const latest = dataRef.current;
+    onUpdateData({
+      ...latest,
+      aiConversations: (latest.aiConversations || []).map(sess => sess.id !== currentSession.id ? sess : {
+        ...sess,
+        updatedAt: new Date().toISOString(),
+        messages: sess.messages.map(msg => msg.id !== messageId ? msg : {
+          ...msg,
+          proposals: (msg.proposals || []).map(p => p.id === proposalId ? { ...p, ...patch } : p)
+        })
+      })
+    });
+  };
+
+  const DONE_NOTE: Record<AiProposal['kind'], string> = {
+    task: 'Task added. You can find it in Projects.',
+    client: 'Client added. You can find it in Clients.',
+    draft_document: 'Draft saved. Review and send it from Billing.',
+    expense: 'Expense saved. You can find it in Finance → P&L.'
+  };
+
+  const handleConfirmProposal = async (messageId: string, proposal: AiProposal) => {
+    setProposal(messageId, proposal.id, { status: 'saving', note: undefined });
+    try {
+      const res = await fetch('/api/ai/assistant/confirm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind: proposal.kind, input: proposal.input })
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body?.error || 'It could not be saved.');
+      const number = body?.document?.documentNumber ? ` (${body.document.documentNumber})` : '';
+      setProposal(messageId, proposal.id, { status: 'done', note: DONE_NOTE[proposal.kind].replace('Draft saved.', `Draft saved${number}.`) });
+    } catch (err: any) {
+      setProposal(messageId, proposal.id, { status: 'failed', note: err?.message || 'It could not be saved. Try again.' });
     }
   };
 
@@ -605,10 +642,10 @@ Send your message again to retry.`,
   const renderMarkdown = (text: string) => <MarkdownText text={text} />;
 
   const suggestions = [
-    { label: "Bank statements", icon: FileText, prompt: "How do I import and reconcile my ANZ or BSP bank statement in Frilensa?" },
-    { label: "VAT on receipts", icon: Scale, prompt: "How do I tell if a business expense receipt qualifies for a Fiji 12.5% VAT input tax claim?" },
-    { label: "M-PAiSA payments", icon: Smartphone, prompt: "How do I let clients pay my invoices with M-PAiSA?" },
-    { label: "Retainer pricing", icon: Bot, prompt: "How should I package my monthly retainer services to increase MRR?" }
+    { label: "Who owes me", icon: Scale, prompt: "Which invoices are overdue, and who owes me the most?" },
+    { label: "Tasks due", icon: FileText, prompt: "What tasks are due this week across my projects?" },
+    { label: "Add a task", icon: Bot, prompt: "Add a task to my newest project to send the client a progress update by Friday." },
+    { label: "How-to", icon: Smartphone, prompt: "How do I let clients pay my invoices with M-PAiSA, and confirm their payment?" }
   ];
 
   return (
@@ -797,7 +834,7 @@ Send your message again to retry.`,
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <h2 className="text-xs font-black text-slate-900 tracking-tight truncate">
-                  {currentSession?.title || 'Frilensa AI Advisor'}
+                  {currentSession?.title || 'Assistant'}
                 </h2>
                 {currentSession?.status === 'completed' ? (
                   <span className="text-[8px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase shrink-0">
@@ -961,6 +998,39 @@ Send your message again to retry.`,
                       <span key={fIdx} className="text-[9.5px] bg-amber-50/80 border border-amber-200/60 text-amber-900 px-2 py-0.5 rounded-md">
                         {f}
                       </span>
+                    ))}
+                  </div>
+                )}
+
+                {/* Proposals waiting for confirmation */}
+                {m.proposals && m.proposals.length > 0 && (
+                  <div className="mt-2.5 space-y-2">
+                    {m.proposals.map(p => (
+                      <div key={p.id} className="border border-sky-200 bg-sky-50/60 rounded-xl p-2.5 text-xs">
+                        <p className="font-bold text-slate-900">{p.title}</p>
+                        {p.details.length > 0 && (
+                          <ul className="mt-1 text-[11px] text-slate-600 space-y-0.5">
+                            {p.details.map((d, i) => <li key={i}>{d}</li>)}
+                          </ul>
+                        )}
+                        {p.status === 'done' ? (
+                          <p className="mt-2 text-[11px] font-semibold text-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> {p.note}</p>
+                        ) : p.status === 'dismissed' ? (
+                          <p className="mt-2 text-[11px] text-slate-400">Dismissed</p>
+                        ) : (
+                          <>
+                            {p.status === 'failed' && <p className="mt-2 text-[11px] text-rose-600">{p.note}</p>}
+                            <div className="mt-2 flex gap-2">
+                              <button type="button" disabled={p.status === 'saving'} onClick={() => handleConfirmProposal(m.id, p)} className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold cursor-pointer disabled:opacity-60">
+                                {p.status === 'saving' ? 'Saving…' : p.status === 'failed' ? 'Try again' : 'Confirm'}
+                              </button>
+                              <button type="button" disabled={p.status === 'saving'} onClick={() => setProposal(m.id, p.id, { status: 'dismissed' })} className="px-3 py-1.5 rounded-lg text-slate-500 text-[11px] font-bold cursor-pointer">
+                                Dismiss
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     ))}
                   </div>
                 )}
@@ -1229,7 +1299,7 @@ Send your message again to retry.`,
                   <Brain className="w-5 h-5 text-amber-100" />
                   <div>
                     <h3 className="text-xs font-black tracking-tight">AI memory</h3>
-                    <p className="text-[9.5px] text-amber-100">What the advisor remembers about {activeBusiness?.name}</p>
+                    <p className="text-[9.5px] text-amber-100">What the assistant remembers about {activeBusiness?.name}</p>
                   </div>
                 </div>
                 <button
@@ -1247,7 +1317,7 @@ Send your message again to retry.`,
                   value={newMemoryInput}
                   onChange={(e) => setNewMemoryInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddManualMemory(); }}
-                  placeholder="Add a fact or preference for the advisor"
+                  placeholder="Add a fact or preference for the assistant"
                   className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500"
                 />
                 <button
@@ -1264,7 +1334,7 @@ Send your message again to retry.`,
                 {memories.length === 0 ? (
                   <div className="text-center py-8 text-slate-400 text-xs">
                     <Brain className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    Nothing saved yet. The advisor saves facts from your consultations, or you can add one above.
+                    Nothing saved yet. The assistant saves facts from your chats, or you can add one above.
                   </div>
                 ) : (
                   memories.map((m) => (
@@ -1304,7 +1374,7 @@ Send your message again to retry.`,
               </div>
 
               <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-[9px] text-slate-500 shrink-0">
-                <span>The advisor uses these facts in every answer</span>
+                <span>The assistant uses these facts in every answer</span>
                 <button
                   onClick={() => setShowMemoryModal(false)}
                   className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold"

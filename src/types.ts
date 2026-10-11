@@ -668,6 +668,17 @@ export interface AiChatMessage {
   isFallback?: boolean;
   attachments?: AiAttachment[];
   memoryExtracted?: string[];
+  proposals?: AiProposal[]; // Things the assistant suggested creating, waiting for the user to confirm
+}
+
+export interface AiProposal {
+  id: string;
+  kind: 'task' | 'client' | 'draft_document' | 'expense';
+  title: string;
+  details: string[];
+  input: unknown;
+  status?: 'pending' | 'saving' | 'done' | 'dismissed' | 'failed';
+  note?: string; // Result or error shown under the card
 }
 
 export interface AiConversationSession {

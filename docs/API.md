@@ -17,7 +17,7 @@ Authorization: Bearer frk_…
 | Access | Can | Can't |
 | --- | --- | --- |
 | **Read only** | Read the account, businesses, clients, quotes, invoices, receipts, credit notes, expenses, projects and summaries | Change anything |
-| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, and add expenses | Send anything to clients, mark anything paid, edit or delete existing records |
+| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, add expenses, and add tasks to projects | Send anything to clients, mark anything paid, edit or delete existing records |
 
 Drafts aren't visible to clients until the user sends them from Frilensa. Everything a key creates
 appears in the activity log as "via API key "<name>"".
@@ -48,10 +48,12 @@ Tools:
 | `get_document` | read | One document by id or number (e.g. `INV-2026-1004`) |
 | `list_expenses` | read | Expenses; filter by `from`/`to`, `category`, `businessId`, or `unbilledForClientId` for reimbursable expenses not yet on an invoice |
 | `list_projects` | read | Projects with status, budget and open tasks |
+| `list_tasks` | read | Tasks across projects; filter by `projectId`, `status` (`open` = not done), `dueBefore` |
 | `get_summary` | read | Cash-basis summary for a period: received, expenses, profit, outstanding, overdue, VAT collected vs claimable |
 | `get_vat_return` | read | VAT return figures for a period (standard periods or `from`/`to`, invoice or payments basis), with warnings; `includeLines` for the documents and expenses behind them |
 | `create_client` | drafts | Add a client |
 | `create_draft_document` | drafts | Draft quote or invoice for an existing client; on invoices, `expenseIds` adds reimbursable expenses as lines |
+| `create_task` | drafts | Add a to-do task to a project |
 | `add_expense` | drafts | Record an expense; `billToClientId` marks it reimbursable by that client |
 
 ### Claude on the web, desktop and phone (OAuth)
@@ -94,6 +96,8 @@ revoked key), 403 (read-only key), 404 (not found), 409 (conflict) or 429 (rate 
 | `GET /api/v1/expenses?from=&to=&category=&businessId=&unbilledForClientId=&limit=` | read | Each expense has `billToClientId`, `billedOn` (invoice number, if billed) and `hasReceipt` |
 | `POST /api/v1/expenses` | drafts | `{ date, vendor, amount, description?, category?, paymentMethod?, vatClaimable?, vatAmount?, currency?, businessId?, projectId?, notes?, billToClientId? }` |
 | `GET /api/v1/projects` | read | |
+| `GET /api/v1/tasks?projectId=&status=open&dueBefore=&limit=` | read | Soonest due first |
+| `POST /api/v1/tasks` | drafts | `{ projectId, title, description?, dueDate?, priority?: "low" \| "medium" \| "high", status?: "todo" \| "in_progress" }` |
 | `GET /api/v1/summary?from=&to=&businessId=` | read | Defaults to this year to date |
 | `GET /api/v1/vat-return?period=last_quarter&basis=invoice&businessId=&includeLines=true` | read | Or `from=&to=` for custom dates. Same figures as Bookkeeping → VAT return |
 

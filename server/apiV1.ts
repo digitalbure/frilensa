@@ -49,6 +49,8 @@ export function createApiV1Router() {
   router.get("/expenses", ...read, handle(req => api.listExpenses(uid(req), query(req))));
   router.post("/expenses", ...draft, handle(req => api.addExpense(uid(req), req.apiKey!.name, req.body)));
   router.get("/projects", ...read, handle(req => api.listProjects(uid(req))));
+  router.get("/tasks", ...read, handle(req => api.listTasks(uid(req), query(req))));
+  router.post("/tasks", ...draft, handle(req => api.createTask(uid(req), req.apiKey!.name, req.body)));
   router.get("/summary", ...read, handle(req => api.getSummary(uid(req), query(req))));
   router.get("/vat-return", ...read, handle(req => api.getVatReturn(uid(req), query(req))));
 

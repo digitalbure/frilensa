@@ -100,6 +100,14 @@ function projectView(p: any) {
   };
 }
 
+function taskView(t: any, p: any) {
+  return {
+    id: t.id, projectId: p.id, projectName: p.name, title: t.title, description: t.description || null,
+    status: t.status || "todo", dueDate: t.dueDate || null, priority: t.priority || null,
+    trackedHours: t.trackedHours || 0
+  };
+}
+
 // ---------- Input schemas (shared by REST validation and MCP tool definitions) ----------
 
 const id = z.string().min(1).max(200);
@@ -195,6 +203,22 @@ export const addExpenseInput = {
   notes: text(1000).optional()
 };
 
+export const listTasksInput = {
+  projectId: id.optional(),
+  status: z.enum(["todo", "in_progress", "done", "open"]).optional().describe("'open' means not done"),
+  dueBefore: date.optional().describe("Only tasks due on or before this date"),
+  limit
+};
+
+export const createTaskInput = {
+  projectId: id.describe("Project to add the task to (see list_projects)"),
+  title: text(200).min(1),
+  description: text(2000).optional(),
+  dueDate: date.optional(),
+  priority: z.enum(["low", "medium", "high"]).optional(),
+  status: z.enum(["todo", "in_progress"]).default("todo")
+};
+
 export function parse<T extends z.ZodRawShape>(shape: T, input: unknown): z.infer<z.ZodObject<T>> {
   const result = z.object(shape).strict().safeParse(input ?? {});
   if (!result.success) {
@@ -282,6 +306,18 @@ export async function listProjects(uid: string) {
   return { projects: (data.projects || []).map(projectView) };
 }
 
+export async function listTasks(uid: string, input: unknown) {
+  const q = parse(listTasksInput, input);
+  const data = await load(uid);
+  const tasks = (data.projects || [])
+    .filter(p => !q.projectId || p.id === q.projectId)
+    .flatMap(p => (p.tasks || []).map(t => taskView(t, p)))
+    .filter(t => !q.status || (q.status === "open" ? t.status !== "done" : t.status === q.status))
+    .filter(t => !q.dueBefore || (t.dueDate !== null && t.dueDate <= q.dueBefore))
+    .sort((a, b) => (a.dueDate || "9999").localeCompare(b.dueDate || "9999"));
+  return { total: tasks.length, tasks: tasks.slice(0, q.limit) };
+}
+
 /**
  * Cash-basis summary for a period, in the home currency: payments received, expenses, profit,
  * and VAT collected on paid invoices against VAT claimable on expenses. Outstanding is as of today.
@@ -356,8 +392,12 @@ export async function getVatReturn(uid: string, input: unknown) {
 
 // ---------- Writes (drafts and records only) ----------
 
+/** Pass as `keyName` for writes the user confirmed in the in-app assistant. */
+export const ASSISTANT_SOURCE = "\u0000assistant";
+
 function activity(type: ActivityLog["type"], title: string, description: string, keyName: string, extra: Partial<ActivityLog> = {}): ActivityLog {
-  return { id: newId("log"), type, title, description: `${description} (via API key "${keyName}")`, timestamp: new Date().toISOString(), ...extra };
+  const via = keyName === ASSISTANT_SOURCE ? "via the assistant" : `via API key "${keyName}"`;
+  return { id: newId("log"), type, title, description: `${description} (${via})`, timestamp: new Date().toISOString(), ...extra };
 }
 
 export async function createClient(uid: string, keyName: string, input: unknown) {
@@ -444,6 +484,31 @@ export async function createDraftDocument(uid: string, keyName: string, input: u
       },
       newDocuments: [doc],
       result: { document: documentView(doc, data, todayIn()), note: "Saved as a draft. Review and send it from Frilensa." }
+    };
+  });
+}
+
+export async function createTask(uid: string, keyName: string, input: unknown) {
+  const q = parse(createTaskInput, input);
+  return updateWorkspace(uid, (raw) => {
+    const projects: any[] = raw.projects || [];
+    const project = projects.find(p => p.id === q.projectId);
+    if (!project) throw new ApiError(404, "Project not found.");
+    if ((project.tasks || []).length >= 500) throw new ApiError(409, "This project already has 500 tasks.");
+    const now = new Date().toISOString();
+    const task = {
+      id: newId("task"), projectId: project.id, title: q.title, status: q.status,
+      ...(q.description ? { description: q.description } : {}),
+      ...(q.dueDate ? { dueDate: q.dueDate } : {}),
+      ...(q.priority ? { priority: q.priority } : {})
+    };
+    const updated = { ...project, tasks: [...(project.tasks || []), task], updatedAt: now };
+    return {
+      set: {
+        projects: projects.map(p => p.id === project.id ? updated : p),
+        activityLogs: [activity("general", "Task added", `${task.title} in ${project.name}`, keyName), ...(raw.activityLogs || [])].slice(0, 500)
+      },
+      result: { task: taskView(task, project) }
     };
   });
 }

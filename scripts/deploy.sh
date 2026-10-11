@@ -151,6 +151,26 @@ if ! gcloud storage buckets get-iam-policy "gs://$FILES_BUCKET" --format=json 2>
   gcloud storage buckets add-iam-policy-binding "gs://$FILES_BUCKET" --member="serviceAccount:$SA" --role=roles/storage.objectAdmin >/dev/null
 fi
 
+# The assistant uses Claude. Its API key is kept in Secret Manager (secret "anthropic-api-key").
+ASSISTANT_ENV=()
+gcloud services enable secretmanager.googleapis.com --project "$RUN_PROJECT" >/dev/null
+if ! gcloud secrets describe anthropic-api-key --project "$RUN_PROJECT" >/dev/null 2>&1; then
+  echo "The assistant needs an Anthropic API key (create one at https://console.anthropic.com/settings/keys)."
+  read -rsp "Paste it here and press Enter (it won't be shown), or just press Enter to skip: " ANTHROPIC_KEY; echo
+  if [[ -n "$ANTHROPIC_KEY" ]]; then
+    printf '%s' "$ANTHROPIC_KEY" | gcloud secrets create anthropic-api-key --project "$RUN_PROJECT" --replication-policy=automatic --data-file=- >/dev/null
+    echo "Saved the key as secret anthropic-api-key."
+  else
+    echo "Skipped. The assistant will say it isn't set up until you add the key and deploy again."
+  fi
+  unset ANTHROPIC_KEY
+fi
+if gcloud secrets describe anthropic-api-key --project "$RUN_PROJECT" >/dev/null 2>&1; then
+  gcloud secrets add-iam-policy-binding anthropic-api-key --project "$RUN_PROJECT" \
+    --member="serviceAccount:$SA" --role=roles/secretmanager.secretAccessor >/dev/null
+  ASSISTANT_ENV=("ANTHROPIC_API_KEY@=anthropic-api-key")
+fi
+
 confirm "Build v$VERSION and deploy it? (A new Cloud Run revision is created; the current one stays available for rollback.)"
 
 # Build the container with Cloud Build into Artifact Registry. (AI Studio's source-deploy
@@ -179,7 +199,7 @@ JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
 
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET" "${ASSISTANT_ENV[@]}"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---

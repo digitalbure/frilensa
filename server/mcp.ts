@@ -80,6 +80,12 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
     inputSchema: {}, annotations: readOnly
   }, () => run(() => api.listProjects(uid)));
 
+  server.registerTool("list_tasks", {
+    title: "List tasks",
+    description: "Tasks across projects (or one project), soonest due first. Filter by status ('open' = not done) or dueBefore.",
+    inputSchema: api.listTasksInput, annotations: readOnly
+  }, args => run(() => api.listTasks(uid, args)));
+
   server.registerTool("get_summary", {
     title: "Profit and VAT summary",
     description: "Cash-basis summary for a period in the home currency: money received, expenses, profit, outstanding and overdue amounts, and VAT collected vs claimable. Defaults to this year to date.",
@@ -106,6 +112,12 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
       description: "Creates a DRAFT quote or invoice for an existing client, numbered in the business's series, with VAT worked out from your VAT setting unless vatRate is given. Invoices can include expenses marked to bill to that client (expenseIds) as reimbursable lines, passed on without VAT unless chargeVatOnExpenses is set; their receipts are shown to the client. Drafts aren't visible to the client until the user sends them from Frilensa.",
       inputSchema: api.createDraftInput, annotations: write
     }, args => run(() => api.createDraftDocument(uid, key.name, args)));
+
+    server.registerTool("create_task", {
+      title: "Add a task to a project",
+      description: "Adds a to-do task to one of the user's projects (find projectId with list_projects).",
+      inputSchema: api.createTaskInput, annotations: write
+    }, args => run(() => api.createTask(uid, key.name, args)));
 
     server.registerTool("add_expense", {
       title: "Add an expense",
