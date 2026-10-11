@@ -151,6 +151,92 @@ try {
   });
   await check('revoking ends the open session', async () => { await fetch(`${API}/api/portal/admin/revoke`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'client@one.fj' }) }); assert.equal((await fetch(`${API}/api/portal/data`, { headers: { Authorization: `Portal ${session}` } })).status, 401); });
 
+
+  // Public API and MCP server
+  const keyAuth = k => ({ Authorization: `Bearer ${k}`, 'Content-Type': 'application/json' });
+  let aliceKey, aliceReadKey, bobKey, newClientId;
+  await check('API keys need sign-in to manage', async () => { assert.equal((await fetch(`${API}/api/keys`)).status, 401); });
+  await check('Alice creates a draft-access key and a read-only key', async () => {
+    const r = await j(await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(A), body: JSON.stringify({ name: 'Claude' }) }));
+    assert.equal(r.status, 200); assert.match(r.body.key, /^frk_/); assert.deepEqual(r.body.scopes, ['read', 'draft']); aliceKey = r.body.key;
+    const ro = await j(await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(A), body: JSON.stringify({ name: 'Reports', access: 'read' }) }));
+    assert.deepEqual(ro.body.scopes, ['read']); aliceReadKey = ro.body.key;
+    bobKey = (await j(await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(B), body: JSON.stringify({ name: 'Bob' }) }))).body.key;
+  });
+  await check('key list never shows the key itself', async () => {
+    const r = await j(await fetch(`${API}/api/keys`, { headers: auth(A) }));
+    assert.equal(r.body.keys.length, 2); assert.ok(!JSON.stringify(r.body).includes(aliceKey)); assert.equal(r.body.keys[0].prefix.length, 10);
+  });
+  await check('API rejects a missing or wrong key', async () => {
+    assert.equal((await fetch(`${API}/api/v1/me`)).status, 401);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth('frk_notARealKeyAAAAAAAAAAAAAAAAAA') })).status, 401);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: auth(A) })).status, 401, 'a Firebase token is not an API key');
+  });
+  await check('API returns the account and documents', async () => {
+    const me = await j(await fetch(`${API}/api/v1/me`, { headers: keyAuth(aliceKey) }));
+    assert.equal(me.status, 200); assert.equal(me.body.businesses[0].name, 'Alice Studio');
+    const docs = await j(await fetch(`${API}/api/v1/documents?type=invoice`, { headers: keyAuth(aliceKey) }));
+    assert.ok(docs.body.documents.some(d => d.number === 'INV-2026-1001'));
+    assert.ok(!JSON.stringify(docs.body).includes('shareToken'), 'raw share tokens are not exposed');
+  });
+  await check('API creates a client and a draft invoice', async () => {
+    const c = await j(await fetch(`${API}/api/v1/clients`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ name: 'Reef Cafe', email: 'owner@reef.fj' }) }));
+    assert.equal(c.status, 200); newClientId = c.body.client.id;
+    const d = await j(await fetch(`${API}/api/v1/documents`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ type: 'invoice', clientId: newClientId, items: [{ name: 'Menu design', quantity: 2, rate: 150 }], vatRate: 12.5 }) }));
+    assert.equal(d.status, 200); assert.equal(d.body.document.status, 'draft'); assert.equal(d.body.document.total, 337.5); assert.equal(d.body.document.onlineUrl, null);
+    const ws = await get(`consultants/${A.uid}`);
+    const saved = ws.documents.find(x => x.id === d.body.document.id);
+    assert.ok(saved && saved.status === 'draft'); assert.ok(ws.clients.some(x => x.id === newClientId));
+    assert.match(ws.activityLogs[0].description, /via API key "Claude"/);
+    assert.equal((await get(`documents/${A.uid}_${saved.id}`)).status, 'draft', 'online copy written');
+    assert.equal((await fetch(`${API}/api/public/documents/${saved.shareToken}`)).status, 404, 'drafts stay private');
+  });
+  await check('API validates input', async () => {
+    const r = await j(await fetch(`${API}/api/v1/documents`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ type: 'invoice', clientId: newClientId, items: [] }) }));
+    assert.equal(r.status, 400);
+    const unknown = await j(await fetch(`${API}/api/v1/documents`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ type: 'invoice', clientId: newClientId, items: [{ name: 'x', quantity: 1, rate: 1 }], status: 'paid' }) }));
+    assert.equal(unknown.status, 400, 'unknown fields such as status are refused');
+  });
+  await check('read-only key cannot change data', async () => {
+    const r = await fetch(`${API}/api/v1/expenses`, { method: 'POST', headers: keyAuth(aliceReadKey), body: JSON.stringify({ date: '2026-10-01', vendor: 'Vodafone', amount: 50 }) });
+    assert.equal(r.status, 403);
+    assert.equal((await fetch(`${API}/api/v1/summary`, { headers: keyAuth(aliceReadKey) })).status, 200);
+  });
+  await check("each key only sees its own workspace", async () => {
+    const r = await j(await fetch(`${API}/api/v1/clients/${newClientId}`, { headers: keyAuth(bobKey) }));
+    assert.equal(r.status, 404);
+    const list = await j(await fetch(`${API}/api/v1/clients`, { headers: keyAuth(bobKey) }));
+    assert.ok(!list.body.clients.some(c => c.id === newClientId));
+  });
+  const mcp = (k, method, params = {}) => fetch(`${API}/mcp`, { method: 'POST', headers: { ...keyAuth(k), Accept: 'application/json, text/event-stream' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params }) }).then(j);
+  await check('MCP server lists tools by key access', async () => {
+    const init = await mcp(aliceKey, 'initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'e2e', version: '1' } });
+    assert.equal(init.status, 200); assert.equal(init.body.result.serverInfo.name, 'frilensa');
+    const full = (await mcp(aliceKey, 'tools/list')).body.result.tools.map(t => t.name);
+    assert.ok(full.includes('list_documents') && full.includes('create_draft_document'));
+    const ro = (await mcp(aliceReadKey, 'tools/list')).body.result.tools.map(t => t.name);
+    assert.ok(ro.includes('get_summary') && !ro.includes('create_draft_document') && !ro.includes('add_expense'));
+  });
+  await check('MCP tools read and write the workspace', async () => {
+    const r = await mcp(aliceKey, 'tools/call', { name: 'list_documents', arguments: { type: 'quote' } });
+    assert.ok(JSON.parse(r.body.result.content[0].text).documents.some(d => d.number === 'QT-2026-1000'));
+    const e = await mcp(aliceKey, 'tools/call', { name: 'add_expense', arguments: { date: '2026-10-02', vendor: 'Vodafone Fiji', amount: 112.5, vatClaimable: true } });
+    const exp = JSON.parse(e.body.result.content[0].text).expense; assert.equal(exp.vatAmount, 12.5);
+    const bad = await mcp(aliceKey, 'tools/call', { name: 'get_document', arguments: { documentId: 'nope' } });
+    assert.equal(bad.body.result.isError, true);
+  });
+  await check('MCP needs a valid key', async () => { assert.equal((await mcp('frk_notARealKeyAAAAAAAAAAAAAAAAAA', 'tools/list')).status, 401); });
+  await check('revoked keys stop working', async () => {
+    const list = await j(await fetch(`${API}/api/keys`, { headers: auth(A) }));
+    const ro = list.body.keys.find(k => k.name === 'Reports');
+    assert.equal((await fetch(`${API}/api/keys/${ro.id}`, { method: 'DELETE', headers: auth(B) })).status, 404, "can't revoke someone else's key");
+    assert.equal((await fetch(`${API}/api/keys/${ro.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: keyAuth(aliceReadKey) })).status, 401);
+  });
+  await check('API key records are not readable from the browser', async () => {
+    const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/api_keys`, { headers: { Authorization: `Bearer ${A.token}` } });
+    assert.equal(r.status, 403);
+  });
   // Daily automation job
   const jobs = (secret) => fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: secret ? { 'X-Job-Secret': secret } : {} });
   const retInvoiceId = `doc-ret-ret1-${fijiToday.slice(0, 7)}`;

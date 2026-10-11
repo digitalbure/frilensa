@@ -12,6 +12,9 @@ import { createPortalRouter } from "./server/portal";
 import { createDirectoryRouter } from "./server/directory";
 import { createPublicDocumentsRouter } from "./server/publicDocuments";
 import { createJobsRouter, createAutomationRouter } from "./server/jobs";
+import { createApiKeysRouter } from "./server/apiKeys";
+import { createApiV1Router } from "./server/apiV1";
+import { createMcpRouter } from "./server/mcp";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -203,6 +206,10 @@ async function startServer() {
   app.use("/api/public/documents", express.json({ limit: "20kb" }), createPublicDocumentsRouter());
   app.use("/api/jobs", express.json({ limit: "10kb" }), createJobsRouter());
   app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
+  // Public API and MCP server (personal API keys), and managing those keys from the app.
+  app.use("/api/keys", express.json({ limit: "10kb" }), createApiKeysRouter());
+  app.use("/api/v1", express.json({ limit: "200kb" }), createApiV1Router());
+  app.use("/mcp", express.json({ limit: "200kb" }), createMcpRouter());
 
   app.use(express.json({ limit: '25mb' }));
   app.use(express.urlencoded({ extended: true, limit: '25mb' }));

@@ -1,6 +1,6 @@
 # Frilensa: features and improvement plan
 
-Status as of v3.4.0 (October 2026). Each feature is marked by whether it actually works in the live app:
+Status as of v3.5.0 (October 2026). Each feature is marked by whether it actually works in the live app:
 
 - ✅ works
 - ⚠️ works with a significant gap
@@ -74,6 +74,8 @@ Status as of v3.4.0 (October 2026). Each feature is marked by whether it actuall
 - ⚠️ Admin panel (for `VITE_ADMIN_EMAILS` only): edits your own workspace's platform settings, and its tenant list is sample data.
 
 ### Platform
+- ✅ Public REST API and MCP server for AI assistants, with personal API keys (read, or read and create drafts). *(3.5.0, see `docs/API.md`)*
+- ⚠️ MCP connectors from the claude.ai website need OAuth sign-in, which isn't built yet; clients that send a header (Claude Code, the API) work.
 - ✅ Installable PWA (manifest, icons, install prompt).
 - ⚠️ The service worker caches nothing, so there's no real offline mode beyond Firestore's own cache.
 

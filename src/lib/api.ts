@@ -271,3 +271,30 @@ export async function fetchAutomationStatus(): Promise<AutomationStatus> {
 export async function runAutomationNow(): Promise<AutomationRun> {
   return (await readJson(await fetch('/api/automation/run-now', { method: 'POST' }))).lastRun;
 }
+
+// ---------- API keys (public API and MCP server) ----------
+
+export interface ApiKeyInfo {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: ('read' | 'draft')[];
+  createdAt: string;
+  lastUsedAt: string | null;
+}
+
+export async function listApiKeys(): Promise<ApiKeyInfo[]> {
+  return (await readJson(await fetch('/api/keys'))).keys;
+}
+
+export async function createApiKey(name: string, access: 'read' | 'draft'): Promise<ApiKeyInfo & { key: string }> {
+  return readJson(await fetch('/api/keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, access })
+  }));
+}
+
+export async function revokeApiKey(id: string): Promise<void> {
+  await readJson(await fetch(`/api/keys/${encodeURIComponent(id)}`, { method: 'DELETE' }));
+}

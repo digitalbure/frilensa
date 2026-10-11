@@ -18,6 +18,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.5.0] - 2026-10-11
+
+### Added
+- **Connect AI assistants and your own tools.** New Settings → API keys and AI assistants: create a personal key, then connect Claude or another AI assistant through the Frilensa MCP server (`https://frilensa.com/mcp`), or scripts and automation tools through the REST API (`https://frilensa.com/api/v1`). See `docs/API.md`.
+- Keys can read your clients, quotes, invoices, receipts, expenses, projects and a profit and VAT summary. Keys with draft access can also add clients, create draft quotes and invoices, and add expenses. Nothing reached through a key can send anything to your clients or mark anything paid, and every change it makes shows in your activity log with the key's name.
+- Keys are shown once and stored only as a hash; revoke one at any time and it stops working immediately. Up to 10 keys per account, 120 requests a minute per key.
+
 ## [3.4.2] - 2026-10-11
 
 ### Fixed

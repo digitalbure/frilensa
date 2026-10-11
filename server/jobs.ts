@@ -6,7 +6,7 @@ import { appUrl, render } from "./notify";
 import { sendViaSendGrid } from "../src/lib/transactionalEmailServer";
 import { runDueRetainers, todayIn } from "../src/lib/retainers";
 import { planReminders, reminderMessage, type PlannedReminder } from "../src/lib/reminders";
-import { normalizeDocuments } from "../src/lib/normalizeDocuments";
+import { toData } from "./workspace";
 import { buildFlatDocumentRow, flatDocumentId, sanitizeForFirestore } from "../src/lib/flatDocuments";
 import type { CRMData, CRMDocument } from "../src/types";
 
@@ -24,18 +24,6 @@ export interface AutomationResult {
   invoicesCreated: { id: string; documentNumber: string; total: number; currency: string; emailedTo?: string }[];
   remindersSent: { documentNumber: string; level: number; to: string }[];
   problems: string[];
-}
-
-function toData(raw: any): CRMData {
-  return normalizeDocuments({
-    ...raw,
-    userProfile: raw.userProfile || {},
-    businesses: raw.businesses || [],
-    clients: raw.clients || [],
-    documents: raw.documents || [],
-    recurringInvoices: raw.recurringInvoices || [],
-    activeBusinessId: raw.activeBusinessId || ""
-  } as CRMData);
 }
 
 function needsRun(raw: any): boolean {
