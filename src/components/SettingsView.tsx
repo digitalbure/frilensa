@@ -1774,7 +1774,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               type="button"
               onClick={() => {
                 setSelectedRegion(region.code as any);
-                triggerStatus(`Showing ${region.name}`, 'info');
+                triggerStatus(`Showing ${region.name}`, 'success');
               }}
               className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                 selectedRegion === region.code
@@ -1801,7 +1801,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="bg-sky-50/50 border border-sky-100 rounded-lg p-2.5 text-[9.5px] text-sky-850 space-y-1">
             <span className="font-extrabold text-[8px] uppercase tracking-wider block">Planned:</span>
             <p className="leading-tight text-sky-800">
-              {selectedRegion === 'WS' && 'Samoa (WST): VAGST is 15%. Not available yet.'}
+              {selectedRegion === 'WS' && 'Samoa (WST): VAT is 15%. Not available yet.'}
               {selectedRegion === 'TO' && 'Tonga (TOP): consumption tax is 15%. Not available yet.'}
               {selectedRegion === 'VU' && 'Vanuatu (VUV): VAT is 15%. Not available yet.'}
               {selectedRegion === 'SB' && 'Solomon Islands (SBD): GST is 10%. Not available yet.'}
@@ -1870,7 +1870,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting Number</label>
+                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting number</label>
                   <input
                     type="number"
                     required
@@ -1900,7 +1900,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting Number</label>
+                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting number</label>
                   <input
                     type="number"
                     required
@@ -1930,7 +1930,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting Number</label>
+                  <label className="block text-[8px] font-medium text-zinc-400 uppercase">Starting number</label>
                   <input
                     type="number"
                     required
@@ -2236,7 +2236,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="button"
           onClick={async () => {
             if (!onManualCloudSync) return;
-            triggerStatus('Syncing…', 'info');
+            triggerStatus('Syncing…', 'success');
             await onManualCloudSync();
             triggerStatus('Sync finished. Any problem is shown in the banner at the top of the page.', 'success');
           }}
@@ -2443,7 +2443,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="button"
           onClick={() => {
             sessionStorage.removeItem('pwa_install_prompt_dismissed');
-            triggerStatus('Reloading to show the install prompt. On iPhone, use Share, then Add to Home Screen.', 'info');
+            triggerStatus('Reloading to show the install prompt. On iPhone, use Share, then Add to Home Screen.', 'success');
             // Dispatch a reload or prompt
             window.location.reload();
           }}

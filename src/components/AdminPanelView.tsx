@@ -183,7 +183,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
       platformSettings: newSettings
     };
     onUpdateCrmData(updatedData);
-    showToast('Platform settings saved successfully.');
+    showToast('Settings saved.');
   };
 
   // Update Plan Limits
@@ -277,7 +277,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     setNewTaxRate(12.5);
     setNewTaxDesc('');
     setNewTaxIsDefault(false);
-    showToast('Platform tax configuration created.');
+    showToast('Tax added.');
   };
 
   // Toggle Tax Status
@@ -326,7 +326,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     setNewFeeRate(2.5);
     setNewFeeDesc('');
     setNewFeeIsDefault(false);
-    showToast('Platform fee configuration created.');
+    showToast('Fee added.');
   };
 
   // Toggle Fee Status
@@ -371,7 +371,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   // Reject Payment
   const handleRejectPayment = (payId: string) => {
     setPendingPayments(prev => prev.filter(p => p.id !== payId));
-    showToast('Payment rejected from queue.');
+    showToast('Payment rejected.');
   };
 
 
@@ -1959,8 +1959,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: AI Receipt OCR */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">AI Receipt OCR & Parsing</span>
-                        <span className="text-[9px] text-slate-500">Gemini vision receipt auto-categorization</span>
+                        <span className="text-xs font-bold text-slate-200 block">AI receipt scanning</span>
+                        <span className="text-[9px] text-slate-500">AI reads and categorises receipts</span>
                       </div>
                       <button
                         type="button"
@@ -1974,8 +1974,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Client Portal */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Client Portal & PIN Login</span>
-                        <span className="text-[9px] text-slate-500">Self-service document downloads & inquiry ticket</span>
+                        <span className="text-xs font-bold text-slate-200 block">Client portal</span>
+                        <span className="text-[9px] text-slate-500">Clients sign in with a PIN to download documents and send questions</span>
                       </div>
                       <button
                         type="button"
@@ -1989,8 +1989,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Recurring Invoices */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Recurring Invoices & Subscriptions</span>
-                        <span className="text-[9px] text-slate-500">Automated monthly billing & schedule retainers</span>
+                        <span className="text-xs font-bold text-slate-200 block">Recurring invoices</span>
+                        <span className="text-[9px] text-slate-500">Monthly billing and retainers on a schedule</span>
                       </div>
                       <button
                         type="button"
@@ -2004,8 +2004,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Multi-Currency */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Multi-Currency (AUD / NZD / USD)</span>
-                        <span className="text-[9px] text-slate-500">Cross-border billing for Pacific & overseas clients</span>
+                        <span className="text-xs font-bold text-slate-200 block">Multiple currencies (AUD / NZD / USD)</span>
+                        <span className="text-[9px] text-slate-500">Bill clients in the Pacific and overseas</span>
                       </div>
                       <button
                         type="button"
@@ -2019,8 +2019,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Custom Branding */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Custom Studio Branding & Logos</span>
-                        <span className="text-[9px] text-slate-500">Custom logo upload, header styles & color themes</span>
+                        <span className="text-xs font-bold text-slate-200 block">Custom branding</span>
+                        <span className="text-[9px] text-slate-500">Own logo, header style and colours</span>
                       </div>
                       <button
                         type="button"
@@ -2034,8 +2034,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Bank & M-Paisa Reconciliation */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Bank & M-Paisa Reconciliation</span>
-                        <span className="text-[9px] text-slate-500">Automated ledger matching with bank statements</span>
+                        <span className="text-xs font-bold text-slate-200 block">Bank and M-PAiSA reconciliation</span>
+                        <span className="text-[9px] text-slate-500">Match bank statement lines to the books</span>
                       </div>
                       <button
                         type="button"
@@ -2049,8 +2049,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Custom Tax Rules */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Custom Tax Rules & Service Levies</span>
-                        <span className="text-[9px] text-slate-500">Create business-level ECAL, STT & handling fees</span>
+                        <span className="text-xs font-bold text-slate-200 block">Custom taxes and levies</span>
+                        <span className="text-[9px] text-slate-500">Set ECAL, STT and handling fees per business</span>
                       </div>
                       <button
                         type="button"
@@ -2064,8 +2064,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Direct Support Chat */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">Direct Client Support Chat</span>
-                        <span className="text-[9px] text-slate-500">Live inquiry ticketing and document question messaging</span>
+                        <span className="text-xs font-bold text-slate-200 block">Client messages</span>
+                        <span className="text-[9px] text-slate-500">Clients can send questions about their documents</span>
                       </div>
                       <button
                         type="button"
@@ -2079,8 +2079,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Toggle: Export PDF */}
                     <div className="p-2.5 bg-slate-950 border border-slate-800 rounded-xl flex items-center justify-between">
                       <div>
-                        <span className="text-xs font-bold text-slate-200 block">FRCS Compliant PDF Export</span>
-                        <span className="text-[9px] text-slate-500">Printable official tax invoices & receipts</span>
+                        <span className="text-xs font-bold text-slate-200 block">PDF export</span>
+                        <span className="text-[9px] text-slate-500">Download tax invoices and receipts as PDFs</span>
                       </div>
                       <button
                         type="button"
@@ -2110,19 +2110,19 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                         <ShieldCheck className="w-4 h-4 text-sky-400" />
-                        <span>Platform Escrow Wallet & Commission Engine</span>
+                        <span>Escrow and commission</span>
                       </h3>
                       <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-mono px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        {platformSettings.escrowEnabled ? 'ACTIVE & ENFORCED' : 'DISABLED'}
+                        {platformSettings.escrowEnabled ? 'ON' : 'OFF'}
                       </span>
                     </div>
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      Fiji Freelancer Platform acts as a trusted escrow custodian between clients and service businesses.
+                      Client payments are held in escrow until the work is approved, then paid out to the business.
                     </p>
                   </div>
 
                   <div className="flex items-center gap-3">
-                    <span className="text-xs font-bold text-slate-300">Escrow Service:</span>
+                    <span className="text-xs font-bold text-slate-300">Escrow:</span>
                     <button
                       type="button"
                       onClick={() => commitPlatformSettings({ ...platformSettings, escrowEnabled: !platformSettings.escrowEnabled })}
@@ -2148,7 +2148,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   return (
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                       <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Total Escrow Volume</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Total value</span>
                         <span className="text-sm font-mono font-black text-slate-100 mt-1 block">
                           FJD ${totalVolume.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
@@ -2156,7 +2156,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       </div>
 
                       <div className="bg-slate-950 p-3 rounded-xl border border-sky-900/40">
-                        <span className="text-[9px] font-bold text-sky-400 uppercase block">In Active Custody</span>
+                        <span className="text-[9px] font-bold text-sky-400 uppercase block">Held now</span>
                         <span className="text-sm font-mono font-black text-sky-300 mt-1 block">
                           FJD ${inCustody.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
@@ -2164,19 +2164,19 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       </div>
 
                       <div className="bg-slate-950 p-3 rounded-xl border border-emerald-900/40">
-                        <span className="text-[9px] font-bold text-emerald-400 uppercase block">Owner Platform Profit</span>
+                        <span className="text-[9px] font-bold text-emerald-400 uppercase block">Fees earned</span>
                         <span className="text-sm font-mono font-black text-emerald-300 mt-1 block">
                           FJD ${totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
-                        <span className="text-[8.5px] text-emerald-400/80">Net fees & commission collected</span>
+                        <span className="text-[8.5px] text-emerald-400/80">Fees and commission from released contracts</span>
                       </div>
 
                       <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Auto-Release Rule</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase block">Auto-release</span>
                         <span className="text-sm font-mono font-black text-slate-100 mt-1 block">
-                          {platformSettings.escrowAutoReleaseDays || 7} Days
+                          {platformSettings.escrowAutoReleaseDays || 7} days
                         </span>
-                        <span className="text-[8.5px] text-slate-500">Post-submission signoff</span>
+                        <span className="text-[8.5px] text-slate-500">After work is submitted</span>
                       </div>
                     </div>
                   );
@@ -2189,17 +2189,17 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                       <Percent className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Custom Commission & Fee Structure</span>
+                      <span>Fees</span>
                     </h4>
 
                     {/* Fee Model Choice */}
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Fee Charging Model</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Charge</label>
                       <div className="grid grid-cols-3 gap-1.5 mt-1.5">
                         {[
-                          { id: 'percentage', label: 'Commission % Only' },
-                          { id: 'flat', label: 'Flat Fee Only' },
-                          { id: 'both', label: 'Both (% + Flat Fee)' }
+                          { id: 'percentage', label: 'Percentage only' },
+                          { id: 'flat', label: 'Flat fee only' },
+                          { id: 'both', label: 'Both' }
                         ].map(m => (
                           <button
                             key={m.id}
@@ -2220,7 +2220,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     {/* Commission Rate (%) */}
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-400 uppercase">Platform Commission Rate (%)</label>
+                        <label className="text-[10px] font-bold text-slate-400 uppercase">Commission (%)</label>
                         <span className="text-xs font-mono font-bold text-sky-400">{platformSettings.escrowCommissionPercent || 3.5}%</span>
                       </div>
                       <div className="flex items-center gap-2 mt-1">
@@ -2250,7 +2250,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     {/* Flat Fee ($) */}
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Fixed Platform Fee (FJD $)</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Flat fee (FJD $)</label>
                       <div className="relative mt-1">
                         <DollarSign className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2" />
                         <input
@@ -2269,11 +2269,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                       <Scale className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Thresholds & Payout Parameters</span>
+                      <span>Limits and payouts</span>
                     </h4>
 
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Minimum Escrow Contract Deposit (FJD $)</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Minimum contract amount (FJD $)</label>
                       <input
                         type="number"
                         min="5"
@@ -2284,7 +2284,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Withdrawal Settlement Fee (FJD $)</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Withdrawal fee (FJD $)</label>
                       <input
                         type="number"
                         step="0.5"
@@ -2293,11 +2293,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         onChange={(e) => commitPlatformSettings({ ...platformSettings, escrowPayoutFee: Number(e.target.value) })}
                         className="w-full bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs font-mono font-bold text-slate-100 mt-1 focus:outline-none focus:border-sky-500"
                       />
-                      <span className="text-[8.5px] text-slate-500 block mt-0.5">Charged on M-Paisa, MyCash & Bank withdrawals</span>
+                      <span className="text-[8.5px] text-slate-500 block mt-0.5">Charged on M-PAiSA, MyCash and bank withdrawals</span>
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Dispute & Custody Policy</label>
+                      <label className="text-[10px] font-bold text-slate-400 uppercase block">Dispute policy</label>
                       <textarea
                         rows={2}
                         value={platformSettings.escrowDisputePolicy || ''}
@@ -2316,15 +2316,15 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
                       <Layers className="w-3.5 h-3.5 text-sky-400" />
-                      <span>Live Escrow Contracts & Mediation Console ({(crmData.escrowContracts || []).length})</span>
+                      <span>Escrow contracts ({(crmData.escrowContracts || []).length})</span>
                     </h4>
-                    <p className="text-[10px] text-slate-400">Review all active escrow milestones and execute platform arbitration overrides</p>
+                    <p className="text-[10px] text-slate-400">Review contracts and release or refund them if there's a dispute</p>
                   </div>
                 </div>
 
                 {(!crmData.escrowContracts || crmData.escrowContracts.length === 0) ? (
                   <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 text-center text-xs text-slate-500">
-                    No escrow contracts recorded on platform yet.
+                    No escrow contracts yet.
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -2354,7 +2354,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                               </span>
                             </div>
                             <p className="text-[10px] text-slate-400 mt-1">
-                              Client: <span className="text-slate-300 font-semibold">{contract.clientName}</span> • Gross: <span className="font-mono font-bold text-slate-200">FJD ${contract.totalAmount.toFixed(2)}</span> • Platform Fee: <span className="font-mono text-emerald-400">FJD ${contract.totalPlatformFee.toFixed(2)}</span> • Net Freelancer: <span className="font-mono text-sky-300">FJD ${contract.netFreelancerAmount.toFixed(2)}</span>
+                              Client: <span className="text-slate-300 font-semibold">{contract.clientName}</span> • Gross: <span className="font-mono font-bold text-slate-200">FJD ${contract.totalAmount.toFixed(2)}</span> • Fee: <span className="font-mono text-emerald-400">FJD ${contract.totalPlatformFee.toFixed(2)}</span> • To freelancer: <span className="font-mono text-sky-300">FJD ${contract.netFreelancerAmount.toFixed(2)}</span>
                             </p>
                           </div>
 
@@ -2364,15 +2364,15 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (confirm(`Super Admin Override: Force release FJD $${contract.netFreelancerAmount.toFixed(2)} to freelancer?`)) {
+                                  if (confirm(`Release FJD $${contract.netFreelancerAmount.toFixed(2)} to the freelancer now?`)) {
                                     const updated = (crmData.escrowContracts || []).map(c => c.id === contract.id ? { ...c, status: 'released' as const, releasedAt: new Date().toISOString() } : c);
                                     onUpdateCrmData({ ...crmData, escrowContracts: updated });
-                                    showToast(`Contract ${contract.contractNumber} released by Super Admin.`);
+                                    showToast(`Contract ${contract.contractNumber} released.`);
                                   }
                                 }}
                                 className="bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all"
                               >
-                                Force Release
+                                Release now
                               </button>
                             )}
 
@@ -2380,15 +2380,15 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (confirm(`Super Admin Override: Force refund FJD $${contract.totalAmount.toFixed(2)} to client ${contract.clientName}?`)) {
+                                  if (confirm(`Refund FJD $${contract.totalAmount.toFixed(2)} to ${contract.clientName}?`)) {
                                     const updated = (crmData.escrowContracts || []).map(c => c.id === contract.id ? { ...c, status: 'refunded' as const, refundedAt: new Date().toISOString() } : c);
                                     onUpdateCrmData({ ...crmData, escrowContracts: updated });
-                                    showToast(`Contract ${contract.contractNumber} refunded to client.`);
+                                    showToast(`Contract ${contract.contractNumber} refunded to the client.`);
                                   }
                                 }}
                                 className="bg-rose-950 hover:bg-rose-900 text-rose-300 font-bold px-2.5 py-1 rounded-lg text-[10px] border border-rose-800 transition-all"
                               >
-                                Force Refund
+                                Refund
                               </button>
                             )}
                           </div>
@@ -2410,12 +2410,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-sky-400" />
-                  <span>Fiji Statutory System Parameters</span>
+                  <span>Tax defaults</span>
                 </h4>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default Fiji VAT Standard</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default VAT rate</label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <input
                         type="number"
@@ -2429,7 +2429,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   </div>
 
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default Platform Currency</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default currency</label>
                     <input
                       type="text"
                       value={platformSettings.defaultCurrency}
@@ -2440,7 +2440,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
                     <div>
-                      <span className="text-[10px] font-bold text-slate-300 uppercase block">Enforce FRCS TIN</span>
+                      <span className="text-[10px] font-bold text-slate-300 uppercase block">Require TIN</span>
                       <span className="text-[8.5px] text-slate-500">Require TIN on docs {'>'} $100</span>
                     </div>
                     <button
@@ -2459,9 +2459,9 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Platform Statutory Taxes & Levies ({platformTaxes.length})
+                      Taxes and levies ({platformTaxes.length})
                     </h4>
-                    <p className="text-[10px] text-slate-400">Standard statutory taxes available across all tenant ventures</p>
+                    <p className="text-[10px] text-slate-400">Taxes every business can apply</p>
                   </div>
                 </div>
 
@@ -2476,7 +2476,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           </span>
                           {tax.isDefault && (
                             <span className="text-[8px] bg-emerald-950 text-emerald-400 px-1.5 py-0.5 rounded font-bold">
-                              Auto-Apply
+                              Auto-applied
                             </span>
                           )}
                         </div>
@@ -2488,7 +2488,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           type="button"
                           onClick={() => handleToggleTax(tax.id)}
                           className={`p-1 ${tax.isActive ? 'text-emerald-400' : 'text-slate-600'}`}
-                          title="Toggle Active"
+                          title="Turn on or off"
                         >
                           {tax.isActive ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
                         </button>
@@ -2506,13 +2506,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                 {/* Add Statutory Tax Form */}
                 <form onSubmit={handleAddPlatformTax} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block">+ Add New Platform Statutory Tax</span>
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block">+ Add tax</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       type="text"
                       value={newTaxName}
                       onChange={(e) => setNewTaxName(e.target.value)}
-                      placeholder="e.g. Green Carbon Offset Levy"
+                      placeholder="e.g. Environment levy"
                       className="bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs text-slate-100"
                     />
                     <div className="flex items-center gap-1">
@@ -2537,7 +2537,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       className="bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add Tax Rule</span>
+                      <span>Add tax</span>
                     </button>
                   </div>
                 </form>
@@ -2548,9 +2548,9 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                   <div>
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Platform Processing & Gateway Fees ({platformFees.length})
+                      Payment fees ({platformFees.length})
                     </h4>
-                    <p className="text-[10px] text-slate-400">Configurable surcharge fees passed through on digital checkouts</p>
+                    <p className="text-[10px] text-slate-400">Surcharges added when clients pay online</p>
                   </div>
                 </div>
 
@@ -2589,13 +2589,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                 {/* Add Platform Fee Form */}
                 <form onSubmit={handleAddPlatformFee} className="p-3 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
-                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block">+ Add Platform Gateway Fee</span>
+                  <span className="text-[9.5px] font-bold uppercase tracking-wider text-slate-400 block">+ Add fee</span>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                     <input
                       type="text"
                       value={newFeeName}
                       onChange={(e) => setNewFeeName(e.target.value)}
-                      placeholder="e.g. Visa / Mastercard Processing Fee"
+                      placeholder="e.g. Card processing fee"
                       className="bg-slate-900 border border-slate-800 rounded-lg py-1.5 px-3 text-xs text-slate-100"
                     />
                     <div className="flex items-center gap-1">
@@ -2620,7 +2620,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg text-xs flex items-center justify-center gap-1"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Add Fee</span>
+                      <span>Add fee</span>
                     </button>
                   </div>
                 </form>
@@ -2640,7 +2640,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search tenant by venture name, owner or TIN..."
+                    placeholder="Search by business name or TIN"
                     className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
                   />
                 </div>
@@ -2719,17 +2719,17 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
               <div className="flex items-center justify-between border-b border-slate-800 pb-2">
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                    Pending Offline Subscription Payments ({pendingPayments.length})
+                    Payments to check ({pendingPayments.length})
                   </h4>
-                  <p className="text-[10px] text-slate-400">Verify M-Paisa mobile references and BSP bank wire transfers</p>
+                  <p className="text-[10px] text-slate-400">Check M-PAiSA references and BSP bank transfers before approving</p>
                 </div>
               </div>
 
               {pendingPayments.length === 0 ? (
                 <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-2xl">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-60" />
-                  <p className="text-xs font-bold text-slate-300">All offline payments reconciled!</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">No pending manual remittance requests at this time.</p>
+                  <p className="text-xs font-bold text-slate-300">No payments to check</p>
+                  <p className="text-[10px] text-slate-500 mt-0.5">Manual subscription payments will appear here.</p>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -2742,11 +2742,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                             {pay.method}
                           </span>
                           <span className="text-[9px] bg-sky-950 text-sky-300 font-bold uppercase px-1.5 py-0.5 rounded">
-                            {pay.plan} Plan
+                            {pay.plan} plan
                           </span>
                         </div>
                         <div className="text-[9.5px] text-slate-400 space-y-0.5 mt-1 font-mono">
-                          <p>Ref Code: <span className="text-slate-200 font-bold">{pay.refCode}</span></p>
+                          <p>Reference: <span className="text-slate-200 font-bold">{pay.refCode}</span></p>
                           <p>Date: {pay.date}</p>
                         </div>
                       </div>
@@ -2765,7 +2765,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95"
                         >
                           <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          <span>Approve & Upgrade</span>
+                          <span>Approve</span>
                         </button>
                       </div>
                     </div>
@@ -2781,29 +2781,29 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total SaaS MRR</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Monthly recurring revenue</span>
                   <span className="text-xl font-black text-slate-100 font-mono mt-1 block">FJD ${totalSaasMRR}</span>
-                  <span className="text-[9px] text-emerald-400 font-bold block mt-0.5">Recurring revenue</span>
+                  <span className="text-[9px] text-emerald-400 font-bold block mt-0.5">From subscriptions</span>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Active Tenants</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Active workspaces</span>
                   <span className="text-xl font-black text-slate-100 font-mono mt-1 block">{activeTenantsCount}</span>
-                  <span className="text-[9px] text-sky-400 font-bold block mt-0.5">Fijian consultants</span>
+                  <span className="text-[9px] text-sky-400 font-bold block mt-0.5">Workspaces in use</span>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Total Clients</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Clients</span>
                   <span className="text-xl font-black text-slate-100 font-mono mt-1 block">
                     {tenants.reduce((acc, t) => acc + t.clientsCount, 0)}
                   </span>
-                  <span className="text-[9px] text-slate-400 block mt-0.5">Managed accounts</span>
+                  <span className="text-[9px] text-slate-400 block mt-0.5">Across all workspaces</span>
                 </div>
 
                 <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">AI OCR Quota</span>
-                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">1,420</span>
-                  <span className="text-[9px] text-rose-400 block mt-0.5">Receipt scans in 2026</span>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">AI receipt scans</span>
+                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">—</span>
+                  <span className="text-[9px] text-rose-400 block mt-0.5">Not tracked yet</span>
                 </div>
               </div>
             </div>
@@ -2813,8 +2813,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
         {/* Footer info bar */}
         <div className="bg-slate-950 px-5 py-2.5 border-t border-slate-800 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-          <span>FRCS Statutory Compliant • Fiji Cloud Invoicing</span>
-          <span>Logged in as Super Admin</span>
+          <span>Frilensa admin</span>
+          <span>Signed in as admin</span>
         </div>
 
       </div>

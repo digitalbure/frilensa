@@ -838,7 +838,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         Format: {booking.meetingType?.replace('_', ' ') || 'Zoom video'}
                       </p>
                       <p className="text-zinc-600">
-                        Payment: <strong className="uppercase">{booking.paymentMethod || 'M-Paisa'}</strong>
+                        Payment: <strong className="uppercase">{booking.paymentMethod || 'M-PAiSA'}</strong>
                       </p>
                       <p className="font-mono font-bold text-emerald-600">
                         Budget: FJD ${(booking.budgetEstimate || 0).toFixed(2)}
@@ -1215,7 +1215,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Email *</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your email *</label>
                       <input
                         type="email"
                         required
@@ -1258,7 +1258,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       className="w-full bg-white border border-zinc-200 rounded-xl py-2 px-3 text-xs mt-1 text-zinc-900 font-medium focus:outline-none focus:border-sky-600"
                     >
                       <option value="mpaisa">M-PAiSA</option>
-                      <option value="mycash">Digicel MyCash</option>
+                      <option value="mycash">MyCash</option>
                       <option value="bank_transfer">Bank transfer</option>
                     </select>
                   </div>

@@ -377,7 +377,7 @@ What can I help with?`,
     let newTitle = currentSession.title;
     if (currentSession.messages.length <= 1 && userMessageText) {
       newTitle = userMessageText.length > 35 
-        ? `${userMessageText.substring(0, 32)}...` 
+        ? `${userMessageText.substring(0, 32)}…` 
         : userMessageText;
     }
 

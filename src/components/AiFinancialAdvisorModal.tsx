@@ -142,7 +142,7 @@ export default function AiFinancialAdvisorModal({
         <div class="grid grid-cols-2 gap-2 p-3 bg-slate-100 rounded-xl text-[11px]">
           <div><span class="text-slate-500 block">Revenue:</span><strong class="text-slate-900 font-mono text-xs">FJD $${pnlStats.totalRevenue.toFixed(2)}</strong></div>
           <div><span class="text-slate-500 block">Expenses:</span><strong class="text-rose-600 font-mono text-xs">FJD $${pnlStats.totalExpenses.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Net Profit:</span><strong class="${pnlStats.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-mono text-xs">FJD $${pnlStats.netProfit.toFixed(2)}</strong></div>
+          <div><span class="text-slate-500 block">Net profit:</span><strong class="${pnlStats.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-mono text-xs">FJD $${pnlStats.netProfit.toFixed(2)}</strong></div>
           <div><span class="text-slate-500 block">Net margin:</span><strong class="text-indigo-600 font-mono text-xs">${pnlStats.profitMargin.toFixed(1)}%</strong></div>
         </div>
         <p>Consider putting <strong>20% of net profit</strong> into a separate account for provisional tax and quarterly FRCS payments.</p>
