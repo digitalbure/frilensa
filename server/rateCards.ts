@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, randomToken, type AuthedRequest } from "./security";
 import { notifyConsultant, later } from "./notify";
 import { readWorkspace } from "./workspace";
+import { rateCardServices as libRateCardServices } from "../src/lib/bookings";
 
 // Shareable rate cards: /?rates=<token> shows one business's services and rates, read live from the
 // workspace, and lets a prospective client ask for a quote. The token-to-workspace mapping lives in
@@ -36,8 +37,7 @@ function onErrors(router: express.Router, name: string) {
 
 /** Services the business lists on its rate card: active, for this business (or all), not hidden. */
 export function rateCardServices(data: any, businessId: string) {
-  return (data.services || []).filter((s: any) =>
-    s && s.isActive !== false && s.showOnRateCard !== false && (!s.businessId || s.businessId === businessId));
+  return libRateCardServices(data.services, businessId);
 }
 
 async function loadCard(token: string) {
@@ -59,7 +59,7 @@ function logoUrl(url: unknown) {
   return "";
 }
 
-function publicCard(data: any, business: any) {
+export function publicCard(data: any, business: any) {
   const profile = data.userProfile || {};
   const vatOn = profile.enableTax !== false && Number(profile.defaultVatRate) > 0;
   return {
@@ -136,18 +136,19 @@ export function createPublicRateCardsRouter() {
         currency: found.data.userProfile.defaultCurrency || "FJD",
         estimate,
         status: "new",
+        channel: "rate_card",
         createdAt: new Date().toISOString()
       };
       await ref.set(request);
       later(notifyConsultant(found.card.uid, {
-        subject: `Quote request ${request.ref} from ${name}`,
-        heading: "Someone asked for a quote from your rate card",
+        subject: `New booking request ${request.ref} from ${name}`,
+        heading: "New booking request from your rate card",
         lines: [
           `${name}${request.company ? ` (${request.company})` : ""} asked for a quote${items.length ? ` for ${items.map((i: any) => `${i.quantity} × ${i.name}`).join(", ")}` : ""}.`,
           message ? `Their note: ${message.slice(0, 500)}` : "",
           `Reply to ${email}, or create the quote in Frilensa.`
         ].filter(Boolean),
-        actionLabel: "View request",
+        actionLabel: "View booking request",
         actionPath: "/?tab=dashboard"
       }));
       res.json({ ok: true, ref: request.ref });

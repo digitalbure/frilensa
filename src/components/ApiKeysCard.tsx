@@ -120,6 +120,10 @@ export default function ApiKeysCard() {
         </button>
       </div>
 
+      <p className="text-[11px] text-zinc-500">
+        <strong>Read and create drafts</strong> lets the app read your records and add clients, draft quotes and invoices, expenses, tasks and <strong>booking requests</strong> (for example from your website or a booking app). <strong>Read only</strong> can't change anything. No key can send anything to your clients or record payments.
+      </p>
+
       {error && <p className="text-[11px] text-rose-700">{error}</p>}
 
       {keys && keys.length > 0 && (

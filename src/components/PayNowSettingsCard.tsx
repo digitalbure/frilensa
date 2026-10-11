@@ -82,7 +82,7 @@ export default function PayNowSettingsCard({ data, onUpdateData }: PayNowSetting
       <span><span className="font-semibold text-slate-800">{label}</span><span className="block text-[11px] text-slate-500">{hint}</span></span>
     </label>
   );
-  const input = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs mt-1 normal-case font-normal';
+  const input = 'w-full bg-white border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-800 mt-1 normal-case font-normal';
 
   return (
     <section className="bg-white rounded-xl p-5 border border-slate-200 shadow-xs space-y-4">

@@ -78,7 +78,7 @@ export default function RateCardSettings({ data, onUpdateData }: RateCardSetting
   };
 
   const listed = data.services.filter(s => s.isActive !== false && s.showOnRateCard !== false && (!s.businessId || s.businessId === business.id)).length;
-  const input = 'w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs mt-1';
+  const input = 'w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs text-zinc-800 mt-1';
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">

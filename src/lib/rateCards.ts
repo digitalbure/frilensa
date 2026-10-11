@@ -30,6 +30,14 @@ export interface QuoteRequest {
   currency: string;
   estimate: number;
   createdAt: string;
+  channel?: 'rate_card' | 'directory' | 'api' | 'booking_page' | 'widget';
+  details?: { label: string; value: string }[];
+  eventDate?: string;
+  startTime?: string;
+  location?: string;
+  source?: { app?: string; reference?: string; url?: string };
+  via?: string;
+  directoryBookingId?: string;
 }
 
 async function json<T>(res: Response): Promise<T> {

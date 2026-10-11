@@ -8,6 +8,7 @@ import { ipLimit } from "./apiV1";
 import { cors } from "./oauth";
 import { WorkspaceMissing } from "./workspace";
 import * as api from "./apiService";
+import * as bookings from "./bookings";
 
 // MCP server (Streamable HTTP, stateless) so AI assistants such as Claude can work with a
 // Frilensa workspace. Authenticated with the same personal API keys as the REST API; tools that
@@ -85,6 +86,24 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
     description: "Tasks across projects (or one project), soonest due first. Filter by status ('open' = not done) or dueBefore.",
     inputSchema: api.listTasksInput, annotations: readOnly
   }, args => run(() => api.listTasks(uid, args)));
+
+  server.registerTool("get_booking_form", {
+    title: "Booking form",
+    description: "What a business lets customers book: bookable services (with prices, units and quantity limits), its booking questions, terms, intro and after-booking message.",
+    inputSchema: bookings.bookingFormInput, annotations: readOnly
+  }, args => run(() => bookings.getBookingForm(uid, args)));
+
+  server.registerTool("list_booking_requests", {
+    title: "List booking requests",
+    description: "Booking requests from every channel (rate card, directory, apps, booking page, website widget), most recently changed first, each with its stage (new, quoted, quote_accepted, invoiced, part_paid, paid, dismissed, cancelled). Filter by since, app, channel or businessId.",
+    inputSchema: bookings.listBookingsInput, annotations: readOnly
+  }, args => run(() => bookings.listBookingRequests(uid, args)));
+
+  server.registerTool("get_booking_request", {
+    title: "Get a booking request",
+    description: "One booking request with the customer's answers, its quote and invoices, and its stage.",
+    inputSchema: { id: z.string().min(1).max(200) }, annotations: readOnly
+  }, args => run(() => bookings.getBookingRequest(uid, args.id)));
 
   server.registerTool("get_summary", {
     title: "Profit and VAT summary",

@@ -3,6 +3,7 @@ import { rateLimit } from "./security";
 import { requireApiKey, apiRateLimit, type ApiRequest } from "./apiKeys";
 import { WorkspaceMissing } from "./workspace";
 import * as api from "./apiService";
+import * as bookings from "./bookings";
 
 // Public REST API, authenticated with a personal API key. See docs/API.md.
 
@@ -53,6 +54,22 @@ export function createApiV1Router() {
   router.post("/tasks", ...draft, handle(req => api.createTask(uid(req), req.apiKey!.name, req.body)));
   router.get("/summary", ...read, handle(req => api.getSummary(uid(req), query(req))));
   router.get("/vat-return", ...read, handle(req => api.getVatReturn(uid(req), query(req))));
+
+  // Bookings: the form an app shows, booking requests it sends, and how far each has got.
+  const bookingsPerDay = rateLimit({ name: "api-bookings-day", max: 500, windowMs: 24 * 60 * 60_000, key: r => (r as ApiRequest).apiKey?.id || r.ip || "anon" });
+  router.get("/booking-form", ...read, handle(req => bookings.getBookingForm(uid(req), query(req))));
+  router.post("/booking-requests", ...draft, bookingsPerDay, async (req: ApiRequest, res: Response, next: NextFunction) => {
+    try {
+      const r = await bookings.createBookingRequest(uid(req), req.apiKey!, req.body);
+      res.status(r.created ? 201 : 200).json(r.body);
+    } catch (err: any) {
+      if (err instanceof api.ApiError) return res.status(err.status).json({ error: err.message });
+      if (err instanceof WorkspaceMissing) return res.status(404).json({ error: err.message });
+      next(err);
+    }
+  });
+  router.get("/booking-requests", ...read, handle(req => bookings.listBookingRequests(uid(req), query(req))));
+  router.get("/booking-requests/:id", ...read, handle(req => bookings.getBookingRequest(uid(req), String(req.params.id))));
 
   return router;
 }

@@ -280,8 +280,8 @@ Reimbursed costs are left out of profit and loss and listed separately in the VA
   {
     id: 'services-rate-card',
     title: 'Services, rate card and default terms',
-    summary: 'Keep a catalogue of services and rates, share a rate card that takes quote requests, and set default terms for each business.',
-    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
+    summary: 'Keep a catalogue of services and rates, share a rate card, take booking requests from your rate card, apps and websites, choose what can be booked and what to ask, and set default terms for each business.',
+    keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
     body: `Everything here is in **Finance → Services**, for the active business.
 
 ### Your catalogue
@@ -291,9 +291,17 @@ Press **Add item** and enter the name, unit (**Per**) and rate. You can add an i
 - **Rate rules** below the catalogue add weekend, rush or after-hours modifiers, and the rate calculator shows what a job costs with them.
 
 ### Rate card
-Under **Rate card**, press **Create rate card link**. The link opens a page with your services, rates and quote terms. Clients can print it or save it as a PDF, pick quantities to see an estimate, and send you a quote request. Untick **Show on rate card** on an item to hide it. **New link** replaces the link and **Turn off** stops it working.
+Under **Rate card**, press **Create rate card link**. The link opens a page with your services, rates and quote terms. Clients can print it or save it as a PDF, pick quantities to see an estimate, and send you a booking request. Untick **Show on rate card** on an item to hide it. **New link** replaces the link and **Turn off** stops it working.
 
-Quote requests appear under **Needs your attention** on **Home**, and you're emailed about each one. **Create quote** makes a draft quote from the request and adds the person as a client if they aren't one already. Check it and send it from **Billing**.
+### Booking requests
+Every booking request, from your rate card, the directory, or an app or website connected with an API key, appears under **Needs your attention** on **Home**, and you're emailed about each one. Each shows where it came from (for example "Booked via Soqo Stream"), the customer's answers, and the event date, time and location. The soonest events are listed first. **Open in** goes to the booking in the app it came from. **Create quote** makes a draft quote with the requested services and a **Booking details** block in its notes, so the customer sees what they're being quoted for. It adds the person as a client if they aren't one already. Check it and send it from **Billing**.
+
+### Bookings settings
+Under **Bookings for** your business:
+- **Bookable services**: everything on your rate card can be booked unless you untick it. Set a minimum or maximum quantity per service.
+- **Booking questions**: switch on the event or job date, start time and location, and add your own questions (short or long text, number, date, time, single or multiple choice, yes or no). Each can be required, have help text, and be asked only when certain services are chosen. Use the arrows to order them.
+- **Intro text** and **After-booking message**, shown to customers by apps that use them.
+- The **Business id** is what an app or website developer needs, with an API key, to show your booking form.
 
 ### Default terms
 Under **Terms for** your business, set **Invoices due after (days)**, **Quotes valid for (days)**, **Invoice terms and notes** and **Quote terms and conditions**, then press **Save terms**. New quotes and invoices fill these in (you can still change them on each one), including drafts made by the assistant or the API, and retainers with no terms of their own.`
@@ -450,7 +458,7 @@ It never sends anything to clients, emails anyone, records or confirms payments,
 
 ### Files, memory and saved chats
 - Attach a receipt, invoice or bank statement (photo, PDF or CSV) and it reads it.
-- **Consultations** keeps your past chats. Start a fresh one with **New consultation**.
+- **Consultations** keeps your past chats. Start a fresh one with **New chat**.
 - **AI memory** holds facts and preferences the assistant uses in every answer. Add or delete them yourself.
 - **Email transcript** emails a chat and its action items.
 
@@ -480,7 +488,10 @@ You can have up to 10 keys. **Revoke** stops a key working immediately. Treat ke
 
 ### What connected tools can do
 - **Read only**: read your account, businesses, clients, quotes, invoices, receipts, credit notes, expenses, projects, tasks, and profit and VAT summaries.
-- **Read and create drafts**: also add clients, tasks and expenses, and create draft quotes and invoices (which can include reimbursable expenses).
+- **Read and create drafts**: also add clients, tasks and expenses, create draft quotes and invoices (which can include reimbursable expenses), and send you **booking requests**.
+
+### Take bookings from your own website or app
+A developer building your booking page or app needs a **Read and create drafts** key (name it after the app, for example "Soqo Stream") and your **Business id** from **Finance → Services → Bookings**. The app reads your booking form (bookable services, prices and questions), sends booking requests, and can check how far each one has got: quoted, quote accepted, invoiced, part paid or paid. Prices always come from Frilensa. Requests land in your inbox like any other booking. The app's documentation is at frilensa.com in docs/API.md.
 
 Nothing reached through a key or connector can send anything to your clients, mark anything paid, or edit or delete existing records. Drafts stay hidden from clients until you send them from Frilensa. Every change shows in your activity log with the key's or app's name.`
   },
@@ -495,7 +506,7 @@ Nothing reached through a key or connector can send anything to your clients, ma
 Your name, email, mobile number and TIN, VAT on or off with your VAT rate, and your **Default currency** for new documents. Press **Save settings** when you're done.
 
 ### Email notifications
-Under **Email notifications**, choose whether you're emailed when a client reports a payment, accepts a quote, sends a message or books you. You're also emailed about rate card quote requests. Turn it off to stop these emails.
+Under **Email notifications**, choose whether you're emailed when a client reports a payment, accepts a quote, sends a message or books you. You're also emailed about every booking request. Turn it off to stop these emails.
 
 ### Other settings
 - **Automatic invoices and reminders**: see the retainers and reminders article.

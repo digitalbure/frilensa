@@ -16,8 +16,8 @@ Authorization: Bearer frk_…
 
 | Access | Can | Can't |
 | --- | --- | --- |
-| **Read only** | Read the account, businesses, clients, quotes, invoices, receipts, credit notes, expenses, projects and summaries | Change anything |
-| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, add expenses, and add tasks to projects | Send anything to clients, mark anything paid, edit or delete existing records |
+| **Read only** | Read the account, businesses, clients, quotes, invoices, receipts, credit notes, expenses, projects, tasks, summaries, booking forms and booking requests | Change anything |
+| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, add expenses, add tasks to projects, and create **booking requests** | Send anything to clients, mark anything paid, edit or delete existing records |
 
 Drafts aren't visible to clients until the user sends them from Frilensa. Everything a key creates
 appears in the activity log as "via API key "<name>"".
@@ -48,6 +48,9 @@ Tools:
 | `get_document` | read | One document by id or number (e.g. `INV-2026-1004`) |
 | `list_expenses` | read | Expenses; filter by `from`/`to`, `category`, `businessId`, or `unbilledForClientId` for reimbursable expenses not yet on an invoice |
 | `list_projects` | read | Projects with status, budget and open tasks |
+| `get_booking_form` | read | A business's bookable services, booking questions, terms and messages |
+| `list_booking_requests` | read | Booking requests from every channel with their stage; filter by `since`, `app`, `channel`, `businessId` |
+| `get_booking_request` | read | One booking request with its quote, invoices and stage |
 | `list_tasks` | read | Tasks across projects; filter by `projectId`, `status` (`open` = not done), `dueBefore` |
 | `get_summary` | read | Cash-basis summary for a period: received, expenses, profit, outstanding, overdue, VAT collected vs claimable |
 | `get_vat_return` | read | VAT return figures for a period (standard periods or `from`/`to`, invoice or payments basis), with warnings; `includeLines` for the documents and expenses behind them |
@@ -118,10 +121,115 @@ Example:
 curl -H "Authorization: Bearer frk_…" "https://frilensa.com/api/v1/documents?overdue=true"
 ```
 
+## Bookings
+
+Frilensa can be the booking engine behind a business's own website or app. The app shows the
+business's booking form, sends what the customer chose, and checks how far each booking has got.
+The business reviews every request in its Frilensa inbox, where it becomes a quote, then an invoice
+the customer can pay online. The examples use Soqo Stream, a live-streaming platform whose
+customers book streaming crews, but any app works the same way.
+
+**Setting up (the business):** in Frilensa, put the services on the rate card, choose what's bookable
+and the booking questions in **Finance → Services → Bookings**, then create a **Read and create
+drafts** key named after the app (for example "Soqo Stream") and give the developer the key and the
+**Business id** shown there. Keep the key in a secret store, never in code.
+
+| Method and path | Access | Notes |
+| --- | --- | --- |
+| `GET /api/v1/booking-form?businessId=` | read | Everything needed to render the form. `businessId` is optional when the account has one business. Works whether or not the public rate card link is on |
+| `POST /api/v1/booking-requests` | drafts | Send a booking request (below). `201` when created, `200` with the existing request when the same `source.app` + `source.reference` was sent before |
+| `GET /api/v1/booking-requests/{id}` | read | The request and its progress |
+| `GET /api/v1/booking-requests?since=&app=&channel=&businessId=&limit=` | read | Most recently changed first. `since` (ISO 8601) compares against the worked-out `updatedAt`, so poll with the time of your last check |
+
+**Booking form** (`GET /api/v1/booking-form`):
+
+```json
+{
+  "businessId": "biz-…",
+  "business": { "name": "Vibrant Fiji", "brandSlogan": "", "colorTheme": "#0f766e", "logoType": "image", "logoUrl": "https://…", "email": "…", "phone": "…", "address": "…" },
+  "currency": "FJD", "vatRate": 12.5,
+  "terms": { "text": "50% deposit to book.", "paymentTermsDays": 14, "quoteValidDays": 30 },
+  "intro": "…", "afterMessage": "We'll reply within one working day.",
+  "services": [{ "id": "srv-…", "name": "Production day", "description": "…", "rate": 1200, "unit": "Day", "category": "Live streaming", "billingInterval": "one-time", "minQuantity": 1, "maxQuantity": null, "vat": true }],
+  "questions": [
+    { "id": "q_date", "type": "date", "label": "Event or job date", "help": "", "required": true, "options": [], "appliesToServiceIds": [] },
+    { "id": "q_…", "type": "single_choice", "label": "How will people watch?", "help": "", "required": false, "options": ["Free", "Ticketed"], "appliesToServiceIds": [] }
+  ]
+}
+```
+
+Question types: `short_text`, `long_text`, `number`, `date` (YYYY-MM-DD), `time` (HH:MM, 24-hour),
+`single_choice`, `multi_choice` (send an array), `yes_no` (send `true`/`false`). A question with
+`appliesToServiceIds` is only asked (and only required) when one of those services is chosen. The
+built-in questions have fixed ids: `q_date`, `q_time`, `q_location`.
+
+**Booking request** (`POST /api/v1/booking-requests`):
+
+```json
+{
+  "businessId": "biz-…",
+  "name": "Mere Tuilau",
+  "email": "mere@example.com",
+  "phone": "+679 999 9999",
+  "company": "Suva Methodist Church",
+  "message": "Anything else the customer wrote (max 3000)",
+  "items": [{ "serviceId": "srv-…", "quantity": 2 }],
+  "answers": [{ "questionId": "q_date", "value": "2027-03-28" }],
+  "details": [{ "label": "Viewing", "value": "Free" }],
+  "eventDate": "2027-03-28",
+  "startTime": "10:00",
+  "location": "Centenary Church, Suva",
+  "source": { "app": "Soqo Stream", "reference": "SQB-7Q2K4M", "url": "https://soqo.stream/admin/collections/bookings/12" }
+}
+```
+
+- **Prices always come from Frilensa.** Any `rate` sent on an item is ignored. Unknown or non-bookable
+  services are dropped, and quantities are kept within each service's minimum and maximum.
+- **Answers are checked** against the business's questions (required, type, choices, service
+  conditions). A failure is `400` naming the question. Answers are stored with the business's labels.
+- `details`: extra facts the app collects itself, shown as-is (up to 30; label up to 60 characters,
+  value up to 500).
+- `eventDate`, `startTime`, `location` fill the built-in questions when they're on, and are kept anyway.
+- `source.url` must be https. It appears in the inbox as "Open in Soqo Stream".
+- Unknown fields are rejected. Limits: the key's 120 a minute, plus 500 booking requests a day per key.
+- It doesn't email the customer, create documents or record payments. The business is emailed
+  ("New booking request … via Soqo Stream").
+
+Response: `201 { "id", "ref": "QR-1A2B3C", "status": "new", "estimate": 1380, "currency": "FJD" }`.
+`estimate` is before VAT.
+
+**Progress** (`GET /api/v1/booking-requests/{id}`):
+
+```json
+{
+  "bookingRequest": {
+    "id": "…", "ref": "QR-1A2B3C", "channel": "api", "status": "new | quoted | dismissed",
+    "stage": "new | quoted | quote_accepted | invoiced | part_paid | paid | dismissed | cancelled",
+    "source": { "app": "Soqo Stream", "reference": "SQB-7Q2K4M", "url": "https://…" },
+    "name": "…", "email": "…", "items": [], "estimate": 1380, "currency": "FJD",
+    "details": [{ "label": "Event or job date", "value": "2027-03-28" }],
+    "eventDate": "2027-03-28", "startTime": "10:00", "location": "…",
+    "createdAt": "…", "updatedAt": "…",
+    "quote": { "id": "…", "number": "QT-2027-0012", "status": "draft | sent | accepted | cancelled", "total": 1380, "currency": "FJD", "onlineUrl": "https://frilensa.com/?doc=…" },
+    "invoices": [{ "id": "…", "number": "INV-2027-0031", "status": "sent | partial | paid | cancelled", "total": 1380, "currency": "FJD", "amountPaid": 690, "balance": 690, "dueDate": "2027-03-14", "onlineUrl": "…" }]
+  }
+}
+```
+
+`stage` is worked out by Frilensa when you read it, from the quote and the invoices made from it, so
+every app gets the same answer: dismissed → `dismissed`; quote cancelled → `cancelled`; every
+(non-draft) invoice paid → `paid`; some paid → `part_paid`; an invoice sent → `invoiced`; quote
+accepted → `quote_accepted`; a quote exists → `quoted`; otherwise `new`. `onlineUrl` is only given
+for documents that have been sent; it's the page where the customer accepts the quote or pays the
+invoice (Pay now). `updatedAt` is the latest change to the request, its quote or its invoices.
+
+`channel` is where the request came from: `rate_card`, `directory`, `api`, `booking_page`, `widget`.
+
 ## For developers
 
 - Keys: `server/apiKeys.ts` (collection `api_keys`, server-only; document id is the SHA-256 of the key).
 - OAuth: `server/oauth.ts` (collections `oauth_clients`, `oauth_codes`, `oauth_grants`, `oauth_tokens`, server-only) and the consent page `src/components/OAuthConsent.tsx`.
+- Bookings: `server/bookings.ts` (requests in the server-only `quote_requests` collection) and `src/lib/bookings.ts` (questions, checking, stages).
 - Operations: `server/apiService.ts`, shared by `server/apiV1.ts` (REST) and `server/mcp.ts` (MCP).
 - Workspace reads and transactional writes: `server/workspace.ts`.
 - Tests: `tests/server.e2e.test.mjs` (keys, REST, MCP, scopes, isolation between users, revocation).

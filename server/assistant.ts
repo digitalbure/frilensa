@@ -6,6 +6,7 @@ import { zodToJsonSchema } from "zod-to-json-schema";
 import { rateLimit, type AuthedRequest } from "./security";
 import { readWorkspace, WorkspaceMissing } from "./workspace";
 import * as api from "./apiService";
+import * as bookings from "./bookings";
 import { HELP_ARTICLES, helpAsText } from "../src/help/articles";
 import { todayIn } from "../src/lib/retainers";
 
@@ -42,6 +43,7 @@ const READ_TOOLS: ReadTool[] = [
   { name: "list_expenses", description: "Expenses, newest first. Filter by date range, category or business; unbilledForClientId finds expenses waiting to be billed to that client.", shape: api.listExpensesInput, run: (uid, i) => api.listExpenses(uid, i) },
   { name: "list_projects", description: "Projects with ids, status, client, dates, budget and number of open tasks.", shape: {}, run: uid => api.listProjects(uid) },
   { name: "list_tasks", description: "Project tasks, soonest due first. Filter by projectId, status ('open' = not done) or dueBefore.", shape: api.listTasksInput, run: (uid, i) => api.listTasks(uid, i) },
+  { name: "list_booking_requests", description: "Booking requests from every channel, most recently changed first, with their stage (new, quoted, invoiced, paid…), the customer's answers, event date and location.", shape: bookings.listBookingsInput, run: (uid, i) => bookings.listBookingRequests(uid, i) },
   { name: "get_summary", description: "Cash-basis summary for a period in the home currency: received, expenses, profit, outstanding, overdue, VAT collected vs claimable. Defaults to this year to date.", shape: api.summaryInput, run: (uid, i) => api.getSummary(uid, i) },
   { name: "get_vat_return", description: "VAT return figures for a period (default last month), invoice or payments basis, with warnings.", shape: api.vatReturnInput, run: (uid, i) => api.getVatReturn(uid, i) }
 ];

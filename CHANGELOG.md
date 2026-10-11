@@ -18,6 +18,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.12.0] - 2026-10-11
+
+### Added
+- **One inbox for every booking.** Booking requests from your rate card, the Frilensa directory, and apps or websites connected to Frilensa now arrive in the same place on **Home**. Each shows where it came from (for example "Booked via Soqo Stream"), the customer's answers, and the event date, time and location. The soonest events are listed first, with **Open in** to go to the booking in the app it came from.
+- **Create quote** now adds a **Booking details** block to the quote's notes, so the customer sees what they're being quoted for.
+- **Bookings settings** for each business, in **Finance → Services**:
+  - **Bookable services:** choose which services can be booked, with a minimum and maximum quantity for each.
+  - **Booking questions:** switch on the event date, start time and location. Add your own questions (text, number, date, time, choices, yes or no), each optionally required or asked only for certain services.
+  - **Intro and after-booking messages**, and the **Business id** to give to app developers.
+- **Bookings for apps and websites:** with a **Read and create drafts** API key, an app can:
+  - show your booking form, with your services, prices and questions;
+  - send you booking requests, with prices always taken from Frilensa and answers checked against your questions;
+  - check how far each booking has got: quoted, quote accepted, invoiced, part paid or paid.
+  Claude can read your booking requests too.
+
+### Changed
+- "Quote requests" are now called **booking requests**.
+- **Read and create drafts** keys can now also create booking requests. They still can't send anything to your clients or record payments.
+- New directory bookings also appear in the bookings inbox. You still accept or decline them in **Directory**.
+
+### Fixed
+- Text typed into some settings boxes (rate card, terms, Pay now) showed in faint grey.
+
 ## [3.11.1] - 2026-10-11
 
 ### Changed

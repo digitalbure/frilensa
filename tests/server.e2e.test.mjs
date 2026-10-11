@@ -76,6 +76,16 @@ await put(`documents/${B.uid}_late1`, { ...bobDocs[0], consultantId: B.uid, clie
 // Carol's workspace for rate cards, the assistant and Pay now.
 const C = await user('carol@rates.fj');
 const TOK_C1 = 'carolInvoiceOneAAAAAAAAAA', TOK_C2 = 'carolInvoiceTwoBBBBBBBBBB';
+const carolBooking = {
+  services: { s5: { minQuantity: 5, maxQuantity: 50 } },
+  builtIn: { date: true, location: true },
+  questions: [
+    { id: 'q_aud', type: 'number', label: 'Expected audience', required: true },
+    { id: 'q_watch', type: 'single_choice', label: 'How people will watch', options: ['Free', 'Ticketed'] },
+    { id: 'q_prints', type: 'yes_no', label: 'Framed prints?', required: true, appliesToServiceIds: ['s5'] }
+  ],
+  intro: 'Book a shoot', afterMessage: "We'll reply within one working day."
+};
 const carolDocs = [
   { id: 'ci1', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5001', currency: 'FJD', issueDate: '2026-10-01', total: 300, subtotal: 300, vatRate: 0, vatAmount: 0, shareToken: TOK_C1, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'x', name: 'Shoot', quantity: 1, rate: 300, total: 300 }] },
   { id: 'ci2', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5002', currency: 'USD', issueDate: '2026-10-02', total: 100, subtotal: 100, vatRate: 0, vatAmount: 0, shareToken: TOK_C2, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'y', name: 'Prints', quantity: 1, rate: 100, total: 100 }] }
@@ -84,7 +94,7 @@ const carolWs = rateCardToken => ({
   consultantEmail: C.email,
   userProfile: { email: C.email, defaultCurrency: 'FJD', defaultVatRate: 12.5 },
   clients: [],
-  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
+  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, booking: carolBooking, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
   services: [
     { id: 's1', name: 'Portrait session', description: 'One hour', rate: 150, unit: 'Hour', businessId: 'cb1', costPrice: 40, sku: 'SECRET-SKU' },
     { id: 's2', name: 'Hidden item', rate: 999, unit: 'Item', businessId: 'cb1', showOnRateCard: false },
@@ -284,7 +294,7 @@ try {
     const full = (await mcp(aliceKey, 'tools/list')).body.result.tools.map(t => t.name);
     assert.ok(full.includes('list_documents') && full.includes('create_draft_document'));
     const ro = (await mcp(aliceReadKey, 'tools/list')).body.result.tools.map(t => t.name);
-    assert.ok(ro.includes('get_summary') && ro.includes('list_tasks') && !ro.includes('create_draft_document') && !ro.includes('add_expense') && !ro.includes('create_task'));
+    assert.ok(ro.includes('get_summary') && ro.includes('list_tasks') && ro.includes('get_booking_form') && ro.includes('list_booking_requests') && ro.includes('get_booking_request') && !ro.includes('create_draft_document') && !ro.includes('add_expense') && !ro.includes('create_task'));
     assert.ok(full.includes('create_task'));
   });
   await check('MCP tools read and write the workspace', async () => {
@@ -573,7 +583,7 @@ try {
     const r = await j(await fetch(`${RC}/${card1}/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Dee', email: 'dee@client.fj', message: 'Family shoot', items: [{ serviceId: 's1', quantity: 2, rate: 1 }, { serviceId: 's2', quantity: 1 }, { serviceId: 's4', quantity: 1 }, { serviceId: 's5', quantity: 3 }] }) }));
     assert.equal(r.status, 200); assert.match(r.body.ref, /^QR-/);
   });
-  await check('consultant is emailed about the quote request', async () => { await emailTo(C.email, /Quote request QR-.* from Dee/); });
+  await check('consultant is emailed about the quote request', async () => { await emailTo(C.email, /New booking request QR-.* from Dee/); });
   await check('only the card owner sees the request', async () => {
     const r = await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }));
     assert.equal(r.body.requests.length, 1);
@@ -733,6 +743,134 @@ try {
   await check('disconnecting PayPal removes the keys', async () => {
     assert.equal((await fetch(`${API}/api/payments/paypal?businessId=cb1`, { method: 'DELETE', headers: auth(C) })).status, 200);
     assert.equal(await get(`paypal_accounts/${C.uid}_cb1`), null);
+  });
+
+  // --- Bookings API ---
+  let carolKey, carolReadKey, bookReqId;
+  const V1 = `${API}/api/v1`;
+  const keyHdr = k => ({ Authorization: `Bearer ${k}`, 'Content-Type': 'application/json' });
+  const booking = (extra = {}) => ({
+    businessId: 'cb1', name: 'Mere Tuilau', email: 'mere@example.com', phone: '+679 999 9999', company: 'Suva Methodist Church',
+    items: [{ serviceId: 's1', quantity: 2, rate: 1 }, { serviceId: 's5', quantity: 2 }, { serviceId: 's2', quantity: 1 }, { serviceId: 's3', quantity: 1 }, { serviceId: 'nope', quantity: 1 }],
+    answers: [{ questionId: 'q_date', value: '2027-03-28' }, { questionId: 'q_location', value: 'Centenary Church, Suva' }, { questionId: 'q_aud', value: 300 }, { questionId: 'q_watch', value: 'Free' }, { questionId: 'q_prints', value: true }],
+    details: [{ label: 'Viewing', value: 'Free' }],
+    startTime: '10:00',
+    source: { app: 'Soqo Stream', reference: 'SQB-7Q2K4M', url: 'https://soqo.stream/admin/collections/bookings/12' },
+    ...extra
+  });
+  const post = (k, body) => fetch(`${V1}/booking-requests`, { method: 'POST', headers: keyHdr(k), body: JSON.stringify(body) });
+  await check('Carol creates keys for a booking app', async () => {
+    carolKey = (await j(await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(C), body: JSON.stringify({ name: 'Soqo Stream' }) }))).body.key;
+    carolReadKey = (await j(await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(C), body: JSON.stringify({ name: 'Viewer', access: 'read' }) }))).body.key;
+    assert.ok(carolKey && carolReadKey);
+  });
+  await check('booking form by key: bookable services, limits and questions', async () => {
+    const r = await j(await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(carolReadKey) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.equal(r.body.business.name, 'Carol Photo'); assert.equal(r.body.currency, 'FJD'); assert.equal(r.body.vatRate, 12.5);
+    assert.deepEqual(r.body.services.map(s => s.id), ['s1', 's5']);
+    const prints = r.body.services.find(s => s.id === 's5'); assert.equal(prints.minQuantity, 5); assert.equal(prints.maxQuantity, 50); assert.equal(prints.vat, false);
+    assert.deepEqual(r.body.questions.map(q => q.id), ['q_date', 'q_location', 'q_aud', 'q_watch', 'q_prints']);
+    assert.deepEqual(r.body.questions.find(q => q.id === 'q_prints').appliesToServiceIds, ['s5']);
+    assert.equal(r.body.afterMessage, "We'll reply within one working day.");
+    assert.equal(JSON.stringify(r.body).includes('SECRET-SKU'), false, 'no cost or SKU');
+  });
+  await check("booking form: another user's business is 404, and businessId is needed with several businesses", async () => {
+    assert.equal((await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(bobKey) })).status, 404);
+    assert.equal((await fetch(`${V1}/booking-form`, { headers: keyHdr(carolReadKey) })).status, 400);
+    const bob = await j(await fetch(`${V1}/booking-form`, { headers: keyHdr(bobKey) }));
+    assert.equal(bob.status, 200); assert.equal(bob.body.businessId, 'bb1');
+  });
+  await check('booking requests need draft access', async () => { assert.equal((await post(carolReadKey, booking())).status, 403); });
+  await check('booking answers are checked against the questions', async () => {
+    const noAud = await j(await post(carolKey, booking({ answers: [{ questionId: 'q_date', value: '2027-03-28' }, { questionId: 'q_prints', value: true }] })));
+    assert.equal(noAud.status, 400); assert.match(noAud.body.error, /Expected audience/);
+    const badChoice = await j(await post(carolKey, booking({ answers: [{ questionId: 'q_date', value: '2027-03-28' }, { questionId: 'q_aud', value: 5 }, { questionId: 'q_watch', value: 'Maybe' }, { questionId: 'q_prints', value: true }] })));
+    assert.equal(badChoice.status, 400); assert.match(badChoice.body.error, /How people will watch/);
+    const badDate = await j(await post(carolKey, booking({ answers: [{ questionId: 'q_date', value: '2027-02-30' }, { questionId: 'q_aud', value: 5 }, { questionId: 'q_prints', value: true }] })));
+    assert.equal(badDate.status, 400); assert.match(badDate.body.error, /Event or job date/);
+    const noPrints = await j(await post(carolKey, booking({ answers: [{ questionId: 'q_date', value: '2027-03-28' }, { questionId: 'q_aud', value: 5 }] })));
+    assert.equal(noPrints.status, 400, 'a question that applies to a chosen service is required'); assert.match(noPrints.body.error, /Framed prints/);
+    const unknownQ = await post(carolKey, booking({ answers: [{ questionId: 'q_zzz', value: 'x' }] }));
+    assert.equal(unknownQ.status, 400);
+  });
+  await check('booking requests reject unknown fields and oversized details', async () => {
+    assert.equal((await post(carolKey, booking({ price: 1 }))).status, 400);
+    assert.equal((await post(carolKey, booking({ details: Array.from({ length: 31 }, (_, i) => ({ label: `L${i}`, value: 'v' })) }))).status, 400);
+    assert.equal((await post(carolKey, booking({ details: [{ label: 'x'.repeat(61), value: 'v' }] }))).status, 400);
+    assert.equal((await post(carolKey, booking({ source: { app: 'Soqo Stream', reference: 'R2', url: 'http://soqo.stream/x' } }))).status, 400, 'https only');
+  });
+  await check('a booking request uses server prices and limits, and drops what can\'t be booked', async () => {
+    const r = await j(await post(carolKey, booking()));
+    assert.equal(r.status, 201, JSON.stringify(r.body)); bookReqId = r.body.id;
+    assert.match(r.body.ref, /^QR-/); assert.equal(r.body.status, 'new'); assert.equal(r.body.currency, 'FJD');
+    assert.equal(r.body.estimate, 2 * 150 + 5 * 20, 's1 at 150, s5 raised to its minimum of 5 at 20; hidden, inactive and unknown dropped');
+  });
+  await check('sending the same app reference again returns the same request', async () => {
+    const r = await j(await post(carolKey, booking({ name: 'Someone else' })));
+    assert.equal(r.status, 200); assert.equal(r.body.id, bookReqId);
+  });
+  await check('the booking arrives in the owner\'s inbox, with answers as details', async () => {
+    const mine = (await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests;
+    const r = mine.find(x => x.id === bookReqId);
+    assert.equal(r.channel, 'api'); assert.equal(r.via, 'Soqo Stream'); assert.equal(r.eventDate, '2027-03-28'); assert.equal(r.startTime, '10:00'); assert.equal(r.location, 'Centenary Church, Suva');
+    assert.deepEqual(r.details.map(d => `${d.label}=${d.value}`), ['Event or job date=2027-03-28', 'Location=Centenary Church, Suva', 'Expected audience=300', 'How people will watch=Free', 'Framed prints?=Yes', 'Viewing=Free']);
+    assert.deepEqual(r.items.map(i => [i.serviceId, i.quantity, i.rate]), [['s1', 2, 150], ['s5', 5, 20]]);
+    const bobs = (await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(B) }))).body.requests;
+    assert.equal(bobs.some(x => x.id === bookReqId), false);
+  });
+  await check('the consultant is emailed, the customer is not', async () => {
+    await emailTo(C.email, /New booking request QR-.* via Soqo Stream/);
+    await new Promise(r => setTimeout(r, 500));
+    assert.equal(emails.filter(e => e.to === 'mere@example.com').length, 0);
+  });
+
+  // Progress, worked out from the workspace documents.
+  const stageOf = async () => (await j(await fetch(`${V1}/booking-requests/${bookReqId}`, { headers: keyHdr(carolReadKey) }))).body.bookingRequest;
+  const withDocs = docs => put(`consultants/${C.uid}`, { ...carolWs(''), documents: [...carolDocs, ...docs] });
+  const QUOTE_TOKEN = 'bookingQuoteTokenAAAAAAA', INV_TOKEN = 'bookingInvoiceTokenAAAAAA';
+  const bq = status => ({ id: 'bq1', type: 'quote', status, documentNumber: 'QT-2027-0012', currency: 'FJD', total: 450, subtotal: 400, vatRate: 12.5, vatAmount: 50, shareToken: QUOTE_TOKEN, clientId: 'cc1', businessId: 'cb1', items: [], updatedAt: '2026-10-11T01:00:00.000Z' });
+  const bi = (status, extra = {}) => ({ id: 'bi1', type: 'invoice', status, documentNumber: 'INV-2027-0031', currency: 'FJD', total: 450, subtotal: 400, vatRate: 12.5, vatAmount: 50, shareToken: INV_TOKEN, clientId: 'cc1', businessId: 'cb1', items: [], sourceQuoteId: 'bq1', dueDate: '2027-03-14', updatedAt: '2026-10-11T02:00:00.000Z', ...extra });
+  await check('booking progress: every stage', async () => {
+    let r = await stageOf(); assert.equal(r.stage, 'new'); assert.equal(r.quote, null); assert.deepEqual(r.source, { app: 'Soqo Stream', reference: 'SQB-7Q2K4M', url: 'https://soqo.stream/admin/collections/bookings/12' });
+    await fetch(`${API}/api/rate-cards/requests/${bookReqId}`, { method: 'PATCH', headers: auth(C), body: JSON.stringify({ status: 'quoted', documentId: 'bq1' }) });
+    await withDocs([bq('draft')]); r = await stageOf();
+    assert.equal(r.stage, 'quoted'); assert.equal(r.quote.number, 'QT-2027-0012'); assert.equal(r.quote.onlineUrl, null, 'no link while draft');
+    await withDocs([bq('sent')]); r = await stageOf(); assert.equal(r.stage, 'quoted'); assert.match(r.quote.onlineUrl, /\/\?doc=bookingQuoteToken/);
+    await withDocs([bq('accepted')]); assert.equal((await stageOf()).stage, 'quote_accepted');
+    await withDocs([bq('accepted'), bi('draft')]); assert.equal((await stageOf()).stage, 'quote_accepted', 'draft invoices don\'t count');
+    await withDocs([bq('accepted'), bi('sent')]); r = await stageOf(); assert.equal(r.stage, 'invoiced'); assert.equal(r.invoices[0].balance, 450); assert.equal(r.invoices[0].dueDate, '2027-03-14');
+    await withDocs([bq('accepted'), bi('partial', { partiallyPaidAmount: 200 })]); r = await stageOf(); assert.equal(r.stage, 'part_paid'); assert.equal(r.invoices[0].amountPaid, 200); assert.equal(r.invoices[0].balance, 250);
+    await withDocs([bq('accepted'), bi('paid', { updatedAt: '2099-01-01T00:00:00.000Z' })]); r = await stageOf(); assert.equal(r.stage, 'paid');
+    assert.equal(r.updatedAt, '2099-01-01T00:00:00.000Z', 'updatedAt follows the documents');
+    const changed = (await j(await fetch(`${V1}/booking-requests?since=2098-12-31`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.deepEqual(changed.bookingRequests.map(b => b.id), [bookReqId], 'since uses the worked-out updatedAt');
+    await withDocs([bq('cancelled')]); assert.equal((await stageOf()).stage, 'cancelled');
+    await fetch(`${API}/api/rate-cards/requests/${bookReqId}`, { method: 'PATCH', headers: auth(C), body: JSON.stringify({ status: 'dismissed' }) });
+    assert.equal((await stageOf()).stage, 'dismissed');
+  });
+  await check('booking progress never shows tokens, PINs or attachments', async () => {
+    await withDocs([bq('accepted'), bi('sent', { portalPin: '1234', paymentAttachments: [{ name: 'slip', dataUrl: 'data:x' }] })]);
+    const text = JSON.stringify(await stageOf());
+    for (const bad of ['"shareToken"', 'portalPin', 'paymentAttachments', '1234', 'accessToken']) assert.equal(text.includes(bad), false, bad);
+  });
+  await check('booking requests list filters by app, channel and since', async () => {
+    const all = (await j(await fetch(`${V1}/booking-requests?app=${encodeURIComponent('Soqo Stream')}`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.ok(all.bookingRequests.some(b => b.id === bookReqId));
+    assert.ok(all.bookingRequests.every(b => b.source?.app === 'Soqo Stream'));
+    const api = (await j(await fetch(`${V1}/booking-requests?channel=api`, { headers: keyHdr(carolReadKey) }))).body.bookingRequests;
+    assert.ok(api.every(b => b.channel === 'api'));
+    const future = (await j(await fetch(`${V1}/booking-requests?since=2100-01-01`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.equal(future.total, 0);
+  });
+  await check("another user's booking request is 404", async () => {
+    assert.equal((await fetch(`${V1}/booking-requests/${bookReqId}`, { headers: keyHdr(bobKey) })).status, 404);
+  });
+  await check('directory bookings arrive in the same inbox', async () => {
+    const r = (await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(A) }))).body.requests;
+    const d = r.find(x => x.channel === 'directory');
+    assert.ok(d, 'directory booking in the inbox'); assert.ok(d.directoryBookingId);
+    assert.equal(d.eventDate, '2026-11-01'); assert.ok(d.details.some(x => x.label === 'Service' && x.value === 'Logo'));
   });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.

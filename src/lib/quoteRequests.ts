@@ -4,6 +4,7 @@ import { suggestDocumentNumber } from './documentNumbers';
 import { generateShareToken } from './documentLinks';
 import { documentDefaults } from './documentTerms';
 import { lineTotals } from './invoiceTotals';
+import { bookingDetailsBlock } from './bookings';
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -39,7 +40,7 @@ export function draftQuoteFromRequest(data: CRMData, req: QuoteRequest, now = ne
   const { subtotal, taxableBase } = lineTotals(items);
   const vatRate = data.userProfile.enableTax === false ? 0 : (data.userProfile.defaultVatRate ?? 12.5);
   const vatAmount = round2(taxableBase * vatRate / 100);
-  const request = [`Requested from your rate card (${req.ref}) by ${req.name}${req.company ? `, ${req.company}` : ''}.`, req.message ? `Their note: ${req.message}` : ''].filter(Boolean).join('\n');
+  const request = [`Booking request ${req.ref} from ${req.name}${req.company ? `, ${req.company}` : ''}.`, req.message ? `Their note: ${req.message}` : ''].filter(Boolean).join('\n');
   const doc: CRMDocument = {
     id: `doc-${now.getTime()}`,
     type: 'quote',
@@ -55,7 +56,7 @@ export function draftQuoteFromRequest(data: CRMData, req: QuoteRequest, now = ne
     vatAmount,
     total: round2(subtotal + vatAmount),
     status: 'draft',
-    notes: defaults.notes,
+    notes: [defaults.notes, bookingDetailsBlock(req)].filter(Boolean).join('\n\n'),
     shareToken: generateShareToken(),
     updatedAt: stamp
   } as CRMDocument;
@@ -67,7 +68,7 @@ export function draftQuoteFromRequest(data: CRMData, req: QuoteRequest, now = ne
       activityLogs: [{
         id: `log-${now.getTime()}`,
         type: 'quote_created' as const,
-        title: 'Draft quote from rate card request',
+        title: 'Draft quote from booking request',
         description: `${doc.documentNumber} for ${client.name}. ${request}`,
         timestamp: stamp,
         entityType: 'quote' as const,

@@ -23,6 +23,7 @@ import { saveLedgerRestorePoint, getLatestLedgerRestorePoint, rollbackLedgerStat
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, getDocumentHomeValues } from '../lib/currencies';
 import ServicesView from './ServicesView';
 import RateCardSettings from './RateCardSettings';
+import BookingSettingsCard from './BookingSettingsCard';
 
 interface BookkeepingViewProps {
   data: CRMData;
@@ -2225,6 +2226,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           >
             <ServicesView data={data} onUpdateData={onUpdateData} />
             <RateCardSettings data={data} onUpdateData={onUpdateData} />
+            <BookingSettingsCard data={data} onUpdateData={onUpdateData} />
 
             {/* Dynamic Rate Modifiers Builder Section */}
             <div className="bg-white border border-zinc-150 rounded-2xl p-4 shadow-sm space-y-3.5">

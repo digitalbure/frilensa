@@ -31,6 +31,20 @@ const REPORTED_METHOD_TO_OPTION: Record<string, string> = {
   'Cash': 'Cash / Cheque'
 };
 
+function channelLabel(r: QuoteRequest) {
+  switch (r.channel) {
+    case 'api': return `Booked via ${r.source?.app || r.via || 'an app'}`;
+    case 'directory': return 'Booked through the Frilensa directory';
+    case 'booking_page': return 'Booked on your booking page';
+    case 'widget': return `Booked on your website${r.source?.url ? ` (${hostOf(r.source.url)})` : ''}`;
+    default: return 'Booked on your rate card';
+  }
+}
+
+function hostOf(url: string) {
+  try { return new URL(url).host; } catch { return url; }
+}
+
 function when(iso?: string) {
   if (!iso) return '';
   const date = new Date(iso);
@@ -173,8 +187,14 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
     try { await resolveQuoteRequest(req.id, 'dismissed'); } catch (err) { console.warn(err); }
   };
 
+  // Soonest event first, then the rest by when they arrived.
+  const sortedRequests = [...requests].sort((a, b) =>
+    (a.eventDate || '9999').localeCompare(b.eventDate || '9999') || String(b.createdAt).localeCompare(String(a.createdAt)));
+  // Directory bookings now arrive as booking requests too; only older ones are listed separately.
+  const directoryOnly = bookings.filter(b => !requests.some(r => r.directoryBookingId === b.id));
+
   const clientName = (doc: CRMDocument) => data.clients.find(c => c.id === doc.clientId)?.name || 'Client';
-  const total = payments.length + quotes.length + messages.length + bookings.length + requests.length;
+  const total = payments.length + quotes.length + messages.length + bookings.filter(b => !requests.some(r => r.directoryBookingId === b.id)).length + requests.length;
 
   if (total === 0 && !notice) return null;
 
@@ -253,25 +273,43 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
           </li>
         ))}
 
-        {requests.map(r => (
-          <li key={`qr-${r.id}`} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
-            <div className="text-xs min-w-0">
-              <p className="font-bold text-zinc-900 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-sky-600" /> Quote request {r.ref} from {r.name}{r.company ? `, ${r.company}` : ''}</p>
+        {sortedRequests.map(r => (
+          <li key={`qr-${r.id}`} className="px-4 py-3 flex flex-wrap items-start justify-between gap-2">
+            <div className="text-xs min-w-0 space-y-1">
+              <p className="font-bold text-zinc-900 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-sky-600" /> Booking request {r.ref} from {r.name}{r.company ? `, ${r.company}` : ''}</p>
+              <p className="text-[11px] text-zinc-500">{channelLabel(r)}</p>
+              {(r.eventDate || r.startTime || r.location) && (
+                <div className="flex flex-wrap gap-1">
+                  {r.eventDate && <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-100 text-[10.5px] font-semibold">{r.eventDate}</span>}
+                  {r.startTime && <span className="px-1.5 py-0.5 rounded bg-sky-50 text-sky-800 border border-sky-100 text-[10.5px] font-semibold">{r.startTime}</span>}
+                  {r.location && <span className="px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-700 text-[10.5px] font-semibold">{r.location}</span>}
+                </div>
+              )}
               <p className="text-zinc-600">
                 {r.items.length ? r.items.map(i => `${i.quantity} × ${i.name}`).join(', ') : 'No services picked'}
                 {r.estimate > 0 ? ` · about ${r.currency} $${r.estimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
               </p>
+              {r.details && r.details.length > 0 && (
+                <dl className="grid grid-cols-[auto_1fr] gap-x-2 text-[11px]">
+                  {r.details.filter(d => !(d.label === 'Event or job date' && d.value === r.eventDate) && !(d.label === 'Start time' && d.value === r.startTime) && !(d.label === 'Location' && d.value === r.location)).slice(0, 12).map((d, i) => (
+                    <React.Fragment key={i}><dt className="text-zinc-400">{d.label}</dt><dd className="text-zinc-700 break-words">{d.value}</dd></React.Fragment>
+                  ))}
+                </dl>
+              )}
               {r.message && <p className="text-zinc-500 line-clamp-2">“{r.message}”</p>}
               <p className="text-zinc-400 text-[11px]">{r.email}{r.phone ? ` · ${r.phone}` : ''} · {when(r.createdAt)}</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button type="button" onClick={() => createQuoteFromRequest(r)} className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold cursor-pointer">Create quote</button>
+              {r.source?.url && /^https:\/\//.test(r.source.url) && (
+                <a href={r.source.url} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 rounded-lg border border-zinc-200 text-zinc-700 text-[11px] font-bold">Open in {r.source.app || 'app'}</a>
+              )}
               <button type="button" onClick={() => dismissRequest(r)} className="px-3 py-1.5 rounded-lg text-zinc-500 text-[11px] font-bold cursor-pointer">Dismiss</button>
             </div>
           </li>
         ))}
 
-        {bookings.map(b => (
+        {directoryOnly.map(b => (
           <li key={`bk-${b.id}`} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
             <div className="text-xs">
               <p className="font-bold text-zinc-900 flex items-center gap-1.5"><CalendarClock className="w-3.5 h-3.5 text-teal-600" /> Booking request {b.bookingRef}: {b.serviceName}</p>

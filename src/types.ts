@@ -277,6 +277,7 @@ export interface Business {
   // Shareable rate card (/?rates=<token>); the token is registered on the server
   rateCardToken?: string;
   rateCardIntro?: string;
+  booking?: import('./lib/bookings').BookingSettings; // What customers can book and the questions they're asked
   // Pay now options on invoices (manual methods default to on when their details are filled in)
   payNow?: {
     bank?: boolean;

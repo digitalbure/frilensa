@@ -2,6 +2,8 @@ import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { notifyConsultant, notifyEmail, later } from "./notify";
+import { readWorkspace } from "./workspace";
+import { saveBookingRequest } from "./bookings";
 
 // Shared marketplace data. Both collections are server-only (Firestore rules deny browser access);
 // every read and write goes through these routes so users only change their own listing and bookings.
@@ -147,6 +149,31 @@ export function createDirectoryRouter() {
       updatedAt: new Date().toISOString()
     };
     await ref.set(booking);
+    // The same request goes into the bookings inbox, next to rate card and app bookings.
+    try {
+      const ws = await readWorkspace(providerUid);
+      const business = ws?.data.businesses.find(b => b.id === listing.businessId) || ws?.data.businesses[0];
+      if (ws && business) {
+        const meeting: Record<string, string> = { in_person: "In person", zoom_video: "Video call", phone_call: "Phone call" };
+        const details = [
+          { label: "Service", value: booking.serviceName },
+          { label: "Preferred date", value: bookingDate },
+          ...(booking.preferredTime ? [{ label: "Preferred time", value: booking.preferredTime }] : []),
+          { label: "Meeting", value: meeting[booking.meetingType] || booking.meetingType },
+          ...(booking.budgetEstimate ? [{ label: "Budget", value: String(booking.budgetEstimate) }] : []),
+          ...(booking.location ? [{ label: "Location", value: booking.location }] : [])
+        ];
+        await saveBookingRequest({
+          uid: providerUid, data: ws.data, business,
+          checked: { items: [], details, eventDate: bookingDate, ...(/^([01]\d|2[0-3]):[0-5]\d$/.test(booking.preferredTime) ? { startTime: booking.preferredTime } : {}), ...(booking.location ? { location: booking.location } : {}), estimate: 0 },
+          contact: { name: clientName, email: clientEmail, phone: booking.clientPhone, message: booking.projectScope },
+          channel: "directory", source: { app: "Frilensa directory", reference: booking.bookingRef },
+          extra: { directoryBookingId: booking.id }, quiet: true
+        });
+      }
+    } catch (err: any) {
+      console.warn("[directory] Could not add the booking to the inbox:", err?.message || err);
+    }
     later(notifyConsultant(providerUid, {
       subject: `New booking request ${booking.bookingRef} from ${clientName}`,
       heading: "You have a new booking request",
