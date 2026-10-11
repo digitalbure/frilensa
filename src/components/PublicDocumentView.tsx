@@ -4,6 +4,7 @@ import { acceptPublicQuote, fetchPublicDocument, reportPublicPayment, type Publi
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import type { Business, Client } from '../types';
 import { publicFileUrl } from '../lib/files';
+import PayNowPanel from './PayNowPanel';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -109,6 +110,19 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
     }
   };
 
+  const reportManual = async (method: string, reference: string) => {
+    await reportPublicPayment(token!, { method, reference });
+    setData({ ...data, document: { ...d, clientPaymentReport: { method, reference, reportedAt: new Date().toISOString(), status: 'pending' } } });
+    setNotice({ text: `Thanks. ${business.name || 'The business'} will confirm your payment once it arrives.`, ok: true });
+  };
+
+  const handlePaidOnline = async (receiptNumber: string | null) => {
+    try { setData(await fetchPublicDocument(token!)); } catch { /* keep the current view */ }
+    setNotice({ text: `Payment received. Thank you.${receiptNumber ? ` Your receipt is ${receiptNumber}.` : ''}`, ok: true });
+  };
+
+  const canPay = d.type === 'invoice' && (d.status === 'sent' || d.status === 'partial') && (!d.clientPaymentReport || d.clientPaymentReport.status === 'rejected');
+
   const handleDownload = () => {
     downloadDocumentPdf(d, { id: d.businessId, ...business } as Business, { id: d.clientId, name: client.name } as Client, null);
   };
@@ -186,15 +200,9 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
           {d.type === 'invoice' && d.status !== 'paid' && d.status !== 'cancelled' && <Row label="Balance due" value={money(currency, balance)} strong />}
         </div>
 
-        {/* How to pay */}
-        {d.type === 'invoice' && d.status !== 'paid' && d.status !== 'cancelled' && (business.bankDetails || business.mPaisaId || business.myCashId) && (
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs text-slate-700 space-y-1">
-            <p className="text-[10px] uppercase tracking-wider font-bold text-slate-400">How to pay</p>
-            {business.bankDetails && <p className="whitespace-pre-line">{business.bankDetails}</p>}
-            {business.mPaisaId && <p>M-PAiSA: <strong>{business.mPaisaId}</strong></p>}
-            {business.myCashId && <p>MyCash: <strong>{business.myCashId}</strong></p>}
-            <p className="text-slate-500">Reference: <strong>{d.documentNumber}</strong></p>
-          </div>
+        {/* Pay now */}
+        {canPay && token && (
+          <PayNowPanel target={{ kind: 'public', token }} brand={brand} businessName={business.name} onReport={reportManual} onPaid={handlePaidOnline} />
         )}
 
         {clientNotes && <p className="text-xs text-slate-500 whitespace-pre-line">{clientNotes}</p>}
@@ -219,10 +227,10 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
               <CheckCircle2 className="w-4 h-4 inline -mt-0.5 mr-1" /> Accept quote
             </button>
           )}
-          {d.type === 'invoice' && (d.status === 'sent' || d.status === 'partial') && (!d.clientPaymentReport || d.clientPaymentReport.status === 'rejected') && !showPayForm && (
+          {canPay && !showPayForm && (
             <button type="button" onClick={() => setShowPayForm(true)}
-              className="px-4 py-2.5 rounded-xl text-white text-xs font-bold cursor-pointer" style={{ backgroundColor: brand }}>
-              I've paid this invoice
+              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 cursor-pointer">
+              Paid another way?
             </button>
           )}
           <button type="button" onClick={handleDownload}

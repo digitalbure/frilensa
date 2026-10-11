@@ -277,6 +277,16 @@ export interface Business {
   // Shareable rate card (/?rates=<token>); the token is registered on the server
   rateCardToken?: string;
   rateCardIntro?: string;
+  // Pay now options on invoices (manual methods default to on when their details are filled in)
+  payNow?: {
+    bank?: boolean;
+    mpaisa?: boolean;
+    mycash?: boolean;
+    paypal?: boolean; // PayPal and card, through the business's own PayPal account (keys kept on the server)
+    paypalCard?: boolean; // Offer the card button as well (default on)
+    paypalCurrency?: string; // Charged in this currency when the invoice's isn't one PayPal supports (e.g. FJD)
+    surchargePercent?: number; // Added for PayPal and card payments; 0 = the business absorbs PayPal's fee
+  };
   updatedAt?: string;
   customFields?: { label: string; value: string; isPreset?: boolean }[];
   mPaisaId?: string;

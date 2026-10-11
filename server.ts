@@ -19,6 +19,7 @@ import { createOAuthRouter, createOAuthAppRouter } from "./server/oauth";
 import { createFilesRouter } from "./server/files";
 import { createRateCardsRouter, createPublicRateCardsRouter } from "./server/rateCards";
 import { createAssistantRouter, assistantConfigured } from "./server/assistant";
+import { createPaymentsRouter } from "./server/payNow";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -210,6 +211,7 @@ async function startServer() {
   app.use("/api/public/documents", express.json({ limit: "20kb" }), createPublicDocumentsRouter());
   app.use("/api/public/rate-cards", express.json({ limit: "20kb" }), createPublicRateCardsRouter());
   app.use("/api/rate-cards", express.json({ limit: "10kb" }), createRateCardsRouter());
+  app.use("/api/payments", express.json({ limit: "10kb" }), createPaymentsRouter());
   app.use("/api/jobs", express.json({ limit: "10kb" }), createJobsRouter());
   app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
   // Public API and MCP server (personal API keys), and managing those keys from the app.

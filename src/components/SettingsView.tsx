@@ -18,6 +18,7 @@ import ReleaseNotes from './ReleaseNotes';
 import HelpCenter from './HelpCenter';
 import AutomationSettingsCard from './AutomationSettingsCard';
 import ApiKeysCard from './ApiKeysCard';
+import PayNowSettingsCard from './PayNowSettingsCard';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount } from '../lib/currencies';
 import { getEmailServiceConfig, sendTestEmail, EmailServiceConfig } from '../lib/emailService';
 import firebaseConfig from '../../firebase-applet-config.json';
@@ -826,6 +827,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
 
         <AutomationSettingsCard data={data} onUpdateData={onUpdateData} onManualCloudSync={onManualCloudSync} />
+
+        <PayNowSettingsCard data={data} onUpdateData={onUpdateData} />
 
         <ApiKeysCard />
 

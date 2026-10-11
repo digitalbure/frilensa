@@ -2,6 +2,7 @@ import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, rateLimit } from "./security";
 import { acceptQuote, reportPayment } from "./portal";
 import { sendDocumentFile } from "./files";
+import { payOptions, createPaypalOrder, capturePaypalOrder, PayError } from "./payNow";
 
 // Public "view online" links: /?doc=<shareToken>. Whoever holds the link (the client the document
 // was sent to) can see that one issued document and act on it. Nothing else is reachable.
@@ -65,6 +66,22 @@ export function createPublicDocumentsRouter() {
     if (!d || d.status === "draft") return res.status(404).json({ error: "File not found." });
     await sendDocumentFile(d, req.params.fileId, res);
   });
+
+  // Pay now: the methods offered on this invoice, and PayPal or card checkout.
+  const payRoute = (fn: (d: any, req: any) => Promise<unknown>) => async (req: any, res: Response) => {
+    const d = await findSharedDocument(req.params.token);
+    if (!d || d.status === "draft" || d.type !== "invoice") return res.status(404).json({ error: "Invoice not found." });
+    try {
+      res.json(await fn(d, req));
+    } catch (err) {
+      if (err instanceof PayError) return res.status(err.status).json({ error: err.message });
+      throw err;
+    }
+  };
+  const payLimit = rateLimit({ name: "public-pay", max: 20, windowMs: 10 * 60_000, key: req => req.ip || "anon" });
+  router.get("/:token/pay", payRoute(d => payOptions(d)));
+  router.post("/:token/pay/paypal/order", payLimit, payRoute(d => createPaypalOrder(d)));
+  router.post("/:token/pay/paypal/capture", payLimit, payRoute((d, req) => capturePaypalOrder(d, req.body?.orderId)));
 
   router.post("/:token/accept", async (req, res) => {
     const d = await findSharedDocument(req.params.token);

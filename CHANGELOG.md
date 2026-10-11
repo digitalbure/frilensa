@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.11.0] - 2026-10-11
+
+### Added
+- **Pay now on invoices.** Unpaid invoices show a Pay now box online and in the client portal, where clients choose how to pay:
+  - **Bank transfer, M-PAiSA and MyCash:** clients see your details, the amount and the reference to use, then tell you they've paid. You confirm it as before.
+  - **Credit or debit card and PayPal:** clients pay straight away through your own PayPal business account, with no PayPal account needed for cards. The invoice is marked paid automatically, the receipt is created, the payment goes into your ledger, and you're emailed.
+- **Settings → Pay now on invoices:** choose the methods for each business, and connect PayPal with your PayPal app's client ID and secret. The secret is checked with PayPal and stored encrypted on the server.
+- **Currency for PayPal:** PayPal doesn't take FJD, so FJD invoices are charged in the currency you choose (AUD, NZD or USD), converted at your exchange rate. Clients see the converted amount before paying. Invoices already in a PayPal currency are charged as they are.
+- **Optional surcharge:** add up to 10% for card and PayPal payments, shown to the client before they pay, or leave it at 0 to absorb PayPal's fee. PayPal's fee is noted on the invoice's payment details.
+
+### Changed
+- The online invoice's "I've paid this invoice" button is now part of Pay now. A **Paid another way?** button stays for other methods.
+- The client portal shows amounts in the document's currency instead of always FJD.
+
 ## [3.10.1] - 2026-10-11
 
 ### Fixed

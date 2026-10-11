@@ -73,13 +73,18 @@ await put(`consultants/${B.uid}`, {
 });
 await put(`documents/${B.uid}_late1`, { ...bobDocs[0], consultantId: B.uid, clientEmail: 'payer@client.fj', clientName: 'Payer Ltd', businessName: 'Bob Agency' });
 
-// Carol's workspace for rate cards.
+// Carol's workspace for rate cards, the assistant and Pay now.
 const C = await user('carol@rates.fj');
+const TOK_C1 = 'carolInvoiceOneAAAAAAAAAA', TOK_C2 = 'carolInvoiceTwoBBBBBBBBBB';
+const carolDocs = [
+  { id: 'ci1', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5001', currency: 'FJD', issueDate: '2026-10-01', total: 300, subtotal: 300, vatRate: 0, vatAmount: 0, shareToken: TOK_C1, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'x', name: 'Shoot', quantity: 1, rate: 300, total: 300 }] },
+  { id: 'ci2', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5002', currency: 'USD', issueDate: '2026-10-02', total: 100, subtotal: 100, vatRate: 0, vatAmount: 0, shareToken: TOK_C2, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'y', name: 'Prints', quantity: 1, rate: 100, total: 100 }] }
+];
 const carolWs = rateCardToken => ({
   consultantEmail: C.email,
   userProfile: { email: C.email, defaultCurrency: 'FJD', defaultVatRate: 12.5 },
   clients: [],
-  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
+  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
   services: [
     { id: 's1', name: 'Portrait session', description: 'One hour', rate: 150, unit: 'Hour', businessId: 'cb1', costPrice: 40, sku: 'SECRET-SKU' },
     { id: 's2', name: 'Hidden item', rate: 999, unit: 'Item', businessId: 'cb1', showOnRateCard: false },
@@ -87,9 +92,10 @@ const carolWs = rateCardToken => ({
     { id: 's4', name: 'Other business item', rate: 7, unit: 'Item', businessId: 'cb2' },
     { id: 's5', name: 'Prints', rate: 20, unit: 'Item', isTaxable: false }
   ],
-  documents: [], projects: [{ id: 'p1', name: 'Wedding shoot', status: 'in_progress', businessId: 'cb1', tasks: [{ id: 't0', projectId: 'p1', title: 'Scout venue', status: 'done' }] }]
+  documents: carolDocs, transactions: [], projects: [{ id: 'p1', name: 'Wedding shoot', status: 'in_progress', businessId: 'cb1', tasks: [{ id: 't0', projectId: 'p1', title: 'Scout venue', status: 'done' }] }]
 });
 await put(`consultants/${C.uid}`, carolWs(''));
+for (const d of carolDocs) await put(`documents/${C.uid}_${d.id}`, { ...d, consultantId: C.uid, clientName: 'Dee', businessName: 'Carol Photo' });
 
 // Fake Anthropic API: scripted replies for the assistant test; records each request.
 const claudeCalls = [];
@@ -112,9 +118,32 @@ const fakeClaude = http.createServer((req, res) => {
   });
 }).listen(3398);
 
+// Fake PayPal REST API.
+const PP_ID = 'AcarolClientIdGoodGoodGood01', PP_SECRET = 'EcarolSecretGoodGoodGoodGood1';
+const ppOrders = new Map(); let ppN = 0;
+const fakePaypal = http.createServer((req, res) => {
+  let body = ''; req.on('data', d => body += d); req.on('end', () => {
+    const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
+    if (req.url === '/v1/oauth2/token') {
+      const ok = req.headers.authorization === `Basic ${Buffer.from(`${PP_ID}:${PP_SECRET}`).toString('base64')}`;
+      return ok ? send(200, { access_token: 'pp-token', expires_in: 3600 }) : send(401, { error: 'invalid_client' });
+    }
+    if (req.headers.authorization !== 'Bearer pp-token') return send(401, {});
+    if (req.method === 'POST' && req.url === '/v2/checkout/orders') {
+      const id = `ORDER${++ppN}`; ppOrders.set(id, JSON.parse(body)); return send(201, { id, status: 'CREATED' });
+    }
+    const m = req.url.match(/^\/v2\/checkout\/orders\/([A-Z0-9]+)\/capture$/);
+    if (m && ppOrders.has(m[1])) {
+      const unit = ppOrders.get(m[1]).purchase_units[0];
+      return send(201, { id: m[1], status: 'COMPLETED', purchase_units: [{ reference_id: unit.reference_id, payments: { captures: [{ id: `CAP${m[1]}`, status: 'COMPLETED', amount: unit.amount, custom_id: unit.custom_id, seller_receivable_breakdown: { paypal_fee: { currency_code: unit.amount.currency_code, value: '2.50' } } }] } }] });
+    }
+    send(404, { name: 'RESOURCE_NOT_FOUND' });
+  });
+}).listen(3397);
+
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -623,11 +652,94 @@ try {
     const r = await j(await fetch(`${API}/api/ai/assistant/status`, { headers: auth(C) }));
     assert.equal(r.body.configured, true); assert.ok(r.body.helpArticles >= 10);
   });
+
+  // --- Pay now: manual methods, PayPal and card ---
+  const PAY = tok => `${API}/api/public/documents/${tok}/pay`;
+  let order1;
+  await check('pay options list the manual methods before PayPal is connected', async () => {
+    const r = await j(await fetch(PAY(TOK_C1)));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    assert.equal(r.body.bank.details, 'BSP 999'); assert.equal(r.body.mpaisa.number, '9991234'); assert.equal(r.body.mycash, null);
+    assert.equal(r.body.paypal, null); assert.equal(r.body.balance, 300); assert.equal(r.body.reference, 'INV-2026-5001');
+  });
+  await check('connecting PayPal needs sign-in and working keys', async () => {
+    assert.equal((await fetch(`${API}/api/payments/paypal`, { method: 'PUT' })).status, 401);
+    const bad = await j(await fetch(`${API}/api/payments/paypal`, { method: 'PUT', headers: auth(C), body: JSON.stringify({ businessId: 'cb1', clientId: PP_ID, secret: 'EwrongSecretWrongWrongWrong1' }) }));
+    assert.equal(bad.status, 400); assert.match(bad.body.error, /didn't accept/);
+    assert.equal((await fetch(`${API}/api/payments/paypal`, { method: 'PUT', headers: auth(B), body: JSON.stringify({ businessId: 'cb1', clientId: PP_ID, secret: PP_SECRET }) })).status, 404, "can't connect someone else's business");
+    const ok = await j(await fetch(`${API}/api/payments/paypal`, { method: 'PUT', headers: auth(C), body: JSON.stringify({ businessId: 'cb1', clientId: PP_ID, secret: PP_SECRET }) }));
+    assert.equal(ok.status, 200, JSON.stringify(ok.body)); assert.equal(ok.body.env, 'live');
+  });
+  await check('the PayPal secret is stored encrypted and never returned', async () => {
+    const st = await j(await fetch(`${API}/api/payments/paypal?businessId=cb1`, { headers: auth(C) }));
+    assert.equal(st.body.connected, true); assert.equal(JSON.stringify(st.body).includes(PP_SECRET), false);
+    const stored = await get(`paypal_accounts/${C.uid}_cb1`);
+    assert.ok(stored.secret.startsWith('v1.')); assert.equal(stored.secret.includes(PP_SECRET), false);
+    assert.equal((await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/paypal_accounts/${C.uid}_cb1`, { headers: { Authorization: `Bearer ${C.token}` } })).status, 403);
+  });
+  await check('FJD invoices are charged in the business PayPal currency with the surcharge shown', async () => {
+    const r = await j(await fetch(PAY(TOK_C1)));
+    const pp = r.body.paypal;
+    assert.equal(pp.clientId, PP_ID); assert.equal(pp.currency, 'AUD'); assert.equal(pp.rate, 1.5);
+    assert.equal(pp.amount, 200); assert.equal(pp.surcharge, 4); assert.equal(pp.total, 204);
+    const usd = (await j(await fetch(PAY(TOK_C2)))).body.paypal;
+    assert.equal(usd.currency, 'USD', 'PayPal currencies are charged as they are'); assert.equal(usd.amount, 100); assert.equal(usd.total, 102);
+  });
+  await check('the order is created server-side for the amount owed', async () => {
+    const r = await j(await fetch(`${PAY(TOK_C1)}/paypal/order`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: 1 }) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); order1 = r.body.orderId;
+    const unit = ppOrders.get(order1).purchase_units[0];
+    assert.deepEqual(unit.amount, { currency_code: 'AUD', value: '204.00' }); assert.equal(unit.custom_id, `${C.uid}:ci1`);
+  });
+  await check('an order for one invoice is refused on another', async () => {
+    const r = await fetch(`${PAY(TOK_C2)}/paypal/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order1 }) });
+    assert.equal(r.status, 400);
+  });
+  await check('capturing marks the invoice paid, logs it and issues a receipt', async () => {
+    const r = await j(await fetch(`${PAY(TOK_C1)}/paypal/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order1 }) }));
+    assert.equal(r.status, 200, JSON.stringify(r.body)); assert.ok(r.body.receiptNumber);
+    const ws = await get(`consultants/${C.uid}`);
+    const inv = ws.documents.find(d => d.id === 'ci1');
+    assert.equal(inv.status, 'paid'); assert.equal(inv.paymentMethod, 'PayPal'); assert.match(inv.paymentExchangeNotes, /AUD 204\.00 incl\. AUD 4\.00 surcharge, PayPal fee AUD 2\.50/);
+    const receipt = ws.documents.find(d => d.type === 'receipt' && d.originalInvoiceId === 'ci1');
+    assert.equal(receipt.documentNumber, r.body.receiptNumber);
+    const tx = ws.transactions.find(t => t.documentId === 'ci1'); assert.equal(tx.amount, 300, 'ledger in FJD');
+    assert.equal((await get(`documents/${C.uid}_ci1`)).status, 'paid', 'portal copy updated');
+    assert.equal((await get(`documents/${C.uid}_${receipt.id}`)).type, 'receipt');
+  });
+  await check('a repeated capture is not recorded twice', async () => {
+    const r = await j(await fetch(`${PAY(TOK_C1)}/paypal/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: order1 }) }));
+    assert.equal(r.status, 200); assert.equal(r.body.alreadyRecorded, true);
+    const ws = await get(`consultants/${C.uid}`);
+    assert.equal(ws.documents.filter(d => d.type === 'receipt' && d.originalInvoiceId === 'ci1').length, 1);
+    assert.equal(ws.transactions.filter(t => t.documentId === 'ci1').length, 1);
+  });
+  await check('consultant is emailed about the online payment', async () => { await emailTo(C.email, /Invoice INV-2026-5001 paid online/); });
+  await check('a paid invoice offers no payment and refuses new orders', async () => {
+    const r = await j(await fetch(PAY(TOK_C1))); assert.equal(r.body.balance, 0); assert.equal(r.body.paypal, null);
+    assert.equal((await fetch(`${PAY(TOK_C1)}/paypal/order`, { method: 'POST' })).status, 409);
+  });
+  await check('a USD invoice is paid in USD and logged at the business rate', async () => {
+    const o = (await j(await fetch(`${PAY(TOK_C2)}/paypal/order`, { method: 'POST' }))).body.orderId;
+    assert.deepEqual(ppOrders.get(o).purchase_units[0].amount, { currency_code: 'USD', value: '102.00' });
+    assert.equal((await fetch(`${PAY(TOK_C2)}/paypal/capture`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ orderId: o }) })).status, 200);
+    const inv = (await get(`consultants/${C.uid}`)).documents.find(d => d.id === 'ci2'); assert.equal(inv.status, 'paid');
+  });
+  await check('drafts and quotes have no Pay now, and the portal route needs a session', async () => {
+    assert.equal((await fetch(PAY(TOK_DRAFT))).status, 404);
+    assert.equal((await fetch(PAY(TOK_QUOTE))).status, 404);
+    assert.equal((await fetch(`${API}/api/portal/documents/ci1/pay`)).status, 401);
+  });
+  await check('disconnecting PayPal removes the keys', async () => {
+    assert.equal((await fetch(`${API}/api/payments/paypal?businessId=cb1`, { method: 'DELETE', headers: auth(C) })).status, 200);
+    assert.equal(await get(`paypal_accounts/${C.uid}_cb1`), null);
+  });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.
   try { process.kill(-server.pid, 'SIGTERM'); } catch {}
   fakeSendGrid.close();
   fakeClaude.close();
+  fakePaypal.close();
 }
 for (const r of results) console.log(r.join('  '));
 const failed = results.filter(r => r[0] === 'FAIL').length;

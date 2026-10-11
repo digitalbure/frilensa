@@ -1,5 +1,6 @@
 import { notifyConsultant, later } from "./notify";
 import { sendDocumentFile } from "./files";
+import { payOptions, createPaypalOrder, capturePaypalOrder, PayError } from "./payNow";
 import express, { type Response, type NextFunction } from "express";
 import {
   getAdminDb, requireUser, rateLimit, isEmail, sha256, randomToken, hashPin, verifyPin,
@@ -341,6 +342,27 @@ export function createPortalRouter() {
       next(err);
     }
   });
+
+  // Pay now from the portal (same as the public invoice link).
+  const portalPay = (fn: (d: any, req: PortalRequest) => Promise<unknown>) => async (req: PortalRequest, res: Response) => {
+    const claims = req.portal!;
+    const db = getAdminDb();
+    const namespaced = await db.collection("documents").doc(`${claims.consultantId}_${req.params.id}`).get();
+    const d = namespaced.exists ? namespaced.data() : (await db.collection("documents").doc(req.params.id).get()).data();
+    if (!d || d.consultantId !== claims.consultantId || d.clientId !== claims.clientId || d.status === "draft" || d.type !== "invoice") {
+      return res.status(404).json({ error: "Invoice not found." });
+    }
+    try {
+      res.json(await fn(d, req));
+    } catch (err) {
+      if (err instanceof PayError) return res.status(err.status).json({ error: err.message });
+      throw err;
+    }
+  };
+  const portalPayLimit = rateLimit({ name: "portal-pay", max: 20, windowMs: 10 * 60_000, key: r => (r as PortalRequest).portal!.email });
+  router.get("/documents/:id/pay", requirePortal, portalPay(d => payOptions(d)));
+  router.post("/documents/:id/pay/paypal/order", requirePortal, portalPayLimit, portalPay(d => createPaypalOrder(d)));
+  router.post("/documents/:id/pay/paypal/capture", requirePortal, portalPayLimit, portalPay((d, req) => capturePaypalOrder(d, req.body?.orderId)));
 
   router.post("/documents/:id/accept", requirePortal, rateLimit({ name: "portal-action", max: 30, windowMs: 60_000, key: r => (r as PortalRequest).portal!.email }), async (req: PortalRequest, res) => {
     const result = await acceptQuote(req.portal!, req.params.id);

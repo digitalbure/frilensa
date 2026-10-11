@@ -145,10 +145,24 @@ In the VAT return, a credit note reduces the period it's issued in when it cance
   {
     id: 'getting-paid',
     title: 'Get paid and record payments',
-    summary: 'How clients report payments, confirming them on Home, recording payments and part payments yourself, and automatic receipts.',
-    keywords: ['payment', 'paid', 'record payment', 'confirm', 'reject', 'reported payment', 'part payment', 'partial', 'deposit', 'receipt', 'M-PAiSA', 'bank transfer', 'foreign currency', 'exchange rate', 'bank fee', 'proof of payment'],
-    body: `### When a client reports a payment
-On the online invoice or in the client portal, the client presses **I've paid this invoice** (or reports it from the portal) and gives the method and transaction reference. You see "Payment reported" under **Needs your attention** on **Home**, and you're emailed if notifications are on.
+    summary: 'Pay now on invoices (bank, M-PAiSA, MyCash, card and PayPal), confirming reported payments, recording payments and part payments yourself, and automatic receipts.',
+    keywords: ['pay now', 'paypal', 'card', 'credit card', 'surcharge', 'payment', 'paid', 'record payment', 'confirm', 'reject', 'reported payment', 'part payment', 'partial', 'deposit', 'receipt', 'M-PAiSA', 'bank transfer', 'foreign currency', 'exchange rate', 'bank fee', 'proof of payment'],
+    body: `### Pay now
+Unpaid invoices show a **Pay now** box online and in the client portal. Clients choose how to pay:
+- **Bank transfer**, **M-PAiSA** or **MyCash**: they see your details, the amount and the invoice number to use as the reference, pay, then press **I've paid** with their transaction reference. You confirm it when the money arrives (below).
+- **Credit or debit card** or **PayPal**: they pay there and then through PayPal. The invoice is marked paid straight away, a receipt is created, the payment goes into your ledger, and you're emailed.
+
+Choose the methods in **Settings → Pay now on invoices**, for the business selected at the top. Bank, M-PAiSA and MyCash appear once their details are filled in on the business.
+
+### Connect PayPal for card and PayPal payments
+1. Sign in at developer.paypal.com with your PayPal business account.
+2. Under **Apps & Credentials**, choose **Live**, create an app and copy its **Client ID** and **Secret**.
+3. Paste them in **Settings → Pay now on invoices** and press **Connect PayPal**. Frilensa checks them with PayPal and stores the secret encrypted.
+
+PayPal doesn't take FJD, so FJD invoices are charged in the currency you pick (AUD, NZD or USD), converted at your exchange rate for that currency, or an approximate one if you haven't set it. Invoices already in a PayPal currency are charged as they are. You can add a surcharge (up to 10%) to cover PayPal's fee; clients see it before they pay. PayPal's own fee is noted on the invoice's payment details. Money goes to your PayPal account; withdraw it to your bank from PayPal. Check that your PayPal account can receive payments in Fiji.
+
+### When a client reports a payment
+On the online invoice or in the client portal, the client chooses bank transfer, M-PAiSA or MyCash under **Pay now** and presses **I've paid** (or **Paid another way?**) with the transaction reference. You see "Payment reported" under **Needs your attention** on **Home**, and you're emailed if notifications are on.
 
 1. Check your bank or wallet for the money.
 2. Press **Confirm**. The **Record payment** form opens with the client's method filled in. Check the details and save.

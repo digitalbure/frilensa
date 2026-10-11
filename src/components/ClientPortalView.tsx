@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import PayNowPanel from './PayNowPanel';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, CheckCircle2, Clock, CreditCard, ArrowUpRight, Phone, Mail, 
@@ -720,7 +721,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
                         <div className="text-right shrink-0 flex items-center gap-1.5">
                           <div className="font-mono text-xs font-bold text-zinc-950">
-                            FJD {doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                            {doc.currency || 'FJD'} {doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </div>
                           <ChevronRight className="w-3.5 h-3.5 text-zinc-300" />
                         </div>
@@ -923,7 +924,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   <div className="space-y-1 text-right font-sans text-xs border-t border-zinc-100 pt-2.5">
                     <div className="flex justify-between max-w-[240px] ml-auto text-[11px]">
                       <span className="text-zinc-400">Subtotal:</span>
-                      <span className="font-mono font-medium">FJD {selectedDoc.subtotal.toFixed(2)}</span>
+                      <span className="font-mono font-medium">{selectedDoc.currency || 'FJD'} {selectedDoc.subtotal.toFixed(2)}</span>
                     </div>
 
                     {/* Itemized Taxes */}
@@ -931,13 +932,13 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       selectedDoc.appliedTaxes.map((tax: any, tIdx: number) => (
                         <div key={tIdx} className="flex justify-between max-w-[240px] ml-auto text-[10.5px]">
                           <span className="text-zinc-400">{tax.name} ({tax.rate}%):</span>
-                          <span className="font-mono text-zinc-600">FJD {tax.amount.toFixed(2)}</span>
+                          <span className="font-mono text-zinc-600">{selectedDoc.currency || 'FJD'} {tax.amount.toFixed(2)}</span>
                         </div>
                       ))
                     ) : (
                       <div className="flex justify-between max-w-[240px] ml-auto text-[10.5px]">
                         <span className="text-zinc-400">Fiji VAT ({selectedDoc.vatRate}%):</span>
-                        <span className="font-mono text-zinc-600">FJD {selectedDoc.vatAmount.toFixed(2)}</span>
+                        <span className="font-mono text-zinc-600">{selectedDoc.currency || 'FJD'} {selectedDoc.vatAmount.toFixed(2)}</span>
                       </div>
                     )}
 
@@ -948,33 +949,36 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                           <span className="text-zinc-400">
                             {fee.name} {fee.type === 'percentage' ? `(${fee.rate}%)` : ''}:
                           </span>
-                          <span className="font-mono text-zinc-600">FJD {fee.amount.toFixed(2)}</span>
+                          <span className="font-mono text-zinc-600">{selectedDoc.currency || 'FJD'} {fee.amount.toFixed(2)}</span>
                         </div>
                       ))
                     )}
 
                     <div className="flex justify-between max-w-[240px] ml-auto font-bold text-zinc-950 text-sm border-t border-zinc-200 pt-1.5">
                       <span>Total:</span>
-                      <span className="font-mono text-emerald-700">FJD {selectedDoc.total.toFixed(2)}</span>
+                      <span className="font-mono text-emerald-700">{selectedDoc.currency || 'FJD'} {selectedDoc.total.toFixed(2)}</span>
                     </div>
                   </div>
 
-                  {/* Payment Terms or Instructions */}
-                  {selectedDoc.type !== 'quote' && (
-                    <div className="p-3 bg-zinc-50 border border-zinc-150 rounded-xl space-y-1.5 text-[10px] leading-relaxed">
-                      <h4 className="font-bold text-zinc-800 uppercase tracking-wide flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5 text-zinc-500" /> How to pay
-                      </h4>
-                      {(() => {
-                        const docBiz = businesses.find(b => b.id === selectedDoc.businessId) || primaryBusiness;
-                        const details = docBiz.bankDetails || selectedDoc.businessBankDetails;
-                        return details ? (
-                          <pre className="font-sans whitespace-pre-wrap text-zinc-600 text-[9.5px]">{details}</pre>
-                        ) : (
-                          <p className="italic text-zinc-400">Pay by M-PAiSA or bank transfer.</p>
-                        );
-                      })()}
-                    </div>
+                  {/* Pay now */}
+                  {selectedDoc.type === 'invoice' && (selectedDoc.status === 'sent' || selectedDoc.status === 'partial') && (!selectedDoc.clientPaymentReport || selectedDoc.clientPaymentReport.status === 'rejected') && (
+                    <PayNowPanel
+                      target={{ kind: 'portal', session, documentId: selectedDoc.id }}
+                      brand={brandColor}
+                      businessName={(businesses.find(b => b.id === selectedDoc.businessId) || primaryBusiness)?.name || ''}
+                      onReport={async (method, reference) => {
+                        await reportPortalPayment(session, selectedDoc.id, { method, reference });
+                        const report = { method, reference, reportedAt: new Date().toISOString(), status: 'pending' as const };
+                        setDocuments(prev => prev.map(d => d.id === selectedDoc.id ? { ...d, clientPaymentReport: report } : d));
+                        setSelectedDoc((prev: any) => ({ ...prev, clientPaymentReport: report }));
+                        triggerStatus('Payment reported. Your consultant will confirm it once received.', 'success');
+                      }}
+                      onPaid={async receiptNumber => {
+                        setSelectedDoc((prev: any) => ({ ...prev, status: 'paid' }));
+                        triggerStatus(`Payment received. Thank you.${receiptNumber ? ` Your receipt is ${receiptNumber}.` : ''}`, 'success');
+                        await refresh();
+                      }}
+                    />
                   )}
 
                   {/* Document Notes */}
@@ -1016,7 +1020,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         className="flex-1 text-white font-bold py-2.5 rounded-xl text-xs text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"
                         style={{ backgroundColor: brandColor }}
                       >
-                        <ArrowUpRight className="w-4 h-4" /> I’ve paid this
+                        <ArrowUpRight className="w-4 h-4" /> Paid another way?
                       </button>
                     )}
                     {selectedDoc.status === 'paid' && (
