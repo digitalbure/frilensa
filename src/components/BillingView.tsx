@@ -1306,9 +1306,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       {/* Header section with Creator buttons */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Fiji Freelancer CRM</span>
+          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Invoices and retainers</span>
           <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-1.5 font-display">
-            <Layers className="w-5 h-5 text-sky-600" /> Billing Hub
+            <Layers className="w-5 h-5 text-sky-600" /> Billing
           </h2>
         </div>
 
@@ -1316,11 +1316,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           <button
             type="button"
             onClick={() => setShowFxCalculator(true)}
-            title="Open Exchange Rate & FJD Calculator"
+            title="Exchange rate calculator"
             className="bg-white hover:bg-sky-50 border border-slate-200 text-sky-700 font-bold py-1.5 px-3 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-2xs cursor-pointer"
           >
             <Calculator className="w-3.5 h-3.5 text-sky-600" />
-            <span className="hidden sm:inline">FX Calculator</span>
+            <span className="hidden sm:inline">FX calculator</span>
           </button>
 
           {billingSubTab === 'documents' ? (
@@ -1328,14 +1328,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               onClick={() => handleNewDocument('invoice')}
               className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-1.5 px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-sky-600/10 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" /> New Document
+              <Plus className="w-3.5 h-3.5" /> New document
             </button>
           ) : (
             <button
               onClick={handleNewRetainer}
               className="bg-sky-600 hover:bg-sky-700 text-white font-semibold py-1.5 px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95 shadow-sm shadow-sky-600/10 cursor-pointer"
             >
-              <Plus className="w-3.5 h-3.5" /> New Retainer Schedule
+              <Plus className="w-3.5 h-3.5" /> New retainer
             </button>
           )}
         </div>
@@ -1346,7 +1346,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         <div className="bg-sky-50 border border-sky-100 p-3 rounded-xl flex items-start gap-2 shadow-sm text-left animate-fade-in">
           <Sparkles className="w-4 h-4 text-sky-500 mt-0.5 shrink-0 animate-pulse" />
           <div className="flex-1">
-            <h4 className="text-[11px] font-black uppercase text-sky-800">Bula AI Billing Assistant</h4>
+            <h4 className="text-[11px] font-black uppercase text-sky-800">Retainer billing</h4>
             <p className="text-[10.5px] text-sky-700 mt-0.5 leading-normal">{autoGenNotification}</p>
           </div>
           <button 
@@ -1368,7 +1368,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <FileText className="w-3.5 h-3.5 text-slate-600" /> Invoices & Quotes
+          <FileText className="w-3.5 h-3.5 text-slate-600" /> Invoices and quotes
         </button>
         <button
           onClick={() => setBillingSubTab('retainers')}
@@ -1378,7 +1378,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               : 'text-slate-500 hover:text-slate-700'
           }`}
         >
-          <RefreshCw className="w-3.5 h-3.5 text-sky-500" /> Recurring Retainers
+          <RefreshCw className="w-3.5 h-3.5 text-sky-500" /> Retainers
           {retainerMetrics.dueCount > 0 && (
             <span className="bg-rose-500 text-white text-[8px] font-black px-1.5 py-0.2 rounded-full ml-0.5 animate-pulse">
               {retainerMetrics.dueCount}
@@ -1395,19 +1395,19 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               onClick={() => setShowFxCalculator(true)}
               className="bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3 py-1.5 rounded-full text-[11px] font-bold text-sky-800 flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-2xs transition-all active:scale-95"
             >
-              <Calculator className="w-3.5 h-3.5 text-sky-600" /> Exchange Rate Calculator
+              <Calculator className="w-3.5 h-3.5 text-sky-600" /> Exchange rate calculator
             </button>
             <button
               onClick={() => handleNewDocument('quote')}
               className="bg-white hover:bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full text-[11px] font-bold text-amber-700 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
             >
-              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" /> + Draft Quote
+              <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" /> + New quote
             </button>
             <button
               onClick={() => handleNewDocument('receipt')}
               className="bg-white hover:bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full text-[11px] font-bold text-emerald-700 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
             >
-              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> + Create Receipt
+              <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" /> + New receipt
             </button>
             <button
               onClick={() => {
@@ -1416,7 +1416,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               }}
               className="bg-white hover:bg-slate-50 border border-slate-100 px-3 py-1.5 rounded-full text-[11px] font-bold text-sky-700 flex items-center gap-1.5 whitespace-nowrap cursor-pointer"
             >
-              <RefreshCw className="w-3 h-3 text-sky-500" /> + New Retainer Schedule
+              <RefreshCw className="w-3 h-3 text-sky-500" /> + New retainer
             </button>
           </div>
 
@@ -1430,7 +1430,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search invoice number, client, or status..."
+                placeholder="Search by number, client or status"
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-10 pr-4 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
@@ -1447,7 +1447,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       : 'text-slate-500 hover:text-slate-700'
                   }`}
                 >
-                  {t === 'all' ? 'All Docs' : `${t}s`}
+                  {t === 'all' ? 'All' : `${t}s`}
                 </button>
               ))}
             </div>
@@ -1464,7 +1464,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </div>
                   <div>
                     <span className="text-xs font-black text-rose-800">
-                      {documentStatusCounts.overdue} Overdue {documentStatusCounts.overdue === 1 ? 'Invoice' : 'Invoices'}
+                      {documentStatusCounts.overdue} overdue {documentStatusCounts.overdue === 1 ? 'invoice' : 'invoices'}
                     </span>
                     <span className="text-[10px] text-rose-600 ml-1.5 font-medium">
                       ({(data.userProfile.defaultCurrency || 'FJD')} ${documentStatusCounts.overdueSum.toLocaleString(undefined, { minimumFractionDigits: 2 })} outstanding)
@@ -1472,7 +1472,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </div>
                 </div>
                 <span className="text-[10px] font-bold text-rose-700 bg-white/80 px-2 py-0.5 rounded-lg border border-rose-200 shadow-2xs">
-                  {filterStatus === 'overdue' ? 'Show All' : 'Filter Overdue'}
+                  {filterStatus === 'overdue' ? 'Show all' : 'Show overdue'}
                 </span>
               </div>
             )}
@@ -1519,7 +1519,6 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       filterStatus === status ? activeClass : inactiveClass
                     }`}
                   >
-                    {status === 'all' && <span className="text-[9px]">🔍</span>}
                     {status === 'draft' && <span className="w-1.5 h-1.5 bg-slate-400 rounded-full" />}
                     {status === 'sent' && <span className="w-1.5 h-1.5 bg-sky-500 rounded-full" />}
                     {status === 'partial' && <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />}
@@ -1538,12 +1537,12 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           {/* Documents List */}
           {filteredDocuments.length === 0 ? (
             <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center">
-              <p className="text-xs text-slate-500">No matching financial documents found.</p>
+              <p className="text-xs text-slate-500">No documents match. Create an invoice to get started.</p>
               <button
                 onClick={() => handleNewDocument('invoice')}
                 className="mt-3 text-xs bg-sky-100 hover:bg-sky-200 text-sky-700 font-semibold py-1.5 px-3 rounded-xl cursor-pointer"
               >
-                Create First Document
+                New invoice
               </button>
             </div>
           ) : (
@@ -1617,16 +1616,16 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                                   displayStatus === 'draft' ? 'bg-slate-100 text-slate-600 border border-slate-200' : 
                                   'bg-rose-50 text-rose-600 border border-rose-200'
                                 }`}
-                                title="Click to toggle status"
+                                title="Change status"
                               >
-                                {displayStatus === 'partial' ? 'Partially Paid' : displayStatus}
+                                {displayStatus === 'partial' ? 'Partially paid' : displayStatus}
                                 <ChevronDown className="w-2.5 h-2.5 opacity-60" />
                               </button>
 
                               {/* Dropdown status switcher menu */}
                               {isStatusMenuOpen && (
                                 <div className="absolute left-0 top-full mt-1 bg-white border border-slate-200 shadow-xl rounded-xl p-1 z-30 min-w-[130px] flex flex-col gap-0.5 animate-in fade-in zoom-in-95">
-                                  <span className="text-[9px] font-bold text-slate-400 px-2 py-0.5 uppercase tracking-wider">Change Status:</span>
+                                  <span className="text-[9px] font-bold text-slate-400 px-2 py-0.5 uppercase tracking-wider">Change status</span>
                                   {(['draft', 'sent', 'partial', 'paid'] as const).map((st) => (
                                     <button
                                       key={st}
@@ -1665,7 +1664,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                                   <>
                                     <span className="text-[10px] text-slate-300">•</span>
                                     <span className="px-1 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-bold max-w-[100px] truncate">
-                                      📁 {linkedProj.name}
+                                      {linkedProj.name}
                                     </span>
                                   </>
                                 );
@@ -1738,7 +1737,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             }}
                             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] px-1.5 py-0.5 rounded cursor-pointer transition-all"
                           >
-                            Pay in Full
+                            Record payment
                           </button>
                           <button
                             type="button"
@@ -1748,7 +1747,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             }}
                             className="bg-amber-600 hover:bg-amber-700 text-white font-bold text-[9px] px-1.5 py-0.5 rounded cursor-pointer transition-all"
                           >
-                            Partial
+                            Part payment
                           </button>
                         </div>
                       </div>
@@ -1785,23 +1784,23 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           {/* Retainer Summary Metric Cards */}
           <div className="grid grid-cols-3 gap-2">
             <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
-              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Active Plans</span>
+              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Active</span>
               <span className="text-base font-black text-slate-800 mt-0.5 block">{retainerMetrics.activeCount}</span>
               <span className="text-[8.5px] text-slate-400 mt-0.5 block">Client retainers</span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
-              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Monthly MRR</span>
+              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Monthly</span>
               <span className="text-xs font-black text-sky-700 mt-0.5 block font-mono">
                 {data.userProfile.defaultCurrency} ${retainerMetrics.mrr.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
               <span className="text-[8.5px] text-emerald-600 font-bold mt-0.5 block">Recurring revenue</span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
-              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Projected ARR</span>
+              <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Yearly</span>
               <span className="text-xs font-black text-slate-800 mt-0.5 block font-mono">
                 {data.userProfile.defaultCurrency} ${retainerMetrics.arr.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
               </span>
-              <span className="text-[8.5px] text-slate-400 mt-0.5 block">Annualized</span>
+              <span className="text-[8.5px] text-slate-400 mt-0.5 block">Projected</span>
             </div>
           </div>
 
@@ -1813,9 +1812,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   <Sparkles className="w-4 h-4 animate-pulse" />
                 </span>
                 <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-400">Automated Monthly Billing Engine</h4>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-400">Retainer billing</h4>
                   <p className="text-[10px] text-slate-300 leading-normal">
-                    Scans recurring schedules for due billing dates and generates compliant {data.userProfile.defaultVatRate ?? 12.5}% VAT tax invoices automatically.
+                    Checks your retainers and creates tax invoices, with {data.userProfile.defaultVatRate ?? 12.5}% VAT, for any that are due.
                   </p>
                 </div>
               </div>
@@ -1827,14 +1826,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 className="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
               >
                 <RefreshCw className="w-3.5 h-3.5" />
-                <span>Run Billing Cycle Check</span>
+                <span>Bill due retainers</span>
               </button>
               
               <button
                 onClick={handleNewRetainer}
                 className="bg-white/10 hover:bg-white/20 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer"
               >
-                <Plus className="w-3.5 h-3.5" /> Schedule
+                <Plus className="w-3.5 h-3.5" /> Add
               </button>
             </div>
           </div>
@@ -1849,7 +1848,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 type="text"
                 value={retainerSearch}
                 onChange={(e) => setRetainerSearch(e.target.value)}
-                placeholder="Search retainers by client or project..."
+                placeholder="Search by client or project"
                 className="w-full bg-white border border-slate-200 rounded-xl py-1.5 pl-9 pr-3 text-xs focus:outline-none focus:ring-1 focus:ring-sky-500"
               />
             </div>
@@ -1866,13 +1865,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         : 'text-slate-500 hover:text-slate-700'
                     }`}
                   >
-                    {st === 'all' ? 'All Schedules' : st}
+                    {st === 'all' ? 'All' : st}
                   </button>
                 ))}
               </div>
 
               <span className="text-[10px] text-slate-400 font-bold">
-                {filteredRetainers.length} Schedule{filteredRetainers.length === 1 ? '' : 's'}
+                {filteredRetainers.length} retainer{filteredRetainers.length === 1 ? '' : 's'}
               </span>
             </div>
           </div>
@@ -1881,12 +1880,12 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           {filteredRetainers.length === 0 ? (
             <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-8 text-center space-y-2">
               <RefreshCw className="w-8 h-8 text-slate-300 mx-auto stroke-1" />
-              <p className="text-xs text-slate-500 font-medium">No recurring retainer schedules found for this view.</p>
+              <p className="text-xs text-slate-500 font-medium">No retainers here yet. Add one to bill a client on a schedule.</p>
               <button
                 onClick={handleNewRetainer}
                 className="mt-2 text-xs bg-sky-600 hover:bg-sky-700 text-white font-bold py-1.5 px-3 rounded-xl cursor-pointer shadow-xs inline-flex items-center gap-1"
               >
-                <Plus className="w-3.5 h-3.5" /> Create Retainer Plan
+                <Plus className="w-3.5 h-3.5" /> New retainer
               </button>
             </div>
           ) : (
@@ -1925,7 +1924,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           <h4 className="text-xs font-black text-slate-800 truncate">{client?.name || 'Unknown Client'}</h4>
                           {linkedProject && (
                             <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-bold truncate max-w-[120px]">
-                              📁 {linkedProject.name}
+                              {linkedProject.name}
                             </span>
                           )}
                         </div>
@@ -1953,21 +1952,21 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     {/* Schedule & Price Details Box */}
                     <div className="grid grid-cols-2 gap-2 bg-slate-50/80 p-2.5 rounded-xl text-[10px]">
                       <div>
-                        <span className="text-slate-400 block uppercase text-[8px] font-black tracking-wider">Billing Schedule</span>
+                        <span className="text-slate-400 block uppercase text-[8px] font-black tracking-wider">Schedule</span>
                         <span className="font-bold text-slate-700 mt-0.5 block capitalize flex items-center gap-1">
                           <Calendar className="w-3 h-3 text-sky-600" />
-                          {ret.interval === 'quarterly' ? 'Quarterly (Every 3 Mo)' :
-                           ret.interval === 'bi-weekly' ? 'Bi-Weekly (Fortnightly)' :
-                           ret.interval === 'annual' ? 'Annual (Yearly)' :
-                           `Monthly (Day ${ret.billingDay || 1})`}
+                          {ret.interval === 'quarterly' ? 'Quarterly' :
+                           ret.interval === 'bi-weekly' ? 'Fortnightly' :
+                           ret.interval === 'annual' ? 'Yearly' :
+                           `Monthly (day ${ret.billingDay || 1})`}
                         </span>
                         <span className="text-[8.5px] text-slate-400 block mt-0.5">
-                          Terms: Net {ret.paymentTermsDays || 14} Days
+                          Terms: net {ret.paymentTermsDays || 14} days
                         </span>
                       </div>
 
                       <div className="text-right">
-                        <span className="text-slate-400 block uppercase text-[8px] font-black tracking-wider">Retainer Value</span>
+                        <span className="text-slate-400 block uppercase text-[8px] font-black tracking-wider">Amount</span>
                         <span className="font-black text-slate-900 mt-0.5 block font-mono text-xs text-sky-700">
                           {data.userProfile.defaultCurrency} ${totalWithVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
@@ -1991,14 +1990,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         </div>
 
                         <div className="flex items-center gap-1 text-slate-500">
-                          <span>Auto-Gen:</span>
+                          <span>Auto-invoice:</span>
                           <button
                             onClick={() => handleToggleAutoGenerate(ret)}
                             className={`px-1.5 py-0.2 rounded font-extrabold text-[8px] cursor-pointer transition-all ${
                               ret.autoGenerate ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-600'
                             }`}
                           >
-                            {ret.autoGenerate ? 'ENABLED' : 'DISABLED'}
+                            {ret.autoGenerate ? 'On' : 'Off'}
                           </button>
                         </div>
                       </div>
@@ -2006,13 +2005,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       {/* Last Billed Info */}
                       <div className="col-span-2 text-[8.5px] text-slate-400 italic flex justify-between">
                         <span>Started: {ret.startDate} {ret.endDate ? `• Ends: ${ret.endDate}` : ''}</span>
-                        <span>{ret.lastGeneratedDate ? `Last billed: ${ret.lastGeneratedDate}` : 'Never billed yet'}</span>
+                        <span>{ret.lastGeneratedDate ? `Last billed: ${ret.lastGeneratedDate}` : 'Not billed yet'}</span>
                       </div>
                     </div>
 
                     {/* Itemized Line Items summary */}
                     <div className="space-y-1 bg-white/60 p-2 rounded-lg border border-slate-100">
-                      <span className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider block">Scope & Invoicing Items:</span>
+                      <span className="text-[8.5px] font-bold text-slate-400 uppercase tracking-wider block">Line items</span>
                       {lineItems.map((item, idx) => (
                         <div key={item.id || idx} className="flex justify-between text-[10px] text-slate-600">
                           <span className="truncate pr-2 font-medium">• {item.name} ({item.quantity}x)</span>
@@ -2032,7 +2031,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       >
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3 text-slate-400" />
-                          Generated Invoices History ({generatedDocs.length})
+                          Invoices ({generatedDocs.length})
                         </span>
                         {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                       </button>
@@ -2041,7 +2040,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         <div className="mt-2 space-y-1.5 pl-2 border-l-2 border-sky-200">
                           {generatedDocs.length === 0 ? (
                             <p className="text-[9.5px] text-slate-400 italic py-1">
-                              No invoices generated yet. Click "Bill Retainer Now" or wait for next automatic monthly cycle.
+                              No invoices yet. Tap "Bill now" or wait for the next billing date.
                             </p>
                           ) : (
                             generatedDocs.map(gDoc => (
@@ -2095,7 +2094,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         className="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-1.5 px-3 rounded-xl text-[10.5px] flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-xs"
                       >
                         <Sparkles className="w-3 h-3" />
-                        <span>Bill Retainer Now</span>
+                        <span>Bill now</span>
                       </button>
                     </div>
                   </div>
@@ -2118,7 +2117,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
             <div className="flex justify-between items-center p-4 sm:p-5 pb-3 border-b border-slate-100 shrink-0">
               <h3 className="text-xs font-bold text-slate-800 flex items-center gap-1.5 uppercase tracking-wide truncate">
                 <FileText className="w-4 h-4 text-sky-600 shrink-0" /> 
-                <span>{editingDoc ? `Edit ${docType}` : `Create New ${docType}`}</span>
+                <span>{editingDoc ? `Edit ${docType}` : `New ${docType}`}</span>
               </h3>
               <button 
                 onClick={() => setShowEditor(false)}
@@ -2133,7 +2132,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Document Type Selector (only if creating new) */}
               {!editingDoc && (
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Document Class</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Type</label>
                   <div className="grid grid-cols-3 gap-1 mt-1 bg-slate-100 p-1 rounded-xl">
                     {(['quote', 'invoice', 'receipt'] as const).map((t) => (
                       <button
@@ -2160,7 +2159,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Number and Client row */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <div className="min-w-0">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Document Number *</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Number *</label>
                   <input
                     type="text"
                     required
@@ -2187,7 +2186,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     }}
                     className="w-full max-w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-2.5 text-xs mt-1 box-border"
                   >
-                    <option value="">Select a Client</option>
+                    <option value="">Choose a client</option>
                     {data.clients.map(c => (
                       <option key={c.id} value={c.id}>
                         {c.name} {c.currency ? `(${c.currency})` : ''}
@@ -2199,7 +2198,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
               {/* Document Status Selector */}
               <div className="min-w-0">
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Document Status</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Status</label>
                 <div className="grid grid-cols-5 gap-1 mt-1 bg-slate-100 p-1 rounded-xl">
                   {[
                     { key: 'draft', label: 'Draft', color: 'text-slate-700 bg-white shadow-xs font-bold' },
@@ -2252,7 +2251,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                   <div className="min-w-0">
                     <div className="flex items-center justify-between">
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Billing Currency *</label>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase">Currency *</label>
                       <button
                         type="button"
                         onClick={() => setShowFxCalculator(true)}
@@ -2267,19 +2266,19 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       className="w-full max-w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-2.5 text-xs mt-1 font-bold text-sky-900 focus:ring-1 focus:ring-sky-500 box-border cursor-pointer"
                     >
                       {activeBusiness?.workingCurrencies && activeBusiness.workingCurrencies.length > 0 && (
-                        <optgroup label="Venture Working Currencies">
+                        <optgroup label="Your currencies">
                           {activeBusiness.workingCurrencies.map(code => {
                             const c = SUPPORTED_CURRENCIES.find(curr => curr.code === code) || { code, name: code, symbol: '$', flag: '🌐' };
                             const customRate = activeBusiness.customExchangeRates?.[code];
                             return (
                               <option key={`biz-${c.code}`} value={c.code}>
-                                ⭐ {c.flag} {c.code} ({c.symbol}) - {c.name} {customRate ? `[Fixed: ${customRate} ${activeBusiness.currency || 'FJD'}]` : ''}
+                                {c.flag} {c.code} ({c.symbol}) - {c.name} {customRate ? `[Fixed: ${customRate} ${activeBusiness.currency || 'FJD'}]` : ''}
                               </option>
                             );
                           })}
                         </optgroup>
                       )}
-                      <optgroup label="All Supported Currencies">
+                      <optgroup label="All currencies">
                         {SUPPORTED_CURRENCIES.map(c => (
                           <option key={c.code} value={c.code}>
                             {c.flag} {c.code} ({c.symbol}) - {c.name}
@@ -2294,7 +2293,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 <div className="bg-sky-50/60 border border-sky-100/80 rounded-xl p-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-[10.5px]">
                   <div className="flex items-center gap-1 flex-wrap">
                     <span className="text-[9px] font-bold uppercase tracking-wider text-slate-500 mr-1">
-                      {activeBusiness?.workingCurrencies ? 'Venture Currencies:' : 'Quick Switch:'}
+                      {activeBusiness?.workingCurrencies ? 'Your currencies:' : 'Quick pick:'}
                     </span>
                     {(activeBusiness?.workingCurrencies && activeBusiness.workingCurrencies.length > 0
                       ? activeBusiness.workingCurrencies
@@ -2307,7 +2306,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           key={code}
                           type="button"
                           onClick={() => setDocCurrency(code)}
-                          title={hasCustom ? `Custom Contracted Rate: 1 ${code} = ${activeBusiness?.customExchangeRates?.[code]} ${activeBusiness?.currency || 'FJD'}` : undefined}
+                          title={hasCustom ? `Agreed rate: 1 ${code} = ${activeBusiness?.customExchangeRates?.[code]} ${activeBusiness?.currency || 'FJD'}` : undefined}
                           className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
                             isSelected
                               ? 'bg-sky-600 text-white shadow-xs'
@@ -2334,7 +2333,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       <div className="flex items-center gap-1.5 shrink-0">
                         {isSynced ? (
                           <span className="text-[9.5px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                            ✓ Synced with Project ({projCur})
+                            ✓ Matches project ({projCur})
                           </span>
                         ) : (
                           <button
@@ -2343,7 +2342,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             className="text-[9.5px] font-bold text-amber-800 bg-amber-50 hover:bg-amber-100 px-1.5 py-0.5 rounded border border-amber-300 flex items-center gap-1 cursor-pointer transition-all"
                             title={`Project is set to ${projCur}. Click to match.`}
                           >
-                            <span>⚡ Match Project ({projCur})</span>
+                            <span>Use project currency ({projCur})</span>
                           </button>
                         )}
                       </div>
@@ -2355,7 +2354,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Dates Row - Optimized to prevent horizontal overhang */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <DateInput
-                  label="Issue Date"
+                  label="Issue date"
                   required
                   value={issueDate}
                   onChange={setIssueDate}
@@ -2369,7 +2368,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                 {docType !== 'receipt' ? (
                   <DateInput
-                    label={docType === 'quote' ? 'Expiry Date' : 'Due Date'}
+                    label={docType === 'quote' ? 'Expiry date' : 'Due date'}
                     required
                     min={issueDate}
                     value={dueDate}
@@ -2377,24 +2376,24 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     placeholder="Select due date"
                     align="right"
                     customPresets={[
-                      { label: '+7 Days', daysOffset: 7 },
-                      { label: '+14 Days', daysOffset: 14 },
-                      { label: '+30 Days', daysOffset: 30 },
-                      { label: 'End of Mo.', special: 'end_of_month' },
+                      { label: '+7 days', daysOffset: 7 },
+                      { label: '+14 days', daysOffset: 14 },
+                      { label: '+30 days', daysOffset: 30 },
+                      { label: 'End of month', special: 'end_of_month' },
                     ]}
                   />
                 ) : (
                   <div className="min-w-0">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Payment Channel</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Payment method</label>
                     <select
                       value={paymentMethod}
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-full max-w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-2.5 text-xs mt-1 box-border min-w-0"
                     >
-                      <option value="M-Paisa">Vodafone M-Paisa</option>
+                      <option value="M-Paisa">Vodafone M-PAiSA</option>
                       <option value="MyCash">Digicel MyCash</option>
-                      <option value="Bank Transfer">Fiji Bank Wire</option>
-                      <option value="Cash">Direct Cash</option>
+                      <option value="Bank Transfer">Bank transfer</option>
+                      <option value="Cash">Cash</option>
                     </select>
                   </div>
                 )}
@@ -2403,7 +2402,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Line Items Builder Section */}
               <div className="border-t border-slate-100 pt-3 space-y-3">
                 <div className="flex justify-between items-center">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Document Line Items ({items.length})</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase">Line items ({items.length})</label>
                   <span className="text-[10px] font-bold text-sky-700">Currency: {docCurrency}</span>
                 </div>
 
@@ -2411,13 +2410,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase">Pick from Catalog</label>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase">From catalog</label>
                       <select
                         value={selectedCatalogItemId}
                         onChange={(e) => handleCatalogSelect(e.target.value)}
                         className="w-full bg-white border border-slate-100 rounded-lg py-1.5 px-2 text-[11px] mt-0.5"
                       >
-                        <option value="">Choose item...</option>
+                        <option value="">Choose an item</option>
                         <option value="custom">✍️ Custom Description</option>
                         {data.services.filter(s => !s.businessId || s.businessId === data.activeBusinessId).map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
@@ -2439,7 +2438,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase">Qty / Hours</label>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase">Qty / hours</label>
                       <input
                         type="number"
                         min={0.5}
@@ -2467,7 +2466,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         onClick={handleAddItemLine}
                         className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-1.5 rounded-lg text-xs transition-all text-center cursor-pointer"
                       >
-                        Add Line
+                        Add line
                       </button>
                     </div>
                   </div>
@@ -2476,7 +2475,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 {/* Items Added Table */}
                 <div className="space-y-1.5">
                   {items.length === 0 ? (
-                    <p className="text-[10px] text-slate-400 italic text-center py-2">No line items added yet.</p>
+                    <p className="text-[10px] text-slate-400 italic text-center py-2">No line items yet. Add one above.</p>
                   ) : (
                     items.map((it, idx) => (
                       <div key={it.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-100 flex justify-between items-center text-[11px]">
@@ -2509,7 +2508,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-                    <span className="text-[10.5px] font-bold text-slate-800 uppercase tracking-wider">Applicable Taxes & Surcharges</span>
+                    <span className="text-[10.5px] font-bold text-slate-800 uppercase tracking-wider">Taxes and fees</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {/* Tax ON / OFF Switch */}
@@ -2521,10 +2520,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           ? 'bg-emerald-50 text-emerald-700 border-emerald-300 hover:bg-emerald-100/60'
                           : 'bg-slate-100 text-slate-500 border-slate-200 hover:bg-slate-200/60'
                       }`}
-                      title={!isTaxExempt ? 'Tax enabled - Click to toggle OFF (Tax Exempt)' : 'Tax disabled / Exempt - Click to toggle ON'}
+                      title={!isTaxExempt ? 'Tax is on. Click to turn it off (tax exempt).' : 'Tax is off (exempt). Click to turn it on.'}
                     >
                       <span className={`w-2 h-2 rounded-full ${!isTaxExempt ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                      <span>{!isTaxExempt ? 'Tax ON' : 'Tax OFF (Exempt)'}</span>
+                      <span>{!isTaxExempt ? 'Tax on' : 'Tax off (exempt)'}</span>
                     </button>
 
                     <button
@@ -2532,7 +2531,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       onClick={() => setShowTaxFeeDetails(!showTaxFeeDetails)}
                       className="text-[10px] text-sky-600 font-semibold hover:underline flex items-center gap-0.5 cursor-pointer"
                     >
-                      {showTaxFeeDetails ? 'Hide Options' : 'Configure'}
+                      {showTaxFeeDetails ? 'Hide options' : 'Show options'}
                       {showTaxFeeDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                     </button>
                   </div>
@@ -2542,15 +2541,15 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 {isTaxExempt && (
                   <div className="flex items-center justify-between p-2 bg-amber-50/80 border border-amber-200/80 rounded-xl text-[10.5px] text-amber-900">
                     <div className="flex items-center gap-1.5">
-                      <span className="font-bold">Tax-Exempt Document:</span>
-                      <span>No VAT or statutory taxes will be applied to this invoice.</span>
+                      <span className="font-bold">Tax exempt:</span>
+                      <span>No VAT or other taxes will be added to this document.</span>
                     </div>
                     <button
                       type="button"
                       onClick={() => setIsTaxExempt(false)}
                       className="text-[10px] font-bold text-amber-800 underline hover:text-amber-950 cursor-pointer"
                     >
-                      Enable Tax
+                      Turn on tax
                     </button>
                   </div>
                 )}
@@ -2561,11 +2560,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-[9.5px] font-bold uppercase text-slate-400 tracking-wider block">
-                          Statutory Taxes & Levies
+                          Taxes and levies
                         </span>
                         {isTaxExempt && (
                           <span className="text-[9px] font-bold text-amber-600 uppercase tracking-wider">
-                            (Disabled by Tax Switch)
+                            (Tax is off)
                           </span>
                         )}
                       </div>
@@ -2612,7 +2611,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     {/* Platform & Business Surcharges & Fees */}
                     <div>
                       <span className="text-[9.5px] font-bold uppercase text-slate-400 tracking-wider block mb-1.5">
-                        Handling, Service & Payment Surcharges
+                        Fees and surcharges
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {[
@@ -2664,7 +2663,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                   {isTaxExempt ? (
                     <div className="flex justify-between text-amber-700 text-[11px] font-medium">
-                      <span>VAT / Taxes (Exempt / OFF)</span>
+                      <span>Tax (exempt)</span>
                       <span className="font-mono">{docCurrency} $0.00</span>
                     </div>
                   ) : (
@@ -2684,7 +2683,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   ))}
 
                   <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
-                    <span>Total Amount</span>
+                    <span>Total</span>
                     <span className="font-mono text-sky-700">{docCurrency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
@@ -2692,7 +2691,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
               {/* Notes */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase">Terms & Notes</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase">Terms and notes</label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -2716,7 +2715,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 form="doc-editor-form"
                 className="flex-1 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold py-2.5 rounded-xl text-xs text-center transition-all shadow-md shadow-sky-600/20 cursor-pointer active:scale-95"
               >
-                {editingDoc ? 'Save & Preview' : 'Create & Preview'}
+                {editingDoc ? 'Save' : 'Create'}
               </button>
             </div>
           </motion.div>
@@ -2737,7 +2736,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Sheet Bar Menu */}
               <div className="p-4 bg-white border-b border-slate-100 flex items-center justify-between">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 uppercase">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Bill Preview
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Preview
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -2750,7 +2749,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </button>
                   <button
                     onClick={() => handleOpenPdfModal(selectedDoc)}
-                    title="Generate & Download PDF Document"
+                    title="Download PDF"
                     className="flex items-center gap-1 bg-sky-600 hover:bg-sky-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Download className="w-3.5 h-3.5" />
@@ -2766,14 +2765,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </button>
                   <button
                     onClick={() => window.print()}
-                    title="Print Document"
+                    title="Print"
                     className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-slate-50 rounded-lg cursor-pointer"
                   >
                     <Printer className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleShareDoc(selectedDoc)}
-                    title="Share Invoice"
+                    title="Share link"
                     className="p-1.5 text-slate-500 hover:text-sky-600 hover:bg-slate-50 rounded-lg cursor-pointer"
                   >
                     <Share2 className="w-4 h-4" />
@@ -2796,7 +2795,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <div className="flex items-center justify-between">
                       <span className="font-extrabold flex items-center gap-1.5 text-rose-700">
                         <AlertTriangle className="w-4 h-4 text-rose-600" />
-                        DOCUMENT CANCELLED / VOIDED
+                        Cancelled
                       </span>
                       {selectedDoc.cancelledAt && (
                         <span className="text-[10px] text-rose-600 font-medium">
@@ -2811,7 +2810,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     )}
                     {selectedDoc.creditNoteNumber && (
                       <p className="text-[10.5px] text-rose-700 font-mono font-bold">
-                        Linked Credit Note: #{selectedDoc.creditNoteNumber}
+                        Credit note: #{selectedDoc.creditNoteNumber}
                       </p>
                     )}
                     <div className="pt-1.5 flex gap-2">
@@ -2819,7 +2818,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         onClick={() => handleDirectStatusChange(selectedDoc, 'draft')}
                         className="bg-white hover:bg-rose-100 border border-rose-200 text-rose-800 font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all cursor-pointer"
                       >
-                        Restore to Draft
+                        Restore as draft
                       </button>
                     </div>
                   </div>
@@ -2831,9 +2830,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
                       <div>
-                        <span className="font-extrabold block">Payment is Overdue</span>
+                        <span className="font-extrabold block">Payment overdue</span>
                         <span className="text-[10px] text-rose-600">
-                          Due date was {selectedDoc.dueDate}. Please follow up or record payment.
+                          Was due on {selectedDoc.dueDate}. Follow up with the client or record a payment.
                         </span>
                         {(selectedDoc.remindersSent || []).length > 0 && (
                           <span className="text-[10px] text-rose-700 font-semibold block">
@@ -2847,7 +2846,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       onClick={() => setPaymentModalDoc(selectedDoc)}
                       className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all cursor-pointer whitespace-nowrap shadow-xs"
                     >
-                      Collect Now
+                      Record payment
                     </button>
                   </div>
                 )}
@@ -2858,25 +2857,25 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <div className="flex justify-between items-center text-xs text-amber-900 font-bold">
                       <span className="flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        Partially Paid Invoice
+                        Partially paid
                       </span>
                       <button
                         type="button"
                         onClick={() => setPartialModalDoc(selectedDoc)}
                         className="text-[10px] text-amber-800 underline font-bold hover:text-amber-950 cursor-pointer"
                       >
-                        Adjust Partial
+                        Edit payment
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-[11px]">
                       <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
-                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Amount Received</span>
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Amount received</span>
                         <span className="font-extrabold text-emerald-700">
                           {selectedDoc.currency || data.userProfile.defaultCurrency || 'FJD'} ${(selectedDoc.partiallyPaidAmount || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
                       </div>
                       <div className="bg-white/80 p-2 rounded-xl border border-amber-100">
-                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Balance Due</span>
+                        <span className="text-[9px] text-slate-500 uppercase font-bold block">Balance due</span>
                         <span className="font-extrabold text-amber-800">
                           {selectedDoc.currency || data.userProfile.defaultCurrency || 'FJD'} ${Math.max(0, selectedDoc.total - (selectedDoc.partiallyPaidAmount || 0)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                         </span>
@@ -2895,7 +2894,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 {selectedDoc.status !== 'cancelled' && (
                   <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-2xl space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Status Tracking</span>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</span>
                       <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
                         selectedDoc.status === 'paid' ? 'bg-emerald-100 text-emerald-800' :
                         selectedDoc.status === 'partial' ? 'bg-amber-100 text-amber-800' :
@@ -2903,7 +2902,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         selectedDoc.status === 'accepted' ? 'bg-indigo-100 text-indigo-800' :
                         'bg-slate-200 text-slate-700'
                       }`}>
-                        {selectedDoc.status === 'partial' ? 'Partially Paid' : selectedDoc.status}
+                        {selectedDoc.status === 'partial' ? 'Partially paid' : selectedDoc.status}
                       </span>
                     </div>
 
@@ -2932,12 +2931,6 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                               isCurrent ? activeStyle : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
                             }`}
                           >
-                            <span className="text-[10px]">
-                              {st === 'draft' && '📝'}
-                              {st === 'sent' && '📤'}
-                              {st === 'partial' && '⏳'}
-                              {st === 'paid' && '✅'}
-                            </span>
                             <span>{st}</span>
                           </button>
                         );
@@ -2951,9 +2944,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           type="button"
                           onClick={() => setPaymentModalDoc(selectedDoc)}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2.5 py-1 rounded-lg text-[10px] transition-all flex items-center gap-1 cursor-pointer shadow-xs"
-                          title="Record foreign or local currency payment with FX & deductions"
+                          title="Record a payment in any currency, with exchange rate and fees"
                         >
-                          <DollarSign className="w-3 h-3" /> Record Full Payment
+                          <DollarSign className="w-3 h-3" /> Record payment
                         </button>
                       )}
 
@@ -2975,13 +2968,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex items-center justify-between text-xs text-amber-800">
                     <span className="font-semibold flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
-                      Ready to advance this bill?
+                      Ready for the next step?
                     </span>
                     <button
                       onClick={() => handleQuickConvert(selectedDoc)}
                       className="bg-amber-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] hover:bg-amber-700 transition-all flex items-center gap-0.5 cursor-pointer"
                     >
-                      Convert to {selectedDoc.type === 'quote' ? 'Invoice' : 'Receipt'} <ArrowRight className="w-3 h-3" />
+                      Convert to {selectedDoc.type === 'quote' ? 'invoice' : 'receipt'} <ArrowRight className="w-3 h-3" />
                     </button>
                   </div>
                 )}
@@ -2991,13 +2984,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   <div className="bg-sky-50 border border-sky-100 p-3 rounded-2xl flex items-center justify-between text-xs text-sky-800">
                     <div className="flex items-center gap-1.5 min-w-0 pr-2">
                       <RefreshCw className="w-4 h-4 text-sky-600 shrink-0" />
-                      <span className="font-semibold text-[11px] truncate">Set up recurring schedule for this client?</span>
+                      <span className="font-semibold text-[11px] truncate">Bill this client on a schedule?</span>
                     </div>
                     <button
                       onClick={() => handleConvertInvoiceToRetainer(selectedDoc)}
                       className="bg-sky-600 text-white font-bold py-1 px-2.5 rounded-lg text-[10px] hover:bg-sky-700 transition-all shrink-0 cursor-pointer flex items-center gap-1"
                     >
-                      <Plus className="w-3 h-3" /> Make Retainer
+                      <Plus className="w-3 h-3" /> Make retainer
                     </button>
                   </div>
                 )}
@@ -3042,7 +3035,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             )}
                             <h3 className="font-extrabold text-slate-800 text-sm">{docBiz?.name || data.userProfile.name}</h3>
                           </div>
-                          <p className="text-slate-400 text-[10px]">{docBiz?.address || 'Suva, Fiji Islands'}</p>
+                          <p className="text-slate-400 text-[10px]">{docBiz?.address || ''}</p>
                           <p className="text-slate-400 text-[10px]">TIN: <span className="font-mono font-bold text-slate-700">{docBiz?.tin || data.userProfile.tin}</span></p>
                         </div>
 
@@ -3060,7 +3053,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           <div 
                             onClick={() => setShowOnlineDocModal(true)}
                             className="mt-2 bg-slate-50 hover:bg-sky-50/80 p-1.5 rounded-xl border border-slate-200 shadow-2xs flex flex-col items-center gap-0.5 cursor-pointer transition-all hover:scale-105"
-                            title="Click to open official online portal"
+                            title="Open online version"
                           >
                             <QRCodeSVG
                               value={documentPublicUrl(selectedDoc) || 'Save the document to get its link'}
@@ -3068,7 +3061,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                               level="M"
                             />
                             <span className="text-[7px] font-mono font-black text-sky-800 uppercase tracking-tighter flex items-center gap-0.5">
-                              <ExternalLink className="w-2 h-2" /> Scan / View Online
+                              <ExternalLink className="w-2 h-2" /> Scan or view online
                             </span>
                           </div>
                         </div>
@@ -3081,8 +3074,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     const client = data.clients.find(c => c.id === selectedDoc.clientId);
                     return (
                       <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Billed To:</span>
-                        <h4 className="font-bold text-slate-800 text-xs mt-0.5">{client?.name || 'Client Name'}</h4>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Bill to</span>
+                        <h4 className="font-bold text-slate-800 text-xs mt-0.5">{client?.name || 'Client'}</h4>
                         <p className="text-slate-500 text-[10px]">{client?.email}</p>
                         <p className="text-slate-500 text-[10px]">{client?.phone}</p>
                         {client?.tin && <p className="text-slate-500 text-[10px]">TIN: <span className="font-mono font-bold">{client.tin}</span></p>}
@@ -3141,7 +3134,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     )}
 
                     <div className="flex justify-between text-slate-900 font-black text-xs pt-1.5 border-t border-slate-200">
-                      <span>TOTAL DUE:</span>
+                      <span>Total due:</span>
                       <span className="font-mono text-sky-700">{selectedDoc.currency || data.userProfile.defaultCurrency} ${selectedDoc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </div>
                   </div>
@@ -3149,7 +3142,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   {/* Bank Details */}
                   {activeBusiness?.bankDetails && (
                     <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 text-[9px] text-slate-500">
-                      <span className="font-bold text-slate-700 uppercase block mb-0.5">Fiji Bank & Payment Instructions:</span>
+                      <span className="font-bold text-slate-700 uppercase block mb-0.5">Bank details:</span>
                       <p className="whitespace-pre-line leading-tight font-mono">{activeBusiness.bankDetails}</p>
                     </div>
                   )}
@@ -3157,7 +3150,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   {/* Notes */}
                   {selectedDoc.notes && (
                     <div className="text-[9.5px] text-slate-400">
-                      <span className="font-bold text-slate-500 block">Terms & Advice:</span>
+                      <span className="font-bold text-slate-500 block">Terms and notes:</span>
                       <p className="mt-0.5 leading-tight">{selectedDoc.notes}</p>
                     </div>
                   )}
@@ -3181,8 +3174,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         setShareToast(`Updated attachments for #${selectedDoc.documentNumber}`);
                         setTimeout(() => setShareToast(null), 3000);
                       }}
-                      title="Attached Payment Records"
-                      description="Receipts, M-Paisa screenshots, wire slips, or bank confirmations attached to this document."
+                      title="Proof of payment"
+                      description="Receipts, M-PAiSA screenshots, transfer slips or bank confirmations for this document."
                       allowCamera={true}
                     />
                   </div>
@@ -3219,7 +3212,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     onClick={() => handleEditDocument(selectedDoc)}
                     className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs text-center transition-all cursor-pointer"
                   >
-                    Edit Document
+                    Edit
                   </button>
                   <button
                     onClick={() => handleDeleteDoc(selectedDoc.id)}
@@ -3245,7 +3238,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
             <div className="flex justify-between items-center p-4 sm:p-5 pb-3 border-b border-slate-100 shrink-0">
               <h3 className="text-xs font-black text-slate-800 flex items-center gap-1.5 uppercase tracking-wide truncate">
                 <RefreshCw className="w-4 h-4 text-sky-500 shrink-0" />
-                <span>{editingRetainer ? 'Edit Recurring Retainer Plan' : 'Add Recurring Retainer Schedule'}</span>
+                <span>{editingRetainer ? 'Edit retainer' : 'New retainer'}</span>
               </h3>
               <button 
                 onClick={() => setShowRetainerEditor(false)}
@@ -3260,7 +3253,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Business Venture and Client Selection */}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Business Venture</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Business</label>
                   <select
                     value={retBusinessId}
                     onChange={(e) => setRetBusinessId(e.target.value)}
@@ -3280,7 +3273,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     onChange={(e) => setRetClientId(e.target.value)}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-2.5 text-xs mt-1"
                   >
-                    <option value="">Select Client...</option>
+                    <option value="">Choose a client</option>
                     {data.clients.map(c => (
                       <option key={c.id} value={c.id}>{c.name}</option>
                     ))}
@@ -3290,13 +3283,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
               {/* Retainer Plan Name */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Retainer Contract Title *</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Retainer name *</label>
                 <input
                   type="text"
                   required
                   value={retProjectName}
                   onChange={(e) => setRetProjectName(e.target.value)}
-                  placeholder="e.g. Monthly Maintenance & DevOps Support SLA"
+                  placeholder="e.g. Monthly website maintenance"
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1 font-semibold text-slate-800"
                 />
               </div>
@@ -3326,7 +3319,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                 <div>
                   <div className="flex items-center justify-between">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Retainer Currency *</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Currency *</label>
                     <button
                       type="button"
                       onClick={() => setShowFxCalculator(true)}
@@ -3352,22 +3345,22 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Schedule Frequency & Billing Day */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Billing Interval *</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Billing interval *</label>
                   <select
                     value={retInterval}
                     onChange={(e) => setRetInterval(e.target.value as any)}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1 font-bold text-slate-800"
                   >
-                    <option value="monthly">Monthly (Every Month)</option>
-                    <option value="quarterly">Quarterly (Every 3 Months)</option>
-                    <option value="bi-weekly">Bi-Weekly (Fortnightly)</option>
-                    <option value="annual">Annual (Yearly)</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly (every 3 months)</option>
+                    <option value="bi-weekly">Fortnightly</option>
+                    <option value="annual">Yearly</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    {retInterval === 'monthly' ? 'Day of Month (1-28) *' : 'Trigger Cycle Day'}
+                    {retInterval === 'monthly' ? 'Day of month (1–28) *' : 'Billing day'}
                   </label>
                   <input
                     type="number"
@@ -3384,28 +3377,28 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Payment Terms & Auto-Send Status */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Terms</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment terms</label>
                   <select
                     value={retPaymentTermsDays}
                     onChange={(e) => setRetPaymentTermsDays(Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1"
                   >
-                    <option value={7}>Net 7 Days</option>
-                    <option value={14}>Net 14 Days (Standard)</option>
-                    <option value={30}>Net 30 Days</option>
-                    <option value={0}>Due on Receipt</option>
+                    <option value={7}>Net 7 days</option>
+                    <option value={14}>Net 14 days</option>
+                    <option value={30}>Net 30 days</option>
+                    <option value={0}>Due on receipt</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Auto-Gen Status</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">New invoices</label>
                   <select
                     value={retAutoSendMode}
                     onChange={(e) => setRetAutoSendMode(e.target.value as 'draft' | 'sent')}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1"
                   >
-                    <option value="sent">Mark as Sent (Direct)</option>
-                    <option value="draft">Create as Draft (Review)</option>
+                    <option value="sent">Mark as sent</option>
+                    <option value="draft">Save as draft to review</option>
                   </select>
                 </div>
               </div>
@@ -3413,7 +3406,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Start Date & End Date */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 <DateInput
-                  label="Schedule Start Date"
+                  label="Start date"
                   required
                   value={retStartDate}
                   onChange={setRetStartDate}
@@ -3421,20 +3414,20 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   align="left"
                   customPresets={[
                     { label: 'Today', special: 'today' },
-                    { label: '1st of Next Mo.', monthsOffset: 1 },
+                    { label: '1st of next month', monthsOffset: 1 },
                   ]}
                 />
 
                 <DateInput
-                  label="End Date (Optional)"
+                  label="End date (optional)"
                   min={retStartDate}
                   value={retEndDate}
                   onChange={setRetEndDate}
-                  placeholder="No expiration (ongoing)"
+                  placeholder="No end date"
                   align="right"
                   customPresets={[
-                    { label: '+6 Months', monthsOffset: 6 },
-                    { label: '+1 Year', monthsOffset: 12 },
+                    { label: '+6 months', monthsOffset: 6 },
+                    { label: '+1 year', monthsOffset: 12 },
                   ]}
                 />
               </div>
@@ -3443,7 +3436,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               <div className="space-y-2 border-t border-slate-100 pt-3">
                 <div className="flex justify-between items-center">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Retainer Line Items ({retItems.length})
+                    Line items ({retItems.length})
                   </label>
                 </div>
 
@@ -3451,13 +3444,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-2">
                   <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <label className="block text-[8.5px] font-bold text-slate-400 uppercase">Service Catalog</label>
+                      <label className="block text-[8.5px] font-bold text-slate-400 uppercase">From catalog</label>
                       <select
                         value={retSelectedCatalogItemId}
                         onChange={(e) => handleRetCatalogSelect(e.target.value)}
                         className="w-full bg-white border border-slate-100 rounded-lg py-1 px-2 text-[10px] mt-0.5"
                       >
-                        <option value="">Choose service...</option>
+                        <option value="">Choose a service</option>
                         <option value="custom">✍️ Custom Description</option>
                         {data.services.map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
@@ -3471,7 +3464,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         type="text"
                         value={retItemName}
                         onChange={(e) => setRetItemName(e.target.value)}
-                        placeholder="e.g. 10hr Retainer Package"
+                        placeholder="e.g. 10-hour retainer package"
                         className="w-full bg-white border border-slate-100 rounded-lg py-1 px-2 text-[10px] mt-0.5"
                       />
                     </div>
@@ -3507,7 +3500,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         onClick={handleAddRetItemLine}
                         className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-1.5 rounded-lg text-[10px] transition-all cursor-pointer text-center"
                       >
-                        + Add Item
+                        + Add item
                       </button>
                     </div>
                   </div>
@@ -3550,7 +3543,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <span className="font-mono">{data.userProfile.defaultCurrency} ${retCalculatedTotals.vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between font-black text-slate-900 pt-1 border-t border-slate-200">
-                    <span>Scheduled Amount Due</span>
+                    <span>Amount per invoice</span>
                     <span className="font-mono text-sky-700">{data.userProfile.defaultCurrency} ${retCalculatedTotals.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
@@ -3559,21 +3552,21 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Status and Auto Generate Toggle */}
               <div className="grid grid-cols-2 gap-3 pt-1">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Plan Status</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Status</label>
                   <select
                     value={retStatus}
                     onChange={(e) => setRetStatus(e.target.value as 'active' | 'paused')}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1 font-bold text-slate-800"
                   >
-                    <option value="active">Active (Billing)</option>
-                    <option value="paused">Paused (Suspended)</option>
+                    <option value="active">Active</option>
+                    <option value="paused">Paused</option>
                   </select>
                 </div>
 
                 <div className="flex flex-col justify-center bg-slate-50 p-2 rounded-xl border border-slate-100 mt-1">
-                  <span className="text-[9px] font-extrabold text-slate-700">Auto-Generate</span>
+                  <span className="text-[9px] font-extrabold text-slate-700">Auto-invoice</span>
                   <div className="flex items-center justify-between mt-1">
-                    <span className="text-[8.5px] text-slate-400">Spawn invoice automatically</span>
+                    <span className="text-[8.5px] text-slate-400">Create invoices automatically</span>
                     <input
                       type="checkbox"
                       checked={retAutoGenerate}
@@ -3586,7 +3579,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
               {/* Notes */}
               <div>
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment Instructions & Notes</label>
+                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Payment instructions and notes</label>
                 <textarea
                   value={retNotes}
                   onChange={(e) => setRetNotes(e.target.value)}
@@ -3610,7 +3603,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 form="retainer-editor-form"
                 className="flex-1 bg-sky-600 hover:bg-sky-700 active:bg-sky-800 text-white font-bold py-2.5 rounded-xl text-xs transition-all text-center shadow-md shadow-sky-600/20 cursor-pointer active:scale-95"
               >
-                {editingRetainer ? 'Update Schedule' : 'Create Retainer'}
+                {editingRetainer ? 'Save' : 'Create retainer'}
               </button>
             </div>
           </motion.div>

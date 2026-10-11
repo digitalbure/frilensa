@@ -722,7 +722,7 @@ export default function AiExpenseCategorizationModal({
                     <span>Fiji tax & VAT</span>
                   </div>
                   <ul className="text-[10px] text-slate-600 space-y-1 list-disc pl-4">
-                    <li><strong>VAT Input Tax:</strong> 12.5% claimable on local tax invoices.</li>
+                    <li><strong>Input VAT:</strong> 12.5% claimable on local tax invoices.</li>
                     <li><strong>Digital Subscriptions:</strong> Overseas software usually has no Fiji VAT to claim.</li>
                     <li><strong>Deductibility:</strong> Ordinary business expenses reduce taxable income.</li>
                   </ul>

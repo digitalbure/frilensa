@@ -365,7 +365,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     }));
 
     setPendingPayments(prev => prev.filter(p => p.id !== payId));
-    showToast(`Payment of FJD $${pay.amount} approved for ${pay.tenantName}`);
+    showToast(`Payment of FJD $${pay.amount} approved for ${pay.tenantName}.`);
   };
 
   // Reject Payment
@@ -861,7 +861,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      {platformSettings.platformTagline || 'Invoicing, bookkeeping and projects for Fiji • frilensa.com'}
+                      {platformSettings.platformTagline || 'Invoicing and bookkeeping for Fiji businesses'}
                     </p>
                   </div>
                 </div>
@@ -873,7 +873,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       commitPlatformSettings({
                         ...platformSettings,
                         platformName: 'Frilensa',
-                        platformTagline: 'Invoicing, bookkeeping and projects for Fiji • frilensa.com',
+                        platformTagline: 'Invoicing and bookkeeping for Fiji businesses',
                         platformSupportEmail: 'support@frilensa.com',
                         platformSupportPhone: '+679 330 1234',
                         platformLogoType: 'symbol',
@@ -881,7 +881,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         platformLogoUrl: '/pwa-icon.svg',
                         platformPrimaryColor: '#0284c7',
                         platformAccentColor: '#0d9488',
-                        platformFooterNote: 'Invoicing and bookkeeping for Fiji • frilensa.com'
+                        platformFooterNote: 'frilensa.com'
                       });
                       showToast('Branding reset to the Frilensa defaults.');
                     }}
@@ -938,7 +938,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           platformTagline: e.target.value
                         });
                       }}
-                      placeholder="e.g. Invoicing and bookkeeping for Fiji"
+                      placeholder="e.g. Invoicing and bookkeeping for Fiji businesses"
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                     />
                   </div>
@@ -1000,7 +1000,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           platformFooterNote: e.target.value
                         });
                       }}
-                      placeholder="e.g. Invoicing and bookkeeping for Fiji • frilensa.com"
+                      placeholder="e.g. frilensa.com"
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                     />
                   </div>
