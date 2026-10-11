@@ -92,8 +92,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [tenants, setTenants] = useState<Tenant[]>([
     {
       id: 'ten-current',
-      name: crmData.businesses[0]?.name || (crmData.userProfile?.name ? `${crmData.userProfile.name}'s Workspace` : 'Primary Workspace'),
-      owner: crmData.userProfile?.name || 'Workspace Owner',
+      name: crmData.businesses[0]?.name || (crmData.userProfile?.name ? `${crmData.userProfile.name}'s workspace` : 'Main workspace'),
+      owner: crmData.userProfile?.name || 'Workspace owner',
       email: crmData.userProfile?.email || 'admin@workspace.fj',
       location: crmData.userProfile?.city || 'Suva, Viti Levu',
       plan: activePlanTier,

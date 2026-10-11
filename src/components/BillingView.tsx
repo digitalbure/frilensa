@@ -1590,7 +1590,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <h3 className="text-xs font-bold text-slate-800 truncate">{client?.name || 'Unknown Client'}</h3>
+                          <h3 className="text-xs font-bold text-slate-800 truncate">{client?.name || 'Unknown client'}</h3>
                           <div className="flex flex-wrap gap-1 items-center mt-0.5">
                             <span className="text-[10px] text-slate-400">{doc.issueDate}</span>
                             {doc.dueDate && (
@@ -1701,7 +1701,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             e.stopPropagation();
                             setEmailModalDoc(doc);
                           }}
-                          title="Email Document to Client"
+                          title="Email to client"
                           className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-xl transition-colors cursor-pointer"
                         >
                           <Mail className="w-3.5 h-3.5" />
@@ -1713,7 +1713,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                             e.stopPropagation();
                             handleEditDocument(doc);
                           }}
-                          title="Edit Document"
+                          title="Edit"
                           className="p-2 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-xl transition-colors cursor-pointer"
                         >
                           <Edit3 className="w-3.5 h-3.5" />
@@ -1921,7 +1921,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <div className="flex justify-between items-start gap-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <h4 className="text-xs font-black text-slate-800 truncate">{client?.name || 'Unknown Client'}</h4>
+                          <h4 className="text-xs font-black text-slate-800 truncate">{client?.name || 'Unknown client'}</h4>
                           {linkedProject && (
                             <span className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[8px] font-bold truncate max-w-[120px]">
                               {linkedProject.name}
@@ -2227,7 +2227,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               <div className="space-y-2.5">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <div className="min-w-0">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Associated Project (Optional)</label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase">Project (optional)</label>
                     <select
                       value={docProjectId}
                       onChange={(e) => {
@@ -2242,7 +2242,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       }}
                       className="w-full max-w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-2.5 text-xs mt-1 box-border"
                     >
-                      <option value="">No Project Linked</option>
+                      <option value="">No project</option>
                       {(data.projects || []).filter(p => p.businessId === data.activeBusinessId).map(p => (
                         <option key={p.id} value={p.id}>{p.name} {p.currency ? `(${p.currency})` : ''}</option>
                       ))}
@@ -2257,7 +2257,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         onClick={() => setShowFxCalculator(true)}
                         className="text-[9.5px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-0.5 cursor-pointer"
                       >
-                        <Calculator className="w-2.5 h-2.5" /> FX Calc
+                        <Calculator className="w-2.5 h-2.5" /> Calculator
                       </button>
                     </div>
                     <select
@@ -2417,7 +2417,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         className="w-full bg-white border border-slate-100 rounded-lg py-1.5 px-2 text-[11px] mt-0.5"
                       >
                         <option value="">Choose an item</option>
-                        <option value="custom">✍️ Custom Description</option>
+                        <option value="custom">Custom item</option>
                         {data.services.filter(s => !s.businessId || s.businessId === data.activeBusinessId).map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
                         ))}
@@ -2425,7 +2425,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     </div>
 
                     <div>
-                      <label className="block text-[9px] font-bold text-slate-400 uppercase">Item Description</label>
+                      <label className="block text-[9px] font-bold text-slate-400 uppercase">Description</label>
                       <input
                         type="text"
                         value={customItemName}
@@ -2741,7 +2741,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => setEmailModalDoc(selectedDoc)}
-                    title="Email Document to Client"
+                    title="Email to client"
                     className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Mail className="w-3.5 h-3.5" />
@@ -2757,7 +2757,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </button>
                   <button
                     onClick={() => handleEditDocument(selectedDoc)}
-                    title="Edit Document"
+                    title="Edit"
                     className="flex items-center gap-1 bg-slate-900 hover:bg-slate-800 text-white px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Edit3 className="w-3.5 h-3.5" />
@@ -3297,7 +3297,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
               {/* Linked Project & Currency */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Associated Project (Optional)</label>
+                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">Project (optional)</label>
                   <select
                     value={retProjectId}
                     onChange={(e) => {
@@ -3310,7 +3310,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     }}
                     className="w-full bg-slate-50 border border-slate-100 rounded-xl py-2 px-3 text-xs mt-1"
                   >
-                    <option value="">No Project Linked</option>
+                    <option value="">No project</option>
                     {(data.projects || []).filter(p => !retBusinessId || p.businessId === retBusinessId).map(p => (
                       <option key={p.id} value={p.id}>{p.name} {p.currency ? `(${p.currency})` : ''}</option>
                     ))}
@@ -3325,7 +3325,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       onClick={() => setShowFxCalculator(true)}
                       className="text-[9.5px] font-bold text-sky-600 hover:text-sky-800 flex items-center gap-0.5 cursor-pointer"
                     >
-                      <Calculator className="w-2.5 h-2.5" /> FX Calc
+                      <Calculator className="w-2.5 h-2.5" /> Calculator
                     </button>
                   </div>
                   <select
@@ -3451,7 +3451,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         className="w-full bg-white border border-slate-100 rounded-lg py-1 px-2 text-[10px] mt-0.5"
                       >
                         <option value="">Choose a service</option>
-                        <option value="custom">✍️ Custom Description</option>
+                        <option value="custom">Custom item</option>
                         {data.services.map(s => (
                           <option key={s.id} value={s.id}>{s.name} (${s.rate})</option>
                         ))}
@@ -3459,7 +3459,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     </div>
 
                     <div>
-                      <label className="block text-[8.5px] font-bold text-slate-400 uppercase">Item Description</label>
+                      <label className="block text-[8.5px] font-bold text-slate-400 uppercase">Description</label>
                       <input
                         type="text"
                         value={retItemName}

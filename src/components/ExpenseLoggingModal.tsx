@@ -201,7 +201,7 @@ export default function ExpenseLoggingModal({
 
     try {
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('This browser can't use the camera. Upload a photo or PDF instead.');
+        throw new Error("This browser can't use the camera. Upload a photo or PDF instead.");
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -220,7 +220,7 @@ export default function ExpenseLoggingModal({
       setIsCameraActive(true);
     } catch (err: any) {
       console.error('Camera access error:', err);
-      setCameraError(err.message || 'Couldn't open the camera. Check that this site is allowed to use it.');
+      setCameraError(err.message || "Couldn't open the camera. Check that this site is allowed to use it.");
       setIsCameraActive(false);
     }
   };
