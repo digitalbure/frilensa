@@ -2108,7 +2108,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <option value="BSP Fiji">BSP Fiji</option>
                           <option value="ANZ Fiji">ANZ Fiji</option>
                           <option value="Westpac Fiji">Westpac Fiji</option>
-                          <option value="M-Paisa">M-Paisa</option>
+                          <option value="M-Paisa">M-PAiSA</option>
                         </select>
                       </div>
                     </div>
@@ -2181,7 +2181,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       <option value="BSP Fiji">BSP Fiji</option>
                       <option value="ANZ Fiji">ANZ Fiji</option>
                       <option value="Westpac Fiji">Westpac Fiji</option>
-                      <option value="M-Paisa">M-Paisa</option>
+                      <option value="M-Paisa">M-PAiSA</option>
                     </select>
                   </div>
                 </div>
