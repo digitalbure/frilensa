@@ -8,6 +8,7 @@ import { getDocumentHomeValues } from "../src/lib/currencies";
 import { todayIn, addDays, daysBetween } from "../src/lib/retainers";
 import { computeVatReturn, vatPeriod } from "../src/lib/vatReturn";
 import { lineTotals, reimbursementLines, linkBilledExpenses, isReimbursement } from "../src/lib/invoiceTotals";
+import { documentDefaults } from "../src/lib/documentTerms";
 import type { ActivityLog, Client, CRMData, CRMDocument, ExpenseRecord } from "../src/types";
 
 // Operations behind the public API (/api/v1) and the MCP server (/mcp). Both call these, so they
@@ -171,11 +172,11 @@ export const createDraftInput = {
   chargeVatOnExpenses: z.boolean().optional().describe("Charge VAT on reimbursable expenses. Default false (passed on at cost)"),
   businessId: id.optional().describe("Defaults to the active business"),
   issueDate: date.optional().describe("Default: today"),
-  dueInDays: z.number().int().min(0).max(365).optional().describe("Default: 14"),
+  dueInDays: z.number().int().min(0).max(365).optional().describe("Default: the business's payment terms (invoices) or quote validity (quotes)"),
   currency: z.string().trim().regex(/^[A-Z]{3}$/).optional().describe("Default: the client's or your currency"),
   vatRate: z.number().min(0).max(50).optional().describe("Percent. Default: your VAT setting"),
   projectId: id.optional(),
-  notes: text(2000).optional()
+  notes: text(2000).optional().describe("Default: the business's terms for this document type")
 };
 
 export const addExpenseInput = {
@@ -411,6 +412,7 @@ export async function createDraftDocument(uid: string, keyName: string, input: u
     const vatRate = q.vatRate ?? (data.userProfile.enableTax === false ? 0 : (data.userProfile.defaultVatRate ?? 12.5));
     const vatAmount = round2(taxableBase * vatRate / 100);
     const now = new Date().toISOString();
+    const defaults = documentDefaults(business, q.type, issueDate);
     const doc: CRMDocument = {
       id: newId("doc"),
       type: q.type,
@@ -420,14 +422,14 @@ export async function createDraftDocument(uid: string, keyName: string, input: u
       projectId: q.projectId,
       currency: q.currency || client.currency || business.currency || homeCurrency(data),
       issueDate,
-      dueDate: addDays(issueDate, q.dueInDays ?? 14),
+      dueDate: q.dueInDays !== undefined ? addDays(issueDate, q.dueInDays) : defaults.dueDate,
       items,
       subtotal,
       vatRate,
       vatAmount,
       total: round2(subtotal + vatAmount),
       status: "draft",
-      notes: q.notes,
+      notes: q.notes ?? defaults.notes,
       shareToken: generateShareToken(),
       updatedAt: now
     };

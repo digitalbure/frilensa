@@ -21,6 +21,8 @@ import { LedgerHistoryModal } from './LedgerHistoryModal';
 import { findDuplicatesInLedger, checkTransactionDuplicate, deduplicateLedger } from '../lib/transactionDeduplication';
 import { saveLedgerRestorePoint, getLatestLedgerRestorePoint, rollbackLedgerState, LedgerRestorePoint } from '../lib/ledgerHistory';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, getDocumentHomeValues } from '../lib/currencies';
+import ServicesView from './ServicesView';
+import RateCardSettings from './RateCardSettings';
 
 interface BookkeepingViewProps {
   data: CRMData;
@@ -29,7 +31,7 @@ interface BookkeepingViewProps {
 }
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {
-  // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'reconciler' | 'ledger' | 'rates'
+  // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'vat' | 'reconciler' | 'ledger' | 'rates' (services, rate card, terms and rate rules)
   const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'rates'>('pnl');
 
   // Expense Logging Modal State
@@ -95,17 +97,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
   } | null>(null);
 
   // Rates module states
-  const [showAddService, setShowAddService] = useState(false);
   const [showAddRule, setShowAddRule] = useState(false);
 
-  // Form state for services
-  const [editingServiceId, setEditingServiceId] = useState<string | null>(null);
-  const [srvName, setSrvName] = useState('');
-  const [srvDesc, setSrvDesc] = useState('');
-  const [srvRate, setSrvRate] = useState(100);
-  const [srvUnit, setSrvUnit] = useState('Hour');
-  const [srvType, setSrvType] = useState<'service' | 'saas'>('service');
-  const [srvInterval, setSrvInterval] = useState<'one-time' | 'monthly' | 'annual'>('one-time');
 
   // Form state for rate modifiers
   const [ruleName, setRuleName] = useState('');
@@ -822,68 +815,6 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
     }
   };
 
-  // Create or edit service/product catalog item
-  const handleOpenAddService = () => {
-    setEditingServiceId(null);
-    setSrvName('');
-    setSrvDesc('');
-    setSrvRate(100);
-    setSrvUnit('Hour');
-    setSrvType('service');
-    setSrvInterval('one-time');
-    setShowAddService(true);
-  };
-
-  const handleOpenEditService = (srv: ProductService) => {
-    setEditingServiceId(srv.id);
-    setSrvName(srv.name);
-    setSrvDesc(srv.description);
-    setSrvRate(srv.rate);
-    setSrvUnit(srv.unit);
-    setSrvType(srv.type || 'service');
-    setSrvInterval(srv.billingInterval || 'one-time');
-    setShowAddService(true);
-  };
-
-  const handleSubmitService = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!srvName || srvRate <= 0) return;
-
-    if (editingServiceId) {
-      // Edit
-      const updated = data.services.map(s => 
-        s.id === editingServiceId
-          ? { ...s, name: srvName, description: srvDesc, rate: Number(srvRate), unit: srvUnit, type: srvType, billingInterval: srvInterval }
-          : s
-      );
-      onUpdateData({ ...data, services: updated });
-    } else {
-      // Add
-      const newSrv: ProductService = {
-        id: `srv-${Date.now()}`,
-        name: srvName,
-        description: srvDesc,
-        rate: Number(srvRate),
-        unit: srvUnit,
-        type: srvType,
-        billingInterval: srvInterval,
-        businessId: data.activeBusinessId
-      };
-      onUpdateData({ ...data, services: [...data.services, newSrv] });
-      if (!selectedPlaygroundSrv) setSelectedPlaygroundSrv(newSrv.id);
-    }
-    setShowAddService(false);
-  };
-
-  const handleDeleteService = (id: string) => {
-    if (confirm('Delete this item from the catalog?')) {
-      onUpdateData({
-        ...data,
-        services: data.services.filter(s => s.id !== id)
-      });
-    }
-  };
-
   // Create a new rate rule (Weekend, Rush, Discount)
   const handleAddRateRule = (e: React.FormEvent) => {
     e.preventDefault();
@@ -1250,7 +1181,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          Rates
+          Services
         </button>
       </div>
 
@@ -2291,66 +2222,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             transition={{ duration: 0.15 }}
             className="space-y-4"
           >
-            {/* Products & Services Catalog Section */}
-            <div className="bg-white border border-zinc-150 rounded-2xl p-4 shadow-sm space-y-3.5">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-1.5">
-                  <Briefcase className="w-4.5 h-4.5 text-zinc-700" />
-                  <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider">Services and products</h3>
-                </div>
-                <button
-                  onClick={handleOpenAddService}
-                  className="text-[9.5px] bg-zinc-900 hover:bg-zinc-850 text-white font-extrabold px-2 py-1 rounded-lg flex items-center gap-1 transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" /> Add item
-                </button>
-              </div>
-
-              <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
-                {data.services.length === 0 ? (
-                  <p className="text-center text-[10px] text-zinc-400 py-6">No services yet. Add one to use it on quotes and invoices.</p>
-                ) : (
-                  data.services.map((srv) => (
-                    <div key={srv.id} className="p-2.5 bg-zinc-50 border border-zinc-150/70 rounded-xl flex justify-between items-center group">
-                      <div className="min-w-0 flex-1 pr-2">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-[10.5px] font-extrabold text-zinc-900 truncate leading-snug">{srv.name}</h4>
-                          <span className={`text-[7.5px] font-black uppercase px-1 rounded-md tracking-tight ${
-                            srv.type === 'saas' ? 'bg-indigo-100 text-indigo-800' : 'bg-zinc-200 text-zinc-800'
-                          }`}>
-                            {srv.type || 'service'}
-                          </span>
-                        </div>
-                        <p className="text-[9.5px] text-zinc-400 truncate mt-0.5">{srv.description}</p>
-                      </div>
-                      
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10.5px] font-black text-zinc-800 font-mono">
-                          FJD ${srv.rate}/{srv.unit === 'Hour' ? 'hr' : srv.unit === 'Flat Fee' ? 'flat' : srv.unit}
-                        </span>
-                        
-                        <div className="flex items-center opacity-0 group-hover:opacity-100 transition-all">
-                          <button
-                            onClick={() => handleOpenEditService(srv)}
-                            className="p-1 text-zinc-400 hover:text-zinc-700 rounded hover:bg-zinc-150"
-                            title="Edit"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteService(srv.id)}
-                            className="p-1 text-zinc-400 hover:text-rose-600 rounded hover:bg-rose-50"
-                            title="Delete"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
+            <ServicesView data={data} onUpdateData={onUpdateData} />
+            <RateCardSettings data={data} onUpdateData={onUpdateData} />
 
             {/* Dynamic Rate Modifiers Builder Section */}
             <div className="bg-white border border-zinc-150 rounded-2xl p-4 shadow-sm space-y-3.5">
@@ -2850,115 +2723,6 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               <h4 className="text-xs font-bold">{reassuranceMessage}</h4>
               <p className="text-[8.5px] text-zinc-400 leading-normal">AI reads each line, suggests a category and works out the {data.userProfile.defaultVatRate ?? 12.5}% VAT. You can check everything before it goes in the ledger.</p>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Add / Edit Service Catalog Modal */}
-      {showAddService && (
-        <div className="fixed inset-0 bg-zinc-900/60 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-fade-in">
-          <div className="bg-white w-full max-w-sm rounded-2xl border border-zinc-100 shadow-2xl overflow-hidden text-zinc-700">
-            <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
-              <h3 className="text-xs font-bold uppercase tracking-wide">
-                {editingServiceId ? 'Edit service' : 'Add service'}
-              </h3>
-              <button onClick={() => setShowAddService(false)} className="text-zinc-400 hover:text-white transition-colors">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitService} className="p-4 space-y-3.5">
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-zinc-400 block">Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Mobile app development"
-                  value={srvName}
-                  onChange={(e) => setSrvName(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none focus:border-zinc-900"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-zinc-400 block">Description</label>
-                <textarea
-                  rows={2}
-                  placeholder="What's included"
-                  value={srvDesc}
-                  onChange={(e) => setSrvDesc(e.target.value)}
-                  className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none resize-none"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Rate (FJD)</label>
-                  <input
-                    type="number"
-                    required
-                    value={srvRate}
-                    onChange={(e) => setSrvRate(Number(e.target.value))}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Unit</label>
-                  <select
-                    value={srvUnit}
-                    onChange={(e) => setSrvUnit(e.target.value)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none"
-                  >
-                    <option value="Hour">Hour</option>
-                    <option value="Day">Day</option>
-                    <option value="Flat Fee">Flat fee</option>
-                    <option value="Project">Project</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Type</label>
-                  <select
-                    value={srvType}
-                    onChange={(e) => setSrvType(e.target.value as any)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs"
-                  >
-                    <option value="service">Service</option>
-                    <option value="saas">Software subscription</option>
-                  </select>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Billing</label>
-                  <select
-                    value={srvInterval}
-                    onChange={(e) => setSrvInterval(e.target.value as any)}
-                    className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs"
-                  >
-                    <option value="one-time">One-time</option>
-                    <option value="monthly">Monthly</option>
-                    <option value="annual">Yearly</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setShowAddService(false)}
-                  className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 py-2 rounded-xl text-xs font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 bg-zinc-900 hover:bg-zinc-850 text-white py-2 rounded-xl text-xs font-bold"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

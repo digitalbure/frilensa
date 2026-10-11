@@ -269,6 +269,15 @@ export interface Business {
   quoteStartNumber?: number;
   isPrimary?: boolean;
   category?: string;
+  // Defaults for new documents
+  paymentTermsDays?: number; // Invoice due date, days after issue (default 14)
+  quoteValidDays?: number; // Quotes are valid for this many days (default 30)
+  invoiceTerms?: string; // Default terms and notes on new invoices
+  quoteTerms?: string; // Default terms and notes on new quotes
+  // Shareable rate card (/?rates=<token>); the token is registered on the server
+  rateCardToken?: string;
+  rateCardIntro?: string;
+  updatedAt?: string;
   customFields?: { label: string; value: string; isPreset?: boolean }[];
   mPaisaId?: string;
   myCashId?: string;
@@ -395,6 +404,7 @@ export interface ProductService {
   isActive?: boolean;
   notes?: string;
   tags?: string[];
+  showOnRateCard?: boolean; // Listed on the business's shareable rate card (default: yes, when active)
 }
 
 export interface ActivityLog {

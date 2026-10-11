@@ -18,6 +18,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.9.0] - 2026-10-11
+
+### Added
+- **Services and rates** in Bookkeeping (the tab was called Rates). It's one catalogue for each business: rates, rush, weekend and retainer rates, cost prices and margins, starter packs for common trades, price adjustments and a rate sheet. Rate rules and currencies are still on this tab.
+- **Shareable rate card.** Create a link to a page that lists your services, rates and terms. Clients can print it or save it as a PDF, pick quantities to see an estimate, and send you a quote request. Choose which items appear with "Show on rate card". "New link" replaces the old link, and "Turn off" stops it working.
+- **Quote requests** show up on your dashboard, and you're emailed about each one. "Create quote" turns a request into a draft quote. If the person isn't already a client, they're added as one.
+- **Default terms for each business.** Set when invoices are due, how long quotes are valid, and your standard invoice and quote terms. New quotes and invoices fill them in, including drafts made through Claude or the API, and retainers when they have no terms of their own.
+
+### Changed
+- The catalogue shows only the selected business's items. Adjusting prices no longer changes other businesses' items.
+- New items and starter packs no longer come with made-up cost prices and rush or weekend rates, so the margins shown are real.
+
+### Fixed
+- Saving an inactive item turned it active again.
+- An item's unit sometimes showed as "Hour" when you edited it.
+
 ## [3.8.0] - 2026-10-11
 
 ### Added

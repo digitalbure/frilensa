@@ -73,6 +73,24 @@ await put(`consultants/${B.uid}`, {
 });
 await put(`documents/${B.uid}_late1`, { ...bobDocs[0], consultantId: B.uid, clientEmail: 'payer@client.fj', clientName: 'Payer Ltd', businessName: 'Bob Agency' });
 
+// Carol's workspace for rate cards.
+const C = await user('carol@rates.fj');
+const carolWs = rateCardToken => ({
+  consultantEmail: C.email,
+  userProfile: { email: C.email, defaultCurrency: 'FJD', defaultVatRate: 12.5 },
+  clients: [],
+  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
+  services: [
+    { id: 's1', name: 'Portrait session', description: 'One hour', rate: 150, unit: 'Hour', businessId: 'cb1', costPrice: 40, sku: 'SECRET-SKU' },
+    { id: 's2', name: 'Hidden item', rate: 999, unit: 'Item', businessId: 'cb1', showOnRateCard: false },
+    { id: 's3', name: 'Retired item', rate: 5, unit: 'Item', businessId: 'cb1', isActive: false },
+    { id: 's4', name: 'Other business item', rate: 7, unit: 'Item', businessId: 'cb2' },
+    { id: 's5', name: 'Prints', rate: 20, unit: 'Item', isTaxable: false }
+  ],
+  documents: [], projects: []
+});
+await put(`consultants/${C.uid}`, carolWs(''));
+
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
 const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
@@ -474,6 +492,67 @@ try {
   await check('automation run records are not readable from the browser', async () => {
     const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/automation_runs/${B.uid}`, { headers: { Authorization: `Bearer ${B.token}` } });
     assert.equal(r.status, 403);
+  });
+
+  // --- rate cards and quote requests ---
+  let card1, card2, requestId;
+  const RC = `${API}/api/public/rate-cards`;
+  await check('rate card admin needs sign-in', async () => { assert.equal((await fetch(`${API}/api/rate-cards`, { method: 'POST' })).status, 401); });
+  await check('rate card link needs one of your businesses', async () => { assert.equal((await fetch(`${API}/api/rate-cards`, { method: 'POST', headers: auth(C), body: JSON.stringify({ businessId: 'bb1' }) })).status, 404); });
+  await check('rate card works once the token is saved on the business', async () => {
+    const r = await j(await fetch(`${API}/api/rate-cards`, { method: 'POST', headers: auth(C), body: JSON.stringify({ businessId: 'cb1' }) }));
+    assert.equal(r.status, 200); card1 = r.body.token; assert.ok(card1.length >= 20);
+    assert.equal((await fetch(`${RC}/${card1}`)).status, 404, 'not live until saved on the business');
+    await put(`consultants/${C.uid}`, carolWs(card1));
+    assert.equal((await fetch(`${RC}/${card1}`)).status, 200);
+  });
+  await check('rate card lists only active, visible items for that business', async () => {
+    const r = await j(await fetch(`${RC}/${card1}`));
+    assert.deepEqual(r.body.services.map(s => s.id), ['s1', 's5']);
+    assert.equal(r.body.business.name, 'Carol Photo');
+    assert.equal(r.body.services[0].costPrice, undefined); assert.equal(r.body.services[0].sku, undefined);
+    assert.equal(r.body.services[0].vat, true); assert.equal(r.body.services[1].vat, false);
+    assert.deepEqual(r.body.terms, { text: '50% deposit to book.', paymentTermsDays: 7, quoteValidDays: 21 });
+    assert.equal(JSON.stringify(r.body).includes(C.uid), false, 'owner id must not leak');
+  });
+  await check('quote request needs a name and email', async () => {
+    assert.equal((await fetch(`${RC}/${card1}/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Dee', items: [{ serviceId: 's1', quantity: 1 }] }) })).status, 400);
+  });
+  await check('quote request uses the card\'s rates and ignores hidden items', async () => {
+    const r = await j(await fetch(`${RC}/${card1}/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Dee', email: 'dee@client.fj', message: 'Family shoot', items: [{ serviceId: 's1', quantity: 2, rate: 1 }, { serviceId: 's2', quantity: 1 }, { serviceId: 's4', quantity: 1 }, { serviceId: 's5', quantity: 3 }] }) }));
+    assert.equal(r.status, 200); assert.match(r.body.ref, /^QR-/);
+  });
+  await check('consultant is emailed about the quote request', async () => { await emailTo(C.email, /Quote request QR-.* from Dee/); });
+  await check('only the card owner sees the request', async () => {
+    const r = await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }));
+    assert.equal(r.body.requests.length, 1);
+    const q = r.body.requests[0]; requestId = q.id;
+    assert.deepEqual(q.items.map(i => [i.serviceId, i.quantity, i.rate]), [['s1', 2, 150], ['s5', 3, 20]]);
+    assert.equal(q.estimate, 360);
+    assert.equal((await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(B) }))).body.requests.length, 0);
+    assert.equal((await fetch(`${API}/api/rate-cards/requests/${requestId}`, { method: 'PATCH', headers: auth(B), body: JSON.stringify({ status: 'dismissed' }) })).status, 404);
+  });
+  await check('marking a request quoted removes it from the inbox', async () => {
+    assert.equal((await fetch(`${API}/api/rate-cards/requests/${requestId}`, { method: 'PATCH', headers: auth(C), body: JSON.stringify({ status: 'quoted', documentId: 'doc-1' }) })).status, 200);
+    assert.equal((await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests.length, 0);
+  });
+  await check('quote requests are not readable from the browser', async () => {
+    const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/quote_requests/${requestId}`, { headers: { Authorization: `Bearer ${C.token}` } });
+    assert.equal(r.status, 403);
+  });
+  await check('someone else cannot turn off the rate card', async () => {
+    await fetch(`${API}/api/rate-cards/${card1}`, { method: 'DELETE', headers: auth(B) });
+    assert.equal((await fetch(`${RC}/${card1}`)).status, 200);
+  });
+  await check('a new link retires the old one', async () => {
+    card2 = (await j(await fetch(`${API}/api/rate-cards`, { method: 'POST', headers: auth(C), body: JSON.stringify({ businessId: 'cb1' }) }))).body.token;
+    await put(`consultants/${C.uid}`, carolWs(card2));
+    assert.equal((await fetch(`${RC}/${card1}`)).status, 404);
+    assert.equal((await fetch(`${RC}/${card2}`)).status, 200);
+  });
+  await check('turning the card off stops the link', async () => {
+    await fetch(`${API}/api/rate-cards/${card2}`, { method: 'DELETE', headers: auth(C) });
+    assert.equal((await fetch(`${RC}/${card2}`)).status, 404);
   });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.

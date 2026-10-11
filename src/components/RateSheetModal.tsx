@@ -1,10 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { 
-  FileText, X, Download, Copy, Check, Printer, Building2, 
-  Sparkles, Tag, ShieldCheck, DollarSign
-} from 'lucide-react';
-import { CRMData, ProductService } from '../types';
+import { FileText, X, Copy, Check, Printer } from 'lucide-react';
+import { CRMData } from '../types';
 import { getCurrencyConfig } from '../lib/currencies';
 
 interface RateSheetModalProps {
@@ -21,17 +18,29 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
   const activeBusiness = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
   const currencyConfig = getCurrencyConfig(data.userProfile.defaultCurrency || 'FJD');
 
-  const categories = Array.from(new Set(data.services.map(s => s.category || 'General Services'))).filter(Boolean);
+  const vatRate = data.userProfile.defaultVatRate ?? 12.5;
 
-  const displayServices = data.services.filter(s => {
+  // Active business only, and only items meant for clients
+  const rateCardServices = (data.services || []).filter(s =>
+    (!s.businessId || s.businessId === data.activeBusinessId) &&
+    s.isActive !== false &&
+    s.showOnRateCard !== false
+  );
+
+  const categories = Array.from(new Set(rateCardServices.map(s => s.category || 'General'))).filter(Boolean);
+
+  const displayServices = rateCardServices.filter(s => {
     if (selectedCategory === 'all') return true;
-    return (s.category || 'General Services') === selectedCategory;
+    return (s.category || 'General') === selectedCategory;
   });
+
+  const contactEmail = activeBusiness?.email || data.userProfile.email;
+  const contactPhone = activeBusiness?.phone || data.userProfile.phone;
+  const tin = activeBusiness?.tin || data.userProfile.tin;
 
   const handleCopyText = () => {
     let text = `${activeBusiness?.name || 'Company'} — Rates\n`;
-    text += `Currency: ${currencyConfig.code} (${currencyConfig.symbol}) • Date: ${new Date().toLocaleDateString()}\n`;
-    text += `===========================================================\n\n`;
+    text += `Currency: ${currencyConfig.code} · ${new Date().toLocaleDateString()}\n\n`;
 
     displayServices.forEach((srv, idx) => {
       text += `${idx + 1}. ${srv.name}\n`;
@@ -42,17 +51,23 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
         if (srv.retainerRate) text += `   - Retainer: ${currencyConfig.symbol} ${srv.retainerRate.toFixed(2)}\n`;
       }
       if (includeScope && srv.description) {
-        text += `   Scope: ${srv.description}\n`;
+        text += `   ${srv.description}\n`;
       }
       text += `\n`;
     });
 
-    text += `\n* Rates are subject to Fiji VAT (${data.userProfile.defaultVatRate || 12.5}%) unless exempt.\n`;
-    text += `Contact: ${activeBusiness?.email || data.userProfile.email} | ${activeBusiness?.phone || data.userProfile.phone || ''}\n`;
+    if (displayServices.some(s => s.isTaxable !== false)) {
+      text += `Rates exclude VAT (${vatRate}%), which is added to taxable items.\n`;
+    }
+    const contact = [contactEmail, contactPhone].filter(Boolean).join(' | ');
+    if (contact) text += `Contact: ${contact}\n`;
 
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 3000);
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 3000);
+    }).catch(() => {
+      window.alert("Couldn't copy to the clipboard. Select the text and copy it instead.");
+    });
   };
 
   const handlePrint = () => {
@@ -69,23 +84,20 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
         {/* Header */}
         <div className="p-5 bg-slate-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-400/20 text-amber-300 flex items-center justify-center border border-amber-400/30">
+            <div className="w-10 h-10 rounded-xl bg-white/10 text-slate-200 flex items-center justify-center border border-white/15 shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                <span>Rate sheet</span>
-                <span className="bg-amber-400/20 text-amber-300 text-[9px] font-extrabold px-2 py-0.2 rounded-full uppercase border border-amber-400/30">
-                  Exportable
-                </span>
-              </h3>
+              <h3 className="text-base font-bold text-white tracking-tight">Rate sheet</h3>
               <p className="text-xs text-slate-300">
-                Copy or print your rates to send to clients.
+                Copy or print your rates to send to clients. Inactive items and items hidden from the rate card are left out.
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -120,7 +132,7 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-xs text-slate-700 cursor-pointer"
             >
-              <option value="all">All categories ({data.services.length})</option>
+              <option value="all">All categories ({rateCardServices.length})</option>
               {categories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -129,15 +141,19 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={handleCopyText}
-              className="px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              disabled={displayServices.length === 0}
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl font-semibold text-slate-700 flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
             >
               {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
               <span>{copied ? 'Copied' : 'Copy text'}</span>
             </button>
             <button
+              type="button"
               onClick={handlePrint}
-              className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+              disabled={displayServices.length === 0}
+              className="disabled:opacity-50 disabled:cursor-not-allowed px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print / PDF</span>
@@ -146,37 +162,41 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
         </div>
 
         {/* Printable Rate Sheet Preview Body */}
-        <div className="p-6 sm:p-8 space-y-6 overflow-y-auto flex-1 bg-white">
+        <div className="p-4 sm:p-8 space-y-6 overflow-y-auto flex-1 bg-white">
           {/* Rate Sheet Header */}
-          <div className="flex justify-between items-start pb-6 border-b border-slate-200">
-            <div>
+          <div className="flex flex-col sm:flex-row justify-between items-start gap-3 pb-6 border-b border-slate-200">
+            <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-sky-500" />
                 <h2 className="text-xl font-bold text-slate-900 font-display tracking-tight">
                   {activeBusiness?.name || 'Rates'}
                 </h2>
               </div>
-              <p className="text-xs text-slate-500 mt-1 max-w-md">
-                {activeBusiness?.brandSlogan || 'Rates and services'}
-              </p>
-              <p className="text-[11px] text-slate-400 mt-1 font-mono">
-                TIN: {activeBusiness?.tin || data.userProfile.tin || '—'} • {activeBusiness?.email || data.userProfile.email}
+              {activeBusiness?.brandSlogan && (
+                <p className="text-xs text-slate-500 mt-1 max-w-md">{activeBusiness.brandSlogan}</p>
+              )}
+              <p className="text-[11px] text-slate-400 mt-1">
+                {[tin ? `TIN ${tin}` : null, contactEmail, contactPhone].filter(Boolean).join(' · ')}
               </p>
             </div>
 
-            <div className="text-right">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Currency</span>
+            <div className="sm:text-right shrink-0">
+              <span className="text-[11px] font-semibold text-slate-400 block">Currency</span>
               <span className="text-lg font-bold text-slate-900 font-mono">
                 {currencyConfig.code} ({currencyConfig.symbol})
               </span>
-              <span className="text-[10px] text-emerald-600 font-semibold block mt-0.5">
-                Effective {new Date().toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+              <span className="text-[11px] text-slate-500 block mt-0.5">
+                {new Date().toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
               </span>
             </div>
           </div>
 
           {/* Matrix Items */}
           <div className="space-y-4">
+            {displayServices.length === 0 && (
+              <p className="text-xs text-slate-500 text-center py-6">
+                No items to show. Add items to your catalogue, or turn on "Show on rate card" for the ones clients should see.
+              </p>
+            )}
             {displayServices.map((srv, idx) => (
               <div 
                 key={srv.id}
@@ -184,7 +204,7 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="space-y-0.5">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-xs font-mono font-bold text-slate-400">{idx + 1}.</span>
                       <h4 className="text-sm font-bold text-slate-900">{srv.name}</h4>
                       {srv.sku && (
@@ -200,7 +220,7 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
                     )}
                   </div>
 
-                  <div className="text-right sm:self-center">
+                  <div className="sm:text-right sm:self-center shrink-0">
                     <span className="text-base font-extrabold text-slate-900 font-mono">
                       {currencyConfig.symbol} {srv.rate.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
@@ -240,16 +260,11 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
             ))}
           </div>
 
-          {/* Rate Sheet Legal & Tax Disclosures */}
-          <div className="pt-4 border-t border-slate-200 text-[10.5px] text-slate-500 space-y-1">
-            <p className="flex items-center gap-1.5 font-medium text-slate-700">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Fiji VAT (12.5%) applies to standard-rated supplies.</span>
-            </p>
-            <p>
-              Quotes from this sheet are valid for 30 days. Retainer agreements are available on request.
-            </p>
-          </div>
+          {displayServices.some(s => s.isTaxable !== false) && (
+            <div className="pt-4 border-t border-slate-200 text-[11px] text-slate-500">
+              <p>Rates exclude VAT ({vatRate}%), which is added to taxable items.</p>
+            </div>
+          )}
         </div>
       </motion.div>
     </div>

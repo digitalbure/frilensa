@@ -18,6 +18,7 @@ import DirectoryView from './components/DirectoryView';
 import OnboardingWizard from './components/OnboardingWizard';
 import PwaInstallPrompt from './components/PwaInstallPrompt';
 import PublicDocumentView from './components/PublicDocumentView';
+import RateCardPublicView from './components/RateCardPublicView';
 import { CRMData, UserProfile } from './types';
 import { INITIAL_CRM_DATA } from './data/mockData';
 import { auth, onAuthStateChanged, signOut, type User } from './lib/firebase';
@@ -83,6 +84,9 @@ export default function App() {
     if (params.get('viewDoc') || window.location.pathname.startsWith('/docs/')) return { token: null };
     return null;
   });
+
+  // Shareable rate cards: /?rates=<token>
+  const [rateCardToken] = useState<string | null>(() => new URLSearchParams(window.location.search).get('rates'));
 
   // CRM workspace for the signed-in user
   const [crmData, setCrmData] = useState<CRMData>(INITIAL_CRM_DATA);
@@ -414,6 +418,10 @@ export default function App() {
     setPortalLinkError(null);
     setPortalSession(session);
   };
+
+  if (rateCardToken) {
+    return <RateCardPublicView token={rateCardToken} />;
+  }
 
   if (publicDocLink) {
     return (

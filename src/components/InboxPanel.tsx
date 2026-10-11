@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BellRing, CheckCircle2, XCircle, FileCheck2, MessageSquare, CalendarClock, ChevronRight } from 'lucide-react';
+import { BellRing, CheckCircle2, XCircle, FileCheck2, MessageSquare, CalendarClock, ChevronRight, ClipboardList } from 'lucide-react';
 import type { CRMData, CRMDocument, DirectoryBooking, SupportMessage } from '../types';
 import { paymentsToConfirm, newlyAcceptedQuotes } from '../lib/inbox';
 import { applyConfirmedPayment, addReceiptForInvoice, type ConfirmedPaymentDetails } from '../lib/payments';
@@ -7,6 +7,8 @@ import { loadSupportMessagesForConsultant, updateSupportMessageStatus } from '..
 import { fetchDirectoryBookings } from '../lib/api';
 import { sendDocumentEmail } from '../lib/emailService';
 import RecordPaymentModal from './RecordPaymentModal';
+import { fetchQuoteRequests, resolveQuoteRequest, type QuoteRequest } from '../lib/rateCards';
+import { draftQuoteFromRequest } from '../lib/quoteRequests';
 
 type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
 
@@ -44,6 +46,7 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
   const quotes = newlyAcceptedQuotes(data);
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [bookings, setBookings] = useState<DirectoryBooking[]>([]);
+  const [requests, setRequests] = useState<QuoteRequest[]>([]);
   const [confirming, setConfirming] = useState<CRMDocument | null>(null);
   const [rejecting, setRejecting] = useState<CRMDocument | null>(null);
   const [rejectReason, setRejectReason] = useState('');
@@ -62,6 +65,11 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
       setBookings(b.received.filter(x => x.status === 'pending'));
     } catch (err) {
       console.warn('Inbox: could not load bookings', err);
+    }
+    try {
+      setRequests(await fetchQuoteRequests());
+    } catch (err) {
+      console.warn('Inbox: could not load quote requests', err);
     }
   }, []);
 
@@ -151,8 +159,22 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
     try { await updateSupportMessageStatus(m.id, 'read'); } catch (err) { console.warn(err); }
   };
 
+  const createQuoteFromRequest = async (req: QuoteRequest) => {
+    const { data: next, doc, client, newClient } = draftQuoteFromRequest(data, req);
+    onUpdateData(next);
+    setRequests(prev => prev.filter(r => r.id !== req.id));
+    try { await resolveQuoteRequest(req.id, 'quoted', doc.id); } catch (err) { console.warn(err); }
+    flash(`Draft quote ${doc.documentNumber} created for ${client.name}${newClient ? ' (added as a new client)' : ''}. Check it and send it from Billing.`);
+    onNavigateToTab('billing', doc.id);
+  };
+
+  const dismissRequest = async (req: QuoteRequest) => {
+    setRequests(prev => prev.filter(r => r.id !== req.id));
+    try { await resolveQuoteRequest(req.id, 'dismissed'); } catch (err) { console.warn(err); }
+  };
+
   const clientName = (doc: CRMDocument) => data.clients.find(c => c.id === doc.clientId)?.name || 'Client';
-  const total = payments.length + quotes.length + messages.length + bookings.length;
+  const total = payments.length + quotes.length + messages.length + bookings.length + requests.length;
 
   if (total === 0 && !notice) return null;
 
@@ -227,6 +249,24 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
             <div className="flex gap-2">
               <button type="button" onClick={() => onNavigateToTab('clients')} className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold cursor-pointer">Reply</button>
               <button type="button" onClick={() => markMessageRead(m)} className="px-3 py-1.5 rounded-lg text-zinc-500 text-[11px] font-bold cursor-pointer">Mark read</button>
+            </div>
+          </li>
+        ))}
+
+        {requests.map(r => (
+          <li key={`qr-${r.id}`} className="px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="text-xs min-w-0">
+              <p className="font-bold text-zinc-900 flex items-center gap-1.5"><ClipboardList className="w-3.5 h-3.5 text-sky-600" /> Quote request {r.ref} from {r.name}{r.company ? `, ${r.company}` : ''}</p>
+              <p className="text-zinc-600">
+                {r.items.length ? r.items.map(i => `${i.quantity} × ${i.name}`).join(', ') : 'No services picked'}
+                {r.estimate > 0 ? ` · about ${r.currency} $${r.estimate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : ''}
+              </p>
+              {r.message && <p className="text-zinc-500 line-clamp-2">“{r.message}”</p>}
+              <p className="text-zinc-400 text-[11px]">{r.email}{r.phone ? ` · ${r.phone}` : ''} · {when(r.createdAt)}</p>
+            </div>
+            <div className="flex gap-2">
+              <button type="button" onClick={() => createQuoteFromRequest(r)} className="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-bold cursor-pointer">Create quote</button>
+              <button type="button" onClick={() => dismissRequest(r)} className="px-3 py-1.5 rounded-lg text-zinc-500 text-[11px] font-bold cursor-pointer">Dismiss</button>
             </div>
           </li>
         ))}

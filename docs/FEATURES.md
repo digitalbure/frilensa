@@ -49,6 +49,9 @@ Status as of v3.7.0 (October 2026). Each feature is marked by whether it actuall
 - ✅ P&L with category breakdown and VAT input/output summary.
 - ✅ VAT return for any period (invoice or payments basis) with warnings, CSV and print; CSV exports for accountants. *(3.7.0)*
 - ✅ Expense logging: manual, or camera/receipt OCR (Gemini, with a basic fallback parser). Receipts are kept in Cloud Storage (`FILES_BUCKET`, `server/files.ts`).
+- ✅ Services and rates catalogue (Bookkeeping → Services): items per business with rate tiers, cost prices and margins, starter packs, price adjustments and a rate sheet.
+- ✅ Shareable rate card (`/?rates=<token>`, `server/rateCards.ts`): a business's services, rates and quote terms, printable, with a quote request form. Requests are stored server-side (`quote_requests`) and appear in the dashboard inbox, where "Create quote" makes a draft quote.
+- ✅ Default terms per business: invoice payment terms, quote validity and terms text, filled in on new quotes and invoices (app, API and retainers).
 - ✅ Reimbursable expenses: bill an expense to a client and add it to their invoice at cost or with markup, without VAT by default. Clients open the receipts from the invoice or portal.
 - ✅ Bank statement import (BSP/ANZ/Westpac/M-PAiSA text and CSV), with AI categorisation and VAT split.
 - ✅ Transaction reconciler with AI-suggested matches, duplicate audit and clean-up, ledger history with undo.

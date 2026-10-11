@@ -26,6 +26,7 @@ import EmailDocumentModal from './EmailDocumentModal';
 import PaymentAttachmentWidget from './PaymentAttachmentWidget';
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
+import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 
 interface BillingViewProps {
   data: CRMData;
@@ -199,14 +200,15 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const projObj = data.projects?.find(p => p.id === forcedProjectId);
     setDocCurrency(projObj?.currency || clientObj?.currency || data.userProfile.defaultCurrency || 'FJD');
 
-    setIssueDate(new Date().toISOString().split('T')[0]);
-    setDueDate(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+    const today = new Date().toISOString().split('T')[0];
+    const defaults = documentDefaults(activeBusiness, type === 'quote' ? 'quote' : 'invoice', today);
+    setIssueDate(today);
+    setDueDate(defaults.dueDate);
     setItems([]);
     setNotes(
-      type === 'quote' ? 'Proposed scope and estimates. Valid for 30 days.' :
       type === 'receipt' ? 'Payment received. Vinaka vakalevu.' :
       type === 'credit_note' ? 'Credit note against the original invoice.' :
-      'Please pay using the bank details below.'
+      defaults.notes
     );
     setPaymentMethod('Bank Transfer');
     setDocStatus(type === 'receipt' || type === 'credit_note' ? 'paid' : 'draft');
@@ -1007,7 +1009,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setRetProjectName(`${client?.name || 'Client'} retainer`);
     setRetInterval('monthly');
     setRetBillingDay(1);
-    setRetPaymentTermsDays(14);
+    setRetPaymentTermsDays(paymentTermsDays(activeBusiness));
     setRetAutoSendMode('sent');
     setRetAutoGenerate(true);
     setRetStartDate(new Date().toISOString().split('T')[0]);
@@ -1040,7 +1042,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setRetProjectName('');
     setRetInterval('monthly');
     setRetBillingDay(1);
-    setRetPaymentTermsDays(14);
+    setRetPaymentTermsDays(paymentTermsDays(activeBusiness));
     setRetAutoSendMode('sent');
     setRetAutoGenerate(true);
     setRetStartDate(new Date().toISOString().split('T')[0]);

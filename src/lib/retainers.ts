@@ -78,7 +78,7 @@ export function buildRetainerInvoice(data: CRMData, ret: RecurringInvoice, today
   const business = data.businesses.find(b => b.id === ret.businessId)
     || data.businesses.find(b => b.id === data.activeBusinessId)
     || data.businesses[0];
-  const termsDays = ret.paymentTermsDays || 14;
+  const termsDays = ret.paymentTermsDays || business?.paymentTermsDays || 14;
   const items: DocumentItem[] = ret.items && ret.items.length > 0
     ? ret.items
     : [{ id: `item-${ret.id}`, name: `${ret.projectName || 'Monthly Retainer'} Service Plan`, quantity: 1, rate: ret.amount, total: ret.amount }];

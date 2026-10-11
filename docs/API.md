@@ -103,6 +103,9 @@ billed (404 if unknown, 409 if already on an invoice). Reimbursed lines carry no
 `chargeVatOnExpenses` is true. Document items show `reimbursable`, `vatCharged` and `hasReceipt`.
 Receipt files themselves aren't available through the API; clients see them from the issued invoice.
 
+Draft quotes and invoices take the business's default terms (Bookkeeping → Services → Terms) for
+`notes` and the due date unless `notes` or `dueInDays` are given.
+
 Dates are `YYYY-MM-DD`. Unknown fields are rejected, so a typo can't be silently ignored.
 
 Example:
