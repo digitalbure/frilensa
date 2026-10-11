@@ -13,7 +13,7 @@ import DateInput from './DateInput';
 import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
-import { documentPublicUrl } from '../lib/documentLinks';
+import { documentPublicUrl, generateShareToken } from '../lib/documentLinks';
 import { applyConfirmedPayment, addReceiptForInvoice } from '../lib/payments';
 import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
 import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses } from '../lib/invoiceTotals';
@@ -295,17 +295,44 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Convert Quote -> Invoice or Invoice -> Receipt
   const handleQuickConvert = (doc: CRMDocument) => {
     if (doc.type === 'quote') {
-      // Convert to Invoice
+      // Convert to a draft invoice with its own number and "view online" link, the business's
+      // payment terms, and none of the quote's acceptance or payment history.
+      const today = new Date().toISOString().split('T')[0];
+      const business = data.businesses.find(b => b.id === doc.businessId) || activeBusiness;
+      const defaults = documentDefaults(business, 'invoice', today);
+      const now = new Date().toISOString();
       const newInv: CRMDocument = {
-        ...doc,
         id: `doc-${Date.now()}`,
         type: 'invoice',
         documentNumber: suggestDocumentNumber('invoice', doc.businessId),
-        issueDate: new Date().toISOString().split('T')[0],
-        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        status: 'sent',
-        notes: 'Converted from quote #' + doc.documentNumber + '. Thank you for accepting.'
+        businessId: doc.businessId,
+        clientId: doc.clientId,
+        projectId: doc.projectId,
+        currency: doc.currency,
+        issueDate: today,
+        dueDate: defaults.dueDate,
+        items: doc.items,
+        subtotal: doc.subtotal,
+        vatRate: doc.vatRate,
+        vatAmount: doc.vatAmount,
+        isTaxExempt: doc.isTaxExempt,
+        appliedTaxes: doc.appliedTaxes,
+        appliedFees: doc.appliedFees,
+        taxTotal: doc.taxTotal,
+        feeTotal: doc.feeTotal,
+        total: doc.total,
+        status: 'draft',
+        notes: `${defaults.notes}\nFor quote #${doc.documentNumber}.`,
+        paymentMethod: doc.paymentMethod,
+        industrySector: doc.industrySector,
+        jobRefLabel: doc.jobRefLabel, jobRefValue: doc.jobRefValue,
+        secondaryRefLabel: doc.secondaryRefLabel, secondaryRefValue: doc.secondaryRefValue,
+        customJobFields: doc.customJobFields,
+        sourceQuoteId: doc.id,
+        shareToken: generateShareToken(),
+        updatedAt: now
       };
+      Object.keys(newInv).forEach(k => (newInv as any)[k] === undefined && delete (newInv as any)[k]);
 
       onUpdateData({
         ...data,
@@ -3078,7 +3105,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 )}
 
                 {/* Visual conversion banner */}
-                {selectedDoc.type !== 'receipt' && selectedDoc.status !== 'paid' && selectedDoc.status !== 'cancelled' && (
+                {selectedDoc.type !== 'receipt' && selectedDoc.type !== 'credit_note' && selectedDoc.status !== 'paid' && selectedDoc.status !== 'cancelled'
+                  && !(selectedDoc.type === 'quote' && data.documents.some(d => d.sourceQuoteId === selectedDoc.id)) && (
                   <div className="bg-amber-50 border border-amber-100 p-3 rounded-2xl flex items-center justify-between text-xs text-amber-800">
                     <span className="font-semibold flex items-center gap-1.5">
                       <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
