@@ -7,6 +7,7 @@ import { generateShareToken } from "../src/lib/documentLinks";
 import { getDocumentHomeValues } from "../src/lib/currencies";
 import { todayIn, addDays, daysBetween } from "../src/lib/retainers";
 import { computeVatReturn, vatPeriod } from "../src/lib/vatReturn";
+import { lineTotals, reimbursementLines, linkBilledExpenses, isReimbursement } from "../src/lib/invoiceTotals";
 import type { ActivityLog, Client, CRMData, CRMDocument, ExpenseRecord } from "../src/types";
 
 // Operations behind the public API (/api/v1) and the MCP server (/mcp). Both call these, so they
@@ -60,7 +61,8 @@ function documentView(d: CRMDocument, data: CRMData, today: string) {
     issueDate: d.issueDate,
     dueDate: d.dueDate || null,
     currency: d.currency || homeCurrency(data),
-    items: d.items.map(it => ({ name: it.name, description: it.description || null, quantity: it.quantity, rate: it.rate, total: it.total })),
+    items: d.items.map(it => ({ name: it.name, description: it.description || null, quantity: it.quantity, rate: it.rate, total: it.total,
+      ...(isReimbursement(it) ? { reimbursable: true, vatCharged: it.taxable === true, hasReceipt: Boolean(it.receiptFileId) } : {}) })),
     subtotal: d.subtotal,
     vatRate: d.vatRate,
     vatAmount: d.vatAmount,
@@ -77,8 +79,11 @@ function documentView(d: CRMDocument, data: CRMData, today: string) {
   };
 }
 
-function expenseView(e: ExpenseRecord) {
+function expenseView(e: ExpenseRecord, data?: CRMData) {
   return {
+    billToClientId: e.billToClientId || null,
+    billedOn: e.billedDocumentId ? data?.documents.find(d => d.id === e.billedDocumentId)?.documentNumber || e.billedDocumentId : null,
+    hasReceipt: Boolean(e.receiptFile || e.receiptImage),
     id: e.id, date: e.date, vendor: e.vendor, description: e.description || null, amount: e.amount,
     currency: e.currency || null, category: e.category, paymentMethod: e.paymentMethod || null,
     vatAmount: e.vatAmount || 0, vatClaimable: Boolean(e.isVatClaimable), businessId: e.businessId || null,
@@ -119,7 +124,9 @@ export const listClientsInput = {
 };
 
 export const listExpensesInput = {
-  from: date.optional(), to: date.optional(), category: text(100).optional(), businessId: id.optional(), limit
+  from: date.optional(), to: date.optional(), category: text(100).optional(), businessId: id.optional(),
+  unbilledForClientId: id.optional().describe("Only expenses marked to bill to this client that aren't on an invoice yet"),
+  limit
 };
 
 export const summaryInput = {
@@ -158,7 +165,10 @@ const item = z.object({
 export const createDraftInput = {
   type: z.enum(["invoice", "quote"]),
   clientId: id,
-  items: z.array(item).min(1).max(100),
+  items: z.array(item).max(100).default([]).describe("Service lines. May be empty if expenseIds are given"),
+  expenseIds: z.array(id).max(100).optional().describe("Expenses marked to bill to this client, added as reimbursable lines"),
+  markupPercent: z.number().min(0).max(100).optional().describe("Markup on reimbursable expenses. Default 0"),
+  chargeVatOnExpenses: z.boolean().optional().describe("Charge VAT on reimbursable expenses. Default false (passed on at cost)"),
   businessId: id.optional().describe("Defaults to the active business"),
   issueDate: date.optional().describe("Default: today"),
   dueInDays: z.number().int().min(0).max(365).optional().describe("Default: 14"),
@@ -177,6 +187,7 @@ export const addExpenseInput = {
   paymentMethod: text(60).optional(),
   vatClaimable: z.boolean().optional().describe("Whether input VAT can be claimed. Default: false"),
   vatAmount: money.optional().describe("VAT included in the amount. Worked out from your VAT rate if claimable and left out"),
+  billToClientId: id.optional().describe("Mark it to bill back to this client as a reimbursable expense"),
   currency: z.string().trim().regex(/^[A-Z]{3}$/).optional(),
   businessId: id.optional(),
   projectId: id.optional(),
@@ -259,8 +270,9 @@ export async function listExpenses(uid: string, input: unknown) {
     .filter(e => !q.to || e.date <= q.to)
     .filter(e => !q.category || e.category === q.category)
     .filter(e => !q.businessId || e.businessId === q.businessId)
+    .filter(e => !q.unbilledForClientId || (e.billToClientId === q.unbilledForClientId && !e.billedDocumentId))
     .sort((a, b) => b.date.localeCompare(a.date))
-    .map(expenseView);
+    .map(e => expenseView(e, data));
   return { total: expenses.length, expenses: expenses.slice(0, q.limit) };
 }
 
@@ -378,13 +390,26 @@ export async function createDraftDocument(uid: string, keyName: string, input: u
     if (q.projectId && !(data.projects || []).some(p => p.id === q.projectId)) throw new ApiError(404, "Project not found.");
 
     const issueDate = q.issueDate || todayIn();
-    const items = q.items.map((it, i) => ({
-      id: `item-${i}-${crypto.randomBytes(3).toString("hex")}`,
-      name: it.name, description: it.description, quantity: it.quantity, rate: it.rate, total: round2(it.quantity * it.rate)
-    }));
-    const subtotal = round2(items.reduce((sum, it) => sum + it.total, 0));
+    const expenseIds = Array.from(new Set(q.expenseIds || []));
+    if (expenseIds.length && q.type !== "invoice") throw new ApiError(400, "Expenses can only be added to invoices.");
+    const billable = expenseIds.map(eid => {
+      const e = (data.expenses || []).find(x => x.id === eid);
+      if (!e) throw new ApiError(404, `Expense ${eid} not found.`);
+      if (e.billToClientId !== client.id) throw new ApiError(400, `Expense ${eid} isn't marked to bill to ${client.name}.`);
+      if (e.billedDocumentId) throw new ApiError(409, `Expense ${eid} is already on an invoice.`);
+      return e;
+    });
+    if (q.items.length === 0 && billable.length === 0) throw new ApiError(400, "Add at least one item or expense.");
+    const items = [
+      ...q.items.map((it, i) => ({
+        id: `item-${i}-${crypto.randomBytes(3).toString("hex")}`,
+        name: it.name, description: it.description, quantity: it.quantity, rate: it.rate, total: round2(it.quantity * it.rate)
+      })),
+      ...reimbursementLines(billable, { markupPercent: q.markupPercent || 0, chargeVat: Boolean(q.chargeVatOnExpenses) })
+    ];
+    const { subtotal, taxableBase } = lineTotals(items);
     const vatRate = q.vatRate ?? (data.userProfile.enableTax === false ? 0 : (data.userProfile.defaultVatRate ?? 12.5));
-    const vatAmount = round2(subtotal * vatRate / 100);
+    const vatAmount = round2(taxableBase * vatRate / 100);
     const now = new Date().toISOString();
     const doc: CRMDocument = {
       id: newId("doc"),
@@ -410,6 +435,7 @@ export async function createDraftDocument(uid: string, keyName: string, input: u
     return {
       set: {
         documents: [doc, ...(raw.documents || [])],
+        ...(billable.length ? { expenses: linkBilledExpenses(raw.expenses || [], doc.id, doc.items) } : {}),
         activityLogs: [activity(q.type === "quote" ? "quote_created" : "invoice_created", `Draft ${label.toLowerCase()} created`,
           `Draft ${label.toLowerCase()} ${doc.documentNumber} for ${client.name}`, keyName,
           { entityType: q.type, entityId: doc.id, amount: doc.total, currency: doc.currency, clientName: client.name }), ...(raw.activityLogs || [])].slice(0, 500)
@@ -425,6 +451,7 @@ export async function addExpense(uid: string, keyName: string, input: unknown) {
   return updateWorkspace(uid, (raw, data) => {
     if (q.businessId && !data.businesses.some(b => b.id === q.businessId)) throw new ApiError(404, "Business not found.");
     if (q.projectId && !(data.projects || []).some(p => p.id === q.projectId)) throw new ApiError(404, "Project not found.");
+    if (q.billToClientId && !data.clients.some(c => c.id === q.billToClientId)) throw new ApiError(404, "Client not found.");
     const vatRate = data.userProfile.enableTax === false ? 0 : (data.userProfile.defaultVatRate ?? 12.5);
     const vatAmount = q.vatAmount ?? (q.vatClaimable ? round2(q.amount * vatRate / (100 + vatRate)) : 0);
     if (vatAmount > q.amount) throw new ApiError(400, "vatAmount can't be more than the amount.");
@@ -433,6 +460,7 @@ export async function addExpense(uid: string, keyName: string, input: unknown) {
       category: q.category || "Other Expense", paymentMethod: q.paymentMethod || "Bank Transfer", vatAmount,
       isVatClaimable: Boolean(q.vatClaimable), currency: q.currency || homeCurrency(data),
       businessId: q.businessId || data.activeBusinessId || undefined, projectId: q.projectId, notes: q.notes,
+      billToClientId: q.billToClientId,
       createdAt: new Date().toISOString()
     };
     (expense as any).updatedAt = expense.createdAt;
@@ -442,7 +470,7 @@ export async function addExpense(uid: string, keyName: string, input: unknown) {
         activityLogs: [activity("expense_logged", "Expense added", `${expense.vendor}: ${expense.currency} ${expense.amount.toFixed(2)}`, keyName,
           { entityType: "expense", entityId: expense.id, amount: expense.amount, currency: expense.currency }), ...(raw.activityLogs || [])].slice(0, 500)
       },
-      result: { expense: expenseView(expense) }
+      result: { expense: expenseView(expense, data) }
     };
   });
 }

@@ -75,7 +75,7 @@ await put(`documents/${B.uid}_late1`, { ...bobDocs[0], consultantId: B.uid, clie
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -354,6 +354,64 @@ try {
       const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${c}`, { headers: { Authorization: `Bearer ${A.token}` } });
       assert.equal(r.status, 403, c);
     }
+  });
+
+  // Reimbursable expenses: receipts in file storage, shown to the client through the document
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+  let receipt;
+  await check('receipts upload to file storage for the signed-in owner', async () => {
+    assert.equal((await fetch(`${API}/api/files`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'taxi.png', type: 'image/png', dataUrl: PNG }) })).status, 401);
+    const bad = await fetch(`${API}/api/files`, { method: 'POST', headers: auth(A), body: JSON.stringify({ name: 'x.html', type: 'text/html', dataUrl: 'data:text/html;base64,PGgxPg==' }) });
+    assert.equal(bad.status, 400, 'only photos and PDFs');
+    const r = await j(await fetch(`${API}/api/files`, { method: 'POST', headers: auth(A), body: JSON.stringify({ name: 'taxi.png', type: 'image/png', dataUrl: PNG }) }));
+    assert.equal(r.status, 200); assert.equal(r.body.type, 'image/png'); receipt = r.body;
+  });
+  await check('only the owner can open their file directly', async () => {
+    const mine = await fetch(`${API}/api/files/${receipt.id}`, { headers: auth(A) });
+    assert.equal(mine.status, 200); assert.equal(mine.headers.get('content-type'), 'image/png');
+    assert.match(mine.headers.get('content-security-policy') || '', /sandbox/);
+    assert.equal((await fetch(`${API}/api/files/${receipt.id}`, { headers: auth(B) })).status, 404);
+  });
+  const RTOK = 'reimbTokenFFFFFFFFFFFFFFF';
+  const reimbDoc = { id: 'r-inv', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-1100', total: 1182.5, subtotal: 1070, vatRate: 12.5, vatAmount: 112.5, shareToken: RTOK, clientId: 'c1', businessId: 'b1',
+    items: [{ id: 'i1', name: 'Shoot', quantity: 1, rate: 900, total: 900 }, { id: 'i2', kind: 'reimbursement', expenseId: 'x1', name: 'Taxi', quantity: 1, rate: 170, total: 170, costAmount: 170, taxable: false, receiptFileId: '' }] };
+  await check('client sees a receipt only through a sent document it is on', async () => {
+    const withReceipt = { ...reimbDoc, items: reimbDoc.items.map(it => it.kind ? { ...it, receiptFileId: receipt.id } : it) };
+    await put(`documents/${A.uid}_r-inv`, { ...withReceipt, consultantId: A.uid, clientEmail: 'client@one.fj', clientName: 'Client One', businessName: 'Alice Studio' });
+    const ok = await fetch(`${API}/api/public/documents/${RTOK}/files/${receipt.id}`);
+    assert.equal(ok.status, 200); assert.equal(ok.headers.get('content-type'), 'image/png');
+    assert.equal((await fetch(`${API}/api/public/documents/${TOK_INV}/files/${receipt.id}`)).status, 404, 'not through another document');
+    await put(`documents/${A.uid}_r-inv`, { ...withReceipt, status: 'draft', consultantId: A.uid, clientEmail: 'client@one.fj' });
+    assert.equal((await fetch(`${API}/api/public/documents/${RTOK}/files/${receipt.id}`)).status, 404, 'not while the invoice is a draft');
+    await put(`documents/${A.uid}_r-inv`, { ...withReceipt, consultantId: A.uid, clientEmail: 'client@one.fj' });
+  });
+  await check("a document can't expose another owner's file", async () => {
+    const bobFile = (await j(await fetch(`${API}/api/files`, { method: 'POST', headers: auth(B), body: JSON.stringify({ name: 'b.png', type: 'image/png', dataUrl: PNG }) }))).body;
+    const trick = { ...reimbDoc, shareToken: 'trickTokenGGGGGGGGGGGGGGG', items: [{ ...reimbDoc.items[1], receiptFileId: bobFile.id }] };
+    await put(`documents/${A.uid}_trick`, { ...trick, id: 'trick', consultantId: A.uid, clientEmail: 'client@one.fj' });
+    assert.equal((await fetch(`${API}/api/public/documents/trickTokenGGGGGGGGGGGGGGG/files/${bobFile.id}`)).status, 404);
+  });
+  await check('portal client can open the receipt on their own document', async () => {
+    const link = await j(await fetch(`${API}/api/portal/admin/link`, { method: 'POST', headers: auth(A), body: JSON.stringify({ clientId: 'c1', clientName: 'Client One', email: 'client@one.fj' }) }));
+    const s2 = (await j(await fetch(`${API}/api/portal/session`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: link.body.token }) }))).body.sessionToken;
+    const r = await fetch(`${API}/api/portal/documents/r-inv/files/${receipt.id}`, { headers: { Authorization: `Portal ${s2}` } });
+    assert.equal(r.status, 200);
+    assert.equal((await fetch(`${API}/api/portal/documents/r-inv/files/${receipt.id}`)).status, 401);
+  });
+  await check('API bills marked expenses onto a draft invoice without VAT by default', async () => {
+    const e = await j(await fetch(`${API}/api/v1/expenses`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ date: '2026-10-03', vendor: 'Fiji Airways', description: 'Flight to Labasa', amount: 300, billToClientId: 'c1' }) }));
+    assert.equal(e.status, 200); assert.equal(e.body.expense.billToClientId, 'c1');
+    const unbilled = await j(await fetch(`${API}/api/v1/expenses?unbilledForClientId=c1`, { headers: keyAuth(aliceKey) }));
+    assert.ok(unbilled.body.expenses.some(x => x.id === e.body.expense.id));
+    const d = await j(await fetch(`${API}/api/v1/documents`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ type: 'invoice', clientId: 'c1', vatRate: 12.5, items: [{ name: 'Design', quantity: 1, rate: 1000 }], expenseIds: [e.body.expense.id] }) }));
+    assert.equal(d.status, 200);
+    assert.equal(d.body.document.vatAmount, 125, 'VAT only on the service line');
+    assert.equal(d.body.document.total, 1425);
+    assert.ok(d.body.document.items.some(it => it.reimbursable && it.vatCharged === false));
+    const ws = await get(`consultants/${A.uid}`);
+    assert.equal(ws.expenses.find(x => x.id === e.body.expense.id).billedDocumentId, d.body.document.id, 'expense marked as billed');
+    const again = await fetch(`${API}/api/v1/documents`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ type: 'invoice', clientId: 'c1', expenseIds: [e.body.expense.id] }) });
+    assert.equal(again.status, 409, 'an expense is billed once');
   });
   // Daily automation job
   const jobs = (secret) => fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: secret ? { 'X-Job-Secret': secret } : {} });

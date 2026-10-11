@@ -18,6 +18,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.8.0] - 2026-10-11
+
+### Added
+- **Reimbursable expenses.** When you log an expense you paid for a client, choose "Bill to a client". When you next write an invoice for that client, Frilensa offers those expenses. Add them with one click, at cost or with a markup.
+- Each reimbursed line shows the date, vendor and what it was for, marked "Reimbursable". The client can open the receipt from the online invoice or the client portal. Receipts aren't shown on drafts.
+- Reimbursed costs carry no VAT by default, and percentage taxes and fees aren't charged on them. Tick VAT on a line if you need to charge it.
+- Receipts are now saved to secure file storage instead of on your device. You can view or remove them from the expense, and attach one without scanning it.
+- An expense shows which invoice it was billed on, so it can't be billed twice. Deleting or cancelling the invoice frees its expenses again.
+- Claude and the API can list unbilled expenses for a client, add them to a draft invoice (`expenseIds`), and log an expense as reimbursable (`billToClientId`).
+
+### Changed
+- The VAT return lists costs reimbursed by clients separately, not as sales. It warns you when you claimed input VAT on an expense you billed on without VAT.
+- Profit and loss leaves out costs clients have repaid, from both income and expenses.
+
+### Fixed
+- In profit and loss, income now follows the period you pick. Before, it always showed all-time income next to the period's expenses. The "year to date" label now shows the current year.
+
 ## [3.7.0] - 2026-10-11
 
 ### Added

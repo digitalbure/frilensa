@@ -1,7 +1,7 @@
 {
   "name": "frilensa",
   "private": true,
-  "version": "3.7.0",
+  "version": "3.8.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -12,8 +12,8 @@
     "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test:rules": "npx -y firebase-tools@13 emulators:exec --only firestore --project frilensa-rules-test \"node tests/firestore.rules.test.mjs\"",
-    "test:e2e": "npx -y firebase-tools@13 emulators:exec --only firestore,auth --project frilensa-e2e \"node tests/server.e2e.test.mjs .\"",
-    "test:unit": "tsx tests/payments.test.ts && tsx tests/documents.test.ts && tsx tests/automation.test.ts && tsx tests/vat.test.ts"
+    "test:e2e": "npx -y firebase-tools@13 emulators:exec --only firestore,auth,storage --project frilensa-e2e \"node tests/server.e2e.test.mjs .\"",
+    "test:unit": "tsx tests/payments.test.ts && tsx tests/documents.test.ts && tsx tests/automation.test.ts && tsx tests/vat.test.ts && tsx tests/reimbursements.test.ts"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

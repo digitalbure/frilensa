@@ -1,5 +1,6 @@
 import type { CRMData, CRMDocument } from '../types';
 import { getDocumentHomeValues } from './currencies';
+import { lineTotals, isReimbursement } from './invoiceTotals';
 
 // VAT return figures for a period, shared by Bookkeeping → VAT return, the CSV export, the API and
 // the MCP server. Amounts are in the home currency. Frilensa doesn't file anything: these are the
@@ -40,7 +41,8 @@ export interface VatReturn {
   basis: VatBasis;
   currency: string;
   businessIds: string[];
-  sales: { standardRated: number; zeroRatedOrExempt: number; outputVat: number; count: number };
+  /** reimbursedNoVat: costs passed on to clients without VAT (not part of your sales). */
+  sales: { standardRated: number; zeroRatedOrExempt: number; reimbursedNoVat: number; outputVat: number; count: number };
   creditNotes: { net: number; vat: number; count: number };
   purchases: { gross: number; net: number; inputVat: number; count: number; notClaimedGross: number; notClaimedCount: number };
   /** Output VAT less credit-note VAT less input VAT. Negative means a refund is due. */
@@ -64,7 +66,7 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
 
   const lines: VatReturnLine[] = [];
   const warnings: string[] = [];
-  const sales = { standardRated: 0, zeroRatedOrExempt: 0, outputVat: 0, count: 0 };
+  const sales = { standardRated: 0, zeroRatedOrExempt: 0, reimbursedNoVat: 0, outputVat: 0, count: 0 };
   const creditNotes = { net: 0, vat: 0, count: 0 };
   let foreign = 0, drafts = 0, partials = 0, skippedCreditNotes = 0;
 
@@ -72,12 +74,16 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
     const c = conv(d);
     const gross = c.homeTotal * share;
     const vat = c.vatHome * share;
-    const net = gross - vat;
+    // Costs passed on without VAT aren't sales; they're reported on their own line.
+    const ratio = d.total > 0 ? c.homeTotal / d.total : 1;
+    const passedOn = lineTotals(d.items || []).reimbursementsNoVat * ratio * share;
+    const net = gross - vat - passedOn;
+    sales.reimbursedNoVat += passedOn;
     if (vat > 0) sales.standardRated += net; else sales.zeroRatedOrExempt += net;
     sales.outputVat += vat;
     sales.count++;
     if ((d.currency || home) !== home) foreign++;
-    lines.push({ kind: 'sale', id: d.id, date, reference: d.documentNumber, party: clientName(d.clientId), currency: d.currency || home, gross: r2(gross), net: r2(net), vat: r2(vat), note });
+    lines.push({ kind: 'sale', id: d.id, date, reference: d.documentNumber, party: clientName(d.clientId), currency: d.currency || home, gross: r2(gross), net: r2(net), vat: r2(vat), note: [note, passedOn > 0 ? `includes ${r2(passedOn).toFixed(2)} reimbursed without VAT` : ''].filter(Boolean).join('; ') || undefined });
   };
 
   const docs = (data.documents || []).filter(d => inBusiness(d.businessId));
@@ -151,10 +157,19 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
     lines.push({ kind: 'purchase', id: t.id, date: day(t.date), reference: t.description, party: t.vendor || t.bankName || '', currency: home, gross: r2(gross), net: r2(gross - t.vatAmount), vat: r2(t.vatAmount), note: 'Bank transaction' });
   }
 
+  const passedOnWithoutVat = new Set<string>();
+  for (const d of docs) {
+    if (d.type !== 'invoice' || d.status === 'draft' || d.status === 'cancelled') continue;
+    for (const it of d.items || []) if (isReimbursement(it) && !it.taxable && it.expenseId) passedOnWithoutVat.add(it.expenseId);
+  }
+  const claimedThenPassedOn = (data.expenses || []).filter(e => e.isVatClaimable && (e.vatAmount || 0) > 0 && passedOnWithoutVat.has(e.id)
+    && inBusiness(e.businessId) && inRange(day(e.date), from, to)).length;
+
   const businessIds = opts.businessId ? [opts.businessId] : data.businesses.map(b => b.id);
   const missingTin = data.businesses.filter(b => businessIds.includes(b.id) && !(b.tin || '').trim());
   if (missingTin.length) warnings.push(`${missingTin.map(b => b.name).join(', ')} has no TIN. Add it in Settings so it shows on your tax invoices.`);
   if (claimableWithoutVat) warnings.push(`${claimableWithoutVat} expense${claimableWithoutVat === 1 ? ' is' : 's are'} marked VAT claimable but has no VAT amount, so nothing is claimed for ${claimableWithoutVat === 1 ? 'it' : 'them'}.`);
+  if (claimedThenPassedOn) warnings.push(`${claimedThenPassedOn} expense${claimedThenPassedOn === 1 ? ' claims' : 's claim'} input VAT but ${claimedThenPassedOn === 1 ? 'was' : 'were'} billed to a client without VAT. Usually it's one or the other; check with your accountant.`);
   if (drafts) warnings.push(`${drafts} draft invoice${drafts === 1 ? '' : 's'} dated in this period ${drafts === 1 ? 'is' : 'are'} not included.`);
   if (foreign) warnings.push(`${foreign} sale${foreign === 1 ? ' is' : 's are'} in another currency and converted to ${home} at the payment or exchange rate on record. Check the rate your accountant uses.`);
   if (partials) warnings.push(`${partials} part-paid invoice${partials === 1 ? ' is' : 's are'} included in proportion to the amount received.`);
@@ -173,7 +188,7 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
     basis,
     currency: home,
     businessIds,
-    sales: { standardRated: r2(sales.standardRated), zeroRatedOrExempt: r2(sales.zeroRatedOrExempt), outputVat, count: sales.count },
+    sales: { standardRated: r2(sales.standardRated), zeroRatedOrExempt: r2(sales.zeroRatedOrExempt), reimbursedNoVat: r2(sales.reimbursedNoVat), outputVat, count: sales.count },
     creditNotes: { net: r2(creditNotes.net), vat: cnVat, count: creditNotes.count },
     purchases: { gross: r2(purchases.gross), net: r2(purchases.net), inputVat, count: purchases.count, notClaimedGross: r2(purchases.notClaimedGross), notClaimedCount: purchases.notClaimedCount },
     netVat: r2(outputVat - cnVat - inputVat),

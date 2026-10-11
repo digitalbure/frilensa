@@ -114,6 +114,7 @@ export function vatReturnCsv(v: VatReturn): string {
     ['Summary', 'Basis', v.basis === 'payments' ? 'Payments basis' : 'Invoice basis', '', '', '', '', ''],
     ['Summary', 'Standard-rated sales (excl. VAT)', '', '', '', v.sales.standardRated, '', ''],
     ['Summary', 'Zero-rated or exempt sales', '', '', '', v.sales.zeroRatedOrExempt, '', ''],
+    ['Summary', 'Costs reimbursed by clients without VAT (not sales)', '', '', '', v.sales.reimbursedNoVat, '', ''],
     ['Summary', 'Output VAT', '', '', '', '', v.sales.outputVat, ''],
     ['Summary', 'Credit notes', '', '', '', -v.creditNotes.net, -v.creditNotes.vat, ''],
     ['Summary', 'Purchases with claimable VAT (excl. VAT)', '', '', '', v.purchases.net, '', ''],

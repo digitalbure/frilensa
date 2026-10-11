@@ -1,0 +1,10 @@
+rules_version = '2';
+// Files (receipts) are read and written only by the server with the Admin SDK (server/files.ts).
+// Browsers never access Cloud Storage directly.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

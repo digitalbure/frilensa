@@ -17,6 +17,7 @@
 #   IMAGE=<image already built by an earlier run>   (skips the Cloud Build step)
 #   SCHEDULER_REGION=<Cloud Scheduler location>     (defaults to REGION)
 #   APP_URL=<public address>                        (defaults to https://frilensa.com; used in emails and links)
+#   FILES_BUCKET=<bucket for receipts>              (defaults to <PROJECT>-files, created if missing)
 #   ALLOW_LOCAL_CHANGES=1   deploy this folder even if it differs from GitHub (not recommended)
 set -euo pipefail
 
@@ -138,6 +139,18 @@ if ! gcloud projects get-iam-policy "$PROJECT" --flatten='bindings[].members' \
   gcloud projects add-iam-policy-binding "$PROJECT" --member="serviceAccount:$SA" --role=roles/datastore.user --condition=None >/dev/null
 fi
 
+# Receipts and other files live in a private Cloud Storage bucket in the database project.
+FILES_BUCKET="${FILES_BUCKET:-${PROJECT}-files}"
+if ! gcloud storage buckets describe "gs://$FILES_BUCKET" >/dev/null 2>&1; then
+  echo "Creating private bucket gs://$FILES_BUCKET for receipts."
+  gcloud storage buckets create "gs://$FILES_BUCKET" --project "$PROJECT" --location="$REGION" \
+    --uniform-bucket-level-access --public-access-prevention
+fi
+if ! gcloud storage buckets get-iam-policy "gs://$FILES_BUCKET" --format=json 2>/dev/null | grep -q "serviceAccount:$SA"; then
+  echo "Letting the service read and write receipts in gs://$FILES_BUCKET."
+  gcloud storage buckets add-iam-policy-binding "gs://$FILES_BUCKET" --member="serviceAccount:$SA" --role=roles/storage.objectAdmin >/dev/null
+fi
+
 confirm "Build v$VERSION and deploy it? (A new Cloud Run revision is created; the current one stays available for rollback.)"
 
 # Build the container with Cloud Build into Artifact Registry. (AI Studio's source-deploy
@@ -166,7 +179,7 @@ JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
 
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---

@@ -70,7 +70,7 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
 
   server.registerTool("list_expenses", {
     title: "List expenses",
-    description: "Expenses, newest first, optionally filtered by date range, category or business.",
+    description: "Expenses, newest first, optionally filtered by date range, category or business. Use unbilledForClientId to find expenses waiting to be billed to a client.",
     inputSchema: api.listExpensesInput, annotations: readOnly
   }, args => run(() => api.listExpenses(uid, args)));
 
@@ -103,13 +103,13 @@ function buildServer(key: NonNullable<ApiRequest["apiKey"]>) {
 
     server.registerTool("create_draft_document", {
       title: "Create a draft quote or invoice",
-      description: "Creates a DRAFT quote or invoice for an existing client, numbered in the business's series, with VAT worked out from your VAT setting unless vatRate is given. Drafts aren't visible to the client until the user sends them from Frilensa.",
+      description: "Creates a DRAFT quote or invoice for an existing client, numbered in the business's series, with VAT worked out from your VAT setting unless vatRate is given. Invoices can include expenses marked to bill to that client (expenseIds) as reimbursable lines, passed on without VAT unless chargeVatOnExpenses is set; their receipts are shown to the client. Drafts aren't visible to the client until the user sends them from Frilensa.",
       inputSchema: api.createDraftInput, annotations: write
     }, args => run(() => api.createDraftDocument(uid, key.name, args)));
 
     server.registerTool("add_expense", {
       title: "Add an expense",
-      description: "Records a business expense. amount is the total paid including VAT; set vatClaimable for expenses with a valid VAT tax invoice.",
+      description: "Records a business expense. amount is the total paid including VAT; set vatClaimable for expenses with a valid VAT tax invoice, and billToClientId to bill it back to a client later. Receipts can only be attached in the Frilensa app.",
       inputSchema: api.addExpenseInput, annotations: write
     }, args => run(() => api.addExpense(uid, key.name, args)));
   }

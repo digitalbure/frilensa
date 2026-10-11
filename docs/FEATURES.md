@@ -48,7 +48,8 @@ Status as of v3.7.0 (October 2026). Each feature is marked by whether it actuall
 ### Finance (bookkeeping)
 - ✅ P&L with category breakdown and VAT input/output summary.
 - ✅ VAT return for any period (invoice or payments basis) with warnings, CSV and print; CSV exports for accountants. *(3.7.0)*
-- ✅ Expense logging: manual, or camera/receipt OCR (Gemini, with a basic fallback parser).
+- ✅ Expense logging: manual, or camera/receipt OCR (Gemini, with a basic fallback parser). Receipts are kept in Cloud Storage (`FILES_BUCKET`, `server/files.ts`).
+- ✅ Reimbursable expenses: bill an expense to a client and add it to their invoice at cost or with markup, without VAT by default. Clients open the receipts from the invoice or portal.
 - ✅ Bank statement import (BSP/ANZ/Westpac/M-PAiSA text and CSV), with AI categorisation and VAT split.
 - ✅ Transaction reconciler with AI-suggested matches, duplicate audit and clean-up, ledger history with undo.
 - ✅ Simple service list and dynamic rate rules (rush, weekend, VIP modifiers).

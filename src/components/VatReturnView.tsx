@@ -45,6 +45,7 @@ export default function VatReturnView({ data }: { data: CRMData }) {
   const rows = vat ? [
     { label: 'Standard-rated sales (excl. VAT)', amount: vat.sales.standardRated },
     { label: 'Zero-rated or exempt sales', amount: vat.sales.zeroRatedOrExempt },
+    ...(vat.sales.reimbursedNoVat ? [{ label: 'Costs reimbursed by clients, no VAT (not sales)', amount: vat.sales.reimbursedNoVat }] : []),
     { label: 'Output VAT on sales', amount: vat.sales.outputVat, strong: true },
     ...(vat.creditNotes.count ? [{ label: `Less VAT on credit notes (${vat.creditNotes.count})`, amount: -vat.creditNotes.vat }] : []),
     { label: 'Purchases with claimable VAT (excl. VAT)', amount: vat.purchases.net },

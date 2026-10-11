@@ -46,13 +46,13 @@ Tools:
 | `get_client` | read | One client, their documents and amount owed |
 | `list_documents` | read | Quotes, invoices, receipts, credit notes; filter by `type`, `status`, `clientId`, `businessId`, `from`/`to` (issue date), `overdue` |
 | `get_document` | read | One document by id or number (e.g. `INV-2026-1004`) |
-| `list_expenses` | read | Expenses; filter by `from`/`to`, `category`, `businessId` |
+| `list_expenses` | read | Expenses; filter by `from`/`to`, `category`, `businessId`, or `unbilledForClientId` for reimbursable expenses not yet on an invoice |
 | `list_projects` | read | Projects with status, budget and open tasks |
 | `get_summary` | read | Cash-basis summary for a period: received, expenses, profit, outstanding, overdue, VAT collected vs claimable |
 | `get_vat_return` | read | VAT return figures for a period (standard periods or `from`/`to`, invoice or payments basis), with warnings; `includeLines` for the documents and expenses behind them |
 | `create_client` | drafts | Add a client |
-| `create_draft_document` | drafts | Draft quote or invoice for an existing client |
-| `add_expense` | drafts | Record an expense |
+| `create_draft_document` | drafts | Draft quote or invoice for an existing client; on invoices, `expenseIds` adds reimbursable expenses as lines |
+| `add_expense` | drafts | Record an expense; `billToClientId` marks it reimbursable by that client |
 
 ### Claude on the web, desktop and phone (OAuth)
 
@@ -90,12 +90,18 @@ revoked key), 403 (read-only key), 404 (not found), 409 (conflict) or 429 (rate 
 | `POST /api/v1/clients` | drafts | `{ name, email?, phone?, address?, tin?, currency?, contactPerson? }` |
 | `GET /api/v1/documents?type=&status=&clientId=&businessId=&from=&to=&overdue=true&limit=` | read | Newest first; `total` is the count before `limit` |
 | `GET /api/v1/documents/{id or number}` | read | |
-| `POST /api/v1/documents` | drafts | `{ type: "invoice" \| "quote", clientId, items: [{ name, description?, quantity, rate }], businessId?, issueDate?, dueInDays?, currency?, vatRate?, projectId?, notes? }` |
-| `GET /api/v1/expenses?from=&to=&category=&businessId=&limit=` | read | |
-| `POST /api/v1/expenses` | drafts | `{ date, vendor, amount, description?, category?, paymentMethod?, vatClaimable?, vatAmount?, currency?, businessId?, projectId?, notes? }` |
+| `POST /api/v1/documents` | drafts | `{ type: "invoice" \| "quote", clientId, items: [{ name, description?, quantity, rate }], businessId?, issueDate?, dueInDays?, currency?, vatRate?, projectId?, notes?, expenseIds?, markupPercent?, chargeVatOnExpenses? }` |
+| `GET /api/v1/expenses?from=&to=&category=&businessId=&unbilledForClientId=&limit=` | read | Each expense has `billToClientId`, `billedOn` (invoice number, if billed) and `hasReceipt` |
+| `POST /api/v1/expenses` | drafts | `{ date, vendor, amount, description?, category?, paymentMethod?, vatClaimable?, vatAmount?, currency?, businessId?, projectId?, notes?, billToClientId? }` |
 | `GET /api/v1/projects` | read | |
 | `GET /api/v1/summary?from=&to=&businessId=` | read | Defaults to this year to date |
 | `GET /api/v1/vat-return?period=last_quarter&basis=invoice&businessId=&includeLines=true` | read | Or `from=&to=` for custom dates. Same figures as Bookkeeping → VAT return |
+
+Reimbursable expenses: `expenseIds` on `POST /api/v1/documents` (invoices only) adds each expense as a
+line at cost, plus `markupPercent` if given. The expenses must be billable to that client and not yet
+billed (404 if unknown, 409 if already on an invoice). Reimbursed lines carry no VAT unless
+`chargeVatOnExpenses` is true. Document items show `reimbursable`, `vatCharged` and `hasReceipt`.
+Receipt files themselves aren't available through the API; clients see them from the issued invoice.
 
 Dates are `YYYY-MM-DD`. Unknown fields are rejected, so a typo can't be silently ignored.
 
