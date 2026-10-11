@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Building2, CheckCircle2, Copy, CreditCard, Smartphone, Wallet } from 'lucide-react';
 import { capturePaypalOrder, createPaypalOrder, fetchPayOptions, loadPaypalSdk, type PayOptions, type PayTarget } from '../lib/payNowClient';
-import { formatMoney } from '../lib/payNow';
+import { currencyName, formatMoney } from '../lib/payNow';
 
 type Method = 'bank' | 'mpaisa' | 'mycash' | 'card' | 'paypal';
 
@@ -111,7 +111,7 @@ export default function PayNowPanel({ target, brand, businessName, onReport, onP
           <button key={m} type="button" role="radio" aria-checked={method === m} onClick={() => { setMethod(m); setError(null); }}
             className={`flex items-center gap-2 px-3 py-2.5 rounded-lg border text-xs font-semibold text-left cursor-pointer ${method === m ? 'text-white border-transparent' : 'border-slate-200 text-slate-700 hover:bg-slate-50'}`}
             style={method === m ? { backgroundColor: brand } : undefined}>
-            {icon(m)} <span>{LABEL[m]}{m === 'card' ? <span className="block text-[10px] font-normal opacity-80">via PayPal</span> : null}</span>
+            {icon(m)} <span>{LABEL[m]}{(m === 'card' || m === 'paypal') ? <span className="block text-[10px] font-normal opacity-80">{m === 'card' ? 'via PayPal' : 'PayPal account'}{pp && pp.currency !== pp.invoiceCurrency ? `, charged in ${pp.currency}` : ''}</span> : null}</span>
           </button>
         ))}
       </div>
@@ -144,7 +144,11 @@ export default function PayNowPanel({ target, brand, businessName, onReport, onP
         <div className="space-y-2 text-xs text-slate-700">
           <div className="bg-slate-50 rounded-lg p-3 space-y-1">
             {pp.currency !== pp.invoiceCurrency && (
-              <p>{formatMoney(pp.invoiceCurrency, pp.balance)} is charged as <strong>{formatMoney(pp.currency, pp.amount)}</strong> (1 {pp.currency} = {pp.rate.toFixed(4)} {pp.invoiceCurrency}).</p>
+              <div className="rounded-md border border-amber-200 bg-amber-50 text-amber-900 p-2 space-y-1" role="note">
+                <p className="font-semibold">You'll be charged in {currencyName(pp.currency)} ({pp.currency})</p>
+                <p>PayPal doesn't accept {currencyName(pp.invoiceCurrency)} ({pp.invoiceCurrency}), so this {formatMoney(pp.invoiceCurrency, pp.balance)} invoice is charged as <strong>{formatMoney(pp.currency, pp.amount)}</strong>, at 1 {pp.currency} = {pp.rate.toFixed(4)} {pp.invoiceCurrency}.</p>
+                <p>Your bank or card provider may convert it again and charge its own fee, so the amount on your statement can differ slightly.</p>
+              </div>
             )}
             {pp.surcharge > 0 && <p>Card and PayPal fee ({pp.surchargePercent}%): {formatMoney(pp.currency, pp.surcharge)}</p>}
             <p>You pay <strong>{formatMoney(pp.currency, pp.total)}</strong>{pp.surcharge > 0 || pp.currency !== pp.invoiceCurrency ? '' : ' to settle this invoice'}.</p>

@@ -6,8 +6,15 @@ import { getCurrencyConfig } from './currencies';
 
 /** Currencies PayPal accepts for payments. */
 export const PAYPAL_CURRENCIES = ['AUD', 'BRL', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'ILS', 'JPY', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'SEK', 'SGD', 'THB', 'TWD', 'USD'];
-/** Offered as the charge currency for invoices in a currency PayPal doesn't take. */
-export const PAYPAL_CHARGE_CURRENCIES = ['AUD', 'NZD', 'USD'];
+/** Offered as the charge currency for invoices in a currency PayPal doesn't take. NZD is the default: it's closest in value to FJD. */
+export const PAYPAL_CHARGE_CURRENCIES = ['NZD', 'AUD', 'USD'];
+export const DEFAULT_PAYPAL_CURRENCY = 'NZD';
+
+const CURRENCY_NAMES: Record<string, string> = {
+  FJD: 'Fijian dollars', NZD: 'New Zealand dollars', AUD: 'Australian dollars', USD: 'US dollars',
+  WST: 'Samoan tālā', TOP: 'Tongan paʻanga', VUV: 'Vanuatu vatu', SBD: 'Solomon Islands dollars', PGK: 'Papua New Guinean kina', XPF: 'CFP francs'
+};
+export const currencyName = (code: string) => CURRENCY_NAMES[code] || code;
 const ZERO_DECIMAL = ['HUF', 'JPY', 'TWD'];
 
 export function manualPayMethods(b?: Partial<Business> | null) {
@@ -70,7 +77,7 @@ export function paypalQuote(
   const invoiceCurrency = (d.currency || homeCurrency).toUpperCase();
   const currency = PAYPAL_CURRENCIES.includes(invoiceCurrency)
     ? invoiceCurrency
-    : (PAYPAL_CURRENCIES.includes(String(business?.payNow?.paypalCurrency)) ? String(business!.payNow!.paypalCurrency) : 'AUD');
+    : (PAYPAL_CURRENCIES.includes(String(business?.payNow?.paypalCurrency)) ? String(business!.payNow!.paypalCurrency) : DEFAULT_PAYPAL_CURRENCY);
   const rate = currency === invoiceCurrency ? 1 : homeRate(currency, business, homeCurrency) / homeRate(invoiceCurrency, business, homeCurrency);
   const amount = round(balance / rate, currency);
   const surchargePercent = Math.min(10, Math.max(0, Number(business?.payNow?.surchargePercent) || 0));

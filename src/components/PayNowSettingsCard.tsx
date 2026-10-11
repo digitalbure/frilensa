@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import type { Business, CRMData } from '../types';
-import { PAYPAL_CHARGE_CURRENCIES, homeRate, manualPayMethods } from '../lib/payNow';
+import { DEFAULT_PAYPAL_CURRENCY, PAYPAL_CHARGE_CURRENCIES, currencyName, homeRate, manualPayMethods } from '../lib/payNow';
 
 interface PayNowSettingsCardProps {
   data: CRMData;
@@ -34,7 +34,7 @@ export default function PayNowSettingsCard({ data, onUpdateData }: PayNowSetting
   const pay = business.payNow || {};
   const manual = manualPayMethods(business);
   const home = data.userProfile.defaultCurrency || 'FJD';
-  const chargeCurrency = pay.paypalCurrency && PAYPAL_CHARGE_CURRENCIES.includes(pay.paypalCurrency) ? pay.paypalCurrency : 'AUD';
+  const chargeCurrency = pay.paypalCurrency && PAYPAL_CHARGE_CURRENCIES.includes(pay.paypalCurrency) ? pay.paypalCurrency : DEFAULT_PAYPAL_CURRENCY;
 
   const update = (patch: Partial<NonNullable<Business['payNow']>>) => onUpdateData({
     ...data,
@@ -117,10 +117,10 @@ export default function PayNowSettingsCard({ data, onUpdateData }: PayNowSetting
               <label className="block text-[10px] font-bold text-slate-400 uppercase">
                 Charge currency for {home} invoices
                 <select value={chargeCurrency} onChange={e => update({ paypalCurrency: e.target.value })} className={input}>
-                  {PAYPAL_CHARGE_CURRENCIES.map(c => <option key={c} value={c}>{c}</option>)}
+                  {PAYPAL_CHARGE_CURRENCIES.map(c => <option key={c} value={c}>{c} ({currencyName(c)}){c === DEFAULT_PAYPAL_CURRENCY ? ', closest to FJD' : ''}</option>)}
                 </select>
                 <span className="block normal-case font-normal text-[11px] text-slate-500 mt-1">
-                  PayPal doesn't take {home}. Invoices in {home} are converted at 1 {chargeCurrency} = {homeRate(chargeCurrency, business, home).toFixed(4)} {home}
+                  PayPal doesn't take {home}. NZD is the default because it's closest in value to FJD. Clients are told the amount and currency before they pay. Invoices in {home} are converted at 1 {chargeCurrency} = {homeRate(chargeCurrency, business, home).toFixed(4)} {home}
                   {business.customExchangeRates?.[chargeCurrency] ? ' (your rate)' : ' (approximate; set your own rate in this business’s currency settings)'}. Invoices in USD, AUD, NZD and other PayPal currencies are charged as they are.
                 </span>
               </label>

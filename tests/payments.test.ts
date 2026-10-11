@@ -58,3 +58,16 @@ console.log("receipt checks passed");
   assert.equal(off.vatAmount, 0); assert.equal(off.total, 100);
   console.log("part payment and totals checks passed");
 }
+
+// Pay now: FJD invoices are charged in NZD unless the business picks another currency.
+{
+  const { paypalQuote } = await import("../src/lib/payNow");
+  const inv: any = { total: 300, status: "sent", currency: "FJD" };
+  const q = paypalQuote(inv, { customExchangeRates: { NZD: 1.25 } } as any, "FJD")!;
+  assert.equal(q.currency, "NZD"); assert.equal(q.rate, 1.25); assert.equal(q.amount, 240); assert.equal(q.total, 240);
+  assert.equal(paypalQuote(inv, { payNow: { paypalCurrency: "USD", surchargePercent: 5 } } as any, "FJD")!.currency, "USD");
+  assert.equal(paypalQuote({ ...inv, currency: "AUD" }, {} as any, "FJD")!.currency, "AUD", "PayPal currencies are charged as they are");
+  assert.equal(paypalQuote({ ...inv, status: "partial", partiallyPaidAmount: 100 }, { customExchangeRates: { NZD: 1.25 } } as any, "FJD")!.amount, 160, "only the balance");
+  assert.equal(paypalQuote({ ...inv, status: "paid" }, {} as any, "FJD"), null);
+  console.log("pay now quote checks passed");
+}

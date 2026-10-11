@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.11.1] - 2026-10-11
+
+### Changed
+- PayPal and card payments on FJD invoices are now charged in New Zealand dollars (NZD) by default, the currency closest in value to FJD. You can still choose AUD or USD in **Settings → Pay now on invoices**.
+- Clients choosing card or PayPal now get a clear notice that PayPal doesn't accept Fijian dollars. It shows the currency they'll be charged in, the amount and the rate, and warns that their bank may add its own conversion fee. The card and PayPal options also say "charged in NZD" (or your chosen currency).
+
 ## [3.11.0] - 2026-10-11
 
 ### Added
