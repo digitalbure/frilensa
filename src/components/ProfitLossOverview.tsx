@@ -7,6 +7,7 @@ import {
   Layers, ChevronRight, X, PieChart, BarChart3, HelpCircle, ShieldCheck
 } from 'lucide-react';
 import { CRMData, Transaction, ExpenseRecord } from '../types';
+import { lineTotals } from '../lib/invoiceTotals';
 import { getDocumentHomeValues } from '../lib/currencies';
 
 interface ProfitLossOverviewProps {
@@ -87,6 +88,29 @@ export default function ProfitLossOverview({
     return list.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [data.expenses, data.transactions, data.activeBusinessId, currentVatRate]);
 
+  // Whether a YYYY-MM-DD date falls in the selected period (used for income and expenses alike).
+  const inPeriod = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+    return (dateStr: string | undefined) => {
+      if (periodFilter === 'all') return true;
+      const itemDate = new Date(dateStr || '');
+      if (isNaN(itemDate.getTime())) return false;
+      const itemYear = itemDate.getFullYear();
+      const itemMonth = itemDate.getMonth();
+      if (periodFilter === 'this_month') return itemYear === currentYear && itemMonth === currentMonth;
+      if (periodFilter === 'last_month') {
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        return itemYear === lastMonthYear && itemMonth === lastMonth;
+      }
+      if (periodFilter === 'quarter') return itemYear === currentYear && Math.floor(itemMonth / 3) === Math.floor(currentMonth / 3);
+      if (periodFilter === 'ytd') return itemYear === currentYear;
+      return true;
+    };
+  }, [periodFilter]);
+
   // Date filtering logic
   const filteredExpenses = useMemo(() => {
     const now = new Date();
@@ -142,16 +166,22 @@ export default function ProfitLossOverview({
   const revenueSummary = useMemo(() => {
     let totalRevenue = 0;
     let outputVat = 0;
+    let reimbursed = 0;
     const paidDocIds = new Set<string>();
 
     // From Invoices and Receipts (normalized to base currency)
     const baseCurrency = data.userProfile?.defaultCurrency || 'FJD';
     (data.documents || []).forEach(doc => {
       if (!data.activeBusinessId || doc.businessId === data.activeBusinessId) {
-        if ((doc.type === 'invoice' && doc.status === 'paid') || doc.type === 'receipt') {
+        if ((doc.type === 'invoice' && doc.status === 'paid') || (doc.type === 'receipt' && !doc.originalInvoiceId)) {
           paidDocIds.add(doc.id);
+          if (!inPeriod(doc.type === 'invoice' ? (doc.paymentDate || doc.issueDate) : doc.issueDate)) return;
           const conv = getDocumentHomeValues(doc, baseCurrency, undefined, data.transactions);
-          totalRevenue += conv.homeTotal;
+          // Costs passed on to the client are recovered, not earned: they're left out of income,
+          // and the matching expenses are left out of expenses below.
+          const recovered = doc.total > 0 ? lineTotals(doc.items || []).recoveredCost * (conv.homeTotal / doc.total) : 0;
+          reimbursed += recovered;
+          totalRevenue += conv.homeTotal - recovered;
           outputVat += conv.vatHome;
         }
       }
@@ -162,7 +192,7 @@ export default function ProfitLossOverview({
       if (tx.amount > 0) {
         if (!data.activeBusinessId || tx.businessId === data.activeBusinessId) {
           const isLinkedToPaidDoc = tx.documentId && tx.documentId.split(',').some(dId => paidDocIds.has(dId.trim()));
-          if (!isLinkedToPaidDoc) {
+          if (!isLinkedToPaidDoc && inPeriod(tx.date)) {
             totalRevenue += (tx.netReceived ?? tx.amount);
             if (tx.vatAmount) outputVat += tx.vatAmount;
           }
@@ -170,12 +200,14 @@ export default function ProfitLossOverview({
       }
     });
 
-    return { totalRevenue, outputVat };
-  }, [data.documents, data.transactions, data.activeBusinessId, data.userProfile?.defaultCurrency]);
+    return { totalRevenue, outputVat, reimbursed, paidDocIds };
+  }, [data.documents, data.transactions, data.activeBusinessId, data.userProfile?.defaultCurrency, inPeriod]);
 
   // Calculate P&L aggregates
   const pnlStats = useMemo(() => {
-    const totalExpenses = filteredExpenses.reduce((sum, item) => sum + item.amount, 0);
+    const recoveredExpenses = filteredExpenses.filter(item => item.billedDocumentId && revenueSummary.paidDocIds.has(item.billedDocumentId));
+    const recoveredExpenseTotal = recoveredExpenses.reduce((sum, item) => sum + item.amount, 0);
+    const totalExpenses = filteredExpenses.reduce((sum, item) => sum + item.amount, 0) - recoveredExpenseTotal;
     const inputVat = filteredExpenses
       .filter(item => item.isVatClaimable !== false)
       .reduce((sum, item) => sum + (item.vatAmount || 0), 0);
@@ -220,7 +252,7 @@ export default function ProfitLossOverview({
       this_month: 'This month',
       last_month: 'Last month',
       quarter: 'This quarter',
-      ytd: '2026 year to date',
+      ytd: `${new Date().getFullYear()} year to date`,
       all: 'All time'
     };
 
@@ -236,6 +268,8 @@ export default function ProfitLossOverview({
       categoryTotals,
       topExpenseCategory: topCat,
       topVendors,
+      reimbursed: revenueSummary.reimbursed,
+      recoveredExpenseTotal,
       periodLabel: periodLabels[periodFilter] || 'Selected period'
     };
   }, [filteredExpenses, revenueSummary, periodFilter]);
@@ -324,6 +358,9 @@ export default function ProfitLossOverview({
               <p className="text-sm sm:text-base font-black font-mono text-emerald-400">
                 ${pnlStats.totalRevenue.toFixed(2)}
               </p>
+              {pnlStats.reimbursed > 0 && (
+                <p className="text-[9px] text-slate-400">Excludes ${pnlStats.reimbursed.toFixed(2)} of costs clients reimbursed</p>
+              )}
               <span className="text-[8.5px] text-slate-400 block truncate">Paid invoices and receipts</span>
             </div>
 

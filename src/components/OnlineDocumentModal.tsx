@@ -378,6 +378,7 @@ export default function OnlineDocumentModal({
                 <div key={it.id || idx} className="pt-2 grid grid-cols-12 items-center text-xs">
                   <div className="col-span-6 sm:col-span-7 pr-2">
                     <span className="font-bold text-slate-800 block">{it.name}</span>
+                    {it.kind === 'reimbursement' && <span className="text-[9px] font-bold uppercase tracking-wider text-amber-800">Reimbursable expense{it.taxable ? '' : ', no VAT'}{it.receiptFileId ? ' · receipt attached' : ''}</span>}
                     {it.description && <p className="text-[10px] text-slate-400 mt-0.5">{it.description}</p>}
                   </div>
                   <div className="col-span-2 text-center font-mono text-slate-600">

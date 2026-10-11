@@ -12,7 +12,7 @@ import firebaseConfig from "../firebase-applet-config.json";
 let adminApp: App | null = null;
 let adminDb: Firestore | null = null;
 
-function getAdminApp(): App {
+export function getAdminApp(): App {
   if (adminApp) return adminApp;
   adminApp = getApps()[0] || initializeApp({
     credential: applicationDefault(),

@@ -413,7 +413,9 @@ export function generateDocumentPdf(
     doc.setFontSize(7.5);
     doc.setTextColor(slate400[0], slate400[1], slate400[2]);
     const rateFormatted = `${Number(item.rate || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const subtitleText = `${item.quantity || 1} x ${docCurrency} $${rateFormatted}`;
+    const subtitleText = item.kind === 'reimbursement'
+      ? `Reimbursable expense${item.taxable ? '' : ', no VAT'}${item.receiptFileId ? ' · receipt available online' : ''}`
+      : `${item.quantity || 1} x ${docCurrency} $${rateFormatted}`;
     doc.text(subtitleText, margin, rowStartY + rowTextOffset);
     rowTextOffset += 3.5;
 

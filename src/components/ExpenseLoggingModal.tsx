@@ -5,7 +5,8 @@ import {
   Tag, CreditCard, Building, FileText, AlertCircle, RefreshCw, Eye, Trash2, FlipHorizontal,
   Globe, ArrowRightLeft, Coins, Calculator
 } from 'lucide-react';
-import { CRMData, Transaction, ExpenseRecord } from '../types';
+import { CRMData, Transaction, ExpenseRecord, StoredFile } from '../types';
+import { uploadFile, openOwnFile } from '../lib/files';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
 import DateInput from './DateInput';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
@@ -85,6 +86,11 @@ export default function ExpenseLoggingModal({
   const [selectedProjectId, setSelectedProjectId] = useState<string>(
     initialExpense?.projectId || ''
   );
+  // Reimbursable: bill this expense to a client, with the receipt kept in file storage.
+  const [billToClientId, setBillToClientId] = useState<string>(initialExpense?.billToClientId || '');
+  const [receiptFile, setReceiptFile] = useState<StoredFile | null>(initialExpense?.receiptFile || null);
+  const [saving, setSaving] = useState(false);
+  const billedOn = initialExpense?.billedDocumentId ? data.documents.find(d => d.id === initialExpense.billedDocumentId) : undefined;
 
   // Live Camera & File upload states
   const [isCameraActive, setIsCameraActive] = useState<boolean>(false);
@@ -93,6 +99,7 @@ export default function ExpenseLoggingModal({
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const manualFileRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const [isDraggingFile, setIsDraggingFile] = useState<boolean>(false);
 
@@ -168,6 +175,8 @@ export default function ExpenseLoggingModal({
         setReceiptFileName(initialExpense.receiptFileName || null);
         setNotes(initialExpense.notes || '');
         setSelectedProjectId(initialExpense.projectId || '');
+        setBillToClientId(initialExpense.billToClientId || '');
+        setReceiptFile(initialExpense.receiptFile || null);
         setActiveMode('manual');
       } else {
         setDate(new Date().toISOString().split('T')[0]);
@@ -182,6 +191,8 @@ export default function ExpenseLoggingModal({
         setReceiptFileName(null);
         setNotes('');
         setSelectedProjectId('');
+        setBillToClientId('');
+        setReceiptFile(null);
         setActiveMode(initialMode);
       }
       setOcrSuccessMessage(null);
@@ -281,7 +292,7 @@ export default function ExpenseLoggingModal({
     });
   };
 
-  const processIncomingFile = async (file: File) => {
+  const processIncomingFile = async (file: File, readReceipt = true) => {
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
     let dataUrl = '';
 
@@ -300,7 +311,7 @@ export default function ExpenseLoggingModal({
 
     setReceiptImage(dataUrl);
     setReceiptFileName(file.name);
-    processReceiptOcr(dataUrl, file.name);
+    if (readReceipt) processReceiptOcr(dataUrl, file.name);
   };
 
   const capturePhoto = () => {
@@ -507,11 +518,30 @@ export default function ExpenseLoggingModal({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vendor.trim() || !amount || parseFloat(amount) <= 0) {
       alert('Enter a vendor and an amount above zero.');
       return;
+    }
+
+    // Keep the receipt in file storage so it isn't limited by the workspace size, and so a client
+    // can see it when the expense is billed to them. If storage isn't available it stays inline.
+    let storedReceipt = receiptFile;
+    let inlineReceipt = receiptImage;
+    if (receiptImage && receiptImage.startsWith('data:')) {
+      setSaving(true);
+      try {
+        storedReceipt = await uploadFile(receiptImage, receiptFileName || 'receipt');
+        inlineReceipt = null;
+      } catch (err: any) {
+        if (billToClientId && !window.confirm(`The receipt couldn't be uploaded (${err?.message || 'unknown error'}), so your client won't be able to see it. Save the expense anyway?`)) {
+          setSaving(false);
+          return;
+        }
+      } finally {
+        setSaving(false);
+      }
     }
 
     const fa = parseFloat(foreignAmount);
@@ -528,8 +558,11 @@ export default function ExpenseLoggingModal({
       vatAmount: calculatedVat,
       isVatClaimable,
       isTaxDeductible,
-      receiptImage: receiptImage || undefined,
-      receiptFileName: receiptFileName || undefined,
+      receiptImage: inlineReceipt || undefined,
+      receiptFileName: (inlineReceipt ? receiptFileName : storedReceipt?.name) || undefined,
+      receiptFile: storedReceipt || undefined,
+      billToClientId: billToClientId || '',
+      billedDocumentId: initialExpense?.billedDocumentId || '',
       notes: notes.trim() || undefined,
       businessId: data.activeBusinessId,
       projectId: selectedProjectId || undefined,
@@ -1292,6 +1325,32 @@ export default function ExpenseLoggingModal({
                 ))}
               </select>
             </div>
+
+            <div className="space-y-1 sm:col-span-2">
+              <label className="text-[9px] font-black uppercase text-slate-500 block">
+                Bill to a client (reimbursable)
+              </label>
+              {billedOn ? (
+                <p className="text-xs text-slate-700 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
+                  Billed on {billedOn.type === 'invoice' ? 'invoice' : billedOn.type} #{billedOn.documentNumber} to {data.clients.find(c => c.id === billToClientId)?.name || 'your client'}.
+                  Remove it from that invoice to bill it elsewhere.
+                </p>
+              ) : (
+                <select
+                  value={billToClientId}
+                  onChange={(e) => setBillToClientId(e.target.value)}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-800 focus:outline-none focus:border-slate-900"
+                >
+                  <option value="">Not billed to a client</option>
+                  {data.clients.map(c => (
+                    <option key={c.id} value={c.id}>{c.name}</option>
+                  ))}
+                </select>
+              )}
+              {billToClientId && !billedOn && (
+                <p className="text-[10px] text-slate-500">Add it to an invoice for this client with "Add expenses" in the invoice editor. Attach the receipt so the client can see it.</p>
+              )}
+            </div>
           </div>
 
           {/* Fiji Tax Compliance & VAT Input Claims Box */}
@@ -1338,6 +1397,33 @@ export default function ExpenseLoggingModal({
               </label>
             </div>
           </div>
+
+          {/* Receipt kept in file storage */}
+          {!receiptImage && receiptFile && activeMode === 'manual' && (
+            <div className="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="truncate">
+                <span className="text-xs font-bold text-slate-800 block truncate">{receiptFile.name}</span>
+                <span className="text-[9px] text-emerald-600 font-bold block">Receipt saved</span>
+              </div>
+              <div className="flex gap-1 shrink-0">
+                <button type="button" onClick={() => openOwnFile(receiptFile.id).catch(err => alert(err.message))} className="text-sky-700 text-xs font-bold px-2 py-1 cursor-pointer">View</button>
+                <button type="button" onClick={() => setReceiptFile(null)} className="text-rose-600 hover:text-rose-700 text-xs font-bold px-2 py-1 cursor-pointer">Remove</button>
+              </div>
+            </div>
+          )}
+
+          {!receiptImage && !receiptFile && activeMode === 'manual' && (
+            <div>
+              <button
+                type="button"
+                onClick={() => manualFileRef.current?.click()}
+                className="w-full text-xs font-bold text-slate-700 border border-dashed border-slate-300 rounded-xl py-2.5 hover:border-slate-400 cursor-pointer"
+              >
+                Attach receipt (photo or PDF)
+              </button>
+              <input ref={manualFileRef} type="file" accept="image/*,application/pdf,.pdf" onChange={e => { const f = e.target.files?.[0]; if (f) processIncomingFile(f, false); e.target.value = ''; }} className="hidden" />
+            </div>
+          )}
 
           {/* Receipt Attachment Thumbnail (if attached) */}
           {receiptImage && activeMode === 'manual' && (
@@ -1400,10 +1486,11 @@ export default function ExpenseLoggingModal({
           <button
             type="submit"
             form="expense-form"
+            disabled={saving}
             className="flex-2 bg-slate-900 hover:bg-slate-800 active:bg-slate-950 text-white py-2.5 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
           >
             <Check className="w-4 h-4" />
-            <span>{initialExpense ? 'Save changes' : 'Save expense'}</span>
+            <span>{saving ? 'Saving receipt…' : initialExpense ? 'Save changes' : 'Save expense'}</span>
           </button>
         </div>
       </motion.div>

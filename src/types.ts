@@ -444,6 +444,13 @@ export interface DocumentItem {
   category?: string; // e.g. "Labor", "Parts", "Equipment", "Legal Counsel"
   itemType?: 'service' | 'product' | 'labor' | 'parts' | 'equipment_rental' | 'consultation' | 'retainer' | 'disbursement';
   partNumber?: string; // Useful for auto mechanics / hardware parts
+  // Reimbursable expense billed to the client (see lib/invoiceTotals.ts)
+  kind?: 'reimbursement';
+  expenseId?: string;       // the expense this line recovers
+  costAmount?: number;      // what the expense cost; total minus this is markup
+  taxable?: boolean;        // reimbursement lines only: charge VAT on this line (default no)
+  receiptFileId?: string;   // receipt shown to the client (server-stored file)
+  receiptFileName?: string;
 }
 
 export interface PaymentAttachment {
@@ -719,6 +726,17 @@ export interface ExpenseRecord {
   originalAmount?: number; // Amount paid in foreign currency
   exchangeRate?: number; // Conversion rate applied (1 Foreign = X Home)
   createdAt?: string;
+  billToClientId?: string;   // reimbursable: bill this expense to a client
+  billedDocumentId?: string; // the invoice it was billed on
+  receiptFile?: StoredFile;  // receipt kept in file storage (replaces receiptImage when uploaded)
+}
+
+/** A file kept in server file storage (see server/files.ts). */
+export interface StoredFile {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
 }
 
 export interface Transaction {

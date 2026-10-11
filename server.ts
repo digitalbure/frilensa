@@ -16,6 +16,7 @@ import { createApiKeysRouter } from "./server/apiKeys";
 import { createApiV1Router } from "./server/apiV1";
 import { createMcpRouter } from "./server/mcp";
 import { createOAuthRouter, createOAuthAppRouter } from "./server/oauth";
+import { createFilesRouter } from "./server/files";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -209,6 +210,8 @@ async function startServer() {
   app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
   // Public API and MCP server (personal API keys), and managing those keys from the app.
   app.use("/api/keys", express.json({ limit: "10kb" }), createApiKeysRouter());
+  // Receipt uploads (base64 in JSON, up to 8 MB per file) and downloads for the owner.
+  app.use("/api/files", express.json({ limit: "12mb" }), createFilesRouter());
   app.use("/api/v1", express.json({ limit: "200kb" }), createApiV1Router());
   app.use("/mcp", express.json({ limit: "200kb" }), createMcpRouter());
   // OAuth sign-in for MCP clients such as claude.ai (discovery, registration, tokens), and the

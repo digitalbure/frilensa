@@ -348,6 +348,7 @@ Sent using Frilensa (frilensa.com)
               <tr>
                 <td>
                   <strong>${item.name}</strong>
+                  ${item.kind === 'reimbursement' ? `<div style="font-size: 11px; color: #92400e; margin-top: 2px;">Reimbursable expense${item.taxable ? '' : ', no VAT'}${item.receiptFileId ? ' &middot; receipt online' : ''}</div>` : ''}
                   ${item.description ? `<div style="font-size: 11px; color: #64748b; margin-top: 2px;">${item.description}</div>` : ''}
                 </td>
                 <td style="text-align: right; color: #64748b; font-family: monospace;">

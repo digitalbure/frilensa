@@ -3,6 +3,7 @@ import { CheckCircle2, Clock, Download, FileText, AlertCircle, LogIn } from 'luc
 import { acceptPublicQuote, fetchPublicDocument, reportPublicPayment, type PublicDocumentData } from '../lib/api';
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import type { Business, Client } from '../types';
+import { publicFileUrl } from '../lib/files';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -156,6 +157,12 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
                 <tr key={it.id || i} className="border-t border-slate-100 align-top">
                   <td className="px-3 py-2">
                     <span className="font-semibold text-slate-900">{it.name}</span>
+                    {it.kind === 'reimbursement' && (
+                      <span className="block text-[11px] text-amber-800 font-semibold">
+                        Reimbursable expense{it.taxable ? '' : ', no VAT'}
+                        {it.receiptFileId && token && <> · <a href={publicFileUrl(token, it.receiptFileId)} target="_blank" rel="noopener noreferrer" className="underline text-sky-700">View receipt</a></>}
+                      </span>
+                    )}
                     {it.description && <span className="block text-slate-500">{it.description}</span>}
                     <span className="sm:hidden block text-slate-400">{it.quantity} × {money(currency, it.rate)}</span>
                   </td>

@@ -16,6 +16,8 @@ import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/docum
 import { documentPublicUrl } from '../lib/documentLinks';
 import { applyConfirmedPayment, addReceiptForInvoice } from '../lib/payments';
 import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
+import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses } from '../lib/invoiceTotals';
+import { openOwnFile } from '../lib/files';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
 import PdfExportModal from './PdfExportModal';
@@ -99,6 +101,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [items, setItems] = useState<DocumentItem[]>([]);
+  const [showExpensePicker, setShowExpensePicker] = useState(false);
+  const [pickedExpenseIds, setPickedExpenseIds] = useState<string[]>([]);
+  const [expenseMarkup, setExpenseMarkup] = useState(0);
+  const [expenseChargeVat, setExpenseChargeVat] = useState(false);
   const [notes, setNotes] = useState('Vinaka vakalevu for your business!');
   const [paymentMethod, setPaymentMethod] = useState('Bank Transfer');
   const [docStatus, setDocStatus] = useState<'draft' | 'sent' | 'paid' | 'cancelled' | 'accepted'>('draft');
@@ -178,6 +184,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   const handleNewDocument = (type: 'quote' | 'invoice' | 'receipt' | 'credit_note', forcedClientId: string = '', forcedProjectId: string = '') => {
     setEditingDoc(null);
+    setShowExpensePicker(false);
+    setPickedExpenseIds([]);
+    setExpenseMarkup(0);
+    setExpenseChargeVat(false);
     setDocType(type);
     setDocNumber(suggestDocumentNumber(type === 'credit_note' ? 'invoice' : type).replace(/^INV-|^QT-|^REC-/, type === 'credit_note' ? 'CN-' : '$&'));
     const targetClientId = forcedClientId || (data.clients[0]?.id || '');
@@ -228,6 +238,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Populate editor with existing document (Full Document Editing)
   const handleEditDocument = (doc: CRMDocument) => {
     setEditingDoc(doc);
+    setShowExpensePicker(false);
+    setPickedExpenseIds([]);
+    setExpenseMarkup(0);
+    setExpenseChargeVat(false);
     setDocType(doc.type);
     setDocNumber(doc.documentNumber);
     setClientId(doc.clientId);
@@ -461,7 +475,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
     onUpdateData({
       ...data,
-      documents: newDocs
+      documents: newDocs,
+      // Expenses billed on the cancelled invoice can be billed again.
+      expenses: linkBilledExpenses(data.expenses || [], docToCancel.id, null)
     });
 
     setSelectedDoc(updatedCancelledDoc);
@@ -546,7 +562,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       const updatedDocs = data.documents.filter(d => d.id !== id);
       onUpdateData({
         ...data,
-        documents: updatedDocs
+        documents: updatedDocs,
+        // Expenses billed on it can be billed again.
+        expenses: linkBilledExpenses(data.expenses || [], id, null)
       });
       setSelectedDoc(null);
     }
@@ -676,6 +694,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Compute subtotal, itemized taxes, itemized fees, and grand total
   const totals = useMemo(() => {
     const subtotal = items.reduce((acc, curr) => acc + curr.total, 0);
+    // Reimbursable expenses are passed on without VAT or fees unless the line is marked taxable.
+    const { taxableBase, reimbursementsNoVat } = lineTotals(items);
 
     const availableTaxes = [
       ...(data.platformTaxes || []),
@@ -691,7 +711,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     selectedFeeIds.forEach(feeId => {
       const fee = availableFees.find(f => f.id === feeId);
       if (fee) {
-        const amount = fee.rateType === 'flat' ? fee.rate : subtotal * (fee.rate / 100);
+        const amount = fee.rateType === 'flat' ? fee.rate : taxableBase * (fee.rate / 100);
         appliedFees.push({
           id: fee.id,
           name: fee.name,
@@ -715,7 +735,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         feeTotal,
         vatRate: 0,
         vatAmount: 0,
-        total: subtotal + feeTotal
+        total: subtotal + feeTotal,
+        reimbursementsNoVat
       };
     }
 
@@ -726,7 +747,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         // If this is standard VAT, ensure rate matches userProfile's default VAT rate
         const isVat = tax.id === 'ptax-1' || tax.category === 'vat' || tax.name.toLowerCase().includes('vat');
         const effectiveRate = isVat ? (data.userProfile.defaultVatRate ?? tax.rate ?? 12.5) : tax.rate;
-        const amount = tax.rateType === 'flat' ? effectiveRate : subtotal * (effectiveRate / 100);
+        const amount = tax.rateType === 'flat' ? effectiveRate : taxableBase * (effectiveRate / 100);
         appliedTaxes.push({
           id: tax.id,
           name: isVat ? `Fiji VAT (${effectiveRate}%)` : tax.name,
@@ -743,7 +764,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           type: 'tax',
           rate,
           rateType: 'percentage',
-          amount: subtotal * (rate / 100)
+          amount: taxableBase * (rate / 100)
         });
       }
     });
@@ -753,7 +774,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     // Primary Fiji VAT rate & amount
     const vatTax = appliedTaxes.find(t => t.id === 'ptax-1' || t.name.toLowerCase().includes('vat'));
     const vatRate = vatTax ? vatTax.rate : (data.userProfile.defaultVatRate ?? 12.5);
-    const vatAmount = vatTax ? vatTax.amount : subtotal * (vatRate / 100);
+    const vatAmount = vatTax ? vatTax.amount : taxableBase * (vatRate / 100);
 
     const total = subtotal + taxTotal + feeTotal;
 
@@ -765,7 +786,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       feeTotal, 
       vatRate, 
       vatAmount, 
-      total 
+      total,
+      reimbursementsNoVat
     };
   }, [items, selectedTaxIds, selectedFeeIds, isTaxExempt, data.userProfile.enableTax, data.platformTaxes, data.platformFees, data.businessTaxes, data.businessFees, data.userProfile.defaultVatRate, data.activeBusinessId, editingDoc]);
 
@@ -817,7 +839,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
     onUpdateData({
       ...data,
-      documents: updatedDocs
+      documents: updatedDocs,
+      expenses: linkBilledExpenses(data.expenses || [], docPayload.id, docPayload.items)
     });
 
     setShowEditor(false);
@@ -2477,6 +2500,70 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   </div>
                 </div>
 
+                {/* Reimbursable expenses for this client */}
+                {(() => {
+                  const available = (data.expenses || []).filter(e =>
+                    clientId && e.billToClientId === clientId &&
+                    (!e.billedDocumentId || e.billedDocumentId === editingDoc?.id) &&
+                    !items.some(it => it.expenseId === e.id)
+                  );
+                  if (!clientId || (available.length === 0 && !showExpensePicker)) return null;
+                  return (
+                    <div className="bg-amber-50/60 border border-amber-200 rounded-xl p-2.5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-[11px] font-bold text-amber-900">
+                          {available.length} expense{available.length === 1 ? '' : 's'} to bill to this client
+                        </span>
+                        <button type="button" onClick={() => setShowExpensePicker(v => !v)} className="text-[11px] font-bold text-amber-900 underline cursor-pointer">
+                          {showExpensePicker ? 'Close' : 'Add expenses'}
+                        </button>
+                      </div>
+                      {showExpensePicker && (
+                        <div className="space-y-2">
+                          {available.map(e => (
+                            <label key={e.id} className="flex items-start gap-2 text-[11px] text-slate-700 cursor-pointer">
+                              <input type="checkbox" className="mt-0.5" checked={pickedExpenseIds.includes(e.id)}
+                                onChange={ev => setPickedExpenseIds(ids => ev.target.checked ? [...ids, e.id] : ids.filter(x => x !== e.id))} />
+                              <span className="flex-1 min-w-0">
+                                <span className="font-semibold">{e.vendor}</span> · {e.date}{e.description && e.description !== e.vendor ? ` · ${e.description}` : ''}
+                                {!e.receiptFile && <span className="text-amber-700"> · no receipt</span>}
+                              </span>
+                              <span className="font-mono shrink-0">{e.currency || docCurrency} ${e.amount.toFixed(2)}</span>
+                            </label>
+                          ))}
+                          <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-700">
+                            <label className="flex items-center gap-1">
+                              Markup
+                              <input type="number" min={0} max={100} value={expenseMarkup} onChange={ev => setExpenseMarkup(Math.max(0, Number(ev.target.value) || 0))} className="w-14 bg-white border border-slate-200 rounded px-1.5 py-0.5" />%
+                            </label>
+                            <label className="flex items-center gap-1">
+                              <input type="checkbox" checked={expenseChargeVat} onChange={ev => setExpenseChargeVat(ev.target.checked)} />
+                              Charge VAT on these
+                            </label>
+                            <button
+                              type="button"
+                              disabled={pickedExpenseIds.length === 0}
+                              onClick={() => {
+                                const picked = available.filter(e => pickedExpenseIds.includes(e.id));
+                                setItems([...items, ...reimbursementLines(picked, { markupPercent: expenseMarkup, chargeVat: expenseChargeVat })]);
+                                setPickedExpenseIds([]);
+                                setShowExpensePicker(false);
+                              }}
+                              className="ml-auto bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold px-3 py-1 rounded-lg cursor-pointer"
+                            >
+                              Add {pickedExpenseIds.length || ''} to invoice
+                            </button>
+                          </div>
+                          <p className="text-[10px] text-slate-500">
+                            Passed on at cost without VAT unless you tick "Charge VAT". Whether VAT applies depends on how you paid for it; check with your accountant if unsure.
+                            Expenses in another currency are added at their recorded {data.userProfile.defaultCurrency || 'FJD'} amount.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* Items Added Table */}
                 <div className="space-y-1.5">
                   {items.length === 0 ? (
@@ -2487,8 +2574,21 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         <div className="min-w-0 pr-2">
                           <span className="font-bold text-slate-800 block truncate">{it.name}</span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">
-                            {it.quantity} x {docCurrency} ${it.rate}
+                            {isReimbursement(it) ? (it.description || 'Reimbursable expense') : `${it.quantity} x ${docCurrency} $${it.rate}`}
                           </span>
+                          {isReimbursement(it) && (
+                            <span className="flex flex-wrap items-center gap-2 mt-1">
+                              <span className="text-[9px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">Reimbursable</span>
+                              <label className="flex items-center gap-1 text-[10px] text-slate-600 cursor-pointer">
+                                <input type="checkbox" checked={it.taxable === true}
+                                  onChange={ev => setItems(items.map(x => x.id === it.id ? { ...x, taxable: ev.target.checked } : x))} />
+                                VAT
+                              </label>
+                              {it.receiptFileId
+                                ? <button type="button" onClick={() => openOwnFile(it.receiptFileId!).catch(err => alert(err.message))} className="text-[10px] font-bold text-sky-700 underline cursor-pointer">Receipt</button>
+                                : <span className="text-[10px] text-amber-700">No receipt</span>}
+                            </span>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-slate-700 font-mono shrink-0">
@@ -2665,6 +2765,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <span>Subtotal</span>
                     <span className="font-mono">{docCurrency} ${totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
+
+                  {totals.reimbursementsNoVat > 0 && (
+                    <div className="flex justify-between text-amber-800 text-[11px]">
+                      <span>Includes reimbursable expenses (no VAT)</span>
+                      <span className="font-mono">{docCurrency} ${totals.reimbursementsNoVat.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
 
                   {isTaxExempt ? (
                     <div className="flex justify-between text-amber-700 text-[11px] font-medium">
@@ -3099,7 +3206,15 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       <div key={it.id || idx} className="flex justify-between items-center py-1 border-b border-slate-50">
                         <div>
                           <span className="font-bold text-slate-700 block">{it.name}</span>
-                          <span className="text-[9.5px] text-slate-400">{it.quantity} x {selectedDoc.currency || data.userProfile.defaultCurrency} ${it.rate}</span>
+                          {isReimbursement(it) ? (
+                            <span className="text-[9.5px] text-slate-400 block">
+                              <span className="font-bold text-amber-800">Reimbursable{it.taxable ? '' : ', no VAT'}</span>
+                              {it.description ? ` · ${it.description}` : ''}
+                              {it.receiptFileId && <> · <button type="button" onClick={() => openOwnFile(it.receiptFileId!).catch(err => alert(err.message))} className="underline text-sky-700 cursor-pointer">receipt</button></>}
+                            </span>
+                          ) : (
+                            <span className="text-[9.5px] text-slate-400">{it.quantity} x {selectedDoc.currency || data.userProfile.defaultCurrency} ${it.rate}</span>
+                          )}
                         </div>
                         <span className="font-mono font-bold text-slate-800">
                           {selectedDoc.currency || data.userProfile.defaultCurrency} ${it.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}

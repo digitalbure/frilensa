@@ -1,4 +1,5 @@
 import { notifyConsultant, later } from "./notify";
+import { sendDocumentFile } from "./files";
 import express, { type Response, type NextFunction } from "express";
 import {
   getAdminDb, requireUser, rateLimit, isEmail, sha256, randomToken, hashPin, verifyPin,
@@ -323,6 +324,22 @@ export function createPortalRouter() {
       services: (ws.services || []).map((s: any) => pick(s, PUBLIC_SERVICE_FIELDS)),
       messages
     });
+  });
+
+  // Receipts attached to one of this client's issued documents.
+  router.get("/documents/:id/files/:fileId", requirePortal, async (req: PortalRequest, res, next) => {
+    try {
+      const claims = req.portal!;
+      const db = getAdminDb();
+      const namespaced = await db.collection("documents").doc(`${claims.consultantId}_${req.params.id}`).get();
+      const d = namespaced.exists ? namespaced.data() : (await db.collection("documents").doc(req.params.id).get()).data();
+      if (!d || d.consultantId !== claims.consultantId || d.clientId !== claims.clientId || d.status === "draft") {
+        return res.status(404).json({ error: "File not found." });
+      }
+      await sendDocumentFile(d, req.params.fileId, res);
+    } catch (err) {
+      next(err);
+    }
   });
 
   router.post("/documents/:id/accept", requirePortal, rateLimit({ name: "portal-action", max: 30, windowMs: 60_000, key: r => (r as PortalRequest).portal!.email }), async (req: PortalRequest, res) => {

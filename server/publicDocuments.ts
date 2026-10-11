@@ -1,6 +1,7 @@
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, rateLimit } from "./security";
 import { acceptQuote, reportPayment } from "./portal";
+import { sendDocumentFile } from "./files";
 
 // Public "view online" links: /?doc=<shareToken>. Whoever holds the link (the client the document
 // was sent to) can see that one issued document and act on it. Nothing else is reachable.
@@ -56,6 +57,13 @@ export function createPublicDocumentsRouter() {
     if (!d) return res.status(404).json({ error: "This document link isn't valid. Ask the sender for a new link." });
     if (d.status === "draft") return res.status(404).json({ error: "This document hasn't been issued yet. Please check back later or contact the sender." });
     res.json(publicView(d));
+  });
+
+  // Receipts attached to the document's reimbursable expense lines.
+  router.get("/:token/files/:fileId", async (req, res) => {
+    const d = await findSharedDocument(req.params.token);
+    if (!d || d.status === "draft") return res.status(404).json({ error: "File not found." });
+    await sendDocumentFile(d, req.params.fileId, res);
   });
 
   router.post("/:token/accept", async (req, res) => {

@@ -17,6 +17,7 @@ import {
   sendPortalMessage
 } from '../lib/api';
 import ClientOverviewView from './ClientOverviewView';
+import { openPortalFile } from '../lib/files';
 
 interface ClientPortalViewProps {
   session: PortalSession;
@@ -902,6 +903,12 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         <div key={idx} className="p-2 grid grid-cols-12 gap-1 text-[10.5px] items-center">
                           <div className="col-span-6 min-w-0">
                             <span className="font-semibold text-zinc-900 block truncate">{item.name}</span>
+                            {item.kind === 'reimbursement' && (
+                              <span className="text-[9px] text-amber-800 font-semibold block">
+                                Reimbursable expense{item.taxable ? '' : ', no VAT'}
+                                {item.receiptFileId && <> · <button type="button" onClick={() => openPortalFile(session, selectedDoc.id, item.receiptFileId).catch((err: any) => alert(err.message))} className="underline text-sky-700 cursor-pointer">View receipt</button></>}
+                              </span>
+                            )}
                             {item.description && <span className="text-[8.5px] text-zinc-400 block truncate">{item.description}</span>}
                           </div>
                           <div className="col-span-2 text-center text-zinc-600 font-mono">{item.quantity}</div>
