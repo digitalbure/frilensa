@@ -5,6 +5,7 @@ import { readWorkspace } from "./workspace";
 import { appUrl, notifyConsultant, later } from "./notify";
 import { ApiError, parse } from "./apiService";
 import { publicCard } from "./rateCards";
+import { emitEvent } from "./webhooks";
 import { bookableServices, bookingQuestions, bookingProgress, checkBooking, BookingError, type BookingInput, type CheckedBooking } from "../src/lib/bookings";
 import type { Business, CRMData, CRMDocument } from "../src/types";
 
@@ -141,6 +142,7 @@ export async function saveBookingRequest(b: NewBooking): Promise<{ created: bool
     ...(b.extra || {}),
     channel: b.channel,
     status: "new",
+    lastStage: "new",
     createdAt: now,
     updatedAt: now
   };
@@ -150,6 +152,7 @@ export async function saveBookingRequest(b: NewBooking): Promise<{ created: bool
     tx.set(ref, request);
     return { created: true, request };
   });
+  if (created.created) later(emitEvent(b.uid, "booking_request.created", { bookingRequest: bookingView(created.request, b.data.documents) }));
   if (created.created && !b.quiet) {
     const r = created.request;
     const where = b.channel === "api" ? ` via ${b.via || b.source?.app || "an app"}` : b.channel === "rate_card" ? " from your rate card" : b.channel === "booking_page" ? " from your booking page" : b.channel === "widget" ? " from your website" : "";

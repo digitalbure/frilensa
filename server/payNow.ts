@@ -2,6 +2,7 @@ import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { readWorkspace, updateWorkspace, WorkspaceMissing } from "./workspace";
 import { notifyConsultant, later } from "./notify";
+import { syncBookingStages } from "./webhooks";
 import { encryptSecret, decryptSecret, secretsConfigured } from "./secrets";
 import { manualPayMethods, paypalQuote, formatMoney, homeRate, PAYPAL_CURRENCIES } from "../src/lib/payNow";
 import { applyConfirmedPayment, addReceiptForInvoice } from "../src/lib/payments";
@@ -172,6 +173,7 @@ export async function capturePaypalOrder(flat: any, orderId: unknown) {
   });
 
   await captureRef.set({ orderId: id, captureId: capture.id, consultantId: flat.consultantId, documentId: doc.id, currency: paidCurrency, value: paidValue, fee, receiptNumber: result.receiptNumber, mismatch: result.mismatch, createdAt: new Date().toISOString() });
+  later(syncBookingStages(flat.consultantId));
   later(notifyConsultant(flat.consultantId, {
     subject: result.mismatch ? `Check a PayPal payment for ${doc.documentNumber}` : `Invoice ${doc.documentNumber} paid online`,
     heading: result.mismatch ? "A PayPal payment needs checking" : "An invoice was paid online",

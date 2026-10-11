@@ -1,5 +1,6 @@
 import { notifyConsultant, later } from "./notify";
 import { sendDocumentFile } from "./files";
+import { syncBookingStages } from "./webhooks";
 import { payOptions, createPaypalOrder, capturePaypalOrder, PayError } from "./payNow";
 import express, { type Response, type NextFunction } from "express";
 import {
@@ -112,6 +113,7 @@ export function acceptQuote(owner: DocumentOwner, documentId: string) {
     d => d.type !== "quote" ? "Only quotes can be accepted." : d.status === "accepted" ? "This quote is already accepted." : d.status !== "sent" ? "This quote can no longer be accepted." : null,
     () => ({ status: "accepted", acceptedAt: new Date().toISOString() })
   ).then(result => {
+    if (result.doc) later(syncBookingStages(owner.consultantId));
     if (result.doc) later(notifyConsultant(owner.consultantId, {
       subject: `Quote ${result.doc.documentNumber} accepted by ${result.doc.clientName || "your client"}`,
       heading: "A client accepted your quote",

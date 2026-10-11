@@ -18,6 +18,7 @@ import ReleaseNotes from './ReleaseNotes';
 import HelpCenter from './HelpCenter';
 import AutomationSettingsCard from './AutomationSettingsCard';
 import ApiKeysCard from './ApiKeysCard';
+import WebhooksCard from './WebhooksCard';
 import PayNowSettingsCard from './PayNowSettingsCard';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount } from '../lib/currencies';
 import { getEmailServiceConfig, sendTestEmail, EmailServiceConfig } from '../lib/emailService';
@@ -831,6 +832,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <PayNowSettingsCard data={data} onUpdateData={onUpdateData} />
 
         <ApiKeysCard />
+
+        <WebhooksCard />
 
         {/* Inactivity Auto-Logout Security Configuration */}
         <div className="p-3.5 rounded-xl border border-zinc-200/90 bg-zinc-50/70 space-y-2.5">

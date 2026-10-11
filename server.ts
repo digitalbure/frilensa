@@ -21,6 +21,7 @@ import { createRateCardsRouter, createPublicRateCardsRouter } from "./server/rat
 import { createAssistantRouter, assistantConfigured } from "./server/assistant";
 import { createPaymentsRouter } from "./server/payNow";
 import { createPublicBookingRouter, createBookingPageRouter } from "./server/bookingPage";
+import { createWebhooksRouter, createEventsRouter, startWebhookRetries } from "./server/webhooks";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -215,6 +216,9 @@ async function startServer() {
   app.use("/api/payments", express.json({ limit: "10kb" }), createPaymentsRouter());
   app.use("/api/public/book", express.json({ limit: "40kb" }), createPublicBookingRouter());
   app.use("/api/booking-page", express.json({ limit: "10kb" }), createBookingPageRouter());
+  app.use("/api/webhooks", express.json({ limit: "10kb" }), createWebhooksRouter());
+  app.use("/api/events", express.json({ limit: "2kb" }), createEventsRouter());
+  startWebhookRetries();
   app.use("/api/jobs", express.json({ limit: "10kb" }), createJobsRouter());
   app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
   // Public API and MCP server (personal API keys), and managing those keys from the app.

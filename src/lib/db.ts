@@ -15,6 +15,7 @@ import {
 } from './firebase';
 import { CRMData, CRMDocument, SupportMessage } from '../types';
 import { sanitizeForFirestore, flatDocumentId, buildFlatDocumentRow } from './flatDocuments';
+import { documentsSaved } from './documentEvents';
 
 export { sanitizeForFirestore, flatDocumentId };
 
@@ -317,6 +318,8 @@ export async function saveConsultantData(data: CRMData) {
       documents: (payload.documents || []).map((d: any) => { const { pdfDataUrl, signature, ...rest } = d; return rest; })
     });
   }
+
+  documentsSaved(documents);
 
   // Mirror documents to the flat collection (ids are namespaced by owner so tenants can't collide)
   // and remove ones that were deleted locally, including un-namespaced copies from older builds.

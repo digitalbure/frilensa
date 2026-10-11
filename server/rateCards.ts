@@ -2,6 +2,7 @@ import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, randomToken, type AuthedRequest } from "./security";
 import { notifyConsultant, later } from "./notify";
+import { syncBookingStages } from "./webhooks";
 import { readWorkspace } from "./workspace";
 import { rateCardServices as libRateCardServices } from "../src/lib/bookings";
 
@@ -203,6 +204,7 @@ export function createRateCardsRouter() {
     const snap = await ref.get();
     if (!snap.exists || snap.data()?.uid !== req.user!.uid) return res.status(404).json({ error: "Request not found." });
     await ref.update({ status, documentId: str(req.body?.documentId, 100), updatedAt: new Date().toISOString() });
+    later(syncBookingStages(req.user!.uid));
     res.json({ ok: true });
   });
 
