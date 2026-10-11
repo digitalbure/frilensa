@@ -68,8 +68,8 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
 
     if (!client.email) {
       setToastMessage({
-        title: 'Client Email Required',
-        subtitle: 'Please add an email address to this client profile before generating an access link.'
+        title: 'Client email needed',
+        subtitle: 'Add an email address for this client before creating a portal link.'
       });
       setTimeout(() => setToastMessage(null), 3500);
       return;
@@ -85,7 +85,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
       setGeneratingLinkId(null);
       setToastMessage({
         title: 'Could not create portal link',
-        subtitle: err?.message || 'Please check your connection and try again.'
+        subtitle: err?.message || 'Check your connection and try again.'
       });
       setTimeout(() => setToastMessage(null), 4500);
       return;
@@ -132,8 +132,8 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
     setCopiedClientId(client.id);
 
     setToastMessage({
-      title: copied ? `Access Link Copied to Clipboard!` : `Access Link Generated!`,
-      subtitle: `Unique access token generated for ${client.name}.`,
+      title: copied ? `Portal link copied` : `Portal link created`,
+      subtitle: `New portal link for ${client.name}.`,
       link: directAccessUrl
     });
 
@@ -154,7 +154,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
     } catch (err: any) {
       setToastMessage({
         title: 'Could not revoke access',
-        subtitle: err?.message || 'Please check your connection and try again.'
+        subtitle: err?.message || 'Check your connection and try again.'
       });
       setTimeout(() => setToastMessage(null), 4500);
       return;
@@ -180,8 +180,8 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
     }
 
     setToastMessage({
-      title: 'Access Link Revoked',
-      subtitle: `Portal link and PIN for ${client.name} have been deactivated.`
+      title: 'Portal link revoked',
+      subtitle: `${client.name}'s portal link and PIN no longer work.`
     });
 
     setTimeout(() => setToastMessage(null), 3500);
@@ -215,8 +215,8 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
 
     setCopiedClientId(client.id);
     setToastMessage({
-      title: copied ? `Access Link Copied to Clipboard!` : `Access Link Ready`,
-      subtitle: `Share with ${client.name} for 1-click portal login.`,
+      title: copied ? `Portal link copied` : `Portal link`,
+      subtitle: `Send this to ${client.name} to open their portal.`,
       link: directAccessUrl
     });
 
@@ -243,7 +243,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
     if (e) {
       e.stopPropagation();
     }
-    if (confirm('Are you sure you want to remove this client? This will not delete their historical invoices.')) {
+    if (confirm('Remove this client? Their past invoices are kept.')) {
       const updatedClients = data.clients.filter(c => c.id !== id);
       onUpdateData({
         ...data,
@@ -417,21 +417,21 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="text-[10.5px] uppercase tracking-widest text-slate-400 font-bold block">
-            Fiji Freelancer CRM
+            Client directory
           </span>
           <h2 className="text-xl md:text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2 mt-0.5">
             <Users className="w-6 h-6 text-slate-600" />
-            <span>Clients & Organizations</span>
+            <span>Clients</span>
           </h2>
           <p className="text-xs text-slate-500 mt-1">
-            Directory of clients, contact representatives, tax TINs, invoices, and direct client portals.
+            Contacts, TINs, invoices and portal links for each client.
           </p>
         </div>
 
         <div className="flex items-center gap-2.5 shrink-0">
           <button
             onClick={handleExportCSV}
-            title="Download CSV export of clients directory"
+            title="Download clients as CSV"
             className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 font-semibold py-2 px-3.5 rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-2xs hover:border-slate-300 cursor-pointer"
           >
             <Download className="w-3.5 h-3.5 text-slate-500" />
@@ -443,7 +443,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
             className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-4 rounded-xl text-xs flex items-center gap-2 transition-all active:scale-98 shadow-sm cursor-pointer"
           >
             <UserPlus className="w-4 h-4" />
-            <span>Add Client</span>
+            <span>Add client</span>
           </button>
         </div>
       </div>
@@ -452,7 +452,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Clients</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Clients</span>
             <div className="w-7 h-7 rounded-lg bg-slate-100 text-slate-600 flex items-center justify-center">
               <Building2 className="w-3.5 h-3.5" />
             </div>
@@ -465,7 +465,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Portals</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active portals</span>
             <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
               <Globe className="w-3.5 h-3.5" />
             </div>
@@ -473,14 +473,14 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
           <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-slate-900 tracking-tight">{activePortalsCount}</span>
             <span className="text-xs text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-              {totalClientsCount > 0 ? `${Math.round((activePortalsCount / totalClientsCount) * 100)}% live` : '0%'}
+              {totalClientsCount > 0 ? `${Math.round((activePortalsCount / totalClientsCount) * 100)}% of clients` : '0%'}
             </span>
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Invoiced</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total invoiced</span>
             <div className="w-7 h-7 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
               <CreditCard className="w-3.5 h-3.5" />
             </div>
@@ -489,13 +489,13 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
             <span className="text-lg font-bold text-slate-900 font-mono tracking-tight block">
               {defaultCurrency} ${totalBilledSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
-            <span className="text-[11px] text-slate-400">{allInvoices.length} total invoices</span>
+            <span className="text-[11px] text-slate-400">{allInvoices.length} invoices</span>
           </div>
         </div>
 
         <div className="bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Outstanding Due</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Outstanding</span>
             <div className={`w-7 h-7 rounded-lg flex items-center justify-center border ${
               totalOutstandingSum > 0 ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
             }`}>
@@ -509,7 +509,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
               {defaultCurrency} ${totalOutstandingSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
             <span className="text-[11px] text-slate-400">
-              {totalOutstandingSum > 0 ? 'Pending collection' : 'All accounts settled'}
+              {totalOutstandingSum > 0 ? 'Unpaid' : 'All paid'}
             </span>
           </div>
         </div>
@@ -527,7 +527,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by client name, representative, email, phone, or Fiji TIN..."
+              placeholder="Search by name, contact, email, phone or TIN"
               className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-10 pr-9 text-xs font-sans text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-slate-900 transition-all font-medium"
             />
             {searchQuery && (
@@ -548,7 +548,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
               onChange={(e) => setCurrencyFilter(e.target.value)}
               className="bg-slate-50 border border-slate-200 text-slate-700 text-xs font-medium py-2 px-3 rounded-xl focus:outline-none focus:border-slate-900 transition-all cursor-pointer"
             >
-              <option value="all">All Currencies</option>
+              <option value="all">All currencies</option>
               {SUPPORTED_CURRENCIES.map(c => (
                 <option key={c.code} value={c.code}>
                   {c.flag} {c.code}
@@ -561,7 +561,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
               <button
                 type="button"
                 onClick={() => setViewMode('table')}
-                title="Spreadsheet / Table View (Desktop Recommended)"
+                title="Table view"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === 'table'
                     ? 'bg-white text-slate-900 shadow-2xs'
@@ -574,7 +574,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
               <button
                 type="button"
                 onClick={() => setViewMode('grid')}
-                title="Card Grid View"
+                title="Card view"
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === 'grid'
                     ? 'bg-white text-slate-900 shadow-2xs'
@@ -600,7 +600,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-600'
             }`}
           >
-            All Clients ({data.clients.length})
+            All clients ({data.clients.length})
           </button>
           <button
             type="button"
@@ -611,7 +611,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                 : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/70'
             }`}
           >
-            <span>With Balance Due</span>
+            <span>Balance due</span>
             {totalOutstandingSum > 0 && (
               <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
             )}
@@ -626,7 +626,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Active Portal ({activePortalsCount})</span>
+            <span>Portal active ({activePortalsCount})</span>
           </button>
 
           {filteredClients.length !== data.clients.length && (
@@ -643,11 +643,11 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
           <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto mb-3">
             <Users className="w-7 h-7" />
           </div>
-          <h3 className="text-sm font-bold text-slate-900">No clients match your filter criteria</h3>
+          <h3 className="text-sm font-bold text-slate-900">No clients to show</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 leading-relaxed">
             {searchQuery
-              ? `No registered clients matching "${searchQuery}". Try adjusting your keywords or clearing filters.`
-              : 'Start by registering your first client organization to issue tax invoices and generate custom client portals.'}
+              ? `No clients match "${searchQuery}". Try another search or clear the filters.`
+              : 'Add your first client to start sending invoices and portal links.'}
           </p>
           <div className="mt-4 flex items-center justify-center gap-2">
             {(searchQuery || statusFilter !== 'all' || currencyFilter !== 'all') ? (
@@ -659,14 +659,14 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                 }}
                 className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-xl transition-all cursor-pointer"
               >
-                Clear All Filters
+                Clear filters
               </button>
             ) : (
               <button
                 onClick={handleOpenAdd}
                 className="text-xs bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 px-4 rounded-xl transition-all cursor-pointer shadow-xs"
               >
-                Register New Client
+                Add client
               </button>
             )}
           </div>
@@ -678,11 +678,11 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/80 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  <th className="py-3.5 px-4 font-bold">Client / Organization</th>
-                  <th className="py-3.5 px-4 font-bold">Primary Contact</th>
-                  <th className="py-3.5 px-4 font-bold">Currency & Tax</th>
-                  <th className="py-3.5 px-4 font-bold">Invoiced / Outstanding</th>
-                  <th className="py-3.5 px-4 font-bold">Portal Access</th>
+                  <th className="py-3.5 px-4 font-bold">Client</th>
+                  <th className="py-3.5 px-4 font-bold">Contact</th>
+                  <th className="py-3.5 px-4 font-bold">Currency and TIN</th>
+                  <th className="py-3.5 px-4 font-bold">Invoiced / outstanding</th>
+                  <th className="py-3.5 px-4 font-bold">Portal</th>
                   <th className="py-3.5 px-4 font-bold text-right">Actions</th>
                 </tr>
               </thead>
@@ -727,7 +727,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                               <span>{representative}</span>
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">No contact specified</span>
+                            <span className="text-slate-400 italic">No contact</span>
                           )}
                           {client.email && (
                             <p className="text-[11px] text-slate-500 font-mono truncate">
@@ -791,17 +791,17 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                               <button
                                 type="button"
                                 onClick={() => setSharingClient(client)}
-                                title="Open Full Client Portal Share Sheet & QR Code"
+                                title="Share portal link or QR code"
                                 className="bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
                               >
                                 <Share2 className="w-3.5 h-3.5 text-sky-600" />
-                                <span>Share Portal</span>
+                                <span>Share portal</span>
                               </button>
 
                               <button
                                 type="button"
                                 onClick={(e) => handleCopyExistingAccessLink(client, e)}
-                                title="Quick Copy Direct Access URL"
+                                title="Copy portal link"
                                 className={`p-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer border ${
                                   copiedClientId === client.id
                                     ? 'bg-emerald-600 text-white border-emerald-600'
@@ -820,11 +820,11 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                               type="button"
                               onClick={(e) => handleGenerateAccessLink(client, e)}
                               disabled={generatingLinkId === client.id}
-                              title="Generate passwordless 1-click access token"
+                              title="Create a portal link"
                               className="bg-slate-100 hover:bg-sky-50 text-slate-700 hover:text-sky-700 border border-slate-200 px-2.5 py-1 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
                             >
                               <Link className="w-3.5 h-3.5 text-slate-400" />
-                              <span>{generatingLinkId === client.id ? 'Generating...' : 'Portal Link'}</span>
+                              <span>{generatingLinkId === client.id ? 'Creating…' : 'Portal link'}</span>
                             </button>
                           )}
                         </div>
@@ -835,21 +835,21 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                         <div className="flex items-center justify-end gap-1">
                           <button
                             onClick={() => setSelectedClient(client)}
-                            title="View Client Dossier"
+                            title="View client"
                             className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
                           >
                             <ChevronRight className="w-4 h-4" />
                           </button>
                           <button
                             onClick={(e) => handleOpenEdit(client, e)}
-                            title="Edit Client"
+                            title="Edit client"
                             className="p-1.5 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all cursor-pointer"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={(e) => handleDeleteClient(client.id, e)}
-                            title="Delete Client"
+                            title="Delete client"
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-all cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -902,14 +902,14 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                       <button
                         onClick={(e) => handleOpenEdit(client, e)}
                         className="p-1.5 text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                        title="Edit Client"
+                        title="Edit client"
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={(e) => handleDeleteClient(client.id, e)}
                         className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
-                        title="Delete Client"
+                        title="Delete client"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -931,7 +931,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                     {client.accessToken && (
                       <span className="bg-sky-50 text-[10px] text-sky-800 font-medium px-2 py-0.5 rounded border border-sky-200/80 flex items-center gap-1">
                         <Globe className="w-3 h-3 text-sky-600" />
-                        <span>Portal Live</span>
+                        <span>Portal active</span>
                       </span>
                     )}
                   </div>
@@ -980,7 +980,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                       </span>
                     ) : (
                       <span className="text-xs font-semibold text-emerald-700 block mt-0.5">
-                        All Paid
+                        All paid
                       </span>
                     )}
                   </div>
@@ -995,7 +995,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                     className="bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-1.5 px-3 rounded-xl text-xs flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Share2 className="w-3.5 h-3.5 text-slate-600" />
-                    <span>{client.accessToken ? 'Share Portal' : 'Portal Link'}</span>
+                    <span>{client.accessToken ? 'Share portal' : 'Portal link'}</span>
                   </button>
 
                   <div className="flex items-center gap-1.5">
@@ -1003,7 +1003,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                       <button
                         type="button"
                         onClick={(e) => handleCopyExistingAccessLink(client, e)}
-                        title="Copy direct portal access link"
+                        title="Copy portal link"
                         className={`p-1.5 rounded-xl border text-xs transition-all cursor-pointer ${
                           copiedClientId === client.id
                             ? 'bg-emerald-600 text-white border-emerald-600'
@@ -1019,7 +1019,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
                       onClick={() => setSelectedClient(client)}
                       className="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-1.5 px-3 rounded-xl text-xs flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
                     >
-                      <span>Dossier</span>
+                      <span>Details</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
                   </div>

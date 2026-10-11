@@ -93,7 +93,7 @@ export default function ProjectCurrencyDisplay({
     return (
       <div 
         className={`inline-flex flex-col items-end bg-gradient-to-br from-slate-50 to-sky-50/50 border border-sky-200/70 hover:border-sky-300 px-2.5 py-1 rounded-xl shadow-2xs transition-all text-right group ${className}`}
-        title={`Native Project Currency: ${projCfg.name} (${projCurrencyCode})\nConverted to Home Currency: ~${baseCurrencyCode} ${formattedConverted} (1 ${projCurrencyCode} ≈ ${rate} ${baseCurrencyCode})`}
+        title={`Project currency: ${projCfg.name} (${projCurrencyCode})\nIn your currency: ~${baseCurrencyCode} ${formattedConverted} (1 ${projCurrencyCode} ≈ ${rate} ${baseCurrencyCode})`}
       >
         <div className="flex items-center gap-1 text-[11px] font-mono font-black text-slate-900 leading-tight">
           {showFlag && <span className="text-xs shrink-0">{projCfg.flag}</span>}
@@ -127,7 +127,7 @@ export default function ProjectCurrencyDisplay({
           <div className="flex items-center gap-1.5 text-[10px] font-mono text-sky-700 bg-sky-50/80 border border-sky-200/70 px-2 py-1 rounded-lg">
             <ArrowRightLeft className="w-3 h-3 text-sky-600 shrink-0" />
             <span>
-              <strong>≈ {baseCurrencyCode} {formattedConverted}</strong> base valuation (1 {projCurrencyCode} ≈ {rate} {baseCurrencyCode})
+              <strong>≈ {baseCurrencyCode} {formattedConverted}</strong> in your currency (1 {projCurrencyCode} ≈ {rate} {baseCurrencyCode})
             </span>
           </div>
         )}

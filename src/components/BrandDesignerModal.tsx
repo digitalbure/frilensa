@@ -36,15 +36,15 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
     { hex: '#7c3aed', name: 'Pacific Amethyst' },
     { hex: '#db2777', name: 'Hibiscus Pink' },
     { hex: '#ea580c', name: 'Savusavu Sunset' },
-    { hex: '#18181b', name: 'Executive Obsidian' },
+    { hex: '#18181b', name: 'Charcoal' },
   ];
 
   const SYMBOLS = [
     { id: 'Waves', label: 'Pacific Waves', icon: Waves },
-    { id: 'Briefcase', label: 'Consultant Pack', icon: Briefcase },
-    { id: 'Building2', label: 'Suva Corporate', icon: Building2 },
-    { id: 'ShieldCheck', label: 'FRCA Compliance', icon: ShieldCheck },
-    { id: 'Sparkles', label: 'Digital Magic', icon: Sparkles },
+    { id: 'Briefcase', label: 'Consultant Briefcase', icon: Briefcase },
+    { id: 'Building2', label: 'Suva Building', icon: Building2 },
+    { id: 'ShieldCheck', label: 'Tick Shield', icon: ShieldCheck },
+    { id: 'Sparkles', label: 'Digital Sparkle', icon: Sparkles },
   ];
 
   // Auto extract colors whenever logoUrl changes
@@ -137,7 +137,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
         {/* Header */}
         <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
           <div>
-            <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold block">Logo & Brand Identity</span>
+            <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-bold block">Logo and brand</span>
             <h3 className="text-base font-bold text-zinc-900 tracking-tight flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-sky-600" />
               {business.name}
@@ -155,11 +155,11 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
         <div className="bg-slate-50 rounded-2xl p-3.5 border border-slate-200/70 space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-[9px] uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1">
-              <Eye className="w-3 h-3 text-slate-400" /> Live Document & Invoice Preview
+              <Eye className="w-3 h-3 text-slate-400" /> Invoice preview
             </span>
             {autoAppliedNotice && (
               <span className="text-[9px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
-                <Check className="w-2.5 h-2.5" /> Logo Colors Applied!
+                <Check className="w-2.5 h-2.5" /> Color applied
               </span>
             )}
           </div>
@@ -193,7 +193,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
               {logoType === 'image' && logoUrl && (
                 <img 
                   src={logoUrl} 
-                  alt="Custom Logo" 
+                  alt="Logo" 
                   className="h-9 max-w-[120px] w-auto object-contain rounded-md shrink-0 border border-slate-100 p-0.5 bg-white"
                   referrerPolicy="no-referrer"
                   onError={(e) => {
@@ -203,13 +203,13 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
               )}
               {logoType === 'image' && !logoUrl && (
                 <div className="w-9 h-9 rounded-xl bg-slate-100 border border-dashed border-slate-300 flex items-center justify-center text-[9px] text-slate-400 shrink-0">
-                  No Logo
+                  No logo
                 </div>
               )}
               <div className="min-w-0">
                 <h4 className="text-xs font-extrabold text-slate-900 leading-tight truncate">{business.name}</h4>
                 <span className="text-[9px] text-slate-400 block font-normal leading-tight truncate mt-0.5">
-                  {brandSlogan || 'Suva, Fiji Islands • TIN Verified'}
+                  {brandSlogan || 'Suva, Fiji'}
                 </span>
               </div>
             </div>
@@ -224,7 +224,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
         {/* Logo Configuration & Upload */}
         <div className="space-y-2 text-xs">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Company Logo Format
+            Logo type
           </label>
           
           {/* Logo Type Selector */}
@@ -236,7 +236,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                 logoType === 'image' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Image className="w-3.5 h-3.5" /> Image Logo
+              <Image className="w-3.5 h-3.5" /> Image
             </button>
             <button
               type="button"
@@ -245,7 +245,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                 logoType === 'symbol' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
-              <Palette className="w-3.5 h-3.5" /> Symbol Icon
+              <Palette className="w-3.5 h-3.5" /> Symbol
             </button>
             <button
               type="button"
@@ -275,7 +275,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                     Click to upload or drag logo here
                   </span>
                   <span className="text-[9px] text-slate-400">
-                    PNG, JPEG, WebP or SVG (auto-extracts brand colors)
+                    PNG, JPEG, WebP or SVG. We'll pick up its colors.
                   </span>
                 </div>
                 <input
@@ -290,7 +290,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
               {/* Or URL input */}
               <div className="pt-1">
                 <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                  Or Paste Direct Image Web URL
+                  Or paste an image link
                 </label>
                 <div className="flex gap-1.5">
                   <input
@@ -317,7 +317,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
           {/* Symbol selector */}
           {logoType === 'symbol' && (
             <div className="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Choose Brand Symbol Icon</span>
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Choose a symbol</span>
               <div className="grid grid-cols-5 gap-1.5">
                 {SYMBOLS.map((sym) => {
                   const Icon = sym.icon;
@@ -344,7 +344,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
           {/* Monogram input */}
           {logoType === 'text' && (
             <div className="space-y-1.5 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Enter Monogram / Initials (2–4 Chars)</span>
+              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Initials (2–4 letters)</span>
               <input
                 type="text"
                 maxLength={4}
@@ -367,14 +367,14 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
             <div className="flex justify-between items-center">
               <span className="font-bold text-sky-950 text-[11px] flex items-center gap-1.5">
                 <Wand2 className="w-3.5 h-3.5 text-sky-600" />
-                Auto-Extracted Palette from Logo
+                Colors from your logo
               </span>
               <button
                 type="button"
                 onClick={() => applyExtractedScheme(extractedPalette.primary)}
                 className="text-[10px] font-bold text-white bg-sky-600 hover:bg-sky-700 px-2 py-0.5 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1"
               >
-                Apply Primary <ArrowRight className="w-2.5 h-2.5" />
+                Use main color <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
 
@@ -388,7 +388,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                     colorTheme.toLowerCase() === hex.toLowerCase() ? 'ring-2 ring-sky-600 ring-offset-1 border-white scale-105' : 'border-black/10'
                   }`}
                   style={{ backgroundColor: hex }}
-                  title={`Extracted Swatch ${hex} (Click to set as Brand Color)`}
+                  title={`Use ${hex} as brand color`}
                 >
                   {colorTheme.toLowerCase() === hex.toLowerCase() && (
                     <Check className="w-3.5 h-3.5 text-white stroke-[3px] drop-shadow-xs" />
@@ -406,7 +406,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
         <div className="space-y-1.5 text-xs">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
             <span className="flex items-center gap-1">
-              <Palette className="w-3.5 h-3.5 text-slate-400" /> Document Theme Color
+              <Palette className="w-3.5 h-3.5 text-slate-400" /> Brand color
             </span>
             {logoUrl && !extractedPalette && (
               <button
@@ -414,7 +414,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                 onClick={() => handleExtractFromUrl(logoUrl, true)}
                 className="text-[10px] text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 cursor-pointer"
               >
-                <RefreshCw className={`w-2.5 h-2.5 ${isExtractingColors ? 'animate-spin' : ''}`} /> Scan Logo Colors
+                <RefreshCw className={`w-2.5 h-2.5 ${isExtractingColors ? 'animate-spin' : ''}`} /> Get colors from logo
               </button>
             )}
           </label>
@@ -441,7 +441,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
                 value={colorTheme}
                 onChange={(e) => setColorTheme(e.target.value)}
                 className="w-5 h-5 border-0 p-0 rounded-full cursor-pointer overflow-hidden outline-none bg-transparent"
-                title="Custom Color Picker"
+                title="Pick a color"
               />
               <span className="text-[10px] font-mono font-bold text-slate-600 uppercase">
                 {colorTheme}
@@ -453,13 +453,13 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
         {/* Brand Slogan / Tagline */}
         <div className="space-y-1 text-xs">
           <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Brand Slogan / Tagline
+            Tagline
           </label>
           <input
             type="text"
             value={brandSlogan}
             onChange={(e) => setBrandSlogan(e.target.value)}
-            placeholder="e.g. Fiji's Premier Digital Agency & IT Consultancy"
+            placeholder="e.g. Web design and IT support in Suva"
             className="w-full bg-white border border-slate-200 rounded-xl py-1.5 px-3 text-xs focus:outline-none focus:border-sky-600 text-slate-800 placeholder-slate-400 transition-colors"
           />
         </div>
@@ -478,7 +478,7 @@ export default function BrandDesignerModal({ business, onSave, onClose }: BrandD
             onClick={handleSave}
             className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-md shadow-sky-600/20 cursor-pointer"
           >
-            Save Brand Guidelines
+            Save
           </button>
         </div>
       </motion.div>

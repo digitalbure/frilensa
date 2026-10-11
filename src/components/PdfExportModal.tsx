@@ -19,7 +19,7 @@ interface PdfExportModalProps {
 }
 
 const COLOR_PRESETS = [
-  { label: 'Business Theme', value: '' },
+  { label: 'Business colour', value: '' },
   { label: 'Pacific Sky', value: '#0284c7' },
   { label: 'Deep Navy', value: '#1e293b' },
   { label: 'Tropical Teal', value: '#0d9488' },
@@ -120,10 +120,10 @@ export default function PdfExportModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-sm text-white">
-                  PDF Generator — {docTypeLabel} #{document.documentNumber}
+                  {docTypeLabel} #{document.documentNumber}
                 </h3>
                 <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-500/30">
-                  Ready to Export
+                  Ready
                 </span>
               </div>
               <p className="text-[11px] text-slate-400">
@@ -138,7 +138,7 @@ export default function PdfExportModal({
               className={`p-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
                 showCustomizer ? 'bg-sky-600 text-white' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
               }`}
-              title="Customize PDF Layout & Colors"
+              title="PDF options"
             >
               <Settings2 className="w-4 h-4" />
               <span className="hidden sm:inline">Options</span>
@@ -147,7 +147,7 @@ export default function PdfExportModal({
             <button
               onClick={handleOpenInNewTab}
               className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-all cursor-pointer"
-              title="Open full page PDF"
+              title="Open in new tab"
             >
               <ExternalLink className="w-4 h-4" />
             </button>
@@ -179,7 +179,7 @@ export default function PdfExportModal({
                     onChange={(e) => setIncludeBankDetails(e.target.checked)}
                     className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-800 border-slate-700"
                   />
-                  <span>Include Bank Details</span>
+                  <span>Bank details</span>
                 </label>
 
                 {/* Notes toggle */}
@@ -190,7 +190,7 @@ export default function PdfExportModal({
                     onChange={(e) => setIncludeNotes(e.target.checked)}
                     className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-800 border-slate-700"
                   />
-                  <span>Include Terms & Notes</span>
+                  <span>Terms and notes</span>
                 </label>
 
                 {/* FRCS Badge toggle */}
@@ -201,7 +201,7 @@ export default function PdfExportModal({
                     onChange={(e) => setIncludeFrcsBadge(e.target.checked)}
                     className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-800 border-slate-700"
                   />
-                  <span>FRCS Tax Compliance Hash</span>
+                  <span>Tax reference footer</span>
                 </label>
 
                 {/* Watermark toggle */}
@@ -212,14 +212,14 @@ export default function PdfExportModal({
                     onChange={(e) => setIncludeWatermark(e.target.checked)}
                     className="w-4 h-4 rounded text-sky-600 focus:ring-sky-500 bg-slate-800 border-slate-700"
                   />
-                  <span>Status Stamp Watermark</span>
+                  <span>Status watermark</span>
                 </label>
               </div>
 
               {/* Color Presets */}
               <div className="flex items-center gap-2 flex-wrap pt-1">
                 <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1">
-                  <Palette className="w-3 h-3 text-sky-400" /> Header Accent:
+                  <Palette className="w-3 h-3 text-sky-400" /> Header colour:
                 </span>
                 {COLOR_PRESETS.map((preset) => (
                   <button
@@ -255,7 +255,7 @@ export default function PdfExportModal({
           ) : (
             <div className="text-center p-8 space-y-2">
               <RefreshCw className="w-8 h-8 text-sky-400 animate-spin mx-auto" />
-              <p className="text-sm font-semibold text-slate-300">Rendering high-resolution vector PDF...</p>
+              <p className="text-sm font-semibold text-slate-300">Preparing PDF…</p>
             </div>
           )}
         </div>
@@ -264,7 +264,7 @@ export default function PdfExportModal({
         <div className="p-4 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span className="hidden sm:inline">Official Fiji standard layout with Tax ID & Line items</span>
+            <span className="hidden sm:inline">Shows your TIN and line items</span>
           </div>
 
           <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -278,7 +278,7 @@ export default function PdfExportModal({
             <button
               onClick={() => window.print()}
               className="px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              title="Print directly"
+              title="Print"
             >
               <Printer className="w-4 h-4" />
               <span className="hidden md:inline">Print</span>
@@ -291,10 +291,10 @@ export default function PdfExportModal({
                   onOpenEmailModal();
                 }}
                 className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-600/20"
-                title="Email this document directly to client"
+                title="Email to client"
               >
                 <Mail className="w-4 h-4" />
-                <span>Email to Client</span>
+                <span>Email client</span>
               </button>
             )}
 
@@ -310,17 +310,17 @@ export default function PdfExportModal({
               {downloadSuccess ? (
                 <>
                   <Check className="w-4 h-4" />
-                  <span>PDF Downloaded!</span>
+                  <span>Downloaded</span>
                 </>
               ) : isDownloading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Generating PDF...</span>
+                  <span>Preparing PDF…</span>
                 </>
               ) : (
                 <>
                   <Download className="w-4 h-4" />
-                  <span>Download PDF Document</span>
+                  <span>Download PDF</span>
                 </>
               )}
             </button>

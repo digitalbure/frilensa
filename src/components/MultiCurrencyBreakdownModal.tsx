@@ -63,13 +63,13 @@ export default function MultiCurrencyBreakdownModal({
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-extrabold text-lg text-white">Multi-Currency Engine & Reconciliation</h3>
+                    <h3 className="font-extrabold text-lg text-white">Foreign currency</h3>
                     <span className="bg-sky-400/20 text-sky-200 border border-sky-300/20 text-[10px] font-bold px-2 py-0.5 rounded-full">
                       Base: {baseCurrency}
                     </span>
                   </div>
                   <p className="text-xs text-sky-200/80 mt-0.5">
-                    Foreign exchange normalization, inward TT remittances, and ledger settlement
+                    Foreign invoices and incoming transfers, converted to your base currency
                   </p>
                 </div>
               </div>
@@ -84,32 +84,32 @@ export default function MultiCurrencyBreakdownModal({
             {/* Total Reconciled Hero Numbers */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-6">
               <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3.5 border border-white/10">
-                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">Total Net Banked ({baseCurrency})</span>
+                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">Total received ({baseCurrency})</span>
                 <span className="text-xl font-black text-white font-mono mt-0.5 block">
                   ${stats.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[9.5px] text-emerald-300 mt-1 flex items-center gap-1">
-                  <CheckCircle2 className="w-3 h-3" /> Reconciled into ledger
+                  <CheckCircle2 className="w-3 h-3" /> Paid invoices
                 </span>
               </div>
 
               <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3.5 border border-white/10">
-                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">Foreign Remittances</span>
+                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">Foreign payments</span>
                 <span className="text-xl font-black text-white font-mono mt-0.5 block truncate">
-                  {stats.primaryForeignSummary || 'No Foreign Remittance'}
+                  {stats.primaryForeignSummary || 'None yet'}
                 </span>
                 <span className="text-[9.5px] text-sky-200 mt-1 flex items-center gap-1">
-                  <Layers className="w-3 h-3" /> {stats.paidInvoicesCount} invoices settled
+                  <Layers className="w-3 h-3" /> {stats.paidInvoicesCount} invoices paid
                 </span>
               </div>
 
               <div className="bg-white/10 backdrop-blur-xs rounded-2xl p-3.5 border border-white/10">
-                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">Fiji VAT Status</span>
+                <span className="text-[10px] uppercase font-bold text-sky-200/90 tracking-wider block">VAT collected</span>
                 <span className="text-xl font-black text-white font-mono mt-0.5 block">
                   ${stats.totalVatCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
                 <span className="text-[9.5px] text-emerald-300 mt-1 flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Zero-Rated Export (0%)
+                  <ShieldCheck className="w-3 h-3" /> Zero-rated exports (0%)
                 </span>
               </div>
             </div>
@@ -119,7 +119,7 @@ export default function MultiCurrencyBreakdownModal({
           <div className="p-6 space-y-6 max-h-[60vh] overflow-y-auto">
             {/* Breakdown Cards */}
             <div>
-              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Currency Breakdown</h4>
+              <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">By currency</h4>
               <div className="space-y-2.5">
                 {stats.currencyBreakdown.map(curr => (
                   <div key={curr.code} className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -133,7 +133,7 @@ export default function MultiCurrencyBreakdownModal({
                           </span>
                         </div>
                         <p className="text-xs text-slate-500 mt-0.5">
-                          Effective Settlement Rate: <span className="font-mono font-bold text-slate-700">1 {curr.code} = {curr.effectiveRate.toFixed(4)} {baseCurrency}</span>
+                          Rate received: <span className="font-mono font-bold text-slate-700">1 {curr.code} = {curr.effectiveRate.toFixed(4)} {baseCurrency}</span>
                         </p>
                       </div>
                     </div>
@@ -151,7 +151,7 @@ export default function MultiCurrencyBreakdownModal({
                         </span>
                       </div>
                       <span className="text-[10px] text-emerald-600 font-bold block mt-0.5">
-                        Net Converted & Banked
+                        Converted
                       </span>
                     </div>
                   </div>
@@ -162,7 +162,7 @@ export default function MultiCurrencyBreakdownModal({
             {/* Reconciled Documents Section */}
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Associated Foreign Invoices & Documents</h4>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Foreign currency documents</h4>
                 <button
                   onClick={() => {
                     onClose();
@@ -170,7 +170,7 @@ export default function MultiCurrencyBreakdownModal({
                   }}
                   className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
                 >
-                  View All in Billing <ExternalLink className="w-3 h-3" />
+                  View in Billing <ExternalLink className="w-3 h-3" />
                 </button>
               </div>
 
@@ -225,7 +225,7 @@ export default function MultiCurrencyBreakdownModal({
             {foreignTransactions.length > 0 && (
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Matched Bank Statement Remittances</h4>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Bank transactions</h4>
                   <button
                     onClick={() => {
                       onClose();
@@ -233,7 +233,7 @@ export default function MultiCurrencyBreakdownModal({
                     }}
                     className="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1 cursor-pointer"
                   >
-                    Open Bookkeeping Ledger <ExternalLink className="w-3 h-3" />
+                    Open bookkeeping <ExternalLink className="w-3 h-3" />
                   </button>
                 </div>
 
@@ -244,7 +244,7 @@ export default function MultiCurrencyBreakdownModal({
                         <div className="flex items-center gap-2">
                           <span className="font-mono font-bold text-[11px] text-sky-950 truncate">{tx.description}</span>
                           <span className="bg-emerald-100 text-emerald-800 text-[8.5px] font-bold px-1.5 py-0.5 rounded-full shrink-0">
-                            Reconciled
+                            Foreign
                           </span>
                         </div>
                         <p className="text-[10px] text-slate-500 mt-0.5">
@@ -273,7 +273,7 @@ export default function MultiCurrencyBreakdownModal({
           <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs text-slate-500 flex items-center gap-1">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              FRCS Compliant Dual-Currency Multi-Tenant Ledger
+              Amounts shown in {baseCurrency}
             </span>
             <div className="flex items-center gap-2">
               <button
@@ -283,7 +283,7 @@ export default function MultiCurrencyBreakdownModal({
                 }}
                 className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 shadow-sm"
               >
-                Go to Bookkeeping & Reconciliation
+                Go to bookkeeping
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             </div>

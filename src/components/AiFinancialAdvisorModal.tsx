@@ -40,20 +40,20 @@ export default function AiFinancialAdvisorModal({
 
   const quickPrompts = [
     {
-      title: '📊 Audit P&L & Profit Margin',
-      prompt: `Analyze our current financial performance for ${activeBusiness?.name || 'our business'}. Total Revenue is FJD $${pnlStats.totalRevenue.toFixed(2)}, Operating Expenses are FJD $${pnlStats.totalExpenses.toFixed(2)}, Net Profit is FJD $${pnlStats.netProfit.toFixed(2)} (${pnlStats.profitMargin.toFixed(1)}% margin). Give 3 concrete recommendations to improve profitability.`
+      title: 'Review profit and margin',
+      prompt: `Analyze our current financial performance for ${activeBusiness?.name || 'our business'}. Total Revenue is FJD $${pnlStats.totalRevenue.toFixed(2)}, Operating Expenses are FJD $${pnlStats.totalExpenses.toFixed(2)}, Net Profit is FJD $${pnlStats.netProfit.toFixed(2)} (${pnlStats.profitMargin.toFixed(1)}% margin). Give 3 specific ways to improve profit.`
     },
     {
-      title: '🧾 FRCS VAT Position & Compliance',
-      prompt: `Review our Fiji VAT position for ${pnlStats.periodLabel}. Output VAT collected: FJD $${pnlStats.outputVat.toFixed(2)}. Claimable Input VAT on expenses: FJD $${pnlStats.inputVat.toFixed(2)}. Net VAT Payable to FRCS: FJD $${pnlStats.netVatPayable.toFixed(2)}. Provide filing guidance and input credit audit tips.`
+      title: 'VAT position',
+      prompt: `Review our Fiji VAT position for ${pnlStats.periodLabel}. Output VAT collected: FJD $${pnlStats.outputVat.toFixed(2)}. Claimable Input VAT on expenses: FJD $${pnlStats.inputVat.toFixed(2)}. Net VAT Payable to FRCS: FJD $${pnlStats.netVatPayable.toFixed(2)}. What should we know about filing, and how do we check our input credits?`
     },
     {
-      title: '💡 Expense Reduction & Cost Control',
-      prompt: `Our highest business spending category is currently "${pnlStats.topExpenseCategory}". How can a Fiji-based freelancer or agency reduce overhead in this area and maximize Section 21 tax deductions?`
+      title: 'Cut costs',
+      prompt: `Our highest business spending category is currently "${pnlStats.topExpenseCategory}". How can a Fiji freelancer or agency reduce costs in this area and claim Section 21 tax deductions?`
     },
     {
-      title: '⚖️ Tax Deduction Eligibility Check',
-      prompt: `Explain the allowable business expense deductions under Fiji Income Tax Act (FRCS) for home office, Internet fibre, software subscriptions, and motor vehicle transport.`
+      title: 'Tax deductions',
+      prompt: `Which business expenses can I deduct under the Fiji Income Tax Act for a home office, internet, software subscriptions and vehicle use?`
     }
   ];
 
@@ -96,7 +96,7 @@ export default function AiFinancialAdvisorModal({
   };
 
   const generateLocalAdvisory = (prompt: string): string => {
-    const bizName = activeBusiness?.name || 'your enterprise';
+    const bizName = activeBusiness?.name || 'your business';
     const isVat = prompt.toLowerCase().includes('vat');
     const isCost = prompt.toLowerCase().includes('reduc') || prompt.toLowerCase().includes('expense');
     const isPnl = prompt.toLowerCase().includes('margin') || prompt.toLowerCase().includes('p&l') || prompt.toLowerCase().includes('profit');
@@ -104,16 +104,16 @@ export default function AiFinancialAdvisorModal({
     if (isVat) {
       return `
         <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-          <p class="font-bold text-slate-900 text-sm">Fiji Revenue & Customs Service (FRCS) VAT Assessment:</p>
+          <p class="font-bold text-slate-900 text-sm">VAT position (${pnlStats.periodLabel}):</p>
           <div class="p-3 bg-sky-50 border border-sky-200 rounded-xl space-y-1">
-            <div class="flex justify-between"><span>Output VAT Collected (Sales):</span> <strong class="font-mono text-slate-900">FJD $${pnlStats.outputVat.toFixed(2)}</strong></div>
-            <div class="flex justify-between"><span>Input VAT Paid (Claimable):</span> <strong class="font-mono text-emerald-600">-FJD $${pnlStats.inputVat.toFixed(2)}</strong></div>
-            <div class="flex justify-between border-t border-sky-200 pt-1 font-bold"><span>Net VAT Payable to FRCS:</span> <strong class="font-mono text-sky-900">FJD $${pnlStats.netVatPayable.toFixed(2)}</strong></div>
+            <div class="flex justify-between"><span>Output VAT (sales):</span> <strong class="font-mono text-slate-900">FJD $${pnlStats.outputVat.toFixed(2)}</strong></div>
+            <div class="flex justify-between"><span>Input VAT (claimable):</span> <strong class="font-mono text-emerald-600">-FJD $${pnlStats.inputVat.toFixed(2)}</strong></div>
+            <div class="flex justify-between border-t border-sky-200 pt-1 font-bold"><span>Net VAT payable to FRCS:</span> <strong class="font-mono text-sky-900">FJD $${pnlStats.netVatPayable.toFixed(2)}</strong></div>
           </div>
           <ul class="list-disc pl-4 space-y-1">
-            <li><strong>Input Tax Credits:</strong> Ensure you keep valid Tax Invoices with the vendor's Fiji TIN for every claimable expense over $20.</li>
-            <li><strong>M-PAiSA & MyCash Receipts:</strong> Retain SMS confirmations and merchant reference IDs as proof of date and payment.</li>
-            <li><strong>Filing Frequency:</strong> If annual turnover is under FJD $300,000, VAT returns can be lodged annually or quarterly.</li>
+            <li><strong>Input tax credits:</strong> Keep a tax invoice showing the supplier's TIN for each claimable expense over $20.</li>
+            <li><strong>M-PAiSA and MyCash payments:</strong> Keep the SMS confirmation and reference number as proof of payment.</li>
+            <li><strong>How often to file:</strong> If annual turnover is under FJD $300,000, you may be able to file VAT returns quarterly or annually. Check with FRCS.</li>
           </ul>
         </div>
       `;
@@ -122,14 +122,14 @@ export default function AiFinancialAdvisorModal({
     if (isCost) {
       return `
         <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-          <p class="font-bold text-slate-900 text-sm">Expense Optimization & Overhead Analysis for ${bizName}:</p>
-          <p>Your primary expense driver is currently <strong>${pnlStats.topExpenseCategory}</strong> (accounting for a significant portion of your FJD $${pnlStats.totalExpenses.toFixed(2)} operational budget).</p>
+          <p class="font-bold text-slate-900 text-sm">Cutting costs at ${bizName}:</p>
+          <p>Your biggest expense category is <strong>${pnlStats.topExpenseCategory}</strong>. Total expenses: FJD $${pnlStats.totalExpenses.toFixed(2)}.</p>
           <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-1">
-            <p class="font-bold text-amber-900">Recommended Action Plan:</p>
+            <p class="font-bold text-amber-900">Things to try:</p>
             <ul class="list-disc pl-4 space-y-1 text-amber-950">
-              <li>Consolidate telecom/fibre plans to business fixed rates to reduce monthly recurring costs.</li>
-              <li>Audit SaaS tool seats to ensure no duplicate subscriptions exist.</li>
-              <li>Ensure 100% of allowable travel and equipment expenses are tagged as tax-deductible under Section 21 of the Fiji Income Tax Act.</li>
+              <li>Move phone and internet plans to a fixed business rate to lower monthly costs.</li>
+              <li>Check your software subscriptions for ones you pay for twice.</li>
+              <li>Mark all allowable travel and equipment expenses as tax-deductible under Section 21 of the Fiji Income Tax Act.</li>
             </ul>
           </div>
         </div>
@@ -138,14 +138,14 @@ export default function AiFinancialAdvisorModal({
 
     return `
       <div class="space-y-3 text-xs leading-relaxed text-slate-700">
-        <p class="font-bold text-slate-900 text-sm">Profit & Loss Health Overview (${pnlStats.periodLabel}):</p>
+        <p class="font-bold text-slate-900 text-sm">Profit and loss (${pnlStats.periodLabel}):</p>
         <div class="grid grid-cols-2 gap-2 p-3 bg-slate-100 rounded-xl text-[11px]">
-          <div><span class="text-slate-500 block">Gross Inflow:</span><strong class="text-slate-900 font-mono text-xs">FJD $${pnlStats.totalRevenue.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Operating Costs:</span><strong class="text-rose-600 font-mono text-xs">FJD $${pnlStats.totalExpenses.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Net Profit:</span><strong class="${pnlStats.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-mono text-xs">FJD $${pnlStats.netProfit.toFixed(2)}</strong></div>
-          <div><span class="text-slate-500 block">Net Profit Margin:</span><strong class="text-indigo-600 font-mono text-xs">${pnlStats.profitMargin.toFixed(1)}%</strong></div>
+          <div><span class="text-slate-500 block">Revenue:</span><strong class="text-slate-900 font-mono text-xs">FJD $${pnlStats.totalRevenue.toFixed(2)}</strong></div>
+          <div><span class="text-slate-500 block">Expenses:</span><strong class="text-rose-600 font-mono text-xs">FJD $${pnlStats.totalExpenses.toFixed(2)}</strong></div>
+          <div><span class="text-slate-500 block">Net profit:</span><strong class="${pnlStats.netProfit >= 0 ? 'text-emerald-600' : 'text-rose-600'} font-mono text-xs">FJD $${pnlStats.netProfit.toFixed(2)}</strong></div>
+          <div><span class="text-slate-500 block">Net margin:</span><strong class="text-indigo-600 font-mono text-xs">${pnlStats.profitMargin.toFixed(1)}%</strong></div>
         </div>
-        <p>Your business maintains a healthy margin. Consider setting aside <strong>20% of net profits</strong> into a dedicated tax buffer account for provisional tax and FRCS quarterly payments.</p>
+        <p>Consider putting <strong>20% of net profit</strong> into a separate account for provisional tax and quarterly FRCS payments.</p>
       </div>
     `;
   };
@@ -169,14 +169,14 @@ export default function AiFinancialAdvisorModal({
             <div>
               <div className="flex items-center gap-1.5">
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                  Bula AI Financial Advisor
+                  AI financial advisor
                 </h3>
                 <span className="bg-indigo-500/30 text-indigo-300 text-[8px] font-bold px-1.5 py-0.5 rounded border border-indigo-400/30">
-                  LIVE P&L CO-PILOT
+                  P&L
                 </span>
               </div>
               <p className="text-[10px] text-slate-300">
-                Synchronized with {activeBusiness?.name || 'your business'} • Fiji FRCS Compliant
+                Using figures from {activeBusiness?.name || 'your business'}
               </p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function AiFinancialAdvisorModal({
             <strong className="font-mono text-rose-400 text-xs">FJD ${pnlStats.totalExpenses.toFixed(2)}</strong>
           </div>
           <div>
-            <span className="text-slate-400 block">Net Margin</span>
+            <span className="text-slate-400 block">Net margin</span>
             <strong className="font-mono text-indigo-300 text-xs">{pnlStats.profitMargin.toFixed(1)}%</strong>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function AiFinancialAdvisorModal({
           {/* Quick 1-Tap Financial Questions */}
           <div className="space-y-2">
             <label className="text-[9px] font-black uppercase text-slate-400 tracking-wider block">
-              1-Tap Financial Analysis
+              Quick questions
             </label>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               {quickPrompts.map((item, idx) => (
@@ -233,7 +233,7 @@ export default function AiFinancialAdvisorModal({
             <div className="p-6 rounded-2xl bg-indigo-50/50 border border-indigo-100 flex flex-col items-center justify-center space-y-3">
               <RefreshCw className="w-7 h-7 text-indigo-600 animate-spin" />
               <p className="text-xs font-bold text-indigo-900 animate-pulse">
-                Auditing ledger entries and calculating tax deductions...
+                Working out your figures…
               </p>
             </div>
           ) : responseHtml ? (
@@ -252,7 +252,7 @@ export default function AiFinancialAdvisorModal({
                   }}
                   className="text-[11px] font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
                 >
-                  <span>Open in Full AI Advisor tab</span>
+                  <span>Continue in AI advisor</span>
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -291,7 +291,7 @@ export default function AiFinancialAdvisorModal({
         {/* Footer */}
         <div className="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
           <span className="text-[10px] text-slate-500">
-            Powered by Frilensa Gemini AI
+            General guidance, not tax advice
           </span>
           <button
             type="button"
@@ -303,7 +303,7 @@ export default function AiFinancialAdvisorModal({
             }}
             className="text-[11px] font-extrabold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
           >
-            <span>Launch Main AI Advisor</span>
+            <span>Open AI advisor</span>
             <ChevronRight className="w-3 h-3" />
           </button>
         </div>

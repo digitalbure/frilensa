@@ -42,7 +42,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   otpBypassNote: 'OTP can be toggled off to give platform admin enough time to configure SMTP and SMS gateway credentials.',
   // Platform Whitelabel & Global Branding
   platformName: 'Frilensa',
-  platformTagline: 'Fiji & Pacific CRM, Invoicing & Tax Compliance Suite • frilensa.com',
+  platformTagline: 'Invoicing, bookkeeping and client portal for Fiji • frilensa.com',
   platformSupportEmail: 'support@frilensa.com',
   platformSupportPhone: '+679 330 1234',
   platformLogoType: 'symbol',
@@ -50,7 +50,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   platformLogoUrl: '/pwa-icon.svg',
   platformPrimaryColor: '#0284c7',
   platformAccentColor: '#0d9488',
-  platformFooterNote: 'FRCS Statutory Compliant • frilensa.com Cloud Invoicing & Escrow Platform',
+  platformFooterNote: 'frilensa.com • Invoicing and bookkeeping for Fiji businesses',
   // Escrow Wallet Platform Configuration
   escrowEnabled: true,
   escrowFeeType: 'both',
@@ -59,7 +59,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   escrowMinAmount: 20.00, // FJD $20.00 min deposit
   escrowAutoReleaseDays: 7, // 7 days auto-release
   escrowPayoutFee: 1.00, // FJD $1.00 M-Paisa/Bank withdrawal fee
-  escrowDisputePolicy: "Escrow funds remain 100% safeguarded until the client signs off on completed deliverables. App platform mediates disputes with FRCS-compliant audit receipts.",
+  escrowDisputePolicy: "Escrow funds are held until the client signs off on the completed work. Frilensa mediates disputes using the payment receipts.",
   // Fiji Public Service Directory & Booking Marketplace
   directoryEnabled: true,
   enforcePaidForDirectory: true, // Only paying Pro & Premium subscribers are publicly visible
@@ -78,7 +78,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     free: {
       id: 'free',
       name: 'Free Starter',
-      description: 'Essential invoicing & tax tools for solo Fijian freelancers and gig creators',
+      description: 'Invoicing and tax tools for solo freelancers in Fiji',
       price: 0,
       badgeColor: '#64748b',
       limits: {
@@ -104,7 +104,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     pro: {
       id: 'pro',
       name: 'Pro Consultant',
-      description: 'Advanced automations, recurring retainers & high quotas for growing studios',
+      description: 'Automations, recurring invoices and higher limits for growing studios',
       price: 25,
       badgeColor: '#0284c7',
       limits: {
@@ -130,7 +130,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
     premium: {
       id: 'premium',
       name: 'Premium Agency',
-      description: 'Unlimited capacity, multi-venture support & high-volume AI for agencies',
+      description: 'Unlimited invoices and clients, up to 10 businesses and more AI scans for agencies',
       price: 50,
       badgeColor: '#10b981',
       limits: {
@@ -224,7 +224,7 @@ export const INITIAL_CRM_DATA: CRMData = {
       isDefault: true,
       isActive: true,
       category: "vat",
-      description: "Standard statutory Fiji Value Added Tax as regulated by FRCS."
+      description: "Standard Fiji VAT, administered by FRCS."
     },
     {
       id: "ptax-ecal",
@@ -235,7 +235,7 @@ export const INITIAL_CRM_DATA: CRMData = {
       isDefault: false,
       isActive: true,
       category: "ecal",
-      description: "Fiji statutory Environmental and Climate Adaptation Levy."
+      description: "Fiji Environment and Climate Adaptation Levy."
     },
     {
       id: "ptax-stt",
@@ -246,7 +246,7 @@ export const INITIAL_CRM_DATA: CRMData = {
       isDefault: false,
       isActive: true,
       category: "stt",
-      description: "Statutory turnover tax applicable to prescribed service sectors."
+      description: "Turnover tax for prescribed service sectors."
     }
   ],
   platformFees: [
@@ -259,7 +259,7 @@ export const INITIAL_CRM_DATA: CRMData = {
       isDefault: false,
       isActive: true,
       category: "processing",
-      description: "Merchant processing gateway pass-through surcharge for digital transactions."
+      description: "Passes on the processing fee for mobile wallet payments."
     },
     {
       id: "pfee-2",
@@ -270,7 +270,7 @@ export const INITIAL_CRM_DATA: CRMData = {
       isDefault: false,
       isActive: true,
       category: "handling",
-      description: "Standard compliance verification and digital ledger archive fee."
+      description: "Flat fee for admin and record keeping."
     }
   ],
   businessTaxes: [],

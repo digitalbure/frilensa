@@ -115,7 +115,7 @@ async function sendReminder(plan: PlannedReminder, consultantEmail: string, ccMe
     subject: msg.subject,
     heading: msg.heading,
     lines: msg.lines,
-    actionLabel: "View invoice and payment details",
+    actionLabel: "View invoice",
     actionPath: token ? `/?doc=${encodeURIComponent(token)}` : "/",
     footer: `Sent by ${business?.name || "your supplier"} using Frilensa. Reply to this email to contact them.`
   });

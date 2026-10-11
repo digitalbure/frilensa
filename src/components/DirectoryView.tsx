@@ -253,7 +253,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
     e.preventDefault();
     if (!selectedBusinessForBooking) return;
     if (!bookingClientName || !bookingClientEmail) {
-      showToast('Please provide your contact name and email.', 'error');
+      showToast('Enter your name and email.', 'error');
       return;
     }
 
@@ -390,12 +390,12 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               <ShieldCheck className="w-3.5 h-3.5 text-sky-400" /> Frilensa Directory
             </span>
             <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-1 rounded-full border border-emerald-400/30">
-              Direct Booking Requests
+              Booking requests
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-display font-bold text-white tracking-tight">
-            Fiji Business & Service Directory
+            Fiji business directory
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
             Find Fijian freelancers, studios and service businesses that use Frilensa, and send them a booking request. They reply from their own Frilensa workspace.
@@ -412,7 +412,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               }`}
             >
               <Search className="w-3.5 h-3.5" />
-              <span>Explore Providers ({visibleBusinesses.length})</span>
+              <span>Browse ({visibleBusinesses.length})</span>
             </button>
 
             <button
@@ -424,7 +424,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               }`}
             >
               <Calendar className="w-3.5 h-3.5" />
-              <span>Received Bookings</span>
+              <span>Received bookings</span>
               {receivedBookings.filter(b => b.status === 'pending').length > 0 && (
                 <span className="bg-amber-400 text-slate-950 text-[10px] px-1.5 py-0.2 rounded-full font-extrabold">
                   {receivedBookings.filter(b => b.status === 'pending').length}
@@ -441,7 +441,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
-              <span>My Outbound Bookings ({outboundBookings.length})</span>
+              <span>My bookings ({outboundBookings.length})</span>
             </button>
           </div>
         </div>
@@ -457,14 +457,14 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-sm font-bold text-zinc-900">
-                  {userPrimaryBiz?.name || 'Your Workspace Business'}
+                  {userPrimaryBiz?.name || 'Your business'}
                 </h3>
                 <span className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
                   isPayingUser 
                     ? 'bg-sky-50 text-sky-700 border border-sky-200'
                     : 'bg-zinc-100 text-zinc-600 border border-zinc-200'
                 }`}>
-                  {activePlan.toUpperCase()} PLAN
+                  {activePlan.toUpperCase()} plan
                 </span>
               </div>
               <p className="text-xs text-zinc-500 leading-normal">
@@ -503,12 +503,12 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 {isUserBizPublic ? (
                   <>
                     <Eye className="w-3.5 h-3.5" />
-                    <span>Public in Directory (Click to Hide)</span>
+                    <span>Listed (click to hide)</span>
                   </>
                 ) : (
                   <>
                     <EyeOff className="w-3.5 h-3.5" />
-                    <span>Make My Profile Public</span>
+                    <span>List my business</span>
                   </>
                 )}
               </button>
@@ -520,7 +520,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 className="px-4 py-2 bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
               >
                 <Lock className="w-3.5 h-3.5" />
-                <span>Upgrade to Pro to Get Listed</span>
+                <span>Upgrade to Pro to list</span>
               </button>
             )}
           </div>
@@ -540,7 +540,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 <Search className="w-4 h-4 text-zinc-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
-                  placeholder="Search by business name, skill (e.g., React, Photography, Tax), TIN, or keywords..."
+                  placeholder="Search by name or skill, e.g. photography, tax"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-zinc-50 hover:bg-zinc-100/70 focus:bg-white border border-zinc-200 rounded-xl pl-9.5 pr-4 py-2.5 text-xs text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:border-sky-600 focus:ring-1 focus:ring-sky-600 transition-colors"
@@ -562,7 +562,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   onChange={(e) => setSelectedCity(e.target.value)}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-800 font-medium focus:outline-none focus:border-sky-600"
                 >
-                  <option value="All">📍 All Fiji Locations</option>
+                  <option value="All">All locations</option>
                   {cities.filter(c => c !== 'All').map(city => (
                     <option key={city} value={city}>{city}</option>
                   ))}
@@ -577,16 +577,16 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2.5 text-xs text-zinc-800 font-medium focus:outline-none focus:border-sky-600"
                 >
                   <option value="name">A–Z</option>
-                  <option value="rate_low">💲 Rate: Low to High</option>
-                  <option value="rate_high">💲 Rate: High to Low</option>
-                  <option value="name">🔤 Name (A-Z)</option>
+                  <option value="rate_low">Rate: low to high</option>
+                  <option value="rate_high">Rate: high to low</option>
+                  <option value="name">Name (A–Z)</option>
                 </select>
               </div>
             </div>
 
             {/* Category Filter Pills */}
             <div className="space-y-1.5">
-              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Service Category</span>
+              <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Category</span>
               <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
                 {categories.map((cat) => (
                   <button
@@ -625,8 +625,8 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 {directoryError
                   ? directoryError
                   : allBusinesses.length === 0
-                    ? 'The directory is new. List your business above to be one of the first that clients can find and book.'
-                    : 'No listed businesses matched your filters. Try clearing your search or changing the category or location.'}
+                    ? 'No businesses are listed yet. List yours above so clients can find and book you.'
+                    : 'No businesses match. Clear your search or change the category or location.'}
               </p>
               <button
                 onClick={() => {
@@ -637,7 +637,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 }}
                 className="px-4 py-2 bg-zinc-900 text-white rounded-xl text-xs font-semibold hover:bg-zinc-800 transition-all inline-flex items-center gap-1.5"
               >
-                <RefreshCw className="w-3.5 h-3.5" /> Reset Filters
+                <RefreshCw className="w-3.5 h-3.5" /> Reset filters
               </button>
             </div>
           ) : (
@@ -682,7 +682,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                             </div>
                             <span className="text-[10px] text-zinc-400 flex items-center gap-1 mt-0.5">
                               <MapPin className="w-3 h-3 text-zinc-400 shrink-0" />
-                              <span className="line-clamp-1">{biz.city || biz.address || 'Suva, Fiji'}</span>
+                              <span className="line-clamp-1">{biz.city || biz.address || 'Fiji'}</span>
                             </span>
                           </div>
                         </div>
@@ -722,7 +722,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                           <span className="text-[10px] text-zinc-400 block font-medium">Starting from</span>
                           <span className="text-xs font-bold text-zinc-900 font-mono">
                             {biz.startingRate != null
-                              ? <>{biz.currency || 'FJD'} ${biz.startingRate.toFixed(2)}<span className="text-[10px] text-zinc-400 font-normal">/{biz.rateUnit || 'Hour'}</span></>
+                              ? <>{biz.currency || 'FJD'} ${biz.startingRate.toFixed(2)}<span className="text-[10px] text-zinc-400 font-normal">/{biz.rateUnit || 'hour'}</span></>
                               : 'Ask for a quote'}
                           </span>
                         </div>
@@ -732,12 +732,12 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       <div className="flex items-center gap-1.5 text-[9px] font-semibold text-zinc-400">
                         <span>Accepts:</span>
                         {biz.mPaisaId && (
-                          <span className="bg-red-50 text-red-700 px-1.5 py-0.2 rounded border border-red-200">M-Paisa</span>
+                          <span className="bg-red-50 text-red-700 px-1.5 py-0.2 rounded border border-red-200">M-PAiSA</span>
                         )}
                         {biz.myCashId && (
                           <span className="bg-sky-50 text-sky-700 px-1.5 py-0.2 rounded border border-sky-200">MyCash</span>
                         )}
-                        <span className="bg-zinc-100 text-zinc-600 px-1.5 py-0.2 rounded">Bank Wire</span>
+                        <span className="bg-zinc-100 text-zinc-600 px-1.5 py-0.2 rounded">Bank transfer</span>
                       </div>
                     </div>
 
@@ -748,7 +748,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         onClick={() => setSelectedBusinessForProfile(biz)}
                         className="flex-1 px-3 py-2 bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 rounded-xl text-xs font-bold transition-all text-center"
                       >
-                        View Profile
+                        View profile
                       </button>
 
                       <button
@@ -756,7 +756,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         onClick={() => handleOpenBookingModal(biz)}
                         className="flex-1 px-3 py-2 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs"
                       >
-                        <span>Book Service</span>
+                        <span>Request booking</span>
                         <ArrowUpRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -773,22 +773,22 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-bold text-zinc-900">Received Client Inquiries & Bookings</h2>
+              <h2 className="text-base font-bold text-zinc-900">Received bookings</h2>
               <p className="text-xs text-zinc-500">
-                Manage incoming client bookings submitted through the Fiji Service Directory.
+                Booking requests sent to you through the directory. Accept or decline each one.
               </p>
             </div>
             <span className="bg-sky-50 text-sky-700 text-xs font-bold px-3 py-1 rounded-lg border border-sky-200">
-              {receivedBookings.length} Total Bookings
+              {receivedBookings.length} total
             </span>
           </div>
 
           {receivedBookings.length === 0 ? (
             <div className="bg-white rounded-2xl p-10 border border-zinc-200 text-center space-y-3">
               <Calendar className="w-10 h-10 text-zinc-300 mx-auto" />
-              <h3 className="text-sm font-bold text-zinc-800">No Booking Inquiries Yet</h3>
+              <h3 className="text-sm font-bold text-zinc-800">No booking requests yet</h3>
               <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                Make sure your business profile is set to Public so clients across Fiji can discover your services and book.
+                List your business in the directory so clients can find you and send a request.
               </p>
             </div>
           ) : (
@@ -807,7 +807,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         <h3 className="font-bold text-sm text-zinc-900">{booking.serviceName}</h3>
                       </div>
                       <span className="text-[10px] text-zinc-400 mt-0.5 block">
-                        Received on {new Date(booking.createdAt).toLocaleDateString()} for appointment on <strong>{booking.bookingDate} at {booking.preferredTime}</strong>
+                        Received {new Date(booking.createdAt).toLocaleDateString()} for <strong>{booking.bookingDate} at {booking.preferredTime}</strong>
                       </span>
                     </div>
 
@@ -826,19 +826,19 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   {/* Client details & Scope */}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                     <div className="bg-zinc-50 p-3 rounded-xl space-y-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Client Contact</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Client</span>
                       <p className="font-bold text-zinc-900">{booking.clientName}</p>
                       <p className="text-zinc-600">{booking.clientEmail}</p>
                       <p className="text-zinc-600 font-mono">{booking.clientPhone}</p>
                     </div>
 
                     <div className="bg-zinc-50 p-3 rounded-xl space-y-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Meeting & Payment</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Meeting and payment</span>
                       <p className="font-semibold text-zinc-800 capitalize">
-                        Format: {booking.meetingType?.replace('_', ' ') || 'Zoom Video'}
+                        Format: {booking.meetingType?.replace('_', ' ') || 'Zoom video'}
                       </p>
                       <p className="text-zinc-600">
-                        Payment: <strong className="uppercase">{booking.paymentMethod || 'M-Paisa'}</strong>
+                        Payment: <strong className="uppercase">{booking.paymentMethod || 'M-PAiSA'}</strong>
                       </p>
                       <p className="font-mono font-bold text-emerald-600">
                         Budget: FJD ${(booking.budgetEstimate || 0).toFixed(2)}
@@ -846,7 +846,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     </div>
 
                     <div className="bg-zinc-50 p-3 rounded-xl space-y-1">
-                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Project Scope</span>
+                      <span className="text-[10px] font-bold text-zinc-400 uppercase block">Details</span>
                       <p className="text-zinc-700 text-[11px] leading-relaxed line-clamp-3">
                         {booking.projectScope}
                       </p>
@@ -869,7 +869,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                           onClick={() => handleUpdateBookingStatus(booking.id, 'accepted')}
                           className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-all shadow-xs"
                         >
-                          Accept Booking
+                          Accept
                         </button>
                       </>
                     )}
@@ -881,16 +881,16 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         className="px-3.5 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-lg transition-all flex items-center gap-1 shadow-xs"
                       >
                         <FileText className="w-3.5 h-3.5" />
-                        <span>Generate Fiji Tax Invoice</span>
+                        <span>Create invoice</span>
                       </button>
                     )}
 
                     <a
-                      href={`mailto:${booking.clientEmail}?subject=Frilensa Booking Confirmation - ${booking.bookingRef}`}
+                      href={`mailto:${booking.clientEmail}?subject=Your booking ${booking.bookingRef}`}
                       className="px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-semibold rounded-lg transition-all flex items-center gap-1"
                     >
                       <Mail className="w-3.5 h-3.5" />
-                      <span>Email Client</span>
+                      <span>Email client</span>
                     </a>
                   </div>
                 </div>
@@ -904,24 +904,24 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
       {activeTab === 'my_bookings' && (
         <div className="space-y-4">
           <div>
-            <h2 className="text-base font-bold text-zinc-900">My Outbound Provider Bookings</h2>
+            <h2 className="text-base font-bold text-zinc-900">My bookings</h2>
             <p className="text-xs text-zinc-500">
-              Services and appointments you booked with other verified Fiji service providers.
+              Booking requests you sent to other businesses in the directory.
             </p>
           </div>
 
           {outboundBookings.length === 0 ? (
             <div className="bg-white rounded-2xl p-10 border border-zinc-200 text-center space-y-3">
               <Clock className="w-10 h-10 text-zinc-300 mx-auto" />
-              <h3 className="text-sm font-bold text-zinc-800">No Outbound Bookings</h3>
+              <h3 className="text-sm font-bold text-zinc-800">No bookings yet</h3>
               <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                Browse the directory to discover talented Fiji consultants, photographers, and developers.
+                Browse the directory to find a business and send a booking request.
               </p>
               <button
                 onClick={() => setActiveTab('directory')}
                 className="px-4 py-2 bg-sky-600 text-white text-xs font-bold rounded-xl shadow-xs"
               >
-                Browse Directory
+                Browse directory
               </button>
             </div>
           ) : (
@@ -949,8 +949,8 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                   <div className="text-xs text-zinc-600 space-y-1">
                     <p><strong>Service:</strong> {booking.serviceName}</p>
-                    <p><strong>Scheduled Date:</strong> {booking.bookingDate} at {booking.preferredTime}</p>
-                    <p><strong>Project Scope:</strong> {booking.projectScope}</p>
+                    <p><strong>Requested date:</strong> {booking.bookingDate} at {booking.preferredTime}</p>
+                    <p><strong>Details:</strong> {booking.projectScope}</p>
                   </div>
                   {(booking.status === 'pending' || booking.status === 'accepted') && (
                     <div className="pt-2 flex justify-end">
@@ -1022,7 +1022,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                 )}
 
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">About the Practice</span>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">About</span>
                   <p className="text-xs text-zinc-600 leading-relaxed">
                     {selectedBusinessForProfile.directoryBio}
                   </p>
@@ -1030,7 +1030,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                 {/* Specialties */}
                 <div className="space-y-2">
-                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Core Capabilities & Skills</span>
+                  <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider block">Skills</span>
                   <div className="flex flex-wrap gap-2">
                     {(selectedBusinessForProfile.directorySpecialties || []).map((spec, i) => (
                       <span key={i} className="bg-zinc-100 text-zinc-800 text-xs font-semibold px-3 py-1 rounded-lg">
@@ -1048,11 +1048,11 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     {selectedBusinessForProfile.phone && <p className="text-zinc-500 text-[11px]">{selectedBusinessForProfile.phone}</p>}
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-zinc-400 uppercase">Payment Methods</span>
+                    <span className="text-[10px] font-bold text-zinc-400 uppercase">Payment methods</span>
                     <div className="flex flex-wrap gap-1.5">
                       {selectedBusinessForProfile.mPaisaId && (
                         <span className="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]">
-                          M-Paisa #{selectedBusinessForProfile.mPaisaId}
+                          M-PAiSA #{selectedBusinessForProfile.mPaisaId}
                         </span>
                       )}
                       {selectedBusinessForProfile.myCashId && (
@@ -1061,7 +1061,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                         </span>
                       )}
                       <span className="bg-zinc-200 text-zinc-800 font-bold px-2 py-0.5 rounded text-[10px]">
-                        BSP / Westpac Wire
+                        Bank transfer
                       </span>
                     </div>
                   </div>
@@ -1073,7 +1073,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     href={`tel:${selectedBusinessForProfile.phone}`}
                     className="px-4 py-2.5 bg-zinc-100 hover:bg-zinc-200 text-zinc-800 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5"
                   >
-                    <Phone className="w-3.5 h-3.5" /> Call Direct
+                    <Phone className="w-3.5 h-3.5" /> Call
                   </a>
                   <button
                     type="button"
@@ -1084,7 +1084,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                     }}
                     className="flex-1 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 shadow-sm"
                   >
-                    <span>Request Booking / Proposal</span>
+                    <span>Request booking</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -1107,9 +1107,9 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
               <div className="p-6 space-y-5">
                 <div className="flex items-start justify-between pb-3 border-b border-zinc-100">
                   <div>
-                    <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider block">Fiji Direct Booking</span>
+                    <span className="text-[10px] font-bold text-sky-600 uppercase tracking-wider block">Booking request</span>
                     <h3 className="text-base font-bold text-zinc-900">
-                      Book Service with {selectedBusinessForBooking.name}
+                      Request a booking with {selectedBusinessForBooking.name}
                     </h3>
                   </div>
                   <button
@@ -1124,13 +1124,13 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   
                   {/* Service selection */}
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Service or Scope Name *</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Service *</label>
                     <input
                       type="text"
                       required
                       value={bookingServiceName}
                       onChange={(e) => setBookingServiceName(e.target.value)}
-                      placeholder="e.g., UI/UX Design Sprint, FRCS Tax Audit, 4K Drone Shoot"
+                      placeholder="e.g. Logo design, tax return, drone shoot"
                       className="w-full bg-white border border-zinc-200 rounded-xl py-2 px-3 text-xs mt-1 text-zinc-900 font-medium focus:outline-none focus:border-sky-600"
                     />
                   </div>
@@ -1138,7 +1138,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   {/* Date & Time */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <DateInput
-                      label="Preferred Date"
+                      label="Preferred date"
                       required
                       min={new Date().toISOString().split('T')[0]}
                       value={bookingDate}
@@ -1147,13 +1147,13 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       inputClassName="bg-white"
                       customPresets={[
                         { label: 'Tomorrow', special: 'tomorrow' },
-                        { label: '+3 Days', daysOffset: 3 },
-                        { label: '+1 Week', daysOffset: 7 },
-                        { label: '+2 Weeks', daysOffset: 14 },
+                        { label: '+3 days', daysOffset: 3 },
+                        { label: '+1 week', daysOffset: 7 },
+                        { label: '+2 weeks', daysOffset: 14 },
                       ]}
                     />
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">Preferred Time</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-1">Preferred time</label>
                       <select
                         value={bookingTime}
                         onChange={(e) => setBookingTime(e.target.value)}
@@ -1170,7 +1170,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                   {/* Meeting Format */}
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Meeting Format</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Meeting type</label>
                     <div className="grid grid-cols-3 gap-2 mt-1">
                       <button
                         type="button"
@@ -1179,7 +1179,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                           bookingMeetingType === 'zoom_video' ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-zinc-50 border-zinc-200 text-zinc-600'
                         }`}
                       >
-                        Zoom Video
+                        Zoom video
                       </button>
                       <button
                         type="button"
@@ -1188,7 +1188,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                           bookingMeetingType === 'in_person' ? 'bg-sky-50 border-sky-300 text-sky-800' : 'bg-zinc-50 border-zinc-200 text-zinc-600'
                         }`}
                       >
-                        In-Person
+                        In person
                       </button>
                       <button
                         type="button"
@@ -1205,7 +1205,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                   {/* Client Info */}
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Full Name *</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your name *</label>
                       <input
                         type="text"
                         required
@@ -1215,7 +1215,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your Email *</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Your email *</label>
                       <input
                         type="email"
                         required
@@ -1228,7 +1228,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                   <div className="grid grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Mobile Phone (M-Paisa/SMS)</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Mobile number</label>
                       <input
                         type="tel"
                         value={bookingClientPhone}
@@ -1237,7 +1237,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Budget Estimate (FJD $)</label>
+                      <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Budget (FJD)</label>
                       <input
                         type="number"
                         min={0}
@@ -1251,26 +1251,26 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
 
                   {/* Payment channel preference */}
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Settlement Method</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Payment method</label>
                     <select
                       value={bookingPaymentMethod}
                       onChange={(e) => setBookingPaymentMethod(e.target.value as any)}
                       className="w-full bg-white border border-zinc-200 rounded-xl py-2 px-3 text-xs mt-1 text-zinc-900 font-medium focus:outline-none focus:border-sky-600"
                     >
-                      <option value="mpaisa">M-Paisa Instant Mobile Wallet</option>
-                      <option value="mycash">Digicel MyCash</option>
-                      <option value="bank_transfer">BSP / Westpac Wire Transfer</option>
+                      <option value="mpaisa">M-PAiSA</option>
+                      <option value="mycash">MyCash</option>
+                      <option value="bank_transfer">Bank transfer</option>
                     </select>
                   </div>
 
                   {/* Project Scope */}
                   <div>
-                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Project Details & Requirements</label>
+                    <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Details</label>
                     <textarea
                       rows={3}
                       value={bookingScope}
                       onChange={(e) => setBookingScope(e.target.value)}
-                      placeholder="Briefly describe your objectives, deliverables, timeline, or any questions..."
+                      placeholder="What you need, by when, and any questions"
                       className="w-full bg-white border border-zinc-200 rounded-xl p-3 text-xs mt-1 text-zinc-900 font-medium focus:outline-none focus:border-sky-600"
                     />
                   </div>
@@ -1287,7 +1287,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
                       type="submit"
                       className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-white rounded-xl text-xs font-bold shadow-sm transition-all"
                     >
-                      Confirm Booking Request
+                      Send request
                     </button>
                   </div>
                 </form>

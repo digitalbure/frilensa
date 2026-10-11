@@ -80,10 +80,10 @@ export default function ClientAddEditModal({
             </div>
             <div>
               <h3 className="text-base font-semibold text-slate-900 tracking-tight">
-                {editingClient ? 'Edit Client Profile' : 'Register New Client'}
+                {editingClient ? 'Edit client' : 'Add client'}
               </h3>
               <p className="text-xs text-slate-500">
-                {editingClient ? 'Update organization identity, tax & currency' : 'Add organization to your CRM directory'}
+                {editingClient ? 'Update contact, TIN and currency' : 'Add a client to invoice and quote'}
               </p>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function ClientAddEditModal({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-              Client / Organization Name *
+              Client name *
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-slate-400">
@@ -109,7 +109,7 @@ export default function ClientAddEditModal({
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. The Church of Jesus Christ of Latter-day Saints / Carpenters Fiji"
+                placeholder="e.g. Coral Coast Rentals"
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:bg-white focus:outline-none focus:border-slate-900 text-slate-900 placeholder-slate-400 transition-all font-medium"
               />
             </div>
@@ -118,7 +118,7 @@ export default function ClientAddEditModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Contact Representative
+                Contact person
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-400">
@@ -136,7 +136,7 @@ export default function ClientAddEditModal({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Fiji Tax TIN
+                TIN
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-400">
@@ -156,7 +156,7 @@ export default function ClientAddEditModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Email Address
+                Email
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-400">
@@ -174,7 +174,7 @@ export default function ClientAddEditModal({
 
             <div>
               <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-                Phone Number
+                Phone
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-2.5 text-slate-400">
@@ -193,7 +193,7 @@ export default function ClientAddEditModal({
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1">
-              Billing Address
+              Billing address
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-slate-400">
@@ -211,8 +211,8 @@ export default function ClientAddEditModal({
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase tracking-wider mb-1 flex items-center justify-between">
-              <span>Billing Currency</span>
-              <span className="text-slate-400 font-normal normal-case text-[11px]">Applied to invoices & quotes</span>
+              <span>Billing currency</span>
+              <span className="text-slate-400 font-normal normal-case text-[11px]">Used on invoices and quotes</span>
             </label>
             <div className="relative">
               <span className="absolute left-3 top-2.5 text-slate-400">
@@ -244,7 +244,7 @@ export default function ClientAddEditModal({
               type="submit"
               className="flex-1 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl text-xs transition-all shadow-xs active:scale-98 cursor-pointer"
             >
-              {editingClient ? 'Save Changes' : 'Register Client'}
+              {editingClient ? 'Save changes' : 'Add client'}
             </button>
           </div>
         </form>

@@ -65,19 +65,19 @@ export async function getEmailServiceConfig(): Promise<EmailServiceConfig> {
         id: 'sendgrid',
         name: 'Twilio SendGrid API',
         active: false,
-        description: 'Requires SENDGRID_API_KEY environment variable'
+        description: 'Needs SENDGRID_API_KEY in the server environment'
       },
       {
         id: 'firebase_extension',
-        name: 'Firebase Trigger Email Extension',
+        name: 'Email extension',
         active: false,
-        description: 'Ready via Firestore "mail" collection for automated background dispatch'
+        description: 'Not used'
       },
       {
         id: 'preview_mode',
-        name: 'Preview & Simulated Dispatch',
+        name: 'Preview only',
         active: true,
-        description: 'Generates full responsive HTML email templates with live visual preview'
+        description: 'Emails are not sent until SendGrid is set up'
       }
     ]
   };
@@ -139,7 +139,7 @@ export async function sendDocumentEmail(options: SendDocumentEmailOptions): Prom
 
     serverResult = await response.json();
     if (!response.ok) {
-      throw new Error(serverResult?.error || `Server responded with status ${response.status}`);
+      throw new Error(serverResult?.error || `Couldn't send this document (error ${response.status}). Please try again.`);
     }
   } catch (err: any) {
     console.error('Email send server request error:', err);
@@ -201,13 +201,13 @@ export async function sendTestEmail(recipientEmail: string, businessName?: strin
 
     const data = await res.json();
     if (!res.ok) {
-      throw new Error(data.error || 'Failed to send test email');
+      throw new Error(data.error || "Couldn't send the test email.");
     }
     return data;
   } catch (err: any) {
     return {
       success: false,
-      message: err.message || 'Error executing test email'
+      message: err.message || "Couldn't send the test email. Check your connection and try again."
     };
   }
 }

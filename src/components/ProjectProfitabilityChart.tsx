@@ -145,14 +145,14 @@ export default function ProjectProfitabilityChart({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-bold text-slate-800 tracking-tight font-sans">
-                Project Profitability & Cost Analytics
+                Project profitability
               </h3>
               <span className="bg-sky-100 text-sky-700 text-[9px] font-extrabold px-2 py-0.5 rounded-full border border-sky-200/60">
-                {projects.length} {projects.length === 1 ? 'Project' : 'Projects'}
+                {projects.length} {projects.length === 1 ? 'project' : 'projects'}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              Estimated vs actual costs, expense allocations, and billable hour revenue yield.
+              Budget against actual costs, revenue and billable hours.
             </p>
           </div>
         </div>
@@ -161,7 +161,7 @@ export default function ProjectProfitabilityChart({
           <button
             type="button"
             className="p-1 text-slate-400 hover:text-slate-600 rounded-lg transition-colors"
-            title={isCollapsed ? "Expand Analytics" : "Collapse Analytics"}
+            title={isCollapsed ? "Expand" : "Collapse"}
           >
             {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>
@@ -173,7 +173,7 @@ export default function ProjectProfitabilityChart({
           {/* Key KPI Stats Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="bg-slate-50/80 border border-slate-150/60 p-3 rounded-xl">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Total Est. Budget</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Estimated budget</span>
               <span className="text-sm font-extrabold text-slate-800 font-mono mt-0.5 block">
                 {defaultCurrency} ${portfolioSummary.totalEstimated.toLocaleString()}
               </span>
@@ -181,15 +181,15 @@ export default function ProjectProfitabilityChart({
             </div>
 
             <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-xl">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-700 block">Actual Costs / Expenses</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-700 block">Actual costs</span>
               <span className="text-sm font-extrabold text-amber-900 font-mono mt-0.5 block">
                 {defaultCurrency} ${portfolioSummary.totalActual.toLocaleString()}
               </span>
-              <span className="text-[8.5px] text-amber-700/80 mt-0.5 block">Incurred expenditures</span>
+              <span className="text-[8.5px] text-amber-700/80 mt-0.5 block">Expenses so far</span>
             </div>
 
             <div className="bg-emerald-50/60 border border-emerald-200/60 p-3 rounded-xl">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 block">Net Gross Margin</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 block">Gross profit</span>
               <span className="text-sm font-extrabold text-emerald-900 font-mono mt-0.5 block flex items-center gap-1">
                 <span>{defaultCurrency} ${portfolioSummary.totalProfit.toLocaleString()}</span>
                 <span className="text-[10px] font-bold px-1 rounded bg-emerald-200/70 text-emerald-900">
@@ -200,12 +200,12 @@ export default function ProjectProfitabilityChart({
             </div>
 
             <div className="bg-sky-50/60 border border-sky-200/60 p-3 rounded-xl">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-sky-700 block">Billable Hours Yield</span>
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-sky-700 block">Billable hours</span>
               <span className="text-sm font-extrabold text-sky-900 font-mono mt-0.5 block flex items-center gap-1">
                 <span>{portfolioSummary.totalHours} hrs</span>
                 <span className="text-[10px] font-normal text-sky-700">(@ ${portfolioSummary.avgRealization}/hr)</span>
               </span>
-              <span className="text-[8.5px] text-sky-700/80 mt-0.5 block">Tracked time realization</span>
+              <span className="text-[8.5px] text-sky-700/80 mt-0.5 block">Revenue per tracked hour</span>
             </div>
           </div>
 
@@ -223,7 +223,7 @@ export default function ProjectProfitabilityChart({
                 }`}
               >
                 <BarChart3 className="w-3.5 h-3.5 text-sky-600" />
-                <span>Estimated vs Actual Costs</span>
+                <span>Budget vs actual</span>
               </button>
 
               <button
@@ -236,7 +236,7 @@ export default function ProjectProfitabilityChart({
                 }`}
               >
                 <Clock className="w-3.5 h-3.5 text-emerald-600" />
-                <span>Billable Hours vs Revenue</span>
+                <span>Hours vs revenue</span>
               </button>
             </div>
 
@@ -248,10 +248,10 @@ export default function ProjectProfitabilityChart({
                 onChange={(e) => setSortBy(e.target.value as any)}
                 className="bg-slate-50 border border-slate-200 rounded-lg py-1 px-2 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500"
               >
-                <option value="profit">Highest Profit</option>
-                <option value="margin">Highest Margin %</option>
-                <option value="revenue">Highest Revenue</option>
-                <option value="hours">Most Tracked Hours</option>
+                <option value="profit">Highest profit</option>
+                <option value="margin">Highest margin %</option>
+                <option value="revenue">Highest revenue</option>
+                <option value="hours">Most hours</option>
               </select>
             </div>
           </div>
@@ -286,31 +286,31 @@ export default function ProjectProfitabilityChart({
                               <p className="font-bold text-sky-400 truncate">{item?.fullName || label}</p>
                               {item?.isForeign && (
                                 <span className="bg-sky-950 text-sky-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold border border-sky-800 shrink-0">
-                                  {item.currency} Project
+                                  {item.currency} project
                                 </span>
                               )}
                             </div>
                             <div className="flex justify-between text-slate-300">
-                              <span>Estimated Budget:</span>
+                              <span>Estimated budget:</span>
                               <div className="text-right">
                                 <span className="font-mono font-bold text-white">${item?.estimatedCost.toLocaleString()} {defaultCurrency}</span>
                                 {item?.isForeign && (
                                   <span className="block text-[9px] font-mono text-sky-300">
-                                    (Native: {item.currency} ${item.rawEstimatedCost.toLocaleString()})
+                                    (Original: {item.currency} ${item.rawEstimatedCost.toLocaleString()})
                                   </span>
                                 )}
                               </div>
                             </div>
                             <div className="flex justify-between text-amber-300">
-                              <span>Actual Incurred Cost:</span>
+                              <span>Actual cost:</span>
                               <span className="font-mono font-bold text-amber-300">${item?.actualCost.toLocaleString()} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-emerald-400">
-                              <span>Total Invoiced Revenue:</span>
+                              <span>Revenue:</span>
                               <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString()} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-800 font-semibold">
-                              <span>Gross Profit (Margin):</span>
+                              <span>Gross profit (margin):</span>
                               <span className={`font-mono ${(item?.grossProfit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                                 ${item?.grossProfit.toLocaleString()} ({item?.profitMargin}%)
                               </span>
@@ -324,8 +324,8 @@ export default function ProjectProfitabilityChart({
                   <Legend 
                     wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} 
                   />
-                  <Bar dataKey="estimatedCost" name="Estimated Budget ($)" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                  <Bar dataKey="actualCost" name="Actual Cost ($)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="estimatedCost" name="Estimated budget ($)" fill="#0284c7" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  <Bar dataKey="actualCost" name="Actual cost ($)" fill="#f59e0b" radius={[4, 4, 0, 0]} maxBarSize={32} />
                   <Bar dataKey="invoicedRevenue" name="Revenue ($)" fill="#10b981" radius={[4, 4, 0, 0]} maxBarSize={32} />
                 </BarChart>
               </ResponsiveContainer>
@@ -365,20 +365,20 @@ export default function ProjectProfitabilityChart({
                               <p className="font-bold text-sky-400 truncate">{item?.fullName || label}</p>
                               {item?.isForeign && (
                                 <span className="bg-sky-950 text-sky-300 text-[9px] px-1.5 py-0.5 rounded font-mono font-bold border border-sky-800 shrink-0">
-                                  {item.currency} Project
+                                  {item.currency} project
                                 </span>
                               )}
                             </div>
                             <div className="flex justify-between text-sky-300">
-                              <span>Billable Tracked Hours:</span>
+                              <span>Tracked hours:</span>
                               <span className="font-mono font-bold text-white">{item?.trackedHours} hrs</span>
                             </div>
                             <div className="flex justify-between text-emerald-400">
-                              <span>Recognized / Invoiced Revenue:</span>
+                              <span>Revenue:</span>
                               <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString()} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-800">
-                              <span>Hourly Realization:</span>
+                              <span>Revenue per hour:</span>
                               <span className="font-mono font-bold text-amber-300">${item?.hourlyRealization}/hr ({defaultCurrency})</span>
                             </div>
                           </div>
@@ -388,7 +388,7 @@ export default function ProjectProfitabilityChart({
                     }}
                   />
                   <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }} />
-                  <Bar yAxisId="left" dataKey="trackedHours" name="Billable Hours (hrs)" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  <Bar yAxisId="left" dataKey="trackedHours" name="Billable hours" fill="#0ea5e9" radius={[4, 4, 0, 0]} maxBarSize={32} />
                   <Line yAxisId="right" type="monotone" dataKey="invoicedRevenue" name={`Revenue (${defaultCurrency} $)`} stroke="#10b981" strokeWidth={2.5} dot={{ r: 4, fill: '#10b981' }} />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -398,7 +398,7 @@ export default function ProjectProfitabilityChart({
           {/* Project Profit Margin Cards Strip */}
           <div className="space-y-1.5">
             <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">
-              Project Performance Breakdown (Valued in {defaultCurrency})
+              By project (in {defaultCurrency})
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
               {sortedMetrics.map((p) => {
@@ -426,13 +426,13 @@ export default function ProjectProfitabilityChart({
                         isModerate ? 'bg-amber-100 text-amber-800' :
                         'bg-rose-100 text-rose-800'
                       }`}>
-                        {p.profitMargin}% Margin
+                        {p.profitMargin}% margin
                       </span>
                     </div>
 
                     <div className="grid grid-cols-3 gap-1 text-[9px] pt-1 border-t border-slate-100 text-slate-500">
                       <div>
-                        <span className="text-[7.5px] text-slate-400 block uppercase">Base Est.</span>
+                        <span className="text-[7.5px] text-slate-400 block uppercase">Estimate</span>
                         <span className="font-mono font-bold text-slate-700">${p.estimatedCost}</span>
                       </div>
                       <div>

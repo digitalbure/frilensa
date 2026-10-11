@@ -79,14 +79,14 @@ export default function DesktopSidebar({
   ).length || 0;
 
   const navItems = [
-    { id: 'dashboard' as const, label: 'Dashboard Hub', icon: LayoutDashboard, badge: attentionCount > 0 ? `${attentionCount} new` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-    { id: 'billing' as const, label: 'Invoices & Billing', icon: Layers, badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} due` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-    { id: 'clients' as const, label: 'Clients CRM', icon: Users, badge: crmData.clients?.length ? `${crmData.clients.length}` : undefined, badgeColor: 'bg-slate-800 text-slate-300 border-slate-700' },
-    { id: 'projects' as const, label: 'Projects & Tasks', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
-    { id: 'services' as const, label: 'Finance & P&L', icon: Briefcase, badge: undefined },
-    { id: 'directory' as const, label: 'Service Directory', icon: Globe, badge: 'FRCS', badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-    { id: 'assistant' as const, label: 'AI Copilot', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
-    { id: 'settings' as const, label: 'Settings & Setup', icon: Settings, badge: undefined },
+    { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard, badge: attentionCount > 0 ? `${attentionCount} new` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    { id: 'billing' as const, label: 'Billing', icon: Layers, badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} due` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+    { id: 'clients' as const, label: 'Clients', icon: Users, badge: crmData.clients?.length ? `${crmData.clients.length}` : undefined, badgeColor: 'bg-slate-800 text-slate-300 border-slate-700' },
+    { id: 'projects' as const, label: 'Projects', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
+    { id: 'services' as const, label: 'Finance', icon: Briefcase, badge: undefined },
+    { id: 'directory' as const, label: 'Directory', icon: Globe, badge: undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
+    { id: 'assistant' as const, label: 'Assistant', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
+    { id: 'settings' as const, label: 'Settings', icon: Settings, badge: undefined },
   ];
 
   const handleSelectBusiness = (bizId: string) => {
@@ -148,7 +148,7 @@ export default function DesktopSidebar({
             </div>
             <div className="flex items-center gap-1 text-[10px] text-slate-400 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Firestore Synced</span>
+              <span>Synced</span>
             </div>
           </div>
         </div>
@@ -157,7 +157,7 @@ export default function DesktopSidebar({
           type="button"
           onClick={onOpenQuickPulse}
           className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-amber-400 transition-colors cursor-pointer border border-slate-700/60"
-          title="Activity Pulse"
+          title="Recent activity"
         >
           <Zap className="w-4 h-4" />
         </button>
@@ -167,7 +167,7 @@ export default function DesktopSidebar({
       <div className="p-3 lg:p-4 border-b border-slate-800/80 shrink-0 relative" ref={workspaceDropdownRef}>
         <div className="flex items-center justify-between px-2 mb-1.5">
           <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold">
-            Active Workspace
+            Business
           </span>
           <div className="flex items-center gap-2">
             <button
@@ -179,13 +179,13 @@ export default function DesktopSidebar({
                 }
               }}
               className="text-[9px] font-bold text-sky-400 hover:text-sky-300 flex items-center gap-0.5 cursor-pointer transition-colors"
-              title="Edit Active Venture Profile"
+              title="Edit business profile"
             >
               <Edit2 className="w-2.5 h-2.5" />
-              <span>Edit Profile</span>
+              <span>Edit profile</span>
             </button>
             <span className="text-[8.5px] font-semibold text-slate-500">
-              • {crmData.businesses?.length || 1} Ventures
+              • {crmData.businesses?.length || 1} businesses
             </span>
           </div>
         </div>
@@ -229,8 +229,7 @@ export default function DesktopSidebar({
               className="absolute left-3 right-3 top-full mt-1.5 bg-slate-900 rounded-2xl border border-slate-700 shadow-2xl p-2 z-50 space-y-1 ring-1 ring-black/60 backdrop-blur-md"
             >
               <div className="px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
-                <span>Switch or Edit Venture</span>
-                <span className="text-[8px] text-sky-400 font-normal">Multi-Model Studio</span>
+                <span>Switch business</span>
               </div>
               
               <div className="max-h-56 overflow-y-auto space-y-1 scrollbar-none">
@@ -277,7 +276,7 @@ export default function DesktopSidebar({
                               ? 'text-white/80 hover:text-white hover:bg-sky-700' 
                               : 'text-slate-400 hover:text-sky-300 hover:bg-slate-700'
                           }`}
-                          title={`Edit ${biz.name} profile & entity`}
+                          title={`Edit ${biz.name}`}
                         >
                           <Edit2 className="w-3 h-3" />
                         </button>
@@ -300,7 +299,7 @@ export default function DesktopSidebar({
                   className="flex-1 flex items-center gap-1.5 p-2 rounded-xl text-xs font-bold text-sky-400 hover:bg-sky-500/10 transition-colors cursor-pointer truncate"
                 >
                   <Plus className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Add Venture</span>
+                  <span className="truncate">Add business</span>
                 </button>
 
                 {activeBusiness && (
@@ -311,10 +310,10 @@ export default function DesktopSidebar({
                       setShowBizDropdown(false);
                     }}
                     className="flex items-center gap-1 p-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer shrink-0"
-                    title="Edit Active Venture"
+                    title="Edit business profile"
                   >
                     <Sliders className="w-3.5 h-3.5 text-sky-400" />
-                    <span>Edit Profile</span>
+                    <span>Edit profile</span>
                   </button>
                 )}
               </div>
@@ -324,7 +323,7 @@ export default function DesktopSidebar({
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none" aria-label="Desktop Sidebar Navigation">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-none" aria-label="Main navigation">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -367,13 +366,13 @@ export default function DesktopSidebar({
             className="flex-1 bg-gradient-to-r from-sky-600 to-teal-500 hover:from-sky-500 hover:to-teal-400 text-white font-bold py-2 px-2.5 rounded-xl text-[10.5px] flex items-center justify-center gap-1.5 transition-all shadow-md shadow-sky-500/10 cursor-pointer active:scale-95"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Invoice</span>
+            <span>New invoice</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenFxCalc}
-            title="Open Pacific FX & FJD Currency Converter"
+            title="Currency converter"
             className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-sky-300 border border-slate-700/60 transition-colors cursor-pointer"
           >
             <Calculator className="w-4 h-4" />
@@ -388,7 +387,7 @@ export default function DesktopSidebar({
             className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[10px] font-bold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 transition-all cursor-pointer"
           >
             <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5" /> Super Admin Portal
+              <ShieldCheck className="w-3.5 h-3.5" /> Admin
             </span>
             <ArrowUpRight className="w-3 h-3" />
           </button>
@@ -403,10 +402,10 @@ export default function DesktopSidebar({
           </div>
           <div className="min-w-0">
             <h5 className="text-xs font-bold text-slate-200 truncate">
-              {crmData.userProfile?.name || 'Fiji Consultant'}
+              {crmData.userProfile?.name || 'Your account'}
             </h5>
             <p className="text-[9.5px] text-slate-400 truncate">
-              {crmData.userProfile?.email || 'Active Session'}
+              {crmData.userProfile?.email || 'Signed in'}
             </p>
           </div>
         </div>
@@ -414,7 +413,7 @@ export default function DesktopSidebar({
         <button
           type="button"
           onClick={onSignOut}
-          title="Sign Out"
+          title="Sign out"
           className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer shrink-0"
         >
           <LogOut className="w-4 h-4" />
@@ -437,8 +436,8 @@ export default function DesktopSidebar({
                     <Building2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-white">Create New Venture</h3>
-                    <p className="text-[10px] text-slate-400">Set up a separate studio, brand, or SaaS workspace</p>
+                    <h3 className="text-sm font-bold text-white">Add a business</h3>
+                    <p className="text-[10px] text-slate-400">Keep a separate business or brand in its own workspace</p>
                   </div>
                 </div>
                 <button
@@ -453,7 +452,7 @@ export default function DesktopSidebar({
               <form onSubmit={handleCreateBusiness} className="space-y-3.5">
                 <div>
                   <label className="text-[10px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                    Business / Brand Name
+                    Business name
                   </label>
                   <input
                     type="text"
@@ -467,7 +466,7 @@ export default function DesktopSidebar({
 
                 <div>
                   <label className="text-[10px] uppercase tracking-wider font-bold text-slate-300 block mb-1.5">
-                    Venture Business Model
+                    Business type
                   </label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-1">
                     {ALL_VENTURE_TYPES.map((vType) => {
@@ -503,7 +502,7 @@ export default function DesktopSidebar({
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-[10px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                      Industry / Category Focus
+                      Category
                     </label>
                     <select
                       value={newBizCategory || VENTURE_MODELS[newBizType]?.defaultCategories[0] || ''}
@@ -520,7 +519,7 @@ export default function DesktopSidebar({
 
                   <div>
                     <label className="text-[10px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                      FRCS TIN (Optional)
+                      TIN (optional)
                     </label>
                     <input
                       type="text"
@@ -534,7 +533,7 @@ export default function DesktopSidebar({
 
                 <div>
                   <label className="text-[10px] uppercase tracking-wider font-bold text-slate-300 block mb-1">
-                    Theme Color Accent
+                    Brand colour
                   </label>
                   <div className="flex items-center gap-2">
                     {['#0284c7', '#059669', '#d97706', '#7c3aed', '#db2777', '#2563eb'].map(c => (
@@ -561,7 +560,7 @@ export default function DesktopSidebar({
                     type="submit"
                     className="flex-1 bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-xl text-xs cursor-pointer shadow-md"
                   >
-                    Create Workspace
+                    Add business
                   </button>
                 </div>
               </form>

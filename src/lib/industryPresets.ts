@@ -39,7 +39,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Filmmakers, Sound Recordists, Drone Pilots, Editors & Event AV',
     iconName: 'Clapperboard',
     colorTheme: '#e11d48',
-    description: 'Tailored for production crews, cinematographers, sound recordists, 4K drone operators, video editors, and live event AV specialists.',
+    description: 'For production crews, cinematographers, sound recordists, 4K drone operators, video editors, and live event AV specialists.',
     defaultUnits: [
       'Shoot Day',
       'Half Day',
@@ -155,7 +155,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Full-Stack Developers, UI/UX Designers, Mobile Engineers & SaaS',
     iconName: 'Code',
     colorTheme: '#0284c7',
-    description: 'Engineered for full-stack developers, mobile app creators, UI/UX designers, systems integrators, and SaaS ventures.',
+    description: 'For full-stack developers, mobile app creators, UI/UX designers, systems integrators, and SaaS ventures.',
     defaultUnits: [
       'Hour',
       'Day',
@@ -186,7 +186,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     sampleServices: [
       {
         name: 'Full-Stack Web Application Development (React / Node)',
-        description: 'End-to-end custom responsive web development, state management, and modern component architecture.',
+        description: 'Custom responsive web development, including state management and component architecture.',
         rate: 95,
         unit: 'Hour',
         type: 'service',
@@ -272,7 +272,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Lawyers, Doctors, Accountants, Architects & Management Consultants',
     iconName: 'Scale',
     colorTheme: '#4f46e5',
-    description: 'Designed for legal practitioners, doctors, medical specialists, certified accountants, architects, and executive consultants.',
+    description: 'For lawyers, doctors, medical specialists, certified accountants, architects, and executive consultants.',
     defaultUnits: [
       'Billable Hour',
       'Brief / Matter',
@@ -302,7 +302,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     sampleServices: [
       {
         name: 'Senior Legal Advisory & Statutory Review',
-        description: 'Comprehensive legal examination, corporate law advice, statutory compliance, and written legal opinions.',
+        description: 'Legal review, corporate law advice, statutory compliance and written legal opinions.',
         rate: 180,
         unit: 'Billable Hour',
         type: 'service',
@@ -311,7 +311,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       },
       {
         name: 'Commercial Contract Drafting & Terms Review',
-        description: 'Bespoke drafting of commercial agreements, partnership deeds, employment contracts, and NDA covenants.',
+        description: 'Drafting of commercial agreements, partnership deeds, employment contracts, and NDA covenants.',
         rate: 650,
         unit: 'Brief / Matter',
         type: 'service',
@@ -362,7 +362,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       scopeSections: [
         {
           title: 'Part 1: Due Diligence & Statutory Assessment',
-          description: 'Comprehensive review of legal liabilities and compliance status.',
+          description: 'Review of legal liabilities and compliance status.',
           cost: 1000,
           deliverables: ['Legal Risk Matrix', 'Statutory Compliance Audit Report']
         },
@@ -388,7 +388,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Auto Mechanics, Diagnostic Specialists, Panel Beaters & Fleet Maintenance',
     iconName: 'Wrench',
     colorTheme: '#d97706',
-    description: 'Tailored for auto mechanics, engine rebuilders, auto-electricians, panel beaters, tire shops, and fleet managers.',
+    description: 'For auto mechanics, engine rebuilders, auto-electricians, panel beaters, tire shops, and fleet managers.',
     defaultUnits: [
       'Labor Hour',
       'Flat Service Fee',
@@ -436,7 +436,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
       },
       {
         name: 'Heavy Duty Front & Rear Ceramic Brake Pad Kit',
-        description: 'Premium low-dust ceramic brake pads including shims, caliper clean, and hardware kit.',
+        description: 'Low-dust ceramic brake pads including shims, caliper clean, and hardware kit.',
         rate: 240,
         unit: 'Part / Item',
         type: 'service',
@@ -503,7 +503,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Builders, Carpenters, Electricians, Plumbers, Roofers & Civil Contractors',
     iconName: 'Hammer',
     colorTheme: '#059669',
-    description: 'Engineered for building contractors, carpenters, electricians, plumbers, tilers, painters, and site supervisors.',
+    description: 'For building contractors, carpenters, electricians, plumbers, tilers, painters, and site supervisors.',
     defaultUnits: [
       'Trade Hour',
       'Day',
@@ -619,7 +619,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Brand Designers, Photographers, Social Marketers & Event Planners',
     iconName: 'Sparkles',
     colorTheme: '#7c3aed',
-    description: 'Tailored for graphic designers, commercial photographers, social media creators, event producers, and entertainment MCs.',
+    description: 'For graphic designers, commercial photographers, social media creators, event producers, and entertainment MCs.',
     defaultUnits: [
       'Hour',
       'Day',
@@ -684,7 +684,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     ],
     sampleProject: {
       name: 'Resort Brand Re-launch & Digital Media Suite',
-      description: 'Comprehensive brand overhaul, menu designs, commercial photography library, and social launch rollout.',
+      description: 'Brand refresh, menu designs, commercial photography library, and social launch rollout.',
       rateType: 'flat',
       defaultCost: 3200,
       tasks: [
@@ -723,7 +723,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     tagline: 'Strategic Advisors, Translators, Researchers & Solo Freelancers',
     iconName: 'Briefcase',
     colorTheme: '#334155',
-    description: 'Versatile foundation for solo freelancers, market researchers, translators, virtual assistants, and business advisors.',
+    description: 'For solo freelancers, market researchers, translators, virtual assistants, and business advisors.',
     defaultUnits: [
       'Hour',
       'Day',
@@ -749,7 +749,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     sampleServices: [
       {
         name: 'Business Strategy & Operational Efficiency Consulting',
-        description: 'In-depth workflow analysis, profitability enhancement, systems optimization, and executive advice.',
+        description: 'Workflow review, ways to improve profit, better systems and advice for management.',
         rate: 90,
         unit: 'Hour',
         type: 'service',
@@ -786,7 +786,7 @@ export const INDUSTRY_PRESETS: IndustryPreset[] = [
     ],
     sampleProject: {
       name: 'Pacific Market Expansion Feasibility & Growth Plan',
-      description: 'Comprehensive market sizing, regulatory analysis, competitive benchmarking, and roadmap execution.',
+      description: 'Market sizing, regulatory analysis, competitive benchmarking, and roadmap execution.',
       rateType: 'flat',
       defaultCost: 2800,
       tasks: [

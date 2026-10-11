@@ -26,7 +26,7 @@ interface ClientPortalViewProps {
 // Shown only until the consultant's real business details load; never contains payment details.
 const LOADING_BUSINESS: Business = {
   id: '',
-  name: 'Client Portal',
+  name: 'Client portal',
   tin: '',
   address: '',
   email: '',
@@ -89,7 +89,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
       setSupportMessages(data.messages || []);
       setLoadError(null);
     } catch (err: any) {
-      setLoadError(err?.message || 'Could not load your portal. Please try again.');
+      setLoadError(err?.message || 'Couldn’t load your portal. Refresh the page to try again.');
       if (/expired|revoked/i.test(err?.message || '')) onSignOut();
     } finally {
       setLoading(false);
@@ -122,7 +122,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
       }
       triggerStatus('Quote accepted. Your consultant can see it now.', 'success');
     } catch (error: any) {
-      triggerStatus(error?.message || 'Failed to accept quote. Please try again.', 'error');
+      triggerStatus(error?.message || 'Couldn’t accept the quote. Try again.', 'error');
     }
   };
 
@@ -131,7 +131,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
     e.preventDefault();
     if (!selectedDoc) return;
     if (!paymentTx.trim()) {
-      triggerStatus('Please enter the transaction reference.', 'error');
+      triggerStatus('Enter the payment reference.', 'error');
       return;
     }
 
@@ -144,7 +144,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
       setPaymentTx('');
       triggerStatus('Payment reported. Your consultant will confirm it once received.', 'success');
     } catch (error: any) {
-      triggerStatus(error?.message || 'Failed to report payment. Try again.', 'error');
+      triggerStatus(error?.message || 'Couldn’t report the payment. Try again.', 'error');
     }
   };
 
@@ -156,11 +156,11 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
     setSendingSupport(true);
     try {
       const generatedSubject = msgSubject.trim() || (
-        msgCategory === 'invoice_inquiry' ? `Billing Inquiry regarding ${msgDocRef || 'Invoice'}` :
-        msgCategory === 'quote_question' ? `Quote Question regarding ${msgDocRef || 'Quote'}` :
-        msgCategory === 'payment_proof' ? `Payment Proof Submission ${msgDocRef ? `(${msgDocRef})` : ''}` :
-        msgCategory === 'urgent_support' ? `URGENT Support Ticket` :
-        `General Client Inquiry`
+        msgCategory === 'invoice_inquiry' ? `Question about ${msgDocRef || 'an invoice'}` :
+        msgCategory === 'quote_question' ? `Question about ${msgDocRef || 'a quote'}` :
+        msgCategory === 'payment_proof' ? `Payment details ${msgDocRef ? `(${msgDocRef})` : ''}` :
+        msgCategory === 'urgent_support' ? `Urgent request` :
+        `General question`
       );
 
       const saved = await sendPortalMessage(session, {
@@ -177,7 +177,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
       setSupportTab('history');
       triggerStatus('Your message was sent to your consultant.', 'success');
     } catch (err: any) {
-      triggerStatus(err?.message || 'Failed to send message. Please retry.', 'error');
+      triggerStatus(err?.message || 'Couldn’t send your message. Try again.', 'error');
     } finally {
       setSendingSupport(false);
     }
@@ -185,7 +185,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
   // Handlers for Overview & Document interactions
   const handleInquireAboutProject = (project: Project) => {
-    setMsgSubject(`Project Inquiry: ${project.name}`);
+    setMsgSubject(`Question about ${project.name}`);
     setMsgCategory('general');
     setMsgDocRef(`Project: ${project.name} (${project.id})`);
     setSupportTab('new_request');
@@ -194,7 +194,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
   const handleInquireAboutDoc = (docItem: any) => {
     setSelectedDoc(null);
-    setMsgSubject(`Inquiry on ${docItem.type.toUpperCase()} #${docItem.documentNumber}`);
+    setMsgSubject(`Question about ${docItem.type.toUpperCase()} #${docItem.documentNumber}`);
     setMsgCategory(docItem.type === 'quote' ? 'quote_question' : 'invoice_inquiry');
     setMsgDocRef(`${docItem.type.toUpperCase()} #${docItem.documentNumber}`);
     setSupportTab('new_request');
@@ -221,7 +221,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
       setSupportMessages(prev => [...prev, saved]);
       setChatInputText('');
     } catch (err: any) {
-      triggerStatus(err?.message || 'Failed to send message.', 'error');
+      triggerStatus(err?.message || 'Couldn’t send your message. Try again.', 'error');
     } finally {
       setSendingSupport(false);
     }
@@ -277,7 +277,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
     size: 'sm' | 'md' | 'lg' = 'md'
   ) => {
     const color = biz.colorTheme || '#0284c7';
-    const name = biz.name || 'Business Venture';
+    const name = biz.name || 'Business';
     const logoType = biz.logoType || (biz.logoUrl ? 'image' : 'symbol');
 
     if (logoType === 'image' && biz.logoUrl) {
@@ -377,7 +377,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
           style={{ backgroundColor: brandColor }}
         >
           <span className="flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> FJ-CLIENT-SECURE
+            <ShieldCheck className="w-3 h-3" /> Client portal
           </span>
           <span className="truncate max-w-[180px] font-sans text-[8.5px] opacity-90">
             {primaryBusiness.name}
@@ -421,14 +421,14 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   ? 'bg-zinc-100 border-zinc-300 text-zinc-900' 
                   : 'bg-white border-zinc-200 text-zinc-500 hover:text-zinc-800'
               }`}
-              title="Business Information & Remittance Details"
+              title="Business and payment details"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
             <button 
               onClick={onSignOut}
               className="p-1.5 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg border border-transparent hover:border-red-100 transition-all"
-              title="Log Out"
+              title="Sign out"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>
@@ -446,7 +446,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
             >
               <div className="flex items-center justify-between pb-1.5 border-b border-zinc-100">
                 <span className="text-[9px] font-bold uppercase tracking-wider text-zinc-400">
-                  Primary Business Profile & Remittance
+                  Business details
                 </span>
                 <span className="text-[9px] font-mono font-bold text-zinc-500">
                   TIN: {primaryBusiness.tin || 'N/A'}
@@ -476,16 +476,16 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
               {/* Remittance Channels */}
               <div className="bg-zinc-50 rounded-xl p-2.5 border border-zinc-150 space-y-1.5 text-[9.5px]">
-                <span className="font-bold text-zinc-800 block uppercase tracking-wide">Direct Settlement Channels</span>
+                <span className="font-bold text-zinc-800 block uppercase tracking-wide">Pay to</span>
                 <div className="flex flex-wrap gap-2">
                   {primaryBusiness.mPaisaId && (
                     <span className="bg-white px-2 py-1 rounded border border-zinc-200 text-zinc-800 font-mono font-semibold">
-                      M-Paisa Business: <strong>{primaryBusiness.mPaisaId}</strong>
+                      M-PAiSA: <strong>{primaryBusiness.mPaisaId}</strong>
                     </span>
                   )}
                   {primaryBusiness.myCashId && (
                     <span className="bg-white px-2 py-1 rounded border border-zinc-200 text-zinc-800 font-mono font-semibold">
-                      MyCash ID: <strong>{primaryBusiness.myCashId}</strong>
+                      MyCash: <strong>{primaryBusiness.myCashId}</strong>
                     </span>
                   )}
                 </div>
@@ -608,10 +608,10 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 <div className="relative z-10 flex items-center justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-bold text-white font-display">
-                      Document & Invoicing Registry
+                      Your documents
                     </h3>
                     <p className="text-[10px] text-white/80 mt-0.5">
-                      Full repository of official Fiji VAT tax invoices, receipts, and quotes.
+                      Invoices, receipts and quotes from {primaryBusiness.name}.
                     </p>
                   </div>
                   <div className="shrink-0 bg-white/10 p-1.5 rounded-xl backdrop-blur-xs border border-white/20">
@@ -624,7 +624,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-white p-3.5 rounded-xl border border-zinc-100 shadow-xs text-center">
                   <span className="text-[8.5px] text-zinc-400 font-bold block uppercase tracking-wider">
-                    Outstanding Balance
+                    Balance owing
                   </span>
                   <span className={`text-base font-bold font-mono block mt-0.5 ${stats.outstanding > 0 ? 'text-amber-600' : 'text-zinc-900'}`}>
                     FJD {stats.outstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -632,7 +632,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 </div>
                 <div className="bg-white p-3.5 rounded-xl border border-zinc-100 shadow-xs text-center">
                   <span className="text-[8.5px] text-zinc-400 font-bold block uppercase tracking-wider">
-                    Total Paid To Date
+                    Paid to date
                   </span>
                   <span className="text-base font-bold font-mono text-emerald-600 block mt-0.5">
                     FJD {stats.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -665,7 +665,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <h4 className="text-[9.5px] font-bold text-zinc-400 uppercase tracking-widest">
-                    Document Registry Records
+                    Documents
                   </h4>
                   <span className="text-[9px] font-mono text-zinc-400">
                     {filteredDocuments.length} record{filteredDocuments.length === 1 ? '' : 's'}
@@ -675,12 +675,12 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 {loading ? (
                   <div className="text-center py-8">
                     <span className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin inline-block" />
-                    <p className="text-[10px] text-zinc-400 mt-2">Loading verified documents from database...</p>
+                    <p className="text-[10px] text-zinc-400 mt-2">Loading documents…</p>
                   </div>
                 ) : filteredDocuments.length === 0 ? (
                   <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-8 text-center">
                     <FileText className="w-6 h-6 text-zinc-300 mx-auto mb-1.5" />
-                    <p className="text-xs text-zinc-400 italic">No documents matched the selected filter.</p>
+                    <p className="text-xs text-zinc-400 italic">No documents here.</p>
                   </div>
                 ) : (
                   filteredDocuments.map((doc) => {
@@ -740,8 +740,8 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       <MessageSquare className="w-4 h-4" />
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-zinc-950">Direct Consultant Communication</h4>
-                      <p className="text-[10px] text-zinc-400">Ask questions regarding invoices, active projects, or payment remittances.</p>
+                      <h4 className="text-xs font-bold text-zinc-950">Messages</h4>
+                      <p className="text-[10px] text-zinc-400">Ask about an invoice, a project or a payment.</p>
                     </div>
                   </div>
                   <button
@@ -752,7 +752,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     className="text-[10px] font-bold text-white px-3 py-1.5 rounded-lg shadow-xs transition-all active:scale-[0.98]"
                     style={{ backgroundColor: brandColor }}
                   >
-                    + New Inquiry
+                    New message
                   </button>
                 </div>
 
@@ -760,7 +760,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 <div className="space-y-2 pt-2 border-t border-zinc-100">
                   {supportMessages.length === 0 ? (
                     <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-6 text-center text-xs text-zinc-400">
-                      No previous support messages found. Click "+ New Inquiry" to message your consultant.
+                      No messages yet. Tap New message to write to your consultant.
                     </div>
                   ) : (
                     supportMessages.map((msg) => (
@@ -776,7 +776,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                           <span className={`text-[8.5px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded ${
                             msg.sender === 'client' ? 'bg-zinc-200 text-zinc-700' : 'bg-sky-200 text-sky-800'
                           }`}>
-                            {msg.sender === 'client' ? 'Sent by You' : `Reply from ${primaryBusiness.name}`}
+                            {msg.sender === 'client' ? 'Sent by you' : `Reply from ${primaryBusiness.name}`}
                           </span>
                           <span className="text-[9px] font-mono text-zinc-400">
                             {new Date(msg.createdAt).toLocaleDateString()}
@@ -795,7 +795,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     type="text"
                     value={chatInputText}
                     onChange={(e) => setChatInputText(e.target.value)}
-                    placeholder="Type a quick message or question..."
+                    placeholder="Write a message…"
                     className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl px-3 py-2 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900"
                   />
                   <button
@@ -814,7 +814,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
         {/* Compliant Footer */}
         <div className="p-3 bg-white border-t border-zinc-100 text-center text-[8.5px] text-zinc-400">
-          Vinaka Vakalevu • {primaryBusiness.name} Client Portal
+          {primaryBusiness.name} · Client portal
         </div>
 
         {/* Document Detail & Action Modal Sheet */}
@@ -831,7 +831,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 <div className="p-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/70">
                   <div className="min-w-0">
                     <span className="text-[8.5px] font-bold text-zinc-400 uppercase tracking-widest block">
-                      Tax Document Viewer
+                      Document
                     </span>
                     <h3 className="text-xs font-bold text-zinc-900 truncate mt-0.5 capitalize">
                       {selectedDoc.type} #{selectedDoc.documentNumber}
@@ -852,7 +852,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   <div className="flex justify-between items-start gap-3 pb-3 border-b border-zinc-100">
                     {renderDocumentLogo(selectedDoc)}
                     <div className="text-right">
-                      <span className="text-[8.5px] uppercase tracking-wider text-zinc-400 font-bold block">Tax Document</span>
+                      <span className="text-[8.5px] uppercase tracking-wider text-zinc-400 font-bold block">Document</span>
                       <span 
                         className="text-xs font-mono font-bold uppercase block px-1.5 py-0.5 rounded text-white mt-0.5"
                         style={{ backgroundColor: businesses.find(b => b.id === selectedDoc.businessId)?.colorTheme || brandColor }}
@@ -868,7 +868,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       const docBiz = businesses.find(b => b.id === selectedDoc.businessId) || primaryBusiness;
                       return (
                         <div>
-                          <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">Issued By</span>
+                          <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">From</span>
                           <p className="font-bold text-zinc-900">{docBiz.name || selectedDoc.businessName}</p>
                           {(docBiz.tin || selectedDoc.businessTin) && (
                             <p className="font-mono text-[9.5px]">TIN: {docBiz.tin || selectedDoc.businessTin}</p>
@@ -879,7 +879,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       );
                     })()}
                     <div>
-                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">Invoiced To</span>
+                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">To</span>
                       <p className="font-bold text-zinc-900">{selectedDoc.clientName}</p>
                       <p className="text-zinc-500">{selectedDoc.clientEmail}</p>
                       <span className="text-[9.5px] text-zinc-400 block mt-1">Issued: {selectedDoc.issueDate}</span>
@@ -892,7 +892,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   {/* Items List */}
                   <div className="border border-zinc-200 rounded-xl overflow-hidden bg-zinc-50/50">
                     <div className="p-2 bg-zinc-100/80 border-b border-zinc-200 grid grid-cols-12 gap-1 text-[8px] text-zinc-500 uppercase font-bold">
-                      <div className="col-span-6">Service Item</div>
+                      <div className="col-span-6">Item</div>
                       <div className="col-span-2 text-center">Qty</div>
                       <div className="col-span-2 text-right">Rate</div>
                       <div className="col-span-2 text-right">Total</div>
@@ -956,7 +956,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   {selectedDoc.type !== 'quote' && (
                     <div className="p-3 bg-zinc-50 border border-zinc-150 rounded-xl space-y-1.5 text-[10px] leading-relaxed">
                       <h4 className="font-bold text-zinc-800 uppercase tracking-wide flex items-center gap-1">
-                        <Wallet className="w-3.5 h-3.5 text-zinc-500" /> Remittance Instructions
+                        <Wallet className="w-3.5 h-3.5 text-zinc-500" /> How to pay
                       </h4>
                       {(() => {
                         const docBiz = businesses.find(b => b.id === selectedDoc.businessId) || primaryBusiness;
@@ -964,7 +964,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         return details ? (
                           <pre className="font-sans whitespace-pre-wrap text-zinc-600 text-[9.5px]">{details}</pre>
                         ) : (
-                          <p className="italic text-zinc-400">Please settle via registered M-Paisa or bank transfer.</p>
+                          <p className="italic text-zinc-400">Pay by M-PAiSA or bank transfer.</p>
                         );
                       })()}
                     </div>
@@ -973,7 +973,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                   {/* Document Notes */}
                   {selectedDoc.notes && (
                     <div className="space-y-1">
-                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">Vendor Notes</span>
+                      <span className="text-[8px] uppercase tracking-widest text-zinc-400 font-bold block">Notes</span>
                       <p className="bg-zinc-50 border border-zinc-150 rounded-xl p-2.5 text-[9.5px] whitespace-pre-line text-zinc-600">
                         {selectedDoc.notes}
                       </p>
@@ -990,12 +990,12 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         className="flex-1 text-white font-bold py-2.5 rounded-xl text-xs text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"
                         style={{ backgroundColor: brandColor }}
                       >
-                        <CheckCircle2 className="w-4 h-4" /> Accept Project Quote
+                        <CheckCircle2 className="w-4 h-4" /> Accept quote
                       </button>
                     )}
                     {selectedDoc.type === 'invoice' && selectedDoc.status !== 'paid' && selectedDoc.clientPaymentReport?.status === 'rejected' && (
                       <div className="w-full py-2 px-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-[11px] font-semibold">
-                        Your reported payment (ref {selectedDoc.clientPaymentReport.reference}) couldn't be matched.{selectedDoc.clientPaymentReport.rejectionReason ? ` ${selectedDoc.clientPaymentReport.rejectionReason}` : ''} Please check the details and report it again.
+                        Your reported payment (ref {selectedDoc.clientPaymentReport.reference}) couldn’t be matched.{selectedDoc.clientPaymentReport.rejectionReason ? ` ${selectedDoc.clientPaymentReport.rejectionReason}` : ''} Check the details and report it again.
                       </div>
                     )}
                     {selectedDoc.type === 'invoice' && selectedDoc.status !== 'paid' && selectedDoc.clientPaymentReport && selectedDoc.clientPaymentReport.status !== 'rejected' && (
@@ -1009,17 +1009,17 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         className="flex-1 text-white font-bold py-2.5 rounded-xl text-xs text-center flex items-center justify-center gap-1.5 transition-all shadow-xs"
                         style={{ backgroundColor: brandColor }}
                       >
-                        <ArrowUpRight className="w-4 h-4" /> I've Paid This Invoice
+                        <ArrowUpRight className="w-4 h-4" /> I’ve paid this
                       </button>
                     )}
                     {selectedDoc.status === 'paid' && (
                       <div className="flex-1 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5">
-                        <Check className="w-4 h-4 text-emerald-600" /> Invoice Paid Successfully
+                        <Check className="w-4 h-4 text-emerald-600" /> Paid
                       </div>
                     )}
                     {selectedDoc.status === 'accepted' && (
                       <div className="flex-1 py-2.5 bg-zinc-100 border border-zinc-200 text-zinc-800 rounded-xl text-center text-xs font-bold flex items-center justify-center gap-1.5">
-                        <Check className="w-4 h-4 text-zinc-800" /> Quote Accepted
+                        <Check className="w-4 h-4 text-zinc-800" /> Quote accepted
                       </div>
                     )}
                   </div>
@@ -1029,7 +1029,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     onClick={() => handleInquireAboutDoc(selectedDoc)}
                     className="w-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 font-semibold py-2 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                   >
-                    <MessageSquare className="w-3.5 h-3.5 text-zinc-500" /> Inquire / Message Consultant about this {selectedDoc.type}
+                    <MessageSquare className="w-3.5 h-3.5 text-zinc-500" /> Ask about this {selectedDoc.type}
                   </button>
                 </div>
               </motion.div>
@@ -1062,7 +1062,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                 <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-amber-300 border-2 border-slate-900 rounded-full animate-ping" />
               )}
             </div>
-            <span className="font-display tracking-tight">Message Consultant</span>
+            <span className="font-display tracking-tight">Messages</span>
             {unreadConsultantMessages > 0 && (
               <span className="bg-white text-zinc-900 text-[9px] font-black px-1.5 py-0.2 rounded-full">
                 {unreadConsultantMessages}
@@ -1095,11 +1095,11 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                           {primaryBusiness.name} Support
                         </h3>
                         <span className="bg-emerald-50 text-emerald-700 text-[8px] font-bold px-1.5 py-0.2 rounded-full border border-emerald-200/60 uppercase tracking-wider">
-                          Direct Desk
+                          Messages
                         </span>
                       </div>
                       <p className="text-[9px] text-zinc-400 truncate flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5 text-zinc-400" /> Typical response within 2–4 hrs (FJT)
+                        <Clock className="w-2.5 h-2.5 text-zinc-400" /> Replies appear here
                       </p>
                     </div>
                   </div>
@@ -1107,7 +1107,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     <button
                       onClick={fetchSupportMessages}
                       disabled={loadingSupport}
-                      title="Refresh Messages"
+                      title="Refresh"
                       className="p-1.5 text-zinc-400 hover:text-zinc-900 rounded-full bg-zinc-100 hover:bg-zinc-200 transition-colors"
                     >
                       <RefreshCw className={`w-3.5 h-3.5 ${loadingSupport ? 'animate-spin' : ''}`} />
@@ -1131,7 +1131,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         : 'text-zinc-500 hover:text-zinc-900'
                     }`}
                   >
-                    <MessageCircle className="w-3.5 h-3.5" /> Live Chat & Thread
+                    <MessageCircle className="w-3.5 h-3.5" /> Messages
                     {supportMessages.length > 0 && (
                       <span className="bg-zinc-200 text-zinc-700 text-[8.5px] px-1.5 py-0.2 rounded-full font-mono">
                         {supportMessages.length}
@@ -1146,7 +1146,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                         : 'text-zinc-500 hover:text-zinc-900'
                     }`}
                   >
-                    <Send className="w-3 h-3" /> New Support Ticket
+                    <Send className="w-3 h-3" /> New message
                   </button>
                 </div>
 
@@ -1158,7 +1158,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {loadingSupport ? (
                         <div className="text-center py-10 space-y-2">
                           <span className="w-6 h-6 border-2 border-zinc-300 border-t-zinc-900 rounded-full animate-spin inline-block" />
-                          <p className="text-[10px] text-zinc-400">Loading conversation history...</p>
+                          <p className="text-[10px] text-zinc-400">Loading messages…</p>
                         </div>
                       ) : supportMessages.length === 0 ? (
                         <div className="bg-white border border-dashed border-zinc-200 rounded-2xl p-6 text-center space-y-2.5 my-6 shadow-2xs">
@@ -1166,9 +1166,9 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                             <Inbox className="w-5 h-5" />
                           </div>
                           <div>
-                            <h4 className="text-xs font-bold text-zinc-800">No Support Inquiries Yet</h4>
+                            <h4 className="text-xs font-bold text-zinc-800">No messages yet</h4>
                             <p className="text-[10px] text-zinc-400 max-w-[220px] mx-auto mt-0.5">
-                              Have questions about an invoice, scope, or payment? Start a conversation directly with your consultant.
+                              Questions about an invoice, a quote or a payment? Send your consultant a message.
                             </p>
                           </div>
                           <button
@@ -1176,7 +1176,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                             className="text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-xs inline-flex items-center gap-1.5"
                             style={{ backgroundColor: brandColor }}
                           >
-                            <Send className="w-3.5 h-3.5" /> Submit First Inquiry
+                            <Send className="w-3.5 h-3.5" /> Write a message
                           </button>
                         </div>
                       ) : (
@@ -1235,7 +1235,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                                 </p>
 
                                 <div className="flex justify-end items-center gap-1 text-[8px] opacity-75 pt-0.5">
-                                  <span>{isClient ? 'Delivered' : 'Consultant Response'}</span>
+                                  <span>{isClient ? 'Sent' : 'Reply'}</span>
                                   {isClient && <Check className="w-3 h-3" />}
                                 </div>
                               </div>
@@ -1252,7 +1252,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                           type="text"
                           value={chatInputText}
                           onChange={(e) => setChatInputText(e.target.value)}
-                          placeholder="Type a quick message to consultant..."
+                          placeholder="Write a message…"
                           className="flex-1 bg-zinc-50 border border-zinc-200 rounded-xl py-2 px-3 text-xs text-zinc-900 focus:outline-none focus:border-zinc-900"
                         />
                         <button
@@ -1275,15 +1275,15 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Category Selector */}
                       <div>
                         <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-1.5">
-                          Inquiry Category *
+                          Topic *
                         </label>
                         <div className="grid grid-cols-2 gap-1.5">
                           {[
-                            { id: 'general', label: 'General Message', icon: MessageSquare },
-                            { id: 'invoice_inquiry', label: 'Invoice / Tax Query', icon: FileText },
-                            { id: 'payment_proof', label: 'Payment Settlement', icon: CreditCard },
-                            { id: 'quote_question', label: 'Project Scope / Quote', icon: Briefcase },
-                            { id: 'urgent_support', label: 'Urgent Support', icon: AlertTriangle }
+                            { id: 'general', label: 'General', icon: MessageSquare },
+                            { id: 'invoice_inquiry', label: 'Invoice or tax', icon: FileText },
+                            { id: 'payment_proof', label: 'Payment', icon: CreditCard },
+                            { id: 'quote_question', label: 'Quote or scope', icon: Briefcase },
+                            { id: 'urgent_support', label: 'Urgent', icon: AlertTriangle }
                           ].map((cat) => {
                             const isSelected = msgCategory === cat.id;
                             const IconComp = cat.icon;
@@ -1309,14 +1309,14 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Optional Document Attachment Selector */}
                       <div>
                         <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                          Related Document (Optional)
+                          Related document (optional)
                         </label>
                         <select
                           value={msgDocRef}
                           onChange={(e) => setMsgDocRef(e.target.value)}
                           className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2 px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900"
                         >
-                          <option value="">-- No specific document linked --</option>
+                          <option value="">None</option>
                           {documents.map((d) => (
                             <option key={d.id} value={`${d.type.toUpperCase()} #${d.documentNumber}`}>
                               {d.type.toUpperCase()} #{d.documentNumber} ({d.issueDate}) - FJD {d.total.toFixed(2)} [{d.status}]
@@ -1328,14 +1328,14 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Quick Template Prompts */}
                       <div className="space-y-1">
                         <label className="block text-[8.5px] font-bold text-zinc-400 uppercase tracking-wider">
-                          Quick Presets (Click to Auto-fill)
+                          Common requests
                         </label>
                         <div className="flex flex-wrap gap-1.5">
                           {[
-                            'Confirm receipt of M-Paisa payment',
-                            'Request updated Tax Invoice with FRCA TIN',
-                            'Clarification on milestone delivery date',
-                            'Request receipt copy for audit filing'
+                            'Please confirm you received my M-PAiSA payment',
+                            'Please send a tax invoice showing your TIN',
+                            'When is the next milestone due?',
+                            'Please send me a copy of the receipt'
                           ].map((promptText, pIdx) => (
                             <button
                               key={pIdx}
@@ -1355,13 +1355,13 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Subject */}
                       <div>
                         <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                          Subject / Topic
+                          Subject
                         </label>
                         <input
                           type="text"
                           value={msgSubject}
                           onChange={(e) => setMsgSubject(e.target.value)}
-                          placeholder="e.g. Request for official receipt"
+                          placeholder="e.g. Receipt for my last payment"
                           className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-2 px-3 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900"
                         />
                       </div>
@@ -1369,14 +1369,14 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Message Body */}
                       <div>
                         <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider mb-1">
-                          Detailed Message *
+                          Message *
                         </label>
                         <textarea
                           required
                           rows={4}
                           value={msgText}
                           onChange={(e) => setMsgText(e.target.value)}
-                          placeholder="Describe your inquiry, payment reference, or project request in detail..."
+                          placeholder="What do you need? Include any payment reference."
                           className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-3 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 resize-none leading-relaxed"
                         />
                       </div>
@@ -1384,7 +1384,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       {/* Emergency Contact Quick Links */}
                       <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-200/80 space-y-1 text-[10px]">
                         <span className="font-bold text-zinc-700 block uppercase tracking-wider text-[8.5px]">
-                          Direct Channels
+                          Contact directly
                         </span>
                         <div className="flex gap-2">
                           {primaryBusiness.phone && (
@@ -1400,7 +1400,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                               href={`mailto:${primaryBusiness.email}?subject=Portal Support Request`} 
                               className="flex-1 bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-800 py-1.5 px-2 rounded-lg font-semibold flex items-center justify-center gap-1 text-[10px]"
                             >
-                              <Mail className="w-3 h-3 text-sky-600" /> Email Consultant
+                              <Mail className="w-3 h-3 text-sky-600" /> Email
                             </a>
                           )}
                         </div>
@@ -1413,7 +1413,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                           onClick={() => setSupportTab('history')}
                           className="flex-1 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold py-2.5 rounded-xl text-xs"
                         >
-                          View History
+                          Back
                         </button>
                         <button
                           type="submit"
@@ -1425,7 +1425,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                             <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           ) : (
                             <>
-                              <Send className="w-3.5 h-3.5" /> Dispatch Message
+                              <Send className="w-3.5 h-3.5" /> Send
                             </>
                           )}
                         </button>
@@ -1448,7 +1448,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
             >
               <div className="flex justify-between items-center">
                 <h4 className="text-xs font-bold text-zinc-950 flex items-center gap-1.5">
-                  <CreditCard className="w-4 h-4 text-zinc-400" /> Log Payment Transaction
+                  <CreditCard className="w-4 h-4 text-zinc-400" /> Report a payment
                 </h4>
                 <button 
                   onClick={() => setShowPaymentModal(false)}
@@ -1460,21 +1460,21 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
 
               <form onSubmit={handleSubmitPayment} className="space-y-3 text-xs text-zinc-600">
                 <div>
-                  <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Payment Channel *</label>
+                  <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Paid by *</label>
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value)}
                     className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2.5 text-xs mt-1 text-zinc-800 focus:outline-none focus:border-zinc-950 font-semibold"
                   >
-                    <option value="M-Paisa">Vodafone M-Paisa (Direct Transfer)</option>
-                    <option value="MyCash">Digicel MyCash QR</option>
-                    <option value="Bank Transfer">Fiji Local Bank Transfer (Westpac/BSP/ANZ)</option>
-                    <option value="Cash">Cash / Cheque Remittance</option>
+                    <option value="M-Paisa">M-PAiSA</option>
+                    <option value="MyCash">MyCash</option>
+                    <option value="Bank Transfer">Bank transfer</option>
+                    <option value="Cash">Cash or cheque</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Transaction ID / Reference *</label>
+                  <label className="block text-[9px] font-bold text-zinc-400 uppercase tracking-wider">Reference *</label>
                   <input
                     type="text"
                     required
@@ -1483,7 +1483,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     placeholder="e.g. MP-889104 or Westpac Ref 109"
                     className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2.5 text-xs mt-1 text-zinc-800 focus:outline-none focus:border-zinc-950 font-mono"
                   />
-                  <p className="text-[8.5px] text-zinc-400 mt-1">Please provide Fiji receipt ID or bank statement reference.</p>
+                  <p className="text-[8.5px] text-zinc-400 mt-1">The receipt or reference number for your payment.</p>
                 </div>
 
                 <div className="flex gap-2 pt-1">
@@ -1499,7 +1499,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     className="flex-1 text-white font-bold py-1.5 rounded-lg text-[11px] shadow-xs"
                     style={{ backgroundColor: brandColor }}
                   >
-                    Submit Notification
+                    Report payment
                   </button>
                 </div>
               </form>

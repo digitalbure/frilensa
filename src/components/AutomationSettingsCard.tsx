@@ -79,7 +79,7 @@ export default function AutomationSettingsCard({ data, onUpdateData, onManualClo
           <CalendarClock className="w-3.5 h-3.5" />
         </div>
         <div>
-          <span className="block text-[11px] font-bold text-zinc-900">Automatic billing & reminders</span>
+          <span className="block text-[11px] font-bold text-zinc-900">Automatic invoices and reminders</span>
           <span className="block text-[10px] leading-snug text-zinc-500">
             Runs every morning (Fiji time). Retainers set to "auto-generate" get their invoice on the due date
             {autoRetainers > 0 ? ` (${autoRetainers} set up)` : ''}, even when Frilensa isn't open.

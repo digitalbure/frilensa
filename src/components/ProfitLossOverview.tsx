@@ -217,11 +217,11 @@ export default function ProfitLossOverview({
       .slice(0, 5);
 
     const periodLabels: Record<string, string> = {
-      this_month: 'This Month',
-      last_month: 'Last Month',
-      quarter: 'This Quarter',
-      ytd: '2026 Year-to-Date',
-      all: 'All Time Financial History'
+      this_month: 'This month',
+      last_month: 'Last month',
+      quarter: 'This quarter',
+      ytd: '2026 year to date',
+      all: 'All time'
     };
 
     return {
@@ -236,13 +236,13 @@ export default function ProfitLossOverview({
       categoryTotals,
       topExpenseCategory: topCat,
       topVendors,
-      periodLabel: periodLabels[periodFilter] || 'Selected Period'
+      periodLabel: periodLabels[periodFilter] || 'Selected period'
     };
   }, [filteredExpenses, revenueSummary, periodFilter]);
 
   // Handle Delete Expense
   const handleDeleteExpense = (id: string) => {
-    if (!confirm('Are you sure you want to delete this expense record?')) return;
+    if (!confirm('Delete this expense?')) return;
 
     // Update data.expenses
     const updatedExpenses = (data.expenses || []).filter(e => e.id !== id);
@@ -277,15 +277,15 @@ export default function ProfitLossOverview({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-[9px] uppercase tracking-widest text-sky-400 font-extrabold px-2 py-0.5 rounded-md bg-sky-950 border border-sky-800">
-                  Frilensa Finance Engine
+                  Bookkeeping
                 </span>
                 <span className="text-[9px] text-slate-400 font-mono">
-                  FRCS Fiji Compliant
+                  Fiji VAT
                 </span>
               </div>
               <h2 className="text-base sm:text-lg font-black text-white tracking-tight mt-1 flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-emerald-400" />
-                Profit & Loss (P&L) & Expenses
+                Profit and loss
               </h2>
             </div>
 
@@ -294,10 +294,10 @@ export default function ProfitLossOverview({
                 <button
                   onClick={onOpenAiCategorizer}
                   className="bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/30 text-xs font-bold px-3 py-2 rounded-2xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                  title="Open AI Expense Categorization Studio"
+                  title="Categorise expenses with AI"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                  <span>AI Categorizer</span>
+                  <span>AI categories</span>
                 </button>
               )}
 
@@ -305,10 +305,10 @@ export default function ProfitLossOverview({
               <button
                 onClick={onOpenAiAdvisor}
                 className="bg-gradient-to-r from-indigo-600 to-sky-600 hover:from-indigo-500 hover:to-sky-500 text-white text-xs font-black px-3.5 py-2 rounded-2xl shadow-lg flex items-center gap-2 transition-all active:scale-95 cursor-pointer border border-white/20 group"
-                title="Call up AI Financial Advisor"
+                title="Ask the AI advisor"
               >
                 <Sparkles className="w-4 h-4 text-amber-300 group-hover:rotate-12 transition-transform" />
-                <span>AI Advisor</span>
+                <span>AI advisor</span>
               </button>
             </div>
           </div>
@@ -318,31 +318,31 @@ export default function ProfitLossOverview({
             {/* Revenue */}
             <div className="bg-slate-950/70 backdrop-blur-md p-3 rounded-2xl border border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-                <span>Gross Inflow</span>
+                <span>Income</span>
                 <ArrowUpRight className="w-3.5 h-3.5 text-emerald-400" />
               </div>
               <p className="text-sm sm:text-base font-black font-mono text-emerald-400">
                 ${pnlStats.totalRevenue.toFixed(2)}
               </p>
-              <span className="text-[8.5px] text-slate-400 block truncate">Invoiced & Paid</span>
+              <span className="text-[8.5px] text-slate-400 block truncate">Paid invoices and receipts</span>
             </div>
 
             {/* Expenses */}
             <div className="bg-slate-950/70 backdrop-blur-md p-3 rounded-2xl border border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-                <span>Total Expenses</span>
+                <span>Expenses</span>
                 <ArrowDownRight className="w-3.5 h-3.5 text-rose-400" />
               </div>
               <p className="text-sm sm:text-base font-black font-mono text-rose-400">
                 ${pnlStats.totalExpenses.toFixed(2)}
               </p>
-              <span className="text-[8.5px] text-slate-400 block truncate">{filteredExpenses.length} Logged Items</span>
+              <span className="text-[8.5px] text-slate-400 block truncate">{filteredExpenses.length} items</span>
             </div>
 
             {/* Net Profit */}
             <div className="bg-slate-950/70 backdrop-blur-md p-3 rounded-2xl border border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-                <span>Net Profit</span>
+                <span>Net profit</span>
                 <DollarSign className="w-3.5 h-3.5 text-sky-400" />
               </div>
               <p className={`text-sm sm:text-base font-black font-mono ${pnlStats.netProfit >= 0 ? 'text-emerald-300' : 'text-rose-300'}`}>
@@ -356,7 +356,7 @@ export default function ProfitLossOverview({
             {/* Fiji VAT Net Position */}
             <div className="bg-slate-950/70 backdrop-blur-md p-3 rounded-2xl border border-slate-800 space-y-1">
               <div className="flex items-center justify-between text-slate-400 text-[10px] font-bold">
-                <span>FRCS Net VAT</span>
+                <span>Net VAT</span>
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-400" />
               </div>
               <p className="text-sm sm:text-base font-black font-mono text-sky-300">
@@ -375,25 +375,25 @@ export default function ProfitLossOverview({
               className="flex-1 bg-white hover:bg-slate-100 text-slate-900 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4 text-slate-900" />
-              <span>Log Business Expense</span>
+              <span>Add expense</span>
             </button>
 
             <button
               onClick={() => onOpenExpenseModal(null, 'camera_ocr')}
               className="bg-rose-600 hover:bg-rose-500 text-white py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
-              title="Camera Receipt Scanner & OCR"
+              title="Scan a receipt with your camera"
             >
               <Camera className="w-4 h-4" />
-              <span>Scan Receipt (AI)</span>
+              <span>Scan receipt</span>
             </button>
 
             <button
               onClick={() => setShowPrintModal(true)}
               className="bg-slate-800 hover:bg-slate-700 text-slate-200 py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
-              title="Print P&L Statement"
+              title="Print profit and loss statement"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">P&L Statement</span>
+              <span className="hidden sm:inline">P&L statement</span>
             </button>
           </div>
         </div>
@@ -403,11 +403,11 @@ export default function ProfitLossOverview({
       <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 overflow-x-auto scrollbar-none">
         {(['all', 'ytd', 'quarter', 'this_month', 'last_month'] as const).map(period => {
           const labels = {
-            all: 'All Time',
+            all: 'All time',
             ytd: '2026 YTD',
-            quarter: 'This Quarter',
-            this_month: 'This Month',
-            last_month: 'Last Month'
+            quarter: 'This quarter',
+            this_month: 'This month',
+            last_month: 'Last month'
           };
           const isActive = periodFilter === period;
           return (
@@ -432,7 +432,7 @@ export default function ProfitLossOverview({
           <div className="flex items-center gap-2">
             <PieChart className="w-4 h-4 text-indigo-600" />
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900">
-              Expense Distribution By Category
+              Expenses by category
             </h3>
           </div>
           <span className="text-[10px] font-mono font-bold text-slate-400">
@@ -443,12 +443,12 @@ export default function ProfitLossOverview({
         {pnlStats.totalExpenses === 0 ? (
           <div className="py-6 text-center text-slate-400 space-y-2">
             <Receipt className="w-8 h-8 mx-auto text-slate-300" />
-            <p className="text-xs font-semibold">No expenses recorded for this period yet.</p>
+            <p className="text-xs font-semibold">No expenses in this period.</p>
             <button
               onClick={() => onOpenExpenseModal(null)}
               className="text-xs font-bold text-sky-600 hover:underline cursor-pointer"
             >
-              + Log your first receipt or expense
+              + Add an expense
             </button>
           </div>
         ) : (
@@ -485,15 +485,15 @@ export default function ProfitLossOverview({
           <div>
             <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
               <Receipt className="w-4 h-4 text-sky-600" />
-              Logged Business Expenses
+              Expenses
             </h3>
             <p className="text-[10px] text-slate-400">
-              Audit trail, VAT input credits, and receipt attachments
+              Every expense with its VAT and receipt
             </p>
           </div>
 
           <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-xl">
-            {filteredExpenses.length} Records
+            {filteredExpenses.length} records
           </span>
         </div>
 
@@ -504,7 +504,7 @@ export default function ProfitLossOverview({
             <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search vendor, description..."
+              placeholder="Search vendor or description"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-800 focus:outline-none focus:border-slate-900"
@@ -518,7 +518,7 @@ export default function ProfitLossOverview({
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-slate-900"
             >
-              <option value="all">All Categories</option>
+              <option value="all">All categories</option>
               {allCategories.map(cat => (
                 <option key={cat} value={cat}>{cat}</option>
               ))}
@@ -532,14 +532,14 @@ export default function ProfitLossOverview({
               onChange={(e) => setSelectedPaymentMethod(e.target.value)}
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold text-slate-700 focus:outline-none focus:border-slate-900"
             >
-              <option value="all">All Payment Channels</option>
+              <option value="all">All payment methods</option>
               <option value="Vodafone M-PAiSA">Vodafone M-PAiSA</option>
               <option value="Digicel MyCash">Digicel MyCash</option>
-              <option value="Cash">Cash / Petty Cash</option>
+              <option value="Cash">Cash</option>
               <option value="Westpac Fiji">Westpac Fiji</option>
               <option value="ANZ Fiji">ANZ Fiji</option>
               <option value="BSP Fiji">BSP Fiji</option>
-              <option value="Credit Card">Credit Card</option>
+              <option value="Credit Card">Credit card</option>
             </select>
           </div>
         </div>
@@ -549,8 +549,8 @@ export default function ProfitLossOverview({
           {filteredExpenses.length === 0 ? (
             <div className="py-8 text-center text-slate-400 space-y-2 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
               <Receipt className="w-8 h-8 mx-auto text-slate-300" />
-              <p className="text-xs font-bold text-slate-600">No expenses matched your filter criteria.</p>
-              <p className="text-[10px] text-slate-400">Try changing the search query or period filter above.</p>
+              <p className="text-xs font-bold text-slate-600">No expenses match these filters.</p>
+              <p className="text-[10px] text-slate-400">Try a different search or period.</p>
             </div>
           ) : (
             filteredExpenses.map((expense) => (
@@ -593,7 +593,7 @@ export default function ProfitLossOverview({
                       </span>
                       {expense.isVatClaimable !== false && (
                         <span className="text-[8.5px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-1.5 py-0.5 rounded">
-                          VAT Claimable
+                          VAT claimable
                         </span>
                       )}
                     </div>
@@ -603,9 +603,9 @@ export default function ProfitLossOverview({
                     </p>
 
                     <div className="flex items-center gap-2 text-[9.5px] text-slate-400 font-mono">
-                      <span>📅 {expense.date}</span>
+                      <span>{expense.date}</span>
                       <span>•</span>
-                      <span>💳 {expense.paymentMethod}</span>
+                      <span>{expense.paymentMethod}</span>
                       {expense.vatAmount ? (
                         <>
                           <span>•</span>
@@ -625,7 +625,7 @@ export default function ProfitLossOverview({
                       -FJD ${expense.amount.toFixed(2)}
                     </span>
                     <span className="text-[9px] text-slate-400 block">
-                      {expense.isTaxDeductible !== false ? '✓ Tax Deductible' : 'Non-deductible'}
+                      {expense.isTaxDeductible !== false ? '✓ Tax deductible' : 'Not deductible'}
                     </span>
                   </div>
 
@@ -687,7 +687,7 @@ export default function ProfitLossOverview({
               <div className="flex items-center gap-2">
                 <Printer className="w-5 h-5 text-sky-400" />
                 <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-white">
-                  Official Fiji Profit & Loss (P&L) Statement
+                  Profit and loss statement
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -720,18 +720,18 @@ export default function ProfitLossOverview({
                     {activeBusiness?.address || 'Suva, Fiji Islands'}
                   </p>
                   <p className="text-xs font-mono text-slate-600 mt-1">
-                    TIN / Tax Identification: <strong>{data.userProfile.tin || activeBusiness?.tin || '99-12345-0-0'}</strong>
+                    TIN: <strong>{data.userProfile.tin || activeBusiness?.tin || 'Not set'}</strong>
                   </p>
                 </div>
                 <div className="text-right">
                   <span className="text-xs font-black uppercase text-slate-400 tracking-widest block">
-                    Statement of Profit & Loss
+                    Profit and loss
                   </span>
                   <p className="text-xs font-bold text-slate-700 mt-0.5">
                     Period: {pnlStats.periodLabel}
                   </p>
                   <p className="text-[10px] text-slate-400 font-mono">
-                    Generated: {new Date().toLocaleDateString('en-GB')}
+                    Printed: {new Date().toLocaleDateString('en-GB')}
                   </p>
                 </div>
               </div>
@@ -739,15 +739,15 @@ export default function ProfitLossOverview({
               {/* 1. Revenue Section */}
               <div className="space-y-2">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 bg-slate-100 p-2 rounded-lg">
-                  1. Gross Revenue / Income
+                  1. Income
                 </h4>
                 <div className="space-y-1.5 px-2 text-xs">
                   <div className="flex justify-between text-slate-700">
-                    <span>Consulting Services & Invoiced Deliverables</span>
+                    <span>Invoiced and other income</span>
                     <span className="font-mono font-bold">${pnlStats.totalRevenue.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-1.5">
-                    <span>Total Gross Income (FJD)</span>
+                    <span>Total income (FJD)</span>
                     <span className="font-mono text-emerald-600">${pnlStats.totalRevenue.toFixed(2)}</span>
                   </div>
                 </div>
@@ -756,7 +756,7 @@ export default function ProfitLossOverview({
               {/* 2. Operating Expenses Section */}
               <div className="space-y-2">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 bg-slate-100 p-2 rounded-lg">
-                  2. Operational & Business Expenses
+                  2. Expenses
                 </h4>
                 <div className="space-y-1.5 px-2 text-xs">
                   {(Object.entries(pnlStats.categoryTotals) as [string, number][]).map(([cat, amt]) => (
@@ -766,7 +766,7 @@ export default function ProfitLossOverview({
                     </div>
                   ))}
                   <div className="flex justify-between text-slate-900 font-bold border-t border-slate-200 pt-1.5">
-                    <span>Total Operating Expenses (FJD)</span>
+                    <span>Total expenses (FJD)</span>
                     <span className="font-mono text-rose-600">${pnlStats.totalExpenses.toFixed(2)}</span>
                   </div>
                 </div>
@@ -775,13 +775,13 @@ export default function ProfitLossOverview({
               {/* 3. Net Profit / (Loss) */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
                 <div className="flex justify-between items-center text-sm font-black">
-                  <span>Net Operating Profit / (Loss) Before Tax:</span>
+                  <span>Net profit / (loss) before tax</span>
                   <span className={`font-mono text-base ${pnlStats.netProfit >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
                     FJD ${pnlStats.netProfit.toFixed(2)}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-500">
-                  <span>Net Profit Margin:</span>
+                  <span>Profit margin</span>
                   <span className="font-mono font-bold text-indigo-700">{pnlStats.profitMargin.toFixed(1)}%</span>
                 </div>
               </div>
@@ -789,19 +789,19 @@ export default function ProfitLossOverview({
               {/* 4. Fiji FRCS VAT Summary */}
               <div className="space-y-2 text-xs">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 bg-slate-100 p-2 rounded-lg">
-                  3. Fiji Revenue & Customs Service (FRCS) VAT Summary ({currentVatRate}%)
+                  3. VAT summary ({currentVatRate}%)
                 </h4>
                 <div className="space-y-1 px-2">
                   <div className="flex justify-between text-slate-600">
-                    <span>Output VAT Collected on Invoiced Sales:</span>
+                    <span>Output VAT on sales</span>
                     <span className="font-mono">${pnlStats.outputVat.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-slate-600">
-                    <span>Less Claimable Input VAT on Business Purchases:</span>
+                    <span>Less input VAT on purchases</span>
                     <span className="font-mono text-emerald-600">-${pnlStats.inputVat.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200 pt-1">
-                    <span>Net VAT Payable / (Credit) to FRCS:</span>
+                    <span>Net VAT payable / (credit)</span>
                     <span className="font-mono text-sky-800">${pnlStats.netVatPayable.toFixed(2)}</span>
                   </div>
                 </div>
@@ -810,13 +810,13 @@ export default function ProfitLossOverview({
               {/* Signature / Declaration */}
               <div className="pt-8 border-t border-slate-200 grid grid-cols-2 gap-8 text-[10px] text-slate-500">
                 <div>
-                  <p className="font-bold text-slate-700">Prepared By:</p>
+                  <p className="font-bold text-slate-700">Prepared by</p>
                   <p className="mt-6 border-t border-slate-300 pt-1">
-                    {data.userProfile.name || activeBusiness?.name} (Authorized Signatory)
+                    {data.userProfile.name || activeBusiness?.name}
                   </p>
                 </div>
                 <div>
-                  <p className="font-bold text-slate-700">Verification Date:</p>
+                  <p className="font-bold text-slate-700">Date</p>
                   <p className="mt-6 border-t border-slate-300 pt-1">
                     {new Date().toLocaleDateString('en-GB')}
                   </p>

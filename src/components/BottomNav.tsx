@@ -11,14 +11,14 @@ interface BottomNavProps {
 
 export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }: BottomNavProps) {
   const navItems = [
-    { id: 'dashboard' as const, label: 'Hub', icon: LayoutDashboard },
+    { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard },
     { id: 'directory' as const, label: 'Directory', icon: Globe },
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
     { id: 'billing' as const, label: 'Billing', icon: Layers },
     { id: 'clients' as const, label: 'Clients', icon: Users },
     { id: 'services' as const, label: 'Finance', icon: Briefcase },
-    { id: 'assistant' as const, label: 'AI', icon: Sparkles },
-    { id: 'settings' as const, label: 'Setup', icon: Settings },
+    { id: 'assistant' as const, label: 'Assistant', icon: Sparkles },
+    { id: 'settings' as const, label: 'Settings', icon: Settings },
   ];
 
   const handleTabClick = (tabId: typeof activeTab) => {
@@ -31,7 +31,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
 
   return (
     <nav 
-      aria-label="Bottom Navigation Bar"
+      aria-label="Main navigation"
       className="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-xl border-t border-slate-200/80 px-1 pt-1.5 shadow-2xl shadow-slate-900/15 z-30 max-w-md mx-auto"
       style={{
         paddingBottom: 'calc(0.5rem + env(safe-area-inset-bottom, 0px))'

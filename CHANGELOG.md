@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.4.1] - 2026-10-11
+
+### Changed
+- Plain, accurate wording across the whole app, emails and PDFs: shorter labels and buttons in sentence case, no decorative emoji, fewer exclamation marks, and no "Gemini" or other technical names on screen.
+- PDFs and emails no longer call documents "FRCS tax compliant" or show a "verification hash"; the reference code is labelled "Ref". Nothing in Frilensa is certified by FRCS, and the app no longer says so.
+- Removed claims the app can't back up: "TIN verification", "100% free forever", "bank-grade", invented response times, offline receipt caching, and Premium features that don't exist (custom subdomain, bank feeds, 24/7 support, white-label, escrow wallet).
+- Documents for a business with no address no longer show a made-up "Suva, Fiji Islands" address.
+- New businesses no longer get a ready-made slogan and bio saved on their invoices.
+
+### Fixed
+- **Cancelling an invoice works again.** The Cancel button opens a dialog to pick a reason and optionally issue a credit note; credit notes are numbered in sequence (CN-2026-1000, 1001, …) instead of at random.
+- Billing confirmations (link copied, status changed, payment recorded, invoice cancelled) are shown again.
+
 ## [3.4.0] - 2026-10-10
 
 ### Added

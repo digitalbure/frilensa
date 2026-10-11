@@ -29,10 +29,10 @@ interface DateInputProps {
 
 const DEFAULT_PRESETS: DatePreset[] = [
   { label: 'Today', special: 'today' },
-  { label: '+7 Days', daysOffset: 7 },
-  { label: '+14 Days', daysOffset: 14 },
-  { label: '+1 Month', monthsOffset: 1 },
-  { label: 'End of Mo.', special: 'end_of_month' },
+  { label: '+7 days', daysOffset: 7 },
+  { label: '+14 days', daysOffset: 14 },
+  { label: '+1 month', monthsOffset: 1 },
+  { label: 'End of month', special: 'end_of_month' },
 ];
 
 const MONTH_NAMES = [
@@ -108,7 +108,7 @@ export default function DateInput({
   required = false,
   min,
   max,
-  placeholder = 'Select date...',
+  placeholder = 'Select date',
   className = '',
   inputClassName = '',
   id,
@@ -446,7 +446,7 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={handlePrevMonth}
-                title="Previous Month"
+                title="Previous month"
                 className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <ChevronLeft className="w-4 h-4" />
@@ -454,7 +454,7 @@ export default function DateInput({
               <button
                 type="button"
                 onClick={handleNextMonth}
-                title="Next Month"
+                title="Next month"
                 className="p-1.5 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
               >
                 <ChevronRight className="w-4 h-4" />
@@ -513,7 +513,7 @@ export default function DateInput({
               onClick={() => handleSelectDate(todayStr)}
               className="text-sky-600 hover:text-sky-800 font-bold hover:underline cursor-pointer flex items-center gap-1"
             >
-              <Clock className="w-3 h-3" /> Jump to Today
+              <Clock className="w-3 h-3" /> Go to today
             </button>
 
             <div className="flex items-center gap-1.5">

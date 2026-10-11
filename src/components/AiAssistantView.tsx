@@ -116,21 +116,21 @@ export default function AiAssistantView({ data, onUpdateData }: AiAssistantViewP
   const getInitialWelcomeMessage = (bizName?: string): AiChatMessage => ({
     id: `msg-welcome-${Date.now()}`,
     sender: 'ai',
-    text: `### Bula! Welcome to **Frilensa AI Advisor** (frilensa.com)
+    text: `### Frilensa AI Advisor
 
-I am your dedicated Fijian and Pacific business co-pilot, synchronised with **${bizName || activeBusiness?.name || 'your studio'}**.
+Ask me about running **${bizName || activeBusiness?.name || 'your business'}**: invoicing, VAT, bookkeeping or pricing.
 
-I have loaded your business context and records:
-* Active Clients: **${summaryContext.clientsCount}**
-* Outstanding Invoices: **FJD $${summaryContext.totalPending}**
-${activeBusiness?.type === 'saas' ? `* Current Monthly Recurring Revenue (MRR): **FJD $${summaryContext.mrr}**` : ''}
+From your records:
+* Active clients: **${summaryContext.clientsCount}**
+* Outstanding invoices: **FJD $${summaryContext.totalPending}**
+${activeBusiness?.type === 'saas' ? `* Monthly recurring revenue (MRR): **FJD $${summaryContext.mrr}**` : ''}
 
-**What I can do for you:**
-1. **Persistent Memory**: I retain key business preferences, banking channels, and tax details across all conversations.
-2. **Document & Receipt OCR**: Attach bank statements, receipts, or contracts to analyze transactions, extract line items, and verify Fiji VAT (12.5%).
-3. **Email Transcript**: When completed, you can email a full, structured transcript and action items directly to your inbox.
+**What I can do:**
+1. **Remember things**: I keep notes on your business preferences, payment methods and tax details between chats.
+2. **Read documents**: Attach bank statements, receipts or contracts and I'll pull out the transactions and line items and check the VAT (12.5%).
+3. **Email a transcript**: When you're done, email yourself the chat and its action items.
 
-What would you like to review or solve today?`,
+What can I help with?`,
     timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   });
 
@@ -144,7 +144,7 @@ What would you like to review or solve today?`,
       // Create initial session
       const newSession: AiConversationSession = {
         id: `session-${Date.now()}`,
-        title: `Financial Advisory & Compliance`,
+        title: `New consultation`,
         businessId: data.activeBusinessId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -206,7 +206,7 @@ What would you like to review or solve today?`,
   // Delete session
   const handleDeleteSession = (sessionId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!confirm("Are you sure you want to delete this consultation record?")) return;
+    if (!confirm("Delete this consultation?")) return;
 
     const updated = (data.aiConversations || []).filter(s => s.id !== sessionId);
     if (onUpdateData) {
@@ -309,7 +309,7 @@ What would you like to review or solve today?`,
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       if (file.size > 15 * 1024 * 1024) {
-        alert(`File "${file.name}" is larger than 15MB. Please upload a smaller file.`);
+        alert(`"${file.name}" is larger than 15MB. Choose a smaller file.`);
         continue;
       }
 
@@ -366,7 +366,7 @@ What would you like to review or solve today?`,
     const userMsg: AiChatMessage = {
       id: `msg-${Date.now()}`,
       sender: 'user',
-      text: userMessageText || (attachmentsToSend.length > 0 ? "Uploaded document for financial review." : ""),
+      text: userMessageText || (attachmentsToSend.length > 0 ? "Attached a document." : ""),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       attachments: attachmentsToSend.length > 0 ? [...attachmentsToSend] : undefined
     };
@@ -377,7 +377,7 @@ What would you like to review or solve today?`,
     let newTitle = currentSession.title;
     if (currentSession.messages.length <= 1 && userMessageText) {
       newTitle = userMessageText.length > 35 
-        ? `${userMessageText.substring(0, 32)}...` 
+        ? `${userMessageText.substring(0, 32)}…` 
         : userMessageText;
     }
 
@@ -491,16 +491,15 @@ What would you like to review or solve today?`,
       const fallbackAiMsg: AiChatMessage = {
         id: `msg-err-${Date.now()}`,
         sender: 'ai',
-        text: `### Vinaka for reaching out!
+        text: `### The AI advisor didn't respond
         
-I encountered a temporary connection glitch with the cloud advisor node. 
+This is usually a connection problem. In the meantime, a few basics for ${activeBusiness?.name}:
 
-**Quick Compliance Reference for ${activeBusiness?.name}:**
-1. **Fiji Standard VAT**: Apply **${data.userProfile.defaultVatRate ?? 12.5}% VAT** on domestic tax invoices.
-2. **FRCS Audit Trail**: Retain all invoices, M-Paisa deposit statements, and bank summaries for 7 years.
-3. **Reconciliation**: Bank feeds can be reconciled directly via Bookkeeping tab.
+1. **VAT**: Charge **${data.userProfile.defaultVatRate ?? 12.5}% VAT** on local tax invoices.
+2. **Records**: Keep all invoices, M-PAiSA statements and bank statements for 7 years.
+3. **Reconciliation**: Import and match bank statements in Bookkeeping.
 
-Please try resending your message or question.`,
+Send your message again to retry.`,
         isFallback: true,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       };
@@ -544,12 +543,12 @@ Please try resending your message or question.`,
           messages: currentSession.messages,
           memories: memories.slice(0, 5),
           notes: emailNote,
-          customSubject: `Frilensa AI Consultation Transcript: ${currentSession.title}`
+          customSubject: `Frilensa AI transcript: ${currentSession.title}`
         })
       });
 
       if (!res.ok) {
-        throw new Error('Failed to dispatch email');
+        throw new Error('the email service returned an error');
       }
 
       const result = await res.json();
@@ -579,7 +578,7 @@ Please try resending your message or question.`,
 
     } catch (err: any) {
       console.error('Email dispatch error:', err);
-      alert('Unable to dispatch email: ' + (err.message || 'Please check your connection'));
+      alert('Could not send the transcript: ' + (err.message || 'check your connection and try again.'));
     } finally {
       setIsSendingEmail(false);
     }
@@ -658,10 +657,10 @@ Please try resending your message or question.`,
   };
 
   const suggestions = [
-    { label: "Bank Statement Review", icon: FileText, prompt: "What is the best way to extract and reconcile my ANZ or BSP bank statement in Frilensa?" },
-    { label: "Receipt VAT Deductibility", icon: Scale, prompt: "How do I determine if a business expense receipt qualifies for Fiji 12.5% VAT input tax claim?" },
-    { label: "M-Paisa Direct Billing", icon: Smartphone, prompt: "How do I configure direct mobile money invoicing using Vodafone M-PAiSA?" },
-    { label: "SaaS MRR Optimization", icon: Bot, prompt: "Give me recommendations on packaging my monthly retainer services to increase MRR." }
+    { label: "Bank statements", icon: FileText, prompt: "How do I import and reconcile my ANZ or BSP bank statement in Frilensa?" },
+    { label: "VAT on receipts", icon: Scale, prompt: "How do I tell if a business expense receipt qualifies for a Fiji 12.5% VAT input tax claim?" },
+    { label: "M-PAiSA payments", icon: Smartphone, prompt: "How do I let clients pay my invoices with M-PAiSA?" },
+    { label: "Retainer pricing", icon: Bot, prompt: "How should I package my monthly retainer services to increase MRR?" }
   ];
 
   return (
@@ -678,7 +677,7 @@ Please try resending your message or question.`,
           <Paperclip className="w-12 h-12 mb-3 animate-bounce" />
           <h3 className="text-lg font-black tracking-tight">Drop files here to attach</h3>
           <p className="text-xs text-sky-100 max-w-sm text-center mt-1">
-            Upload bank statements (PDF, CSV), receipts (images), or financial invoices for instant AI review.
+            Bank statements (PDF, CSV), receipt photos or invoices.
           </p>
         </div>
       )}
@@ -706,14 +705,14 @@ Please try resending your message or question.`,
             </div>
             <div>
               <h3 className="text-xs font-black text-slate-900 tracking-tight">Consultations</h3>
-              <p className="text-[9px] text-slate-400 font-medium">{sessions.length} recorded sessions</p>
+              <p className="text-[9px] text-slate-400 font-medium">{sessions.length} saved</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={handleCreateNewSession}
               className="p-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-              title="Start New Consultation"
+              title="New consultation"
             >
               <Plus className="w-3.5 h-3.5" />
               <span className="text-[10px] font-bold pr-1">New</span>
@@ -735,7 +734,7 @@ Please try resending your message or question.`,
               type="text"
               value={historySearch}
               onChange={(e) => setHistorySearch(e.target.value)}
-              placeholder="Search conversation history..."
+              placeholder="Search consultations"
               className="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-[11px] text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500"
             />
           </div>
@@ -752,8 +751,8 @@ Please try resending your message or question.`,
                 <Brain className="w-3.5 h-3.5" />
               </div>
               <div>
-                <span className="text-[11px] font-bold text-slate-800 block">AI Memory Bank</span>
-                <span className="text-[9px] text-slate-400">{memories.length} persistent facts retained</span>
+                <span className="text-[11px] font-bold text-slate-800 block">AI memory</span>
+                <span className="text-[9px] text-slate-400">{memories.length} facts saved</span>
               </div>
             </div>
             <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-slate-600" />
@@ -764,7 +763,7 @@ Please try resending your message or question.`,
         <div className="flex-1 overflow-y-auto p-2 space-y-1">
           {filteredSessions.length === 0 ? (
             <div className="p-4 text-center text-[10px] text-slate-400">
-              No matching consultations found.
+              No consultations match your search.
             </div>
           ) : (
             filteredSessions.map((s) => {
@@ -791,7 +790,7 @@ Please try resending your message or question.`,
                     <button
                       onClick={(e) => handleDeleteSession(s.id, e)}
                       className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-600 text-slate-400 rounded transition-opacity"
-                      title="Delete Record"
+                      title="Delete consultation"
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
@@ -838,7 +837,7 @@ Please try resending your message or question.`,
             <button
               onClick={() => setShowHistorySidebar(prev => !prev)}
               className="p-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg md:hidden"
-              title="View History"
+              title="Consultations"
             >
               <History className="w-4 h-4" />
             </button>
@@ -858,12 +857,12 @@ Please try resending your message or question.`,
                   </span>
                 ) : (
                   <span className="text-[8px] bg-sky-100 text-sky-800 font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase shrink-0">
-                    Live Session
+                    Active
                   </span>
                 )}
               </div>
               <p className="text-[9px] text-slate-400 font-medium truncate">
-                Context: <strong className="text-slate-600">{activeBusiness?.name}</strong> &bull; {memories.length} active business memories
+                Context: <strong className="text-slate-600">{activeBusiness?.name}</strong> &bull; {memories.length} saved facts
               </p>
             </div>
           </div>
@@ -873,10 +872,10 @@ Please try resending your message or question.`,
             <button
               onClick={() => setShowMemoryModal(true)}
               className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-700 hover:border-amber-400 hover:bg-amber-50/50 text-[11px] font-bold transition-all cursor-pointer"
-              title="Open AI Long-Term Memory"
+              title="Open AI memory"
             >
               <Brain className="w-3.5 h-3.5 text-amber-500" />
-              <span>Memory Bank</span>
+              <span>Memory</span>
               <span className="bg-amber-100 text-amber-800 text-[9px] px-1 rounded-full font-mono">
                 {memories.length}
               </span>
@@ -885,10 +884,10 @@ Please try resending your message or question.`,
             <button
               onClick={() => setShowEmailModal(true)}
               className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200 text-[11px] font-extrabold transition-all cursor-pointer"
-              title="Email Transcript of this session"
+              title="Email a transcript of this consultation"
             >
               <Mail className="w-3.5 h-3.5 text-sky-600" />
-              <span>Email Transcript</span>
+              <span>Email transcript</span>
             </button>
 
             {currentSession && (
@@ -899,7 +898,7 @@ Please try resending your message or question.`,
                     ? 'border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100'
                     : 'border-slate-200 text-slate-500 hover:bg-slate-100'
                 }`}
-                title={currentSession.status === 'completed' ? "Reopen Session" : "Mark as Completed"}
+                title={currentSession.status === 'completed' ? "Reopen" : "Mark as completed"}
               >
                 <CheckCircle2 className="w-4 h-4" />
               </button>
@@ -909,7 +908,7 @@ Please try resending your message or question.`,
 
         {/* Dynamic Financial Banner */}
         <div className="bg-sky-50/60 px-4 py-1.5 border-b border-slate-100 flex items-center justify-between text-[8.5px] font-mono text-sky-900 shrink-0">
-          <span className="truncate">TIN: <strong>{activeBusiness?.tin || 'Not Registered'}</strong></span>
+          <span className="truncate">TIN: <strong>{activeBusiness?.tin || 'Not recorded'}</strong></span>
           <span className="shrink-0 font-bold">Outstanding: FJD ${summaryContext.totalPending}</span>
         </div>
 
@@ -974,7 +973,7 @@ Please try resending your message or question.`,
                           <div className="min-w-0 flex-1">
                             <span className="text-[11px] font-bold block truncate">{att.name}</span>
                             <span className="text-[9px] opacity-75 font-mono block">
-                              {att.size ? `${(att.size / 1024).toFixed(1)} KB` : isPdf ? 'PDF Document' : 'Attachment'}
+                              {att.size ? `${(att.size / 1024).toFixed(1)} KB` : isPdf ? 'PDF' : 'Attachment'}
                             </span>
                           </div>
 
@@ -1008,7 +1007,7 @@ Please try resending your message or question.`,
                 {m.memoryExtracted && m.memoryExtracted.length > 0 && (
                   <div className="mt-2.5 pt-2 border-t border-slate-100 flex flex-col gap-1">
                     <span className="text-[8px] font-extrabold uppercase tracking-wider text-amber-600 flex items-center gap-1">
-                      <Brain className="w-2.5 h-2.5" /> Added to Long-Term Memory
+                      <Brain className="w-2.5 h-2.5" /> Saved to memory
                     </span>
                     {m.memoryExtracted.map((f, fIdx) => (
                       <span key={fIdx} className="text-[9.5px] bg-amber-50/80 border border-amber-200/60 text-amber-900 px-2 py-0.5 rounded-md">
@@ -1023,7 +1022,7 @@ Please try resending your message or question.`,
                   <span className="font-mono">{m.timestamp}</span>
                   <div className="flex items-center gap-2">
                     {m.sender === 'ai' && m.isFallback && (
-                      <span className="bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold">Rule Fallback</span>
+                      <span className="bg-amber-100 text-amber-800 px-1 py-0.5 rounded font-bold">Offline reply</span>
                     )}
                     <button
                       onClick={() => handleCopyMessage(m.id, m.text)}
@@ -1048,7 +1047,7 @@ Please try resending your message or question.`,
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-500"></span>
                 </span>
                 <span className="text-[10.5px] text-slate-600 font-bold font-mono animate-pulse">
-                  Frilensa AI is analyzing documents & financial context...
+                  Thinking…
                 </span>
               </div>
             </div>
@@ -1062,7 +1061,7 @@ Please try resending your message or question.`,
           <div className="px-3.5 py-2 border-t border-slate-100 bg-white shrink-0">
             <div className="flex items-center gap-1 mb-1.5 text-slate-400">
               <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-              <span className="text-[8.5px] font-bold uppercase tracking-wider">Suggested Inquiries</span>
+              <span className="text-[8.5px] font-bold uppercase tracking-wider">Try asking</span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
               {suggestions.map((s, idx) => {
@@ -1121,7 +1120,7 @@ Please try resending your message or question.`,
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className="p-2 text-slate-500 hover:text-sky-600 hover:bg-sky-50 rounded-xl border border-slate-200 transition-colors shrink-0 cursor-pointer"
-              title="Attach Bank Statement, Receipt or Document"
+              title="Attach a file"
             >
               <Paperclip className="w-4 h-4" />
             </button>
@@ -1131,7 +1130,7 @@ Please try resending your message or question.`,
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
-              placeholder={pendingAttachments.length > 0 ? "Add a message or instructions for these documents..." : "Ask about VAT, statements, receipts or business growth..."}
+              placeholder={pendingAttachments.length > 0 ? "Add a message about these files" : "Ask about VAT, statements, receipts or growth"}
               className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 disabled:opacity-50"
             />
 
@@ -1144,8 +1143,8 @@ Please try resending your message or question.`,
             </button>
           </form>
           <div className="flex items-center justify-between mt-1.5 px-1 text-[8px] text-slate-400">
-            <span>Supports bank statements (PDF/CSV), receipts, and invoice documents</span>
-            <span className="font-mono">Frilensa Advisor Engine</span>
+            <span>Attach bank statements (PDF/CSV), receipts or invoices</span>
+            <span className="font-mono">Frilensa AI</span>
           </div>
         </div>
 
@@ -1165,8 +1164,8 @@ Please try resending your message or question.`,
                 <div className="flex items-center gap-2">
                   <Mail className="w-5 h-5 text-sky-200" />
                   <div>
-                    <h3 className="text-xs font-black tracking-tight">Email Consultation Transcript</h3>
-                    <p className="text-[9.5px] text-sky-100">Send formatted record & action items to your inbox</p>
+                    <h3 className="text-xs font-black tracking-tight">Email transcript</h3>
+                    <p className="text-[9.5px] text-sky-100">Send this consultation and its action items by email</p>
                   </div>
                 </div>
                 <button
@@ -1180,7 +1179,7 @@ Please try resending your message or question.`,
               <div className="p-4 space-y-3.5">
                 <div>
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mb-1">
-                    Recipient Email Address
+                    Send to
                   </label>
                   <input
                     type="email"
@@ -1190,19 +1189,19 @@ Please try resending your message or question.`,
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500"
                   />
                   <span className="text-[8.5px] text-slate-400 mt-1 block">
-                    Defaults to your registered Frilensa account email.
+                    Defaults to your Frilensa account email.
                   </span>
                 </div>
 
                 <div>
                   <label className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mb-1">
-                    Optional Custom Note
+                    Note (optional)
                   </label>
                   <textarea
                     value={emailNote}
                     onChange={(e) => setEmailNote(e.target.value)}
                     rows={2}
-                    placeholder="e.g. Notes on Suva client meeting, tax filing deadlines..."
+                    placeholder="e.g. Notes from the Suva client meeting, tax deadlines"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:border-sky-500 resize-none"
                   />
                 </div>
@@ -1218,7 +1217,7 @@ Please try resending your message or question.`,
                     <strong className="text-slate-800">{currentSession.messages.length} messages</strong>
                   </div>
                   <div className="flex justify-between">
-                    <span className="font-medium">Business Context:</span>
+                    <span className="font-medium">Business:</span>
                     <strong className="text-slate-800">{activeBusiness?.name}</strong>
                   </div>
                 </div>
@@ -1226,11 +1225,11 @@ Please try resending your message or question.`,
                 {/* Native mailto backup helper */}
                 <div className="text-center">
                   <a
-                    href={`mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(`Frilensa AI Consultation: ${currentSession.title}`)}&body=${encodeURIComponent(currentSession.messages.map(m => `${m.sender.toUpperCase()}: ${m.text}\n`).join('\n'))}`}
+                    href={`mailto:${encodeURIComponent(recipientEmail)}?subject=${encodeURIComponent(`Frilensa AI transcript: ${currentSession.title}`)}&body=${encodeURIComponent(currentSession.messages.map(m => `${m.sender.toUpperCase()}: ${m.text}\n`).join('\n'))}`}
                     className="text-[9px] text-sky-600 hover:underline font-bold inline-flex items-center gap-1"
                   >
                     <ExternalLink className="w-2.5 h-2.5" />
-                    Or open in your default Mail app
+                    Or open in your email app
                   </a>
                 </div>
               </div>
@@ -1252,12 +1251,12 @@ Please try resending your message or question.`,
                   {isSendingEmail ? (
                     <>
                       <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      <span>Dispatching...</span>
+                      <span>Sending…</span>
                     </>
                   ) : (
                     <>
                       <Mail className="w-3.5 h-3.5" />
-                      <span>Send Transcript</span>
+                      <span>Send transcript</span>
                     </>
                   )}
                 </button>
@@ -1281,8 +1280,8 @@ Please try resending your message or question.`,
                 <div className="flex items-center gap-2">
                   <Brain className="w-5 h-5 text-amber-100" />
                   <div>
-                    <h3 className="text-xs font-black tracking-tight">AI Long-Term Memory Bank</h3>
-                    <p className="text-[9.5px] text-amber-100">Learned facts & persistent context for {activeBusiness?.name}</p>
+                    <h3 className="text-xs font-black tracking-tight">AI memory</h3>
+                    <p className="text-[9.5px] text-amber-100">What the advisor remembers about {activeBusiness?.name}</p>
                   </div>
                 </div>
                 <button
@@ -1300,7 +1299,7 @@ Please try resending your message or question.`,
                   value={newMemoryInput}
                   onChange={(e) => setNewMemoryInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleAddManualMemory(); }}
-                  placeholder="Teach the advisor a new business fact or preference..."
+                  placeholder="Add a fact or preference for the advisor"
                   className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-amber-500"
                 />
                 <button
@@ -1317,7 +1316,7 @@ Please try resending your message or question.`,
                 {memories.length === 0 ? (
                   <div className="text-center py-8 text-slate-400 text-xs">
                     <Brain className="w-8 h-8 mx-auto mb-2 text-slate-300" />
-                    No memories recorded yet. The AI advisor automatically extracts facts during consultations, or you can add them above.
+                    Nothing saved yet. The advisor saves facts from your consultations, or you can add one above.
                   </div>
                 ) : (
                   memories.map((m) => (
@@ -1357,7 +1356,7 @@ Please try resending your message or question.`,
               </div>
 
               <div className="p-3 border-t border-slate-100 bg-slate-50 flex items-center justify-between text-[9px] text-slate-500 shrink-0">
-                <span>Memories are injected into the advisor's prompt on every query</span>
+                <span>The advisor uses these facts in every answer</span>
                 <button
                   onClick={() => setShowMemoryModal(false)}
                   className="px-3 py-1 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-lg font-bold"
@@ -1384,7 +1383,7 @@ Please try resending your message or question.`,
                 className="max-w-full max-h-[80vh] object-contain rounded-xl shadow-2xl border border-white/20"
               />
               <span className="text-white text-xs font-bold mt-2 bg-black/50 px-3 py-1 rounded-full">
-                {previewImage.title} (Click anywhere to close)
+                {previewImage.title} (click anywhere to close)
               </span>
             </div>
           </div>

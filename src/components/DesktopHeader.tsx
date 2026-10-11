@@ -44,23 +44,23 @@ export default function DesktopHeader({
   const getTabInfo = () => {
     switch (activeTab) {
       case 'dashboard':
-        return { title: 'Executive Hub', subtitle: 'Overview, cash flow, and quick invoicing actions' };
+        return { title: 'Home', subtitle: 'Overview, cash flow and quick actions' };
       case 'billing':
-        return { title: 'Invoices & Billing', subtitle: 'Tax-compliant invoices, quotes, receipts & retainers' };
+        return { title: 'Billing', subtitle: 'Invoices, quotes, receipts and retainers' };
       case 'clients':
-        return { title: 'Client Management', subtitle: 'Directory of clients, direct portals & access links' };
+        return { title: 'Clients', subtitle: 'Your clients and their portal links' };
       case 'projects':
-        return { title: 'Projects & Milestones', subtitle: 'Kanban boards, deliverables & tracked hourly billing' };
+        return { title: 'Projects', subtitle: 'Boards, deliverables and tracked hours' };
       case 'services':
-        return { title: 'Finance & Bookkeeping', subtitle: 'P&L statements, BSP/ANZ ledger & auto reconciler' };
+        return { title: 'Finance', subtitle: 'Profit and loss, bookkeeping and bank reconciliation' };
       case 'directory':
-        return { title: 'Service Directory', subtitle: 'FRCS-verified Fijian freelancers and agency network' };
+        return { title: 'Directory', subtitle: 'Fijian freelancers and businesses on Frilensa' };
       case 'assistant':
-        return { title: 'Bula AI Copilot', subtitle: 'Smart business advisor for Fiji tax, billing and contracts' };
+        return { title: 'AI assistant', subtitle: 'Ask about Fiji tax, billing and contracts' };
       case 'settings':
-        return { title: 'Settings & Compliance', subtitle: 'TIN registration, VAT rates, PWA, and business presets' };
+        return { title: 'Settings', subtitle: 'Business details, TIN, VAT and app settings' };
       default:
-        return { title: 'Frilensa Freelancer CRM', subtitle: 'Pacific Business Operating System' };
+        return { title: 'Frilensa', subtitle: '' };
     }
   };
 
@@ -94,10 +94,10 @@ export default function DesktopHeader({
           type="button"
           onClick={onSearchClick}
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 text-slate-500 hover:text-slate-800 text-xs font-medium border border-slate-200/60 transition-all cursor-pointer shadow-2xs"
-          title="Search anything (⌘K)"
+          title="Search (⌘K)"
         >
           <Search className="w-3.5 h-3.5 text-slate-400" />
-          <span className="hidden xl:inline text-[11px]">Quick Search...</span>
+          <span className="hidden xl:inline text-[11px]">Search…</span>
           <kbd className="text-[9px] font-mono font-bold bg-white text-slate-400 border border-slate-200 px-1 py-0.5 rounded shadow-2xs">
             ⌘K
           </kbd>
@@ -114,7 +114,7 @@ export default function DesktopHeader({
               ? 'bg-amber-50 text-amber-800 border-amber-200'
               : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
           }`}
-          title={`Cloud Database Sync: ${firebaseConfig.projectId} (Click to re-sync)`}
+          title="Sync now"
         >
           {syncing ? (
             <RefreshCw className="w-3.5 h-3.5 text-amber-600 animate-spin" />
@@ -124,7 +124,7 @@ export default function DesktopHeader({
             <Cloud className="w-3.5 h-3.5 text-sky-600" />
           )}
           <span className="hidden sm:inline text-[11px]">
-            {syncing ? 'Syncing...' : syncedJustNow ? 'Synced' : 'Cloud DB'}
+            {syncing ? 'Syncing…' : syncedJustNow ? 'Synced' : 'Sync'}
           </span>
         </button>
 
@@ -133,10 +133,10 @@ export default function DesktopHeader({
           type="button"
           onClick={onOpenFxCalc}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100/80 text-sky-800 text-xs font-bold border border-sky-200/70 transition-all cursor-pointer shadow-2xs"
-          title="Open Pacific FX Exchange Calculator"
+          title="Currency converter"
         >
           <Calculator className="w-3.5 h-3.5 text-sky-600" />
-          <span className="hidden sm:inline text-[11px]">FX Rates</span>
+          <span className="hidden sm:inline text-[11px]">FX rates</span>
         </button>
 
         {/* Activity Summary / Quick Pulse */}
@@ -144,10 +144,10 @@ export default function DesktopHeader({
           type="button"
           onClick={onOpenQuickPulse}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-sky-500/10 hover:from-amber-500/20 hover:to-sky-500/20 text-slate-800 text-xs font-bold border border-amber-300/40 transition-all cursor-pointer shadow-2xs"
-          title="Open Activity Summary Pulse"
+          title="Recent activity"
         >
           <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500 animate-pulse" />
-          <span className="hidden sm:inline text-[11px]">Pulse</span>
+          <span className="hidden sm:inline text-[11px]">Activity</span>
         </button>
 
         {/* Active Business Badge */}

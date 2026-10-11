@@ -192,8 +192,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
     triggerUndoToast(
       '',
-      'Ledger Restored',
-      `Restored state to "${restoredPoint.actionTitle}" (${restoredTransactions.length} entries)`
+      'Ledger restored',
+      `Restored to "${restoredPoint.actionTitle}" (${restoredTransactions.length} entries)`
     );
   };
 
@@ -220,11 +220,11 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
   const handleResolveDuplicates = (cleanTransactions: Transaction[], removedCount: number) => {
     const point = saveLedgerRestorePoint(
       userEmail,
-      `Duplicate Cleanup (${removedCount} duplicate copies removed)`,
+      `Duplicate removal (${removedCount} removed)`,
       'deduplicate',
       transactions,
       cleanTransactions,
-      `Cleaned ${removedCount} duplicate entries from ledger`
+      `Removed ${removedCount} duplicate entries`
     );
 
     onUpdateData({
@@ -234,8 +234,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
     triggerUndoToast(
       point.id,
-      'Duplicates Cleaned',
-      `Removed ${removedCount} duplicate copies. Your ledger numbers are restored.`
+      'Duplicates removed',
+      `Removed ${removedCount} duplicate entries.`
     );
   };
 
@@ -260,7 +260,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
     if (!statementText.trim()) return;
 
     setIsClassifying(true);
-    setReassuranceMessage('Gemini AI is scanning statements and matching Fiji VAT components...');
+    setReassuranceMessage('Reading the statement…');
 
     try {
       const currentVatRate = data.userProfile.defaultVatRate ?? 12.5;
@@ -296,7 +296,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
   // Submit base64 receipt file for AI OCR extraction
   const handleReceiptOcrSubmit = async (fileData: string, fileName: string) => {
     setIsClassifying(true);
-    setReassuranceMessage('Gemini Vision AI is extracting receipt items and isolating Fiji standard VAT...');
+    setReassuranceMessage('Reading the receipt…');
     setShowReceiptModal(false);
 
     try {
@@ -309,12 +309,12 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       const parsed = await res.json();
 
       if (!res.ok && !parsed.extracted) {
-        throw new Error(parsed.error || `Failed to analyze receipt (${res.status})`);
+        throw new Error(parsed.error || `Couldn't read the receipt (${res.status})`);
       }
 
       const item = parsed.extracted;
       if (!item) {
-        throw new Error(parsed.error || 'No document details could be extracted');
+        throw new Error(parsed.error || 'No details found in this file');
       }
 
       const rawAmount = Number(item.amount) || 0;
@@ -337,7 +337,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       setReviewQueue(prev => [ocrItem, ...prev]);
     } catch (e: any) {
       console.error('OCR failed:', e);
-      alert('Notice analyzing document: ' + (e.message || 'Please verify file or enter manually.'));
+      alert("Couldn't read this document: " + (e.message || 'check the file or enter the details yourself.'));
     } finally {
       setIsClassifying(false);
     }
@@ -372,11 +372,11 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
     const point = saveLedgerRestorePoint(
       userEmail,
-      `Approve Review Queue (${itemsToApprove.length} items)`,
+      `Approval of ${itemsToApprove.length} imported entries`,
       'approve_review',
       transactions,
       updatedTransactions,
-      skippedCount > 0 ? `${skippedCount} duplicate items were excluded` : undefined
+      skippedCount > 0 ? `${skippedCount} duplicates skipped` : undefined
     );
 
     onUpdateData({
@@ -387,8 +387,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
     triggerUndoToast(
       point.id,
-      'Review Queue Approved',
-      `Added ${itemsToApprove.length} transactions to ledger${skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : ''}`
+      'Entries added',
+      `Added ${itemsToApprove.length} transactions to the ledger${skippedCount > 0 ? ` (${skippedCount} duplicates skipped)` : ''}`
     );
   };
 
@@ -398,7 +398,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       const updatedTransactions = [{ ...approvedItem, status: 'reconciled' as const }, ...transactions];
       const point = saveLedgerRestorePoint(
         userEmail,
-        `Approve Entry: ${approvedItem.description}`,
+        `Approval of "${approvedItem.description}"`,
         'approve_review',
         transactions,
         updatedTransactions
@@ -408,7 +408,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
         transactions: updatedTransactions
       });
       setReviewQueue(prev => prev.filter(item => item.id !== id));
-      triggerUndoToast(point.id, 'Entry Approved', `Added "${approvedItem.description}" to ledger`);
+      triggerUndoToast(point.id, 'Entry added', `Added "${approvedItem.description}" to the ledger`);
     }
   };
 
@@ -524,8 +524,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           candidates.push({
             id: sub.id,
             type: 'subscription',
-            title: `${service?.name || 'SaaS Plan'} Subscription`,
-            detail: `Client: ${client.name} | Interval: ${sub.billingInterval}`,
+            title: `${service?.name || 'Plan'} subscription`,
+            detail: `Client: ${client.name} | Billed: ${sub.billingInterval}`,
             amount: sub.price,
             score: Math.min(100, score),
             refObject: { sub, client }
@@ -547,14 +547,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
     const pendingTxList = transactions.filter(t => t.status === 'pending');
     if (pendingTxList.length === 0) {
       setTimeout(() => {
-        setAutoMatchLogs(["Bula! There are no pending transactions to reconcile right now."]);
+        setAutoMatchLogs(["No pending transactions to reconcile."]);
         setIsAutoMatching(false);
       }, 800);
       return;
     }
 
     const matchesFound: string[] = [];
-    const logs = ["Bula AI Audit System Initializing...", "Scanning bank feeds for M-Paisa logs, BSP, ANZ and Westpac..."];
+    const logs = ["Matching pending transactions to invoices and subscriptions…"];
 
     setTimeout(() => {
       pendingTxList.forEach(tx => {
@@ -563,13 +563,13 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
         
         if (bestCandidate && bestCandidate.score >= 75) {
           matchesFound.push(tx.id);
-          logs.push(`✓ HIGH CONFIDENCE: Auto-matched "${tx.description}" (FJD $${Math.abs(tx.amount)}) with ${bestCandidate.title} (${bestCandidate.score}% match)`);
+          logs.push(`✓ Matched "${tx.description}" (FJD $${Math.abs(tx.amount)}) to ${bestCandidate.title} (${bestCandidate.score}% match)`);
         } else {
-          logs.push(`⚆ MANUAL REVIEW REQUIRED: "${tx.description}" (FJD $${Math.abs(tx.amount)}) requires human allocation.`);
+          logs.push(`⚆ No match: "${tx.description}" (FJD $${Math.abs(tx.amount)}) needs you to reconcile it.`);
         }
       });
 
-      logs.push(`\nAudit Complete! Ready to reconcile ${matchesFound.length} matches out of ${pendingTxList.length} total items.`);
+      logs.push(`\nDone. ${matchesFound.length} of ${pendingTxList.length} transactions matched.`);
       setAutoMatchLogs(logs);
       setIsAutoMatching(false);
     }, 1200);
@@ -677,7 +677,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           setReconcileAiHint({
             category: json.category,
             confidence: json.confidence || 90,
-            reason: json.reason || 'AI inferred category based on transaction description.'
+            reason: json.reason || 'Suggested from the description.'
           });
         }
       }
@@ -798,12 +798,12 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
   // Delete transaction
   const handleDeleteTransaction = (id: string) => {
-    if (confirm('Are you sure you want to delete this ledger entry?')) {
+    if (confirm('Delete this ledger entry?')) {
       const txToDelete = transactions.find(t => t.id === id);
       const updated = transactions.filter(t => t.id !== id);
       const point = saveLedgerRestorePoint(
         userEmail,
-        `Delete Entry: ${txToDelete?.description || 'Transaction'}`,
+        `Deletion of "${txToDelete?.description || 'transaction'}"`,
         'delete_entry',
         transactions,
         updated,
@@ -815,7 +815,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       });
       triggerUndoToast(
         point.id,
-        'Entry Deleted',
+        'Entry deleted',
         `"${txToDelete?.description || 'Transaction'}" was removed from the ledger`
       );
     }
@@ -922,7 +922,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
   };
 
   const handleDeleteRule = (id: string) => {
-    if (confirm('Delete this rate modifier rule?')) {
+    if (confirm('Delete this rate rule?')) {
       onUpdateData({
         ...data,
         rateRules: rateRules.filter(r => r.id !== id)
@@ -958,7 +958,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
     let surcharges = 0;
     let discounts = 0;
     let multiplierMultiplier = 1;
-    const steps: string[] = [`Base Service Rate: FJD $${baseRate.toFixed(2)} per ${selectedService.unit}`];
+    const steps: string[] = [`Base rate: FJD $${baseRate.toFixed(2)} per ${selectedService.unit.toLowerCase()}`];
 
     // Read active rules selected in checklist
     activePlaygroundRules.forEach(ruleId => {
@@ -966,24 +966,24 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       if (rule && rule.isActive) {
         if (rule.type === 'multiplier') {
           multiplierMultiplier *= rule.value;
-          steps.push(`Applied Multiplier Rule [${rule.name}]: ${rule.value}x`);
+          steps.push(`${rule.name}: ${rule.value}x`);
         } else if (rule.type === 'surcharge') {
           if (rule.unit === 'flat') {
             surcharges += rule.value;
-            steps.push(`Applied Flat Surcharge [${rule.name}]: +FJD $${rule.value.toFixed(2)}`);
+            steps.push(`${rule.name}: +FJD $${rule.value.toFixed(2)}`);
           } else {
             const surchargeAmt = (baseRate * rule.value) / 100;
             surcharges += surchargeAmt;
-            steps.push(`Applied Percentage Surcharge [${rule.name}]: +${rule.value}% (+FJD $${surchargeAmt.toFixed(2)})`);
+            steps.push(`${rule.name}: +${rule.value}% (+FJD $${surchargeAmt.toFixed(2)})`);
           }
         } else if (rule.type === 'discount') {
           if (rule.unit === 'flat') {
             discounts += Math.abs(rule.value);
-            steps.push(`Applied Flat Discount [${rule.name}]: -FJD $${Math.abs(rule.value).toFixed(2)}`);
+            steps.push(`${rule.name}: -FJD $${Math.abs(rule.value).toFixed(2)}`);
           } else {
             const discountAmt = (baseRate * Math.abs(rule.value)) / 100;
             discounts += discountAmt;
-            steps.push(`Applied Percentage Discount [${rule.name}]: -${Math.abs(rule.value)}% (-FJD $${discountAmt.toFixed(2)})`);
+            steps.push(`${rule.name}: -${Math.abs(rule.value)}% (-FJD $${discountAmt.toFixed(2)})`);
           }
         }
       }
@@ -1115,7 +1115,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       inputVat,
       netVatPayable,
       topExpenseCategory: allExp[0]?.category || 'Office Supplies',
-      periodLabel: '2026 Financial Year'
+      periodLabel: '2026 financial year'
     };
   }, [data]);
 
@@ -1129,17 +1129,17 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-medium block">Pacific Bookkeeping Engine</span>
+            <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-medium block">Bookkeeping</span>
             <span className={`text-[8.5px] font-extrabold px-2 py-0.5 rounded-full uppercase flex items-center gap-1 ${activeVentureConfig.badgeBg} ${activeVentureConfig.badgeText} border ${activeVentureConfig.badgeBorder}`}>
               <Briefcase className="w-2.5 h-2.5" />
-              <span>{activeVentureConfig.shortLabel} ({activeBiz?.name || 'Active Venture'})</span>
+              <span>{activeVentureConfig.shortLabel} ({activeBiz?.name || 'Current business'})</span>
             </span>
           </div>
           <h2 className="text-xl md:text-2xl font-display font-semibold text-zinc-900 tracking-tight flex items-center gap-1.5 mt-0.5">
-            <Landmark className="w-5 h-5 text-sky-600" /> Bookkeeping, Ledger & Rates
+            <Landmark className="w-5 h-5 text-sky-600" /> Bookkeeping
           </h2>
           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-            <span className="text-[10.5px] text-zinc-400 font-medium">Expense Focus:</span>
+            <span className="text-[10.5px] text-zinc-400 font-medium">Typical expenses:</span>
             {activeVentureConfig.expenseFocus.map((focusTag) => (
               <span key={focusTag} className="text-[10px] bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-md border border-zinc-200/60 font-medium">
                 {focusTag}
@@ -1158,10 +1158,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               setShowExpenseModal(true);
             }}
             className="bg-rose-50 hover:bg-rose-100 border border-rose-200/80 text-rose-700 text-xs font-black px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="Scan receipt with camera & extract vendor, amount, and date with Gemini Vision AI"
+            title="Scan a receipt to fill in the vendor, amount and date"
           >
             <Camera className="w-3.5 h-3.5 text-rose-600" />
-            <span>Scan Receipt</span>
+            <span>Scan receipt</span>
           </button>
 
           {/* AI Expense Categorizer Call-up Button */}
@@ -1169,10 +1169,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             type="button"
             onClick={() => setShowAiCategorizerModal(true)}
             className="bg-sky-50 hover:bg-sky-100 border border-sky-200/80 text-sky-700 text-xs font-black px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="AI-Powered Expense Category Suggestions by Service / Project Type"
+            title="Suggest expense categories with AI"
           >
             <Tag className="w-3.5 h-3.5 text-sky-600" />
-            <span>AI Expense Categorizer</span>
+            <span>AI categories</span>
           </button>
 
           {/* AI Advisor Call-up Icon */}
@@ -1180,10 +1180,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             type="button"
             onClick={() => setShowAiFinancialAdvisor(true)}
             className="bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 text-indigo-700 text-xs font-black px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="Call up AI Financial Advisor"
+            title="Ask the AI advisor"
           >
             <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" />
-            <span>AI Advisor</span>
+            <span>AI advisor</span>
           </button>
 
           {/* International FX & Currency Converter Button */}
@@ -1191,10 +1191,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             type="button"
             onClick={() => setShowFxCalcModal(true)}
             className="bg-emerald-50 hover:bg-emerald-100 border border-emerald-200/80 text-emerald-700 text-xs font-black px-3.5 py-2 rounded-xl shadow-2xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-            title="Open Currency Conversion & FX Calculator for Expenses and Invoicing"
+            title="Convert between currencies"
           >
             <ArrowRightLeft className="w-3.5 h-3.5 text-emerald-600" />
-            <span>FX Converter</span>
+            <span>Currency converter</span>
           </button>
         </div>
       </div>
@@ -1209,7 +1209,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          📈 P&L & Expenses
+          P&L and expenses
         </button>
         <button
           onClick={() => setActiveSubTab('reconciler')}
@@ -1219,7 +1219,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          🤝 Reconciler
+          Reconcile
         </button>
         <button
           onClick={() => setActiveSubTab('ledger')}
@@ -1229,7 +1229,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          📊 Ledger
+          Ledger
         </button>
         <button
           onClick={() => setActiveSubTab('rates')}
@@ -1239,7 +1239,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
-          ⚙️ Rates
+          Rates
         </button>
       </div>
 
@@ -1285,10 +1285,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   <div className="flex justify-between items-center">
                     <div>
                       <h4 className="text-xs font-black uppercase tracking-wider text-zinc-800">
-                        Fiji Bank Reconciliation
+                        Bank reconciliation
                       </h4>
                       <p className="text-[10px] text-zinc-500 mt-0.5">
-                        Match bank statements against invoices & SaaS plans
+                        Match bank transactions to invoices and subscriptions
                       </p>
                     </div>
                     <div className="text-right">
@@ -1316,8 +1316,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       <span className="text-xs font-black text-emerald-600 font-mono mt-0.5 block">{reconciledCount} items</span>
                     </div>
                     <div className="bg-zinc-50/50 p-2 rounded-xl">
-                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Unlocked</span>
-                      <span className="text-xs font-black text-sky-600 font-mono mt-0.5 block">100% Secure</span>
+                      <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-wider block">Total</span>
+                      <span className="text-xs font-black text-sky-600 font-mono mt-0.5 block">{totalCount} items</span>
                     </div>
                   </div>
                 </div>
@@ -1331,8 +1331,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   <Sparkles className="w-4 h-4 animate-pulse" />
                 </span>
                 <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-400">Bula AI Auto-Reconciliation</h4>
-                  <p className="text-[9.5px] text-zinc-300">Run algorithmic ledger audits on pending Westpac, BSP, ANZ & M-Paisa feeds.</p>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-sky-400">Auto-match</h4>
+                  <p className="text-[9.5px] text-zinc-300">Match pending bank transactions to your invoices and subscriptions.</p>
                 </div>
               </div>
 
@@ -1342,14 +1342,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   className="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>Audit Bank Feeds</span>
+                  <span>Find matches</span>
                 </button>
                 <button
                   onClick={() => setShowAiCategorizerModal(true)}
                   className="bg-amber-500 hover:bg-amber-400 text-white font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span>AI Categorizer Studio</span>
+                  <span>AI categories</span>
                 </button>
               </div>
             </div>
@@ -1362,7 +1362,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     <Check className="w-3 h-3" />
                   </span>
                   <p className="text-xs font-bold">
-                    Successfully reconciled {reconciledCountInSession} transaction{reconciledCountInSession > 1 ? 's' : ''}!
+                    Reconciled {reconciledCountInSession} transaction{reconciledCountInSession > 1 ? 's' : ''}
                   </p>
                 </div>
                 <button 
@@ -1390,9 +1390,9 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       <Check className="w-7 h-7" />
                     </div>
                     <div>
-                      <h4 className="text-sm font-black uppercase text-zinc-800 tracking-tight">Reconciliation Zero!</h4>
+                      <h4 className="text-sm font-black uppercase text-zinc-800 tracking-tight">All reconciled</h4>
                       <p className="text-xs text-zinc-400 mt-1 max-w-[260px] mx-auto leading-relaxed">
-                        All imported bank transactions have been perfectly matched with invoices, recurring SaaS plans, and general business costs.
+                        Every imported bank transaction has been matched or categorised.
                       </p>
                     </div>
                     <div className="pt-2">
@@ -1400,7 +1400,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         onClick={() => setActiveSubTab('ledger')}
                         className="bg-zinc-950 text-white px-4 py-2 rounded-xl text-xs font-extrabold hover:bg-zinc-900 transition-all cursor-pointer"
                       >
-                        View Financial Ledger
+                        View ledger
                       </button>
                     </div>
                   </div>
@@ -1426,7 +1426,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       onClick={() => setSelectedTxId(null)}
                       className="text-xs font-bold text-zinc-600 hover:text-zinc-900 flex items-center gap-1.5 cursor-pointer bg-zinc-100 py-1.5 px-3 rounded-lg border border-zinc-200"
                     >
-                      ← Back to Bank Statement Queue
+                      ← Back to pending transactions
                     </button>
 
                     {/* Prominent Focused Transaction Card */}
@@ -1444,7 +1444,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       
                       <div className="flex justify-between items-end mt-4 pt-4 border-t border-white/10">
                         <div>
-                          <span className="text-[9px] opacity-80 uppercase block">VAT Portion (Fiji {currentVatRate}%)</span>
+                          <span className="text-[9px] opacity-80 uppercase block">VAT ({currentVatRate}%)</span>
                           <span className="text-xs font-bold font-mono text-white/95">
                             FJD ${Math.abs(Number(vatAmt)).toFixed(2)}
                           </span>
@@ -1462,7 +1462,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     <div className="bg-white border border-zinc-100 rounded-2xl p-4 shadow-sm space-y-3">
                       <div className="flex justify-between items-center">
                         <h4 className="text-xs font-black uppercase text-zinc-800 flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5 text-sky-500 animate-pulse" /> Bula AI Match Candidates
+                          <Sparkles className="w-3.5 h-3.5 text-sky-500 animate-pulse" /> Possible matches
                         </h4>
                         <span className="text-[9px] bg-zinc-100 px-2 py-0.5 rounded-full text-zinc-500 font-bold">
                           {candidates.length} found
@@ -1473,7 +1473,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         <div className="text-center py-6 bg-zinc-50/50 rounded-xl border border-zinc-100 text-zinc-400">
                           <AlertCircle className="w-5 h-5 mx-auto text-zinc-300 mb-1" />
                           <p className="text-[10px] leading-relaxed max-w-[240px] mx-auto">
-                            No open invoice or subscription candidate matching FJD ${Math.abs(tx.amount).toLocaleString()} was identified automatically.
+                            No open invoice or subscription matches FJD ${Math.abs(tx.amount).toLocaleString()}.
                           </p>
                         </div>
                       ) : (
@@ -1488,7 +1488,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                                   <span className={`text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded ${
                                     c.score >= 85 ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                                   }`}>
-                                    {c.score}% Match
+                                    {c.score}% match
                                   </span>
                                   <span className="text-[10px] font-extrabold text-zinc-700 truncate">{c.title}</span>
                                 </div>
@@ -1517,10 +1517,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       <div className="flex items-center justify-between">
                         <div>
                           <h4 className="text-xs font-black uppercase text-zinc-800">
-                            Direct Categorize Allocation
+                            Categorise it yourself
                           </h4>
                           <p className="text-[10px] text-zinc-400 mt-0.5">
-                            Categorize this bank statement directly into your accounting ledger.
+                            Pick a category and add this transaction to the ledger.
                           </p>
                         </div>
 
@@ -1531,7 +1531,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           className="text-[10px] font-bold bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
                         >
                           <Sparkles className={`w-3 h-3 text-amber-600 ${isReconcileAiLoading ? 'animate-spin' : ''}`} />
-                          <span>{isReconcileAiLoading ? 'Analyzing...' : 'AI Auto-Suggest'}</span>
+                          <span>{isReconcileAiLoading ? 'Thinking…' : 'Suggest with AI'}</span>
                         </button>
                       </div>
 
@@ -1541,10 +1541,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <div className="flex items-center justify-between">
                             <span className="font-extrabold text-amber-900 flex items-center gap-1">
                               <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-                              AI Suggestion: {reconcileAiHint.category}
+                              Suggested: {reconcileAiHint.category}
                             </span>
                             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                              {reconcileAiHint.confidence}% Confidence
+                              {reconcileAiHint.confidence}% confident
                             </span>
                           </div>
                           <p className="text-[10px] text-amber-800/90 leading-tight">
@@ -1555,7 +1555,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
                       <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <label className="text-[8px] font-black uppercase text-zinc-400 tracking-wider block">Ledger Category</label>
+                          <label className="text-[8px] font-black uppercase text-zinc-400 tracking-wider block">Category</label>
                           <select
                             value={reconcileCategory}
                             onChange={(e) => setReconcileCategory(e.target.value)}
@@ -1568,7 +1568,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         </div>
 
                         <div className="space-y-1">
-                          <label className="text-[8px] font-black uppercase text-zinc-400 tracking-wider block">Associated Client</label>
+                          <label className="text-[8px] font-black uppercase text-zinc-400 tracking-wider block">Client</label>
                           <select
                             value={reconcileClientId}
                             onChange={(e) => setReconcileClientId(e.target.value)}
@@ -1585,13 +1585,13 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       {/* Notes section right at the bottom of the popover */}
                       <div className="space-y-1 pt-2 border-t border-zinc-100">
                         <label className="text-[8px] font-black uppercase text-zinc-400 tracking-wider block">
-                          Notes / FRCS Audit Remarks
+                          Notes
                         </label>
                         <textarea
                           rows={2}
                           value={reconcileNotes}
                           onChange={(e) => setReconcileNotes(e.target.value)}
-                          placeholder="Add internal notes, vendor TIN, check number, or FRCS remarks..."
+                          placeholder="e.g. vendor TIN, cheque number"
                           className="w-full bg-zinc-50 border border-zinc-200 focus:border-zinc-400 focus:bg-white rounded-xl py-1.5 px-2.5 text-xs text-zinc-700 font-medium focus:outline-none resize-none"
                         />
                       </div>
@@ -1600,7 +1600,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         onClick={() => handleDirectReconcile(tx.id)}
                         className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-extrabold text-xs py-2 rounded-xl text-center cursor-pointer transition-all active:scale-95 shadow-sm mt-1"
                       >
-                        ✓ Direct Allocation To Ledger
+                        ✓ Add to ledger
                       </button>
                     </div>
                   </div>
@@ -1617,7 +1617,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     </span>
                     <input
                       type="text"
-                      placeholder="Filter bank description, amount, BSP, ANZ, M-Paisa..."
+                      placeholder="Search description, bank or category"
                       value={reconcileSearch}
                       onChange={(e) => setReconcileSearch(e.target.value)}
                       className="w-full bg-white border border-zinc-100 hover:border-zinc-200 rounded-2xl py-2.5 pl-9 pr-3 text-xs text-zinc-800 placeholder-zinc-400 transition-colors focus:outline-none shadow-xs"
@@ -1627,10 +1627,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   {/* List header */}
                   <div className="flex justify-between items-center px-1">
                     <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                      Statement Pending Audits ({filteredPending.length})
+                      Pending ({filteredPending.length})
                     </span>
                     <span className="text-[9px] text-zinc-400 italic">
-                      Click item to inspect matches
+                      Tap a transaction to see matches
                     </span>
                   </div>
 
@@ -1679,7 +1679,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                               {hasStrongMatch ? (
                                 <div className="flex items-center gap-1 text-[9.5px] text-emerald-600 font-bold">
                                   <Sparkles className="w-3.5 h-3.5" />
-                                  <span>Bula Match Suggested ({candidates[0].score}% Score)</span>
+                                  <span>Likely match ({candidates[0].score}%)</span>
                                 </div>
                               ) : (
                                 <div className="flex items-center gap-1 text-[9.5px] text-zinc-400 font-medium">
@@ -1716,10 +1716,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="absolute right-3 top-3 bg-emerald-50 text-emerald-600 p-1.5 rounded-xl">
                   <ArrowUpRight className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Total Revenue</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Income</span>
                 <p className="text-base font-black text-zinc-900 mt-1 font-mono">FJD ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <span className="text-[8px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold uppercase">BSP + ANZ feeds</span>
+                  <span className="text-[8px] bg-emerald-100 text-emerald-800 px-1 py-0.5 rounded font-bold uppercase">All accounts</span>
                 </div>
               </div>
 
@@ -1727,10 +1727,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="absolute right-3 top-3 bg-rose-50 text-rose-600 p-1.5 rounded-xl">
                   <ArrowDownLeft className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Total Expenses</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Expenses</span>
                 <p className="text-base font-black text-rose-600 mt-1 font-mono">FJD ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <span className="text-[8px] bg-rose-100 text-rose-800 px-1 py-0.5 rounded font-bold uppercase">Tax Deductible</span>
+                  <span className="text-[8px] bg-rose-100 text-rose-800 px-1 py-0.5 rounded font-bold uppercase">All accounts</span>
                 </div>
               </div>
 
@@ -1738,7 +1738,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="absolute right-3 top-3 bg-sky-50 text-sky-600 p-1.5 rounded-xl">
                   <TrendingUp className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Net Business Profit</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Net profit</span>
                 <p className="text-base font-black text-zinc-900 mt-1 font-mono">FJD ${netProfit.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
               </div>
 
@@ -1746,10 +1746,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="absolute right-3 top-3 bg-indigo-50 text-indigo-600 p-1.5 rounded-xl">
                   <Percent className="w-4 h-4" />
                 </div>
-                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">Fiji VAT Liability</span>
+                <span className="text-[9px] font-extrabold uppercase tracking-wider text-zinc-400">VAT</span>
                 <p className="text-base font-black text-indigo-600 mt-1 font-mono">FJD ${totalVatLiability.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center gap-1 mt-2">
-                  <span className="text-[8px] text-zinc-500 font-bold">{data.userProfile.defaultVatRate ?? 12.5}% VAT Net Included</span>
+                  <span className="text-[8px] text-zinc-500 font-bold">VAT at {data.userProfile.defaultVatRate ?? 12.5}%, included in amounts</span>
                 </div>
               </div>
             </div>
@@ -1763,12 +1763,12 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     <Building2 className="w-4 h-4" />
                   </span>
                   <div>
-                    <h4 className="text-xs font-bold">Bank Statement Reconciliation & Receipt OCR</h4>
-                    <p className="text-[9px] text-zinc-400">Import genuine bank statements or scan receipts with real Fiji VAT isolation.</p>
+                    <h4 className="text-xs font-bold">Import transactions</h4>
+                    <p className="text-[9px] text-zinc-400">Import a bank statement or scan a receipt.</p>
                   </div>
                 </div>
                 <span className="text-[8.5px] bg-emerald-500/20 text-emerald-300 font-extrabold px-2 py-0.5 rounded-full border border-emerald-500/30 font-mono uppercase tracking-wider">
-                  LIVE DATA ONLY
+                  CSV or photo
                 </span>
               </div>
 
@@ -1777,10 +1777,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   type="button"
                   onClick={() => setShowUploadModal(true)}
                   className="bg-sky-500 hover:bg-sky-400 text-white text-[11px] font-extrabold py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 cursor-pointer"
-                  title="Import or paste BSP NetBank CSV statements"
+                  title="Upload or paste a bank statement"
                 >
                   <Upload className="w-4 h-4 text-white" />
-                  <span>Import Bank Statement (BSP CSV)</span>
+                  <span>Import statement</span>
                 </button>
                 <button
                   type="button"
@@ -1790,10 +1790,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     setShowExpenseModal(true);
                   }}
                   className="bg-white/10 hover:bg-white/20 text-white text-[11px] font-extrabold py-2.5 px-3 rounded-xl transition-all flex items-center justify-center gap-2 border border-white/10 cursor-pointer"
-                  title="Scan Receipt with Camera or Upload"
+                  title="Scan or upload a receipt"
                 >
                   <Camera className="w-4 h-4 text-emerald-400" />
-                  <span>Scan Receipt (Camera / OCR)</span>
+                  <span>Scan receipt</span>
                 </button>
               </div>
             </div>
@@ -1804,7 +1804,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     <Sparkles className="w-4 h-4 text-amber-600 animate-pulse" />
-                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-900">AI Review Hub (Human-in-the-Loop)</span>
+                    <span className="text-[10px] font-extrabold uppercase tracking-wide text-amber-900">To review</span>
                     <span className="text-[9px] bg-amber-200/70 text-amber-900 font-bold px-1.5 py-0.5 rounded-full font-mono">
                       {reviewQueue.length} pending
                     </span>
@@ -1813,25 +1813,25 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     <button
                       onClick={() => setReviewQueue([])}
                       className="text-[9px] text-zinc-600 hover:text-rose-700 font-bold px-2 py-1 rounded-lg border border-amber-200 hover:bg-rose-50 transition-all cursor-pointer"
-                      title="Discard all pending items in review queue"
+                      title="Discard everything waiting for review"
                     >
-                      Clear Queue
+                      Discard all
                     </button>
                     {reviewQueueDuplicates.length > 0 && (
                       <button
                         onClick={() => handleApproveAllReview(true)}
                         className="text-[9px] bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1 rounded-lg font-bold transition-all shadow-xs cursor-pointer flex items-center gap-1"
-                        title="Approve only new entries, safely skipping duplicate transactions"
+                        title="Add only new entries and skip duplicates"
                       >
                         <ShieldCheck className="w-3 h-3" />
-                        <span>Skip Duplicates & Approve ({reviewQueue.length - reviewQueueDuplicates.length})</span>
+                        <span>Add new only ({reviewQueue.length - reviewQueueDuplicates.length})</span>
                       </button>
                     )}
                     <button
                       onClick={() => handleApproveAllReview(false)}
                       className="text-[9px] bg-amber-600 hover:bg-amber-700 text-white px-2.5 py-1 rounded-lg font-bold transition-all shadow-xs cursor-pointer"
                     >
-                      Approve All ({reviewQueue.length})
+                      Add all ({reviewQueue.length})
                     </button>
                   </div>
                 </div>
@@ -1840,13 +1840,13 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   <div className="bg-amber-100/90 border border-amber-300 rounded-xl p-2.5 text-[10px] text-amber-950 flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>
-                      <strong>Duplicate Guard:</strong> {reviewQueueDuplicates.length} of {reviewQueue.length} items closely match existing entries in your ledger. Use "Skip Duplicates & Approve" to prevent double counting.
+                      <strong>Possible duplicates:</strong> {reviewQueueDuplicates.length} of {reviewQueue.length} items look like entries already in your ledger. Use "Add new only" so they aren't counted twice.
                     </span>
                   </div>
                 )}
 
                 <p className="text-[9.5px] text-amber-800 leading-normal">
-                  Verify categories, bank accounts, and Fiji VAT portions estimated by Gemini AI before reconciling them to the ledger.
+                  Check the categories, accounts and VAT before adding these to the ledger. AI estimates can be wrong.
                 </p>
 
                 <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
@@ -1880,10 +1880,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             <span className="text-[8px] font-mono text-zinc-400">{item.date}</span>
                             <span className="text-[8px] font-semibold bg-zinc-100 text-zinc-600 px-1 py-0.5 rounded uppercase">
-                              🏦 {item.bankName}
+                              {item.bankName}
                             </span>
                             <span className="text-[8px] bg-sky-50 text-sky-800 border border-sky-100 font-bold uppercase px-1 rounded">
-                              🏷️ {item.category}
+                              {item.category}
                             </span>
                             {item.vatAmount !== 0 && (
                               <span className="text-[8px] bg-indigo-50 text-indigo-700 font-bold px-1 rounded">
@@ -1897,11 +1897,11 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                             )}
                             {dupCheck.isDuplicate && (
                               <span className="text-[8px] bg-amber-100 text-amber-900 border border-amber-300 font-bold px-1 py-0.5 rounded flex items-center gap-0.5" title={dupCheck.reason}>
-                                ⚠️ Duplicate Detected
+                                Possible duplicate
                               </span>
                             )}
                             <span className="text-[8px] font-bold text-amber-700">
-                              ✨ {item.confidence}% confidence
+                              {item.confidence}% confidence
                             </span>
                           </div>
                         </div>
@@ -1910,14 +1910,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <button
                             onClick={() => handleApproveSingle(item.id)}
                             className="p-1 text-emerald-600 hover:bg-emerald-50 rounded transition-all cursor-pointer"
-                            title="Reconcile to Ledger"
+                            title="Add to ledger"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
                           <button
                             onClick={() => handleRemoveSingleReview(item.id)}
                             className="p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all cursor-pointer"
-                            title="Reject Transaction"
+                            title="Discard"
                           >
                             <X className="w-3.5 h-3.5" />
                           </button>
@@ -1934,7 +1934,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               <div className="p-4 border-b border-zinc-100 space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider">Transaction Ledger</h3>
+                    <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider">Ledger</h3>
                     <span className="text-[10px] bg-zinc-100 text-zinc-600 font-mono font-bold px-2 py-0.5 rounded-full">
                       {transactions.length} entries
                     </span>
@@ -1950,10 +1950,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           ? 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm' 
                           : 'bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border-zinc-200'
                       }`}
-                      title="Audit and clean duplicate entries in the ledger"
+                      title="Find and remove duplicate entries"
                     >
                       <AlertTriangle className={`w-3.5 h-3.5 ${totalDuplicatesCount > 0 ? 'text-white' : 'text-amber-600'}`} />
-                      <span>Clean Duplicates</span>
+                      <span>Duplicates</span>
                       {totalDuplicatesCount > 0 && (
                         <span className="bg-white text-amber-700 font-black px-1.5 py-0.2 rounded-full text-[8.5px] font-mono">
                           {totalDuplicatesCount}
@@ -1966,10 +1966,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       type="button"
                       onClick={() => setShowHistoryModal(true)}
                       className="text-[9.5px] bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 font-extrabold px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
-                      title="View restore points and roll back to previous ledger states"
+                      title="See restore points and undo changes"
                     >
                       <History className="w-3.5 h-3.5 text-zinc-600" />
-                      <span>Ledger History & Undo</span>
+                      <span>History</span>
                     </button>
 
                     {/* Manual Log Button */}
@@ -1979,7 +1979,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       className="text-[9.5px] bg-zinc-900 hover:bg-zinc-850 text-white font-extrabold px-2.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer shadow-xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>Manual Log</span>
+                      <span>Add entry</span>
                     </button>
                   </div>
                 </div>
@@ -1992,9 +1992,9 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         <AlertTriangle className="w-4 h-4" />
                       </div>
                       <div className="space-y-0.5">
-                        <span className="font-black text-amber-950 block text-xs">Duplicate Statement Entries Detected</span>
+                        <span className="font-black text-amber-950 block text-xs">Possible duplicates</span>
                         <p className="text-[10px] text-amber-800 leading-snug">
-                          Found <strong>{totalDuplicatesCount} duplicate transaction{totalDuplicatesCount > 1 ? 's' : ''}</strong> from repeated bank imports that may double-count your revenue or expenses.
+                          <strong>{totalDuplicatesCount} transaction{totalDuplicatesCount > 1 ? 's' : ''}</strong> may have been imported twice, which would count income or expenses twice.
                         </p>
                       </div>
                     </div>
@@ -2005,7 +2005,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         className="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white font-extrabold px-3 py-1.5 rounded-xl text-[11px] flex items-center justify-center gap-1.5 transition-all shadow-sm cursor-pointer active:scale-95"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>Audit & Clean ({totalDuplicatesCount})</span>
+                        <span>Review ({totalDuplicatesCount})</span>
                       </button>
                     </div>
                   </div>
@@ -2014,7 +2014,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 {/* Manual Log Inputs collapsible */}
                 {showAddManual && (
                   <form onSubmit={handleAddManualTransaction} className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 space-y-3 text-zinc-800 animate-fade-in">
-                    <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider block">Add Manual Ledger Item</span>
+                    <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider block">Add ledger entry</span>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <DateInput
@@ -2022,7 +2022,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         required
                         value={manualDate}
                         onChange={setManualDate}
-                        placeholder="Select entry date"
+                        placeholder="Select date"
                         inputClassName="bg-white py-1.5"
                         customPresets={[
                           { label: 'Today', special: 'today' },
@@ -2056,7 +2056,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         <input
                           type="text"
                           required
-                          placeholder="e.g. Suva Stationary"
+                          placeholder="e.g. Suva Stationery"
                           value={manualDesc}
                           onChange={(e) => setManualDesc(e.target.value)}
                           className="w-full bg-white border border-zinc-200 rounded-lg p-1.5 text-[10px] focus:outline-none"
@@ -2087,7 +2087,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                             className="text-[8px] font-extrabold text-amber-700 hover:text-amber-900 flex items-center gap-0.5 cursor-pointer disabled:opacity-40"
                           >
                             <Sparkles className={`w-2.5 h-2.5 ${isManualAiLoading ? 'animate-spin' : ''}`} />
-                            <span>AI Detect</span>
+                            <span>Suggest</span>
                           </button>
                         </div>
                         <select
@@ -2099,7 +2099,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         </select>
                       </div>
                       <div className="space-y-1">
-                        <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Bank Account</label>
+                        <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Account</label>
                         <select
                           value={manualBank}
                           onChange={(e) => setManualBank(e.target.value)}
@@ -2108,7 +2108,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <option value="BSP Fiji">BSP Fiji</option>
                           <option value="ANZ Fiji">ANZ Fiji</option>
                           <option value="Westpac Fiji">Westpac Fiji</option>
-                          <option value="M-Paisa">M-Paisa</option>
+                          <option value="M-Paisa">M-PAiSA</option>
                         </select>
                       </div>
                     </div>
@@ -2125,7 +2125,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         type="submit"
                         className="bg-zinc-900 hover:bg-zinc-850 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg"
                       >
-                        Submit Entry
+                        Add entry
                       </button>
                     </div>
                   </form>
@@ -2139,7 +2139,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     </span>
                     <input
                       type="text"
-                      placeholder="Search description, bank, category..."
+                      placeholder="Search description, bank or category"
                       value={ledgerSearch}
                       onChange={(e) => setLedgerSearch(e.target.value)}
                       className="w-full bg-zinc-50 border border-zinc-200 rounded-xl py-1.5 pl-9 pr-4 text-[11px] text-zinc-800 placeholder-zinc-400 focus:outline-none focus:border-zinc-900 focus:bg-white"
@@ -2158,9 +2158,9 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       onChange={(e) => setTypeFilter(e.target.value)}
                       className="bg-zinc-100 hover:bg-zinc-200 border-none rounded-lg px-2 py-1 text-zinc-700 font-bold outline-none cursor-pointer"
                     >
-                      <option value="all">All Types</option>
-                      <option value="income">Income Only</option>
-                      <option value="expense">Expenses Only</option>
+                      <option value="all">All types</option>
+                      <option value="income">Income</option>
+                      <option value="expense">Expenses</option>
                     </select>
 
                     <select
@@ -2168,7 +2168,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       onChange={(e) => setCategoryFilter(e.target.value)}
                       className="bg-zinc-100 hover:bg-zinc-200 border-none rounded-lg px-2 py-1 text-zinc-700 font-bold outline-none cursor-pointer max-w-[120px]"
                     >
-                      <option value="all">All Categories</option>
+                      <option value="all">All categories</option>
                       {categoryOptions.map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
 
@@ -2177,11 +2177,11 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       onChange={(e) => setBankFilter(e.target.value)}
                       className="bg-zinc-100 hover:bg-zinc-200 border-none rounded-lg px-2 py-1 text-zinc-700 font-bold outline-none cursor-pointer"
                     >
-                      <option value="all">All Accounts</option>
+                      <option value="all">All accounts</option>
                       <option value="BSP Fiji">BSP Fiji</option>
                       <option value="ANZ Fiji">ANZ Fiji</option>
                       <option value="Westpac Fiji">Westpac Fiji</option>
-                      <option value="M-Paisa">M-Paisa</option>
+                      <option value="M-Paisa">M-PAiSA</option>
                     </select>
                   </div>
                 </div>
@@ -2192,8 +2192,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 {filteredLedger.length === 0 ? (
                   <div className="text-center py-8 text-zinc-400">
                     <LANDMARK_DECORATOR />
-                    <p className="text-[10px] font-bold uppercase tracking-wider mt-2">No Transactions Listed</p>
-                    <p className="text-[8.5px] max-w-[200px] mx-auto leading-normal mt-0.5">Use AI Sync or tap Manual Log above to seed your bookkeeping ledger.</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mt-2">No transactions</p>
+                    <p className="text-[8.5px] max-w-[200px] mx-auto leading-normal mt-0.5">Import a statement or tap Add entry above.</p>
                   </div>
                 ) : (
                   filteredLedger.map((tx) => (
@@ -2210,7 +2210,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                             ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
                             : 'bg-white border-zinc-200 text-zinc-300 hover:text-zinc-500'
                         }`}
-                        title={tx.status === 'reconciled' ? 'Mark Pending' : 'Mark Reconciled'}
+                        title={tx.status === 'reconciled' ? 'Mark as pending' : 'Mark as reconciled'}
                       >
                         <Check className="w-3 h-3" />
                       </button>
@@ -2230,10 +2230,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <span className="text-[8px] font-mono text-zinc-400">{tx.date}</span>
                           <span className="text-[8px] bg-zinc-100 text-zinc-600 px-1 py-0.5 rounded font-extrabold uppercase tracking-tight">
-                            🏦 {tx.bankName}
+                            {tx.bankName}
                           </span>
                           <span className="text-[8px] bg-zinc-100 text-zinc-600 px-1 py-0.5 rounded font-extrabold uppercase tracking-tight">
-                            🏷️ {tx.category}
+                            {tx.category}
                           </span>
                           {tx.vatAmount !== 0 && (
                             <span className="text-[8px] bg-indigo-50 text-indigo-700 px-1 rounded font-bold">
@@ -2251,7 +2251,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       <button
                         onClick={() => handleDeleteTransaction(tx.id)}
                         className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-all shrink-0 self-center"
-                        title="Delete Ledger Entry"
+                        title="Delete entry"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -2275,19 +2275,19 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
                   <Briefcase className="w-4.5 h-4.5 text-zinc-700" />
-                  <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider">Service & SaaS Catalog</h3>
+                  <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider">Services and products</h3>
                 </div>
                 <button
                   onClick={handleOpenAddService}
                   className="text-[9.5px] bg-zinc-900 hover:bg-zinc-850 text-white font-extrabold px-2 py-1 rounded-lg flex items-center gap-1 transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" /> New Item
+                  <Plus className="w-3.5 h-3.5" /> Add item
                 </button>
               </div>
 
               <div className="space-y-2 max-h-[190px] overflow-y-auto pr-1">
                 {data.services.length === 0 ? (
-                  <p className="text-center text-[10px] text-zinc-400 py-6">No catalog services. Create one to begin!</p>
+                  <p className="text-center text-[10px] text-zinc-400 py-6">No services yet. Add one to use it on quotes and invoices.</p>
                 ) : (
                   data.services.map((srv) => (
                     <div key={srv.id} className="p-2.5 bg-zinc-50 border border-zinc-150/70 rounded-xl flex justify-between items-center group">
@@ -2312,14 +2312,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                           <button
                             onClick={() => handleOpenEditService(srv)}
                             className="p-1 text-zinc-400 hover:text-zinc-700 rounded hover:bg-zinc-150"
-                            title="Edit Service"
+                            title="Edit"
                           >
                             <Edit3 className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => handleDeleteService(srv.id)}
                             className="p-1 text-zinc-400 hover:text-rose-600 rounded hover:bg-rose-50"
-                            title="Delete Service"
+                            title="Delete"
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -2336,51 +2336,51 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-1.5">
                   <Percent className="w-4.5 h-4.5 text-indigo-600" />
-                  <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider font-sans">Dynamic Modifier Rules</h3>
+                  <h3 className="text-xs font-black uppercase text-zinc-500 tracking-wider font-sans">Rate rules</h3>
                 </div>
                 <button
                   onClick={() => setShowAddRule(!showAddRule)}
                   className="text-[9.5px] bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold px-2 py-1 rounded-lg flex items-center gap-1 transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Add Rule
+                  <Plus className="w-3.5 h-3.5" /> Add rule
                 </button>
               </div>
 
               {/* Form to add custom RateRule */}
               {showAddRule && (
                 <form onSubmit={handleAddRateRule} className="bg-zinc-50 border border-zinc-200 rounded-xl p-3 space-y-3 text-zinc-800 animate-fade-in">
-                  <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider block">Create Custom Rate Multiplier/Surcharge</span>
+                  <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider block">New rate rule</span>
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Rule Title</label>
+                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Name</label>
                       <input
                         type="text"
                         required
-                        placeholder="e.g. Night Shift"
+                        placeholder="e.g. Night shift"
                         value={ruleName}
                         onChange={(e) => setRuleName(e.target.value)}
                         className="w-full bg-white border border-zinc-200 rounded-lg p-1.5 text-[10px] focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Trigger Class</label>
+                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Applies to</label>
                       <select
                         value={ruleApplies}
                         onChange={(e) => setRuleApplies(e.target.value as any)}
                         className="w-full bg-white border border-zinc-200 rounded-lg p-1.5 text-[10px]"
                       >
-                        <option value="weekend">Saturday / Sunday</option>
-                        <option value="rush">Express / High Urgency</option>
-                        <option value="after-hours">After-Hours (Night)</option>
-                        <option value="all">Always Applied</option>
+                        <option value="weekend">Weekends</option>
+                        <option value="rush">Rush jobs</option>
+                        <option value="after-hours">After hours</option>
+                        <option value="all">All work</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2">
                     <div className="col-span-2 space-y-1">
-                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Modifier Type</label>
+                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Type</label>
                       <select
                         value={ruleType}
                         onChange={(e) => {
@@ -2395,9 +2395,9 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         }}
                         className="w-full bg-white border border-zinc-200 rounded-lg p-1.5 text-[10px]"
                       >
-                        <option value="multiplier">Rate Multiplier (e.g. 1.5x)</option>
-                        <option value="surcharge">Added Surcharge (Fee)</option>
-                        <option value="discount">Subtracted Loyalty Discount</option>
+                        <option value="multiplier">Multiplier (e.g. 1.5x)</option>
+                        <option value="surcharge">Surcharge</option>
+                        <option value="discount">Discount</option>
                       </select>
                     </div>
                     <div className="space-y-1">
@@ -2415,24 +2415,24 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Modifier Unit</label>
+                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Unit</label>
                       <select
                         value={ruleUnit}
                         onChange={(e) => setRuleUnit(e.target.value as any)}
                         className="w-full bg-white border border-zinc-200 rounded-lg p-1.5 text-[10px]"
                       >
                         {ruleType === 'multiplier' ? (
-                          <option value="multiplier">X Factor (Multiplier)</option>
+                          <option value="multiplier">Multiplier (x)</option>
                         ) : (
                           <>
-                            <option value="flat">FJD Flat Rate ($)</option>
-                            <option value="percent">Percent Portion (%)</option>
+                            <option value="flat">Fixed amount (FJD)</option>
+                            <option value="percent">Percentage (%)</option>
                           </>
                         )}
                       </select>
                     </div>
                     <div className="space-y-1">
-                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Shorthand Description</label>
+                      <label className="text-[8px] font-extrabold text-zinc-500 uppercase block">Description</label>
                       <input
                         type="text"
                         placeholder="e.g. Weekend rates apply"
@@ -2455,7 +2455,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       type="submit"
                       className="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-lg animate-pulse"
                     >
-                      Deploy Rule
+                      Save rule
                     </button>
                   </div>
                 </form>
@@ -2493,13 +2493,13 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                             : 'bg-zinc-200 text-zinc-500'
                         }`}
                       >
-                        {rule.isActive ? 'Active' : 'Muted'}
+                        {rule.isActive ? 'On' : 'Off'}
                       </button>
 
                       <button
                         onClick={() => handleDeleteRule(rule.id)}
                         className="opacity-0 group-hover:opacity-100 p-1 text-zinc-400 hover:text-rose-600 rounded transition-all"
-                        title="Delete Rule"
+                        title="Delete rule"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
@@ -2518,10 +2518,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   </div>
                   <div>
                     <h3 className="text-xs font-black uppercase text-zinc-900 tracking-wider">
-                      Venture Working Currencies & FX Benchmarks
+                      Currencies and exchange rates
                     </h3>
                     <p className="text-[9.5px] text-zinc-500">
-                      Configured for <span className="font-bold text-zinc-700">{activeBiz?.name}</span> (Base: <span className="font-mono font-bold text-emerald-700">{activeBiz?.currency || 'FJD'}</span>)
+                      For <span className="font-bold text-zinc-700">{activeBiz?.name}</span> (base currency: <span className="font-mono font-bold text-emerald-700">{activeBiz?.currency || 'FJD'}</span>)
                     </p>
                   </div>
                 </div>
@@ -2533,14 +2533,14 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                     className="text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold px-3 py-1.5 rounded-xl shadow-xs flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                   >
                     <ArrowRightLeft className="w-3.5 h-3.5" />
-                    <span>Launch FX Converter</span>
+                    <span>Currency converter</span>
                   </button>
                   {onNavigateToTab && (
                     <button
                       type="button"
                       onClick={() => onNavigateToTab('settings')}
                       className="text-[10px] bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-bold px-2.5 py-1.5 rounded-xl transition-all cursor-pointer"
-                      title="Manage working currencies in Business Settings"
+                      title="Change currencies in Settings"
                     >
                       Settings
                     </button>
@@ -2575,7 +2575,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                       </div>
                       <p className="text-[10.5px] font-bold mt-1 truncate">{cfg.name}</p>
                       <div className="mt-1 flex items-baseline justify-between text-[9px]">
-                        <span className="text-zinc-500 font-medium">{isBase ? 'Base Ledger' : '1 ' + curCode + ' ='}</span>
+                        <span className="text-zinc-500 font-medium">{isBase ? 'Base' : '1 ' + curCode + ' ='}</span>
                         <span className="font-mono font-black text-zinc-900">
                           {isBase ? '1.0000' : `${rate.toFixed(3)} ${activeBiz?.currency || 'FJD'}`}
                         </span>
@@ -2595,15 +2595,15 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   <Calculator className="w-4.5 h-4.5" />
                 </span>
                 <div>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-sky-400">Rate Calculator Engine</h4>
-                  <p className="text-[9px] text-zinc-300">Test combinations of catalog services and active rate rules dynamically.</p>
+                  <h4 className="text-xs font-black uppercase tracking-wider text-sky-400">Rate calculator</h4>
+                  <p className="text-[9px] text-zinc-300">See what a service costs with your rate rules applied.</p>
                 </div>
               </div>
 
               {/* Selector */}
               <div className="space-y-3 pt-1 text-zinc-800">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider block">1. Select Catalog Service</label>
+                  <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider block">1. Service</label>
                   <select
                     value={selectedPlaygroundSrv}
                     onChange={(e) => setSelectedPlaygroundSrv(e.target.value)}
@@ -2620,7 +2620,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 {selectedService?.unit === 'Hour' && (
                   <div className="space-y-1">
                     <div className="flex justify-between items-center">
-                      <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider">2. Project Duration (Hours)</label>
+                      <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider">2. Hours</label>
                       <span className="text-[10px] text-sky-400 font-mono font-bold">{playgroundHours} hrs</span>
                     </div>
                     <input
@@ -2636,7 +2636,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
                 {/* Modifiers checklist inside sandbox */}
                 <div className="space-y-1 text-white">
-                  <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider block">3. Toggle Rate Modifiers</label>
+                  <label className="text-[8px] font-black uppercase text-indigo-300 tracking-wider block">3. Rate rules</label>
                   <div className="grid grid-cols-2 gap-1.5 pt-1">
                     {rateRules.map((rule) => {
                       const isRuleChecked = activePlaygroundRules.includes(rule.id) && rule.isActive;
@@ -2671,8 +2671,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
               {/* Dynamic Rate Receipt Render */}
               <div className="bg-indigo-950/60 border border-indigo-900 rounded-2xl p-4 space-y-3 font-mono">
                 <div className="flex justify-between items-center border-b border-indigo-900 pb-1.5">
-                  <span className="text-[8px] font-extrabold text-indigo-300 uppercase tracking-widest">Pricing Formula Output</span>
-                  <span className="text-[8px] bg-indigo-900 text-sky-400 px-1.5 py-0.5 rounded font-bold uppercase">Dynamic Sizing Ready</span>
+                  <span className="text-[8px] font-extrabold text-indigo-300 uppercase tracking-widest">Breakdown</span>
+                  <span className="text-[8px] bg-indigo-900 text-sky-400 px-1.5 py-0.5 rounded font-bold uppercase">Estimate</span>
                 </div>
 
                 <div className="space-y-1 text-zinc-300 text-[10px] leading-relaxed">
@@ -2686,15 +2686,15 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
                 <div className="border-t border-indigo-900 pt-2 space-y-1 text-xs">
                   <div className="flex justify-between text-[10px] text-zinc-400">
-                    <span>Final Base Rate per Unit:</span>
+                    <span>Rate per unit</span>
                     <span>FJD ${ratePlaygroundResults.finalRatePerUnit.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-[10px] text-indigo-300">
-                    <span>Fiji VAT Component ({data.userProfile.defaultVatRate ?? 12.5}%):</span>
+                    <span>VAT included ({data.userProfile.defaultVatRate ?? 12.5}%)</span>
                     <span>FJD ${ratePlaygroundResults.vatAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-white font-black text-sm pt-1 border-t border-dashed border-indigo-900/50">
-                    <span className="font-display">Total Client Charge:</span>
+                    <span className="font-display">Total to client</span>
                     <span className="font-mono text-sky-400">FJD ${ratePlaygroundResults.rawTotal.toFixed(2)}</span>
                   </div>
                 </div>
@@ -2714,8 +2714,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           setShowUploadModal(false);
           triggerUndoToast(
             '',
-            'Bank Statement Imported',
-            `Loaded ${importedTransactions.length} statement rows into the review hub.`
+            'Statement imported',
+            `${importedTransactions.length} rows are waiting for review.`
           );
         }}
         defaultVatRate={data.userProfile.defaultVatRate ?? 12.5}
@@ -2781,7 +2781,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
               <div className="flex items-center gap-1.5">
                 <Camera className="w-4 h-4 text-emerald-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wide">Fiji AI Receipt Capture</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wide">Scan receipt</h3>
               </div>
               <button 
                 onClick={() => setShowReceiptModal(false)}
@@ -2793,7 +2793,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
             <div className="p-4 space-y-4">
               <p className="text-[9.5px] text-zinc-500 leading-normal">
-                Snap a picture or upload an expense receipt. Gemini Vision AI will automatically parse the merchant name, date, negative amount, and calculate the standard Fijian **{data.userProfile.defaultVatRate ?? 12.5}% VAT component** or detect zero VAT for overseas SaaS.
+                Take a photo or upload a receipt. AI reads the vendor, date and amount, and works out the {data.userProfile.defaultVatRate ?? 12.5}% VAT (or no VAT for overseas software).
               </p>
 
               {/* Upload Drop Zone */}
@@ -2807,8 +2807,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:scale-110 transition-transform">
                   <Camera className="w-5 h-5" />
                 </div>
-                <span className="text-[11px] font-bold text-zinc-800 mt-2">Upload Invoice PDF or Photo</span>
-                <span className="text-[9px] text-zinc-400 mt-0.5">PDF, Screenshots, JPEG, PNG up to 25MB</span>
+                <span className="text-[11px] font-bold text-zinc-800 mt-2">Upload PDF or photo</span>
+                <span className="text-[9px] text-zinc-400 mt-0.5">PDF, screenshot, JPEG or PNG, up to 25MB</span>
               </label>
             </div>
           </div>
@@ -2825,9 +2825,9 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             </div>
             
             <div className="space-y-1">
-              <span className="text-[8px] font-black uppercase tracking-widest text-sky-400">Gemini LLM Active</span>
+              <span className="text-[8px] font-black uppercase tracking-widest text-sky-400">Working</span>
               <h4 className="text-xs font-bold">{reassuranceMessage}</h4>
-              <p className="text-[8.5px] text-zinc-400 leading-normal">Our AI parses transaction strings, categorizes them according to FRCA tax guidelines, and extracts standard {data.userProfile.defaultVatRate ?? 12.5}% VAT included values securely.</p>
+              <p className="text-[8.5px] text-zinc-400 leading-normal">AI reads each line, suggests a category and works out the {data.userProfile.defaultVatRate ?? 12.5}% VAT. You can check everything before it goes in the ledger.</p>
             </div>
           </div>
         </div>
@@ -2839,7 +2839,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           <div className="bg-white w-full max-w-sm rounded-2xl border border-zinc-100 shadow-2xl overflow-hidden text-zinc-700">
             <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
               <h3 className="text-xs font-bold uppercase tracking-wide">
-                {editingServiceId ? 'Edit Catalog Service' : 'Add Catalog Service / SaaS'}
+                {editingServiceId ? 'Edit service' : 'Add service'}
               </h3>
               <button onClick={() => setShowAddService(false)} className="text-zinc-400 hover:text-white transition-colors">
                 <X className="w-4 h-4" />
@@ -2848,11 +2848,11 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
             <form onSubmit={handleSubmitService} className="p-4 space-y-3.5">
               <div className="space-y-1">
-                <label className="text-[8px] font-black uppercase text-zinc-400 block">Service Name</label>
+                <label className="text-[8px] font-black uppercase text-zinc-400 block">Name</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Bespoke Mobile App Development"
+                  placeholder="e.g. Mobile app development"
                   value={srvName}
                   onChange={(e) => setSrvName(e.target.value)}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none focus:border-zinc-900"
@@ -2863,7 +2863,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <label className="text-[8px] font-black uppercase text-zinc-400 block">Description</label>
                 <textarea
                   rows={2}
-                  placeholder="Explain inclusions, deliverables, etc."
+                  placeholder="What's included"
                   value={srvDesc}
                   onChange={(e) => setSrvDesc(e.target.value)}
                   className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs focus:outline-none resize-none"
@@ -2872,7 +2872,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Base Rate (FJD)</label>
+                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Rate (FJD)</label>
                   <input
                     type="number"
                     required
@@ -2882,7 +2882,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Billing Unit</label>
+                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Unit</label>
                   <select
                     value={srvUnit}
                     onChange={(e) => setSrvUnit(e.target.value)}
@@ -2890,7 +2890,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   >
                     <option value="Hour">Hour</option>
                     <option value="Day">Day</option>
-                    <option value="Flat Fee">Flat Fee</option>
+                    <option value="Flat Fee">Flat fee</option>
                     <option value="Project">Project</option>
                   </select>
                 </div>
@@ -2898,26 +2898,26 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Catalog Type</label>
+                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Type</label>
                   <select
                     value={srvType}
                     onChange={(e) => setSrvType(e.target.value as any)}
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs"
                   >
-                    <option value="service">Service (Consulting)</option>
-                    <option value="saas">SaaS (Product License)</option>
+                    <option value="service">Service</option>
+                    <option value="saas">Software subscription</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Billing Interval</label>
+                  <label className="text-[8px] font-black uppercase text-zinc-400 block">Billing</label>
                   <select
                     value={srvInterval}
                     onChange={(e) => setSrvInterval(e.target.value as any)}
                     className="w-full bg-zinc-50 border border-zinc-200 rounded-xl p-2 text-xs"
                   >
                     <option value="one-time">One-time</option>
-                    <option value="monthly">Monthly Recurring</option>
-                    <option value="annual">Annual Recurring</option>
+                    <option value="monthly">Monthly</option>
+                    <option value="annual">Yearly</option>
                   </select>
                 </div>
               </div>
@@ -2934,7 +2934,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   type="submit"
                   className="flex-1 bg-zinc-900 hover:bg-zinc-850 text-white py-2 rounded-xl text-xs font-bold"
                 >
-                  Save Service
+                  Save
                 </button>
               </div>
             </form>
@@ -2949,7 +2949,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
             <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
               <div className="flex items-center gap-1.5 font-sans">
                 <Sparkles className="w-4 h-4 text-sky-400" />
-                <h3 className="text-xs font-bold uppercase tracking-wide">Bula AI Statement Audit</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wide">Auto-match</h3>
               </div>
               <button 
                 onClick={() => setShowAutoMatchModal(false)}
@@ -2964,7 +2964,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 <div className="flex flex-col items-center justify-center py-8 space-y-3.5">
                   <RefreshCw className="w-8 h-8 text-sky-500 animate-spin" />
                   <p className="text-xs font-bold text-zinc-500 animate-pulse text-center">
-                    Executing ledger cross-referencing algorithms...
+                    Looking for matches…
                   </p>
                 </div>
               ) : (
@@ -2984,19 +2984,19 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                   {autoMatchLogs.some(log => log.includes('✓')) ? (
                     <div className="space-y-2 text-left">
                       <p className="text-[10px] text-zinc-400 leading-normal">
-                        Bula AI found high-confidence pairs between bank statement records and open invoices/subscriptions. Reconciling them will instantly mark matched invoices as "Paid".
+                        These bank transactions match open invoices or subscriptions. Reconciling them marks the matched invoices as paid.
                       </p>
                       <button
                         onClick={handleApproveAllAutoMatches}
                         className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold py-2 px-3 rounded-xl text-xs flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer"
                       >
                         <Check className="w-4 h-4" />
-                        <span>Accept & Reconcile All Matches</span>
+                        <span>Reconcile all matches</span>
                       </button>
                     </div>
                   ) : (
                     <p className="text-[10px] text-zinc-400 text-center leading-normal">
-                      No high-confidence automated matches could be processed. Please use manual match indicators to link transactions.
+                      No strong matches found. Open each transaction to match or categorise it yourself.
                     </p>
                   )}
                 </div>

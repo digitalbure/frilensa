@@ -43,7 +43,7 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
   if (!isOpen) return null;
 
   const handleRestore = (point: LedgerRestorePoint) => {
-    const confirmMessage = `Rollback ledger to state: "${point.actionTitle}" (${point.displayTime})?\n\nThis will restore your ledger to ${point.transactions.length} transactions. A backup of your current state will be saved automatically before rolling back.`;
+    const confirmMessage = `Restore the ledger to "${point.actionTitle}" (${point.displayTime})?\n\nYour ledger will go back to ${point.transactions.length} transactions. Your current ledger is saved as a restore point first.`;
     if (window.confirm(confirmMessage)) {
       const result = rollbackLedgerState(userEmail, point.id, currentTransactions);
       if (result) {
@@ -54,7 +54,7 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
   };
 
   const handleClearHistory = () => {
-    if (window.confirm('Clear all ledger rollback history points?')) {
+    if (window.confirm('Delete all restore points?')) {
       clearLedgerRestorePoints(userEmail);
       setPoints([]);
     }
@@ -72,13 +72,13 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold tracking-tight">Ledger History & Rollback Points</h3>
+                <h3 className="text-sm font-bold tracking-tight">Ledger history</h3>
                 <span className="text-[10px] bg-indigo-500/20 text-indigo-300 font-semibold px-2 py-0.5 rounded-full border border-indigo-500/30">
-                  {points.length} Snapshots
+                  {points.length} saved
                 </span>
               </div>
               <p className="text-[11px] text-zinc-400">
-                Recover prior ledger versions before imports, batch reconciliations, or accidental edits
+                Go back to how your ledger looked before an import, batch approval or mistake
               </p>
             </div>
           </div>
@@ -98,16 +98,16 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
                 <History className="w-6 h-6" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-bold text-zinc-900">No Restore Points Yet</h4>
+                <h4 className="text-sm font-bold text-zinc-900">No restore points yet</h4>
                 <p className="text-xs text-zinc-500 max-w-sm mx-auto">
-                  Restore points are automatically captured whenever you import bank statements, approve review batches, or clean duplicates.
+                  A restore point is saved each time you import a bank statement, approve a batch or remove duplicates.
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-2.5">
               <div className="flex justify-between items-center text-xs text-zinc-500 pb-1 border-b border-zinc-150">
-                <span>Select a restore point to rollback your ledger:</span>
+                <span>Pick a restore point:</span>
                 <span className="font-mono text-[11px]">Current: {currentTransactions.length} entries</span>
               </div>
 
@@ -128,7 +128,7 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
                       <div className="flex items-center gap-2 flex-wrap">
                         {isLatest && (
                           <span className="text-[9px] font-black uppercase tracking-wider bg-indigo-600 text-white px-1.5 py-0.5 rounded">
-                            Latest Point
+                            Latest
                           </span>
                         )}
                         <span className="text-xs font-bold text-zinc-900">
@@ -164,7 +164,7 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
                       className="self-start sm:self-center bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 shadow-xs cursor-pointer active:scale-95"
                     >
                       <RotateCcw className="w-3.5 h-3.5 text-indigo-300" />
-                      <span>Restore This State</span>
+                      <span>Restore</span>
                     </button>
                   </div>
                 );
@@ -181,7 +181,7 @@ export const LedgerHistoryModal: React.FC<LedgerHistoryModalProps> = ({
               onClick={handleClearHistory}
               className="text-[11px] text-rose-600 hover:text-rose-800 font-bold px-2 py-1 rounded transition-colors cursor-pointer"
             >
-              Clear History
+              Clear history
             </button>
           ) : <div />}
 

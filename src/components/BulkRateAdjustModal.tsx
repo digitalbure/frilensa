@@ -74,12 +74,12 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
     const newLog = {
       id: `act-bulk-${Date.now()}`,
       type: 'rate_updated' as const,
-      title: `Bulk Rate Adjustment Applied (${affectedCount} Items)`,
+      title: `Rates updated (${affectedCount} items)`,
       description: adjustType === 'percent' 
-        ? `Adjusted ${affectedCount} catalog rates by ${percentDelta >= 0 ? '+' : ''}${percentDelta}% across category '${targetCategory}'.`
+        ? `Changed ${affectedCount} rates by ${percentDelta >= 0 ? '+' : ''}${percentDelta}% in category '${targetCategory}'.`
         : adjustType === 'flat'
-        ? `Applied ${flatDelta >= 0 ? '+' : ''}${currencyConfig.symbol}${flatDelta} to ${affectedCount} catalog items.`
-        : `Targeted ${targetMargin}% gross margin across ${affectedCount} catalog items.`,
+        ? `Changed ${affectedCount} items by ${flatDelta >= 0 ? '+' : ''}${currencyConfig.symbol}${flatDelta}.`
+        : `Set ${affectedCount} items to a ${targetMargin}% gross margin.`,
       timestamp: new Date().toISOString(),
       entityType: 'service' as const,
       badgeColor: 'amber' as const
@@ -109,10 +109,10 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
-                Bulk Rates & Pricing Adjustment
+                Adjust rates
               </h3>
               <p className="text-xs text-slate-300">
-                Adjust prices across your entire catalogue or target specific categories with live preview.
+                Change prices across your catalogue or in one category, and preview the result.
               </p>
             </div>
           </div>
@@ -129,7 +129,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
           {/* Adjustment Mode Selector */}
           <div>
             <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">
-              Adjustment Strategy
+              Adjust by
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
@@ -142,7 +142,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                 }`}
               >
                 <span className="text-xs font-bold block">Percentage (%)</span>
-                <span className="text-[10px] opacity-75">Inflation or annual hike</span>
+                <span className="text-[10px] opacity-75">Raise or lower by a percentage</span>
               </button>
 
               <button
@@ -154,8 +154,8 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <span className="text-xs font-bold block">Flat Rate (+/-)</span>
-                <span className="text-[10px] opacity-75">Fixed sum surcharge</span>
+                <span className="text-xs font-bold block">Flat amount (+/-)</span>
+                <span className="text-[10px] opacity-75">Add or subtract a fixed amount</span>
               </button>
 
               <button
@@ -167,8 +167,8 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <span className="text-xs font-bold block">Target Margin %</span>
-                <span className="text-[10px] opacity-75">Cost-plus formula</span>
+                <span className="text-xs font-bold block">Target margin %</span>
+                <span className="text-[10px] opacity-75">Price from cost</span>
               </button>
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
             {adjustType === 'percent' && (
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Percentage Adjustment (%)
+                  Percentage (%)
                 </label>
                 <div className="flex items-center gap-2 mt-1">
                   <input
@@ -209,7 +209,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
             {adjustType === 'flat' && (
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Flat Amount ({currencyConfig.code})
+                  Amount ({currencyConfig.code})
                 </label>
                 <div className="flex items-center gap-2 mt-1">
                   <input
@@ -240,7 +240,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
             {adjustType === 'margin_target' && (
               <div>
                 <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Target Gross Margin %
+                  Target gross margin %
                 </label>
                 <input
                   type="number"
@@ -250,21 +250,21 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                   onChange={(e) => setTargetMargin(Number(e.target.value))}
                   className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-800 mt-1 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
-                <p className="text-[10px] text-slate-400 mt-1">Computes Selling Price = Cost / (1 - Margin %)</p>
+                <p className="text-[10px] text-slate-400 mt-1">Price = cost / (1 - margin %)</p>
               </div>
             )}
 
             {/* Target Category Filter */}
             <div>
               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Target Category Scope
+                Category
               </label>
               <select
                 value={targetCategory}
                 onChange={(e) => setTargetCategory(e.target.value)}
                 className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs mt-1 text-slate-800 font-medium focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
               >
-                <option value="all">All Categories ({data.services.length} items)</option>
+                <option value="all">All categories ({data.services.length} items)</option>
                 {categories.map(c => (
                   <option key={c} value={c}>{c}</option>
                 ))}
@@ -281,7 +281,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                 onChange={(e) => setIncludeTierRates(e.target.checked)}
                 className="rounded text-sky-600 focus:ring-sky-500 cursor-pointer"
               />
-              <span>Proportionately Scale Multi-Tier Rates (Rush / Weekend)</span>
+              <span>Scale rush, weekend and retainer rates too</span>
             </label>
 
             <div className="flex items-center gap-1.5">
@@ -291,9 +291,9 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                 onChange={(e) => setRoundingRule(e.target.value as any)}
                 className="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs text-slate-700 cursor-pointer"
               >
-                <option value="two_decimals">Exact (Cents)</option>
-                <option value="nearest_5">Round to Nearest $5</option>
-                <option value="nearest_10">Round to Nearest $10</option>
+                <option value="two_decimals">Exact (cents)</option>
+                <option value="nearest_5">Round to nearest $5</option>
+                <option value="nearest_10">Round to nearest $10</option>
               </select>
             </div>
           </div>
@@ -302,7 +302,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="font-bold text-slate-700 flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Live Adjustment Preview ({affectedCount} Items Affected)
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Preview ({affectedCount} items affected)
               </span>
             </div>
 
@@ -356,7 +356,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
             className="px-5 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white flex items-center gap-2 transition-all shadow-sm cursor-pointer"
           >
             <Check className="w-4 h-4 text-emerald-400" />
-            <span>Apply Rates to {affectedCount} Items</span>
+            <span>Update {affectedCount} items</span>
           </button>
         </div>
       </motion.div>
