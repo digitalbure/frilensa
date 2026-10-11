@@ -399,12 +399,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold text-slate-100 tracking-tight">Super Admin Platform Control</h2>
+                <h2 className="text-sm font-bold text-slate-100 tracking-tight">Admin</h2>
                 <span className="text-[9px] bg-sky-500/20 text-sky-300 font-mono font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
-                  FRCS SAAS V2
+                  Owner only
                 </span>
               </div>
-              <p className="text-[10px] text-slate-400">Manage subscription plans, quotas, feature toggles & statutory Fiji tax rules</p>
+              <p className="text-[10px] text-slate-400">Plans, limits, features, and platform taxes and fees</p>
             </div>
           </div>
 
@@ -435,7 +435,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Palette className="w-3.5 h-3.5" />
-            <span>App Branding & Identity</span>
+            <span>Branding</span>
           </button>
 
           <button
@@ -447,7 +447,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <KeyRound className="w-3.5 h-3.5" />
-            <span>Registration & OTP Control</span>
+            <span>Sign-ups</span>
             <span className={`text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase ${
               (platformSettings.registrationMode || 'open') === 'open' 
                 ? 'bg-emerald-500/20 text-emerald-300' 
@@ -468,7 +468,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            <span>Fiji Directory & Bookings</span>
+            <span>Directory</span>
             <span className="text-[8px] font-black px-1.5 py-0.2 rounded-full uppercase bg-sky-500/20 text-sky-300">
               {(crmData.directoryBusinesses || []).length}
             </span>
@@ -483,7 +483,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>Plans & Feature Toggles</span>
+            <span>Plans</span>
           </button>
 
           <button
@@ -495,7 +495,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Escrow & Commission</span>
+            <span>Escrow</span>
           </button>
 
           <button
@@ -507,7 +507,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Percent className="w-3.5 h-3.5" />
-            <span>Statutory Taxes & Fees</span>
+            <span>Taxes and fees</span>
           </button>
 
           <button
@@ -519,7 +519,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Tenant Workspaces ({tenants.length})</span>
+            <span>Workspaces ({tenants.length})</span>
           </button>
 
           <button
@@ -531,7 +531,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>M-Paisa / Bank Approvals ({pendingPayments.length})</span>
+            <span>Payments ({pendingPayments.length})</span>
           </button>
 
           <button
@@ -543,7 +543,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>MRR Analytics</span>
+            <span>Revenue</span>
           </button>
         </div>
 
@@ -561,23 +561,23 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="text-base font-bold text-slate-100">Fiji Business Directory & Marketplace</h3>
+                      <h3 className="text-base font-bold text-slate-100">Business directory</h3>
                       <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
                         (platformSettings.directoryEnabled !== false)
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                           : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                       }`}>
-                        {(platformSettings.directoryEnabled !== false) ? 'MARKETPLACE ACTIVE' : 'MARKETPLACE DISABLED'}
+                        {(platformSettings.directoryEnabled !== false) ? 'ON' : 'OFF'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      Configure public discovery, booking rules, paid subscription requirements, and verify registered Fijian businesses.
+                      Choose who appears in the public directory and mark businesses as verified.
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-3 self-end sm:self-center">
-                  <span className="text-xs font-bold text-slate-300">Public Directory:</span>
+                  <span className="text-xs font-bold text-slate-300">Public directory:</span>
                   <button
                     type="button"
                     onClick={() => {
@@ -588,7 +588,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         ...crmData,
                         platformSettings: newSettings
                       });
-                      showToast(newStatus ? 'Directory module enabled globally.' : 'Directory module disabled globally.');
+                      showToast(newStatus ? 'Directory turned on.' : 'Directory turned off.');
                     }}
                     className={`transition-colors p-1 ${(platformSettings.directoryEnabled !== false) ? 'text-emerald-400' : 'text-slate-600'}`}
                   >
@@ -603,16 +603,16 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2.5">
                     <ShieldCheck className="w-5 h-5 text-sky-400" />
                     <div>
-                      <h4 className="text-sm font-bold text-slate-100">Subscription Requirement for Directory Listing</h4>
+                      <h4 className="text-sm font-bold text-slate-100">Paid plan required to be listed</h4>
                       <p className="text-xs text-slate-400">
-                        Require users to have an active paid subscription (Pro or Premium) to be listed in the public directory.
+                        Only show businesses on Pro or Premium in the public directory.
                       </p>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono font-bold text-slate-300">
-                      {platformSettings.enforcePaidForDirectory !== false ? 'Paid Only (Pro & Premium)' : 'Open to All (Free Included)'}
+                      {platformSettings.enforcePaidForDirectory !== false ? 'Pro and Premium only' : 'All plans'}
                     </span>
                     <button
                       type="button"
@@ -624,7 +624,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           ...crmData,
                           platformSettings: newSettings
                         });
-                        showToast(newEnforce ? 'Paid subscription rule active: Free non-paying accounts hidden.' : 'Directory opened to all verified users.');
+                        showToast(newEnforce ? 'Free accounts are now hidden from the directory.' : 'Directory is now open to all plans.');
                       }}
                       className={`transition-colors p-1 ${(platformSettings.enforcePaidForDirectory !== false) ? 'text-sky-400' : 'text-slate-600'}`}
                     >
@@ -634,12 +634,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 </div>
 
                 <div className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
-                  <p className="font-semibold text-slate-200">Policy Explanation:</p>
+                  <p className="font-semibold text-slate-200">What this means</p>
                   <p className="text-[11px] leading-relaxed">
                     {platformSettings.enforcePaidForDirectory !== false ? (
-                      <>🔒 <strong>Non-paying users (Free Starter) are automatically excluded</strong> from the public Fiji Directory search. Only paying subscribers on Pro and Premium who set their profile to "Public" are visible and bookable by clients.</>
+                      <><strong>Free accounts are hidden</strong> from directory search. Pro and Premium users who set their profile to Public can be found and booked by clients.</>
                     ) : (
-                      <>🔓 <strong>Free tier users can also be listed</strong> if their profile is toggled public and verified by admin.</>
+                      <><strong>Free accounts can be listed too</strong> if their profile is public and you've verified them.</>
                     )}
                   </p>
                 </div>
@@ -651,15 +651,15 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div>
                     <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                       <Building2 className="w-4 h-4 text-sky-400" />
-                      <span>Registered Businesses Directory Registry</span>
+                      <span>Listed businesses</span>
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Manage visibility, FRCS verification badges, and directory profiles for platform tenants.
+                      Set each business to public or private, and mark it as verified.
                     </p>
                   </div>
 
                   <span className="text-xs bg-slate-800 text-slate-300 font-mono px-3 py-1 rounded-lg border border-slate-700">
-                    {(crmData.directoryBusinesses || []).length} Businesses Registered
+                    {(crmData.directoryBusinesses || []).length} businesses
                   </span>
                 </div>
 
@@ -693,13 +693,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                             {isVerified && (
                               <span className="bg-emerald-950 text-emerald-300 border border-emerald-800 text-[9px] font-bold px-1.5 py-0.2 rounded flex items-center gap-1">
-                                <ShieldCheck className="w-3 h-3" /> FRCS Verified
+                                <ShieldCheck className="w-3 h-3" /> Verified
                               </span>
                             )}
                           </div>
 
                           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-slate-400 text-[11px]">
-                            <span>📍 {biz.city || biz.address || 'Suva, Fiji'}</span>
+                            <span>{biz.city || biz.address || 'Suva, Fiji'}</span>
                             <span>TIN: <strong className="font-mono text-slate-300">{biz.tin || 'N/A'}</strong></span>
                             <span>Category: <strong className="text-slate-300">{biz.category || 'General'}</strong></span>
                             <span>Rate: <strong className="font-mono text-slate-200">FJD ${biz.startingRate || 85}/{biz.rateUnit || 'hr'}</strong></span>
@@ -728,7 +728,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                 ...crmData,
                                 directoryBusinesses: updatedList
                               });
-                              showToast(`${biz.name} set to ${!isPublic ? 'PUBLIC' : 'PRIVATE'}`);
+                              showToast(`${biz.name} is now ${!isPublic ? 'public' : 'private'}.`);
                             }}
                             className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all border ${
                               isPublic
@@ -754,14 +754,14 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                 ...crmData,
                                 directoryBusinesses: updatedList
                               });
-                              showToast(`${biz.name} verification status toggled.`);
+                              showToast(`${biz.name} ${!isVerified ? 'marked as verified' : 'no longer marked as verified'}.`);
                             }}
                             className={`p-1.5 rounded-xl border transition-all ${
                               isVerified
                                 ? 'bg-sky-950 text-sky-300 border-sky-800 hover:bg-sky-900'
                                 : 'bg-slate-800 text-slate-500 border-slate-700 hover:text-slate-300'
                             }`}
-                            title="Toggle FRCS Verified Badge"
+                            title="Mark as verified"
                           >
                             <ShieldCheck className="w-4 h-4" />
                           </button>
@@ -778,14 +778,14 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div>
                     <h4 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                       <Calendar className="w-4 h-4 text-sky-400" />
-                      <span>Platform Directory Client Bookings Log</span>
+                      <span>Bookings</span>
                     </h4>
                     <p className="text-xs text-slate-400">
-                      Audit all inquiries, consultations, and job orders booked through the Fiji Directory.
+                      All bookings made through the directory.
                     </p>
                   </div>
                   <span className="text-xs bg-sky-950 text-sky-300 font-mono font-bold px-2.5 py-1 rounded-lg border border-sky-800">
-                    {(crmData.directoryBookings || []).length} Bookings Logged
+                    {(crmData.directoryBookings || []).length} bookings
                   </span>
                 </div>
 
@@ -857,11 +857,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         {platformSettings.platformName || 'Frilensa'}
                       </h3>
                       <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                        Live Production Ready
+                        Live
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      {platformSettings.platformTagline || 'Fiji & Pacific CRM, Invoicing & Tax Compliance Suite • frilensa.com'}
+                      {platformSettings.platformTagline || 'Invoicing, bookkeeping and projects for Fiji • frilensa.com'}
                     </p>
                   </div>
                 </div>
@@ -873,7 +873,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       commitPlatformSettings({
                         ...platformSettings,
                         platformName: 'Frilensa',
-                        platformTagline: 'Fiji & Pacific CRM, Invoicing & Tax Compliance Suite • frilensa.com',
+                        platformTagline: 'Invoicing, bookkeeping and projects for Fiji • frilensa.com',
                         platformSupportEmail: 'support@frilensa.com',
                         platformSupportPhone: '+679 330 1234',
                         platformLogoType: 'symbol',
@@ -881,13 +881,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         platformLogoUrl: '/pwa-icon.svg',
                         platformPrimaryColor: '#0284c7',
                         platformAccentColor: '#0d9488',
-                        platformFooterNote: 'FRCS Statutory Compliant • frilensa.com Cloud Invoicing & Escrow Platform'
+                        platformFooterNote: 'Invoicing and bookkeeping for Fiji • frilensa.com'
                       });
-                      showToast('Default Frilensa branding restored.');
+                      showToast('Branding reset to the Frilensa defaults.');
                     }}
                     className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-700"
                   >
-                    Reset Defaults
+                    Reset to defaults
                   </button>
                 </div>
               </div>
@@ -901,15 +901,15 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="flex items-center gap-2">
                       <Globe className="w-4 h-4 text-sky-400" />
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                        Platform App Identity
+                        App details
                       </h4>
                     </div>
-                    <span className="text-[9px] text-slate-400">frilensa.com Header</span>
+                    <span className="text-[9px] text-slate-400">Shown in the header</span>
                   </div>
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      App / Platform Name
+                      App name
                     </label>
                     <input
                       type="text"
@@ -927,7 +927,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Tagline / Slogan
+                      Tagline
                     </label>
                     <input
                       type="text"
@@ -938,7 +938,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           platformTagline: e.target.value
                         });
                       }}
-                      placeholder="e.g. Fiji & Pacific CRM, Invoicing & Tax Compliance Suite • frilensa.com"
+                      placeholder="e.g. Invoicing and bookkeeping for Fiji"
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                     />
                   </div>
@@ -946,7 +946,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="grid grid-cols-2 gap-2.5">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Support Email
+                        Support email
                       </label>
                       <div className="relative">
                         <Mail className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -967,7 +967,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Support Hotline
+                        Support phone
                       </label>
                       <div className="relative">
                         <Phone className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -989,7 +989,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Footer Compliance Notice
+                      Footer text
                     </label>
                     <input
                       type="text"
@@ -1000,7 +1000,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           platformFooterNote: e.target.value
                         });
                       }}
-                      placeholder="FRCS Statutory Compliant • frilensa.com Cloud Invoicing & Escrow Platform"
+                      placeholder="e.g. Invoicing and bookkeeping for Fiji • frilensa.com"
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                     />
                   </div>
@@ -1012,16 +1012,16 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="flex items-center gap-2">
                       <Palette className="w-4 h-4 text-teal-400" />
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                        App Logo & Color Theme
+                        Logo and colours
                       </h4>
                     </div>
-                    <span className="text-[9px] text-slate-400">Visual Styling</span>
+                    <span className="text-[9px] text-slate-400">Appearance</span>
                   </div>
 
                   {/* Logo Style Switcher */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-                      Logo Format
+                      Logo type
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {(['symbol', 'text', 'image'] as const).map((type) => (
@@ -1050,7 +1050,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   {(platformSettings.platformLogoType || 'symbol') === 'symbol' && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Logo Icon / Emoji Symbol
+                        Logo emoji
                       </label>
                       <div className="flex items-center gap-2">
                         {['🌴', '🌺', '🌊', '⚡', '💼', '🚀', '⭐', '🛡️'].map((emoji) => (
@@ -1091,7 +1091,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   {platformSettings.platformLogoType === 'text' && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Brand Monogram / Text (2-4 chars)
+                        Logo text (2–4 characters)
                       </label>
                       <input
                         type="text"
@@ -1112,7 +1112,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   {platformSettings.platformLogoType === 'image' && (
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Logo Image URL / Vector Icon Path
+                        Logo image URL
                       </label>
                       <div className="relative">
                         <ImageIcon className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" />
@@ -1125,7 +1125,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                               platformLogoUrl: e.target.value
                             });
                           }}
-                          placeholder="/pwa-icon.svg or https://..."
+                          placeholder="/pwa-icon.svg or https://…"
                           className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-8 pr-2 text-xs text-slate-100 focus:outline-none focus:border-sky-500 font-mono"
                         />
                       </div>
@@ -1136,7 +1136,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Primary Theme Color
+                        Primary colour
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -1158,7 +1158,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Accent Theme Color
+                        Accent colour
                       </label>
                       <div className="flex items-center gap-2">
                         <input
@@ -1189,48 +1189,48 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2">
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Real-World Production Readiness Audit
+                      What's live
                     </h4>
                   </div>
                   <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">
-                    100% Fully Functional
+                    Live
                   </span>
                 </div>
 
                 <p className="text-[11px] text-slate-300 leading-relaxed">
-                  The application is fully wired for real-world day-to-day business operations. There are no placeholder stubs or fake mocked actions blocking your workflow:
+                  These features are switched on for users:
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
                   <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-200">Firebase Firestore Cloud Persistence</p>
-                      <p className="text-[10px] text-slate-400">All clients, invoices, receipts, and settings automatically synchronize to your live Google Cloud database.</p>
+                      <p className="font-bold text-slate-200">Cloud storage</p>
+                      <p className="text-[10px] text-slate-400">Clients, invoices, receipts and settings are saved to each user's account online.</p>
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-200">Fiji Statutory Tax Calculations</p>
-                      <p className="text-[10px] text-slate-400">Exact 12.5% VAT, ECAL, and STT calculations with TIN verification and compliant PDF invoices.</p>
+                      <p className="font-bold text-slate-200">Fiji tax calculations</p>
+                      <p className="text-[10px] text-slate-400">VAT (12.5%), ECAL and STT calculations, with the business TIN on PDF invoices.</p>
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-emerald-300">Live Gemini 3.5 AI Advisor & OCR</p>
-                      <p className="text-[10px] text-slate-400">Real Gemini AI analyzes bank statements, extracts receipts, and answers complex Fiji business tax queries.</p>
+                      <p className="font-bold text-emerald-300">AI assistant and receipt scanning</p>
+                      <p className="text-[10px] text-slate-400">AI reads bank statements and receipts and answers questions about Fiji business tax.</p>
                     </div>
                   </div>
 
                   <div className="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start gap-2">
                     <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-bold text-slate-200">Offline PWA & M-Paisa Payment Links</p>
-                      <p className="text-[10px] text-slate-400">Generate real M-Paisa QR codes, send invoices via WhatsApp, and access your books even when offline in the islands.</p>
+                      <p className="font-bold text-slate-200">Offline use and M-PAiSA payment links</p>
+                      <p className="text-[10px] text-slate-400">M-PAiSA QR codes, invoices sent by WhatsApp, and access to your books offline.</p>
                     </div>
                   </div>
                 </div>
@@ -1251,7 +1251,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-bold text-slate-100">
-                        Account Registration & OTP Authentication Policy
+                        Sign-ups and verification codes
                       </h3>
                       <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border uppercase ${
                         (platformSettings.registrationMode || 'open') === 'open'
@@ -1260,11 +1260,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                             ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
                             : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                       }`}>
-                        {platformSettings.registrationMode === 'open' ? 'Open Sign-Ups' : platformSettings.registrationMode === 'invite_only' ? 'Invite-Only Mode' : 'Sign-Ups Disabled'}
+                        {platformSettings.registrationMode === 'open' ? 'Open' : platformSettings.registrationMode === 'invite_only' ? 'Invite only' : 'Closed'}
                       </span>
                     </div>
                     <p className="text-[11px] text-slate-300 mt-0.5">
-                      Control who can sign up, invite specific users with pre-assigned plans, and toggle OTP verification during gateway setup.
+                      Choose who can sign up, invite people on a set plan, and turn verification codes on or off.
                     </p>
                   </div>
                 </div>
@@ -1279,11 +1279,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         enableEmailOtp: true,
                         enablePhoneOtp: true
                       });
-                      showToast('Default open registration & OTP restored.');
+                      showToast('Sign-ups reset to open, with verification codes on.');
                     }}
                     className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border border-slate-700 cursor-pointer"
                   >
-                    Reset Defaults
+                    Reset to defaults
                   </button>
                 </div>
               </div>
@@ -1294,10 +1294,10 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2">
                     <Users className="w-4 h-4 text-sky-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      User Registration Access Policy
+                      Who can sign up
                     </h4>
                   </div>
-                  <span className="text-[10px] text-slate-400">Global Sign-Up Gateway</span>
+                  <span className="text-[10px] text-slate-400">All new accounts</span>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1308,7 +1308,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         ...platformSettings,
                         registrationMode: 'open'
                       });
-                      showToast('Registration mode set to: Open Public Sign-ups');
+                      showToast('Sign-ups are open to everyone.');
                     }}
                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                       (platformSettings.registrationMode || 'open') === 'open'
@@ -1320,18 +1320,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Unlock className="w-4 h-4 text-emerald-400" />
-                          <span className="font-bold text-xs">Open Registration</span>
+                          <span className="font-bold text-xs">Open</span>
                         </div>
                         {(platformSettings.registrationMode || 'open') === 'open' && (
                           <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 leading-snug">
-                        Anyone can sign up and create a new freelancer workspace immediately from the portal login screen.
+                        Anyone can sign up from the login screen.
                       </p>
                     </div>
                     <span className="mt-3 text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
-                      Standard SaaS Mode
+                      Default
                     </span>
                   </div>
 
@@ -1342,7 +1342,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         ...platformSettings,
                         registrationMode: 'invite_only'
                       });
-                      showToast('Registration mode set to: Invite-Only');
+                      showToast('Sign-ups are now invite only.');
                     }}
                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                       platformSettings.registrationMode === 'invite_only'
@@ -1354,18 +1354,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <UserPlus className="w-4 h-4 text-amber-400" />
-                          <span className="font-bold text-xs">Invite-Only Access</span>
+                          <span className="font-bold text-xs">Invite only</span>
                         </div>
                         {platformSettings.registrationMode === 'invite_only' && (
                           <CheckCircle2 className="w-4 h-4 text-amber-400" />
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 leading-snug">
-                        Only users with an official admin-generated invite code or invite link can register a new account.
+                        Only people with an invite code or link can sign up.
                       </p>
                     </div>
                     <span className="mt-3 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                      Restricted VIP Access
+                      Restricted
                     </span>
                   </div>
 
@@ -1376,7 +1376,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         ...platformSettings,
                         registrationMode: 'disabled'
                       });
-                      showToast('Registration mode set to: Disabled');
+                      showToast('Sign-ups are closed.');
                     }}
                     className={`p-4 rounded-2xl border-2 transition-all cursor-pointer flex flex-col justify-between ${
                       platformSettings.registrationMode === 'disabled'
@@ -1388,18 +1388,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <Ban className="w-4 h-4 text-rose-400" />
-                          <span className="font-bold text-xs">Registration Disabled</span>
+                          <span className="font-bold text-xs">Closed</span>
                         </div>
                         {platformSettings.registrationMode === 'disabled' && (
                           <CheckCircle2 className="w-4 h-4 text-rose-400" />
                         )}
                       </div>
                       <p className="text-[11px] text-slate-400 leading-snug">
-                        Completely disables all new user sign-ups. Existing registered users can still sign in and access their workspaces.
+                        No new sign-ups. Existing users can still sign in.
                       </p>
                     </div>
                     <span className="mt-3 text-[10px] font-bold text-rose-400 uppercase tracking-wider">
-                      Closed Maintenance Mode
+                      Closed
                     </span>
                   </div>
                 </div>
@@ -1411,18 +1411,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2">
                     <Shield className="w-4 h-4 text-sky-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Multi-Factor & OTP Verification Toggles
+                      Verification codes
                     </h4>
                   </div>
                   <span className="text-[10px] bg-slate-800 text-slate-300 font-mono px-2 py-0.5 rounded">
-                    Bypass & Setup Mode
+                    Setup
                   </span>
                 </div>
 
                 <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3 text-[11px] text-slate-300 leading-relaxed flex items-start gap-2.5">
                   <Sparkles className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
                   <div>
-                    <strong className="text-slate-100">Admin Grace Period Note:</strong> Toggling OTP off allows you to launch the platform and onboard team members immediately without waiting for SMTP mail servers or Vodafone/Digicel SMS gateway credentials to be provisioned.
+                    <strong className="text-slate-100">Before email or SMS is set up:</strong> turn codes off so people can sign up while you wait for mail server or Vodafone/Digicel SMS credentials.
                   </div>
                 </div>
 
@@ -1432,12 +1432,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-sky-400" />
-                        <span className="text-xs font-bold text-slate-200">Email OTP Verification</span>
+                        <span className="text-xs font-bold text-slate-200">Email code</span>
                       </div>
                       <p className="text-[10px] text-slate-400">
                         {platformSettings.enableEmailOtp !== false 
-                          ? 'Active: 6-digit email confirmation code required on sign-up' 
-                          : 'Disabled: Users sign up immediately without email code verification'}
+                          ? 'On: new users enter a 6-digit code sent by email' 
+                          : 'Off: users sign up without an email code'}
                       </p>
                     </div>
 
@@ -1449,7 +1449,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           ...platformSettings,
                           enableEmailOtp: nextVal
                         });
-                        showToast(`Email OTP ${nextVal ? 'Enabled' : 'Disabled'}.`);
+                        showToast(`Email codes turned ${nextVal ? 'on' : 'off'}.`);
                       }}
                       className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
                         platformSettings.enableEmailOtp !== false ? 'bg-sky-500' : 'bg-slate-700'
@@ -1466,12 +1466,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <Smartphone className="w-4 h-4 text-emerald-400" />
-                        <span className="text-xs font-bold text-slate-200">Phone / SMS OTP Verification</span>
+                        <span className="text-xs font-bold text-slate-200">SMS code</span>
                       </div>
                       <p className="text-[10px] text-slate-400">
                         {platformSettings.enablePhoneOtp !== false 
-                          ? 'Active: SMS passcode required on Fiji mobile logins' 
-                          : 'Disabled: Bypasses mobile SMS verification gateway'}
+                          ? 'On: users enter a code sent by SMS when signing in by mobile' 
+                          : 'Off: no SMS code needed'}
                       </p>
                     </div>
 
@@ -1483,7 +1483,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                           ...platformSettings,
                           enablePhoneOtp: nextVal
                         });
-                        showToast(`Phone OTP ${nextVal ? 'Enabled' : 'Disabled'}.`);
+                        showToast(`SMS codes turned ${nextVal ? 'on' : 'off'}.`);
                       }}
                       className={`w-12 h-6 rounded-full transition-colors relative cursor-pointer ${
                         platformSettings.enablePhoneOtp !== false ? 'bg-emerald-500' : 'bg-slate-700'
@@ -1500,17 +1500,17 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="space-y-0.5">
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4 text-amber-400" />
-                        <span className="text-xs font-bold text-slate-200">Default Session Inactivity Timeout</span>
+                        <span className="text-xs font-bold text-slate-200">Sign out after inactivity</span>
                       </div>
                       <p className="text-[10px] text-slate-400">
-                        Global fallback auto-logout timer for unattended devices & public terminals across all users.
+                        Default for all users who haven't set their own.
                       </p>
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
                       {[
                         { label: '5m', value: 5 },
-                        { label: '15m (Def)', value: 15 },
+                        { label: '15m (default)', value: 15 },
                         { label: '30m', value: 30 },
                         { label: '60m', value: 60 },
                         { label: 'Off', value: 0 }
@@ -1523,7 +1523,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                               ...platformSettings,
                               defaultInactivityTimeoutMinutes: t.value
                             });
-                            showToast(`Default inactivity timeout set to: ${t.value === 0 ? 'Disabled' : `${t.value} mins`}`);
+                            showToast(`Inactivity sign-out ${t.value === 0 ? 'turned off' : `set to ${t.value} minutes`}.`);
                           }}
                           className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all cursor-pointer border ${
                             (platformSettings.defaultInactivityTimeoutMinutes ?? 15) === t.value
@@ -1545,11 +1545,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2">
                     <UserCheck className="w-4 h-4 text-sky-400" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Invite-Only Access Manager & Code Generator
+                      Invites
                     </h4>
                   </div>
                   <span className="text-[10px] text-slate-400">
-                    {(platformSettings.invites || []).length} Active/Issued Invites
+                    {(platformSettings.invites || []).length} invites
                   </span>
                 </div>
 
@@ -1569,7 +1569,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       createdAt: new Date().toISOString().split('T')[0],
                       expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
                       used: false,
-                      notes: newInviteNotes.trim() || 'Admin-generated platform invitation'
+                      notes: newInviteNotes.trim() || 'Admin invite'
                     };
 
                     const currentInvites = platformSettings.invites || [];
@@ -1581,18 +1581,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     setNewInviteEmail('');
                     setNewInviteCode('');
                     setNewInviteNotes('');
-                    showToast(`Invite code ${codeToUse} generated successfully.`);
+                    showToast(`Invite code ${codeToUse} created.`);
                   }}
                   className="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3"
                 >
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Generate New User Invite:
+                    New invite
                   </span>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                        Recipient Email (Optional)
+                        Email (optional)
                       </label>
                       <input
                         type="email"
@@ -1605,31 +1605,31 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <label className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                        Pre-Assigned Role
+                        Role
                       </label>
                       <select
                         value={newInviteRole}
                         onChange={(e) => setNewInviteRole(e.target.value as any)}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl py-1.5 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                       >
-                        <option value="freelancer">Freelancer / Consultant</option>
-                        <option value="client">Client / Portal Guest</option>
-                        <option value="accountant">Accountant / Auditor</option>
+                        <option value="freelancer">Freelancer</option>
+                        <option value="client">Client</option>
+                        <option value="accountant">Accountant</option>
                       </select>
                     </div>
 
                     <div>
                       <label className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                        Pre-Assigned Subscription Plan
+                        Plan
                       </label>
                       <select
                         value={newInvitePlan}
                         onChange={(e) => setNewInvitePlan(e.target.value as any)}
                         className="w-full bg-slate-900 border border-slate-800 rounded-xl py-1.5 px-3 text-xs text-slate-100 focus:outline-none focus:border-sky-500"
                       >
-                        <option value="free">Starter Free ($0/mo)</option>
-                        <option value="pro">Freelance Pro ($25/mo)</option>
-                        <option value="premium">Agency Premium ($50/mo)</option>
+                        <option value="free">Free ($0/mo)</option>
+                        <option value="pro">Pro ($25/mo)</option>
+                        <option value="premium">Premium ($50/mo)</option>
                       </select>
                     </div>
                   </div>
@@ -1637,7 +1637,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                        Custom Invite Code (or leave blank to auto-generate)
+                        Invite code (leave blank to generate one)
                       </label>
                       <input
                         type="text"
@@ -1650,7 +1650,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <label className="block text-[10px] text-slate-400 uppercase font-bold mb-1">
-                        Notes / Context
+                        Notes
                       </label>
                       <input
                         type="text"
@@ -1668,7 +1668,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       className="bg-sky-600 hover:bg-sky-500 text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-1.5 transition-all shadow-md cursor-pointer"
                     >
                       <UserPlus className="w-3.5 h-3.5" />
-                      Create & Issue Invite Code
+                      Create invite
                     </button>
                   </div>
                 </form>
@@ -1676,12 +1676,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 {/* Invites Table */}
                 <div className="space-y-2">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-                    Issued Invites Registry:
+                    Invites sent
                   </span>
 
                   {(platformSettings.invites || []).length === 0 ? (
                     <div className="bg-slate-950 p-6 rounded-xl border border-slate-800 text-center text-slate-400 text-xs">
-                      No invites issued yet. Generate an invite code above.
+                      No invites yet. Create one above.
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -1702,7 +1702,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                   {inv.code}
                                 </span>
                                 <span className="bg-sky-500/20 text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
-                                  {inv.plan} Plan
+                                  {inv.plan} plan
                                 </span>
                                 <span className="bg-slate-800 text-slate-300 text-[10px] font-bold px-2 py-0.5 rounded uppercase">
                                   {inv.role}
@@ -1713,13 +1713,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                   </span>
                                 ) : (
                                   <span className="bg-emerald-500/20 text-emerald-300 text-[9px] px-1.5 py-0.2 rounded font-bold border border-emerald-500/30">
-                                    Active / Valid
+                                    Active
                                   </span>
                                 )}
                               </div>
 
                               <div className="flex flex-wrap gap-x-3 text-[11px] text-slate-400">
-                                {inv.email && <span>Target: <strong className="text-slate-200">{inv.email}</strong></span>}
+                                {inv.email && <span>For: <strong className="text-slate-200">{inv.email}</strong></span>}
                                 <span>Expires: {inv.expiresAt}</span>
                                 {inv.notes && <span className="italic text-slate-500">"{inv.notes}"</span>}
                               </div>
@@ -1732,12 +1732,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                   navigator.clipboard.writeText(inviteUrl);
                                   setCopiedInviteId(inv.id);
                                   setTimeout(() => setCopiedInviteId(null), 2000);
-                                  showToast('Invite link copied to clipboard!');
+                                  showToast('Invite link copied.');
                                 }}
                                 className="bg-slate-900 hover:bg-slate-800 text-slate-200 text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-800 flex items-center gap-1 cursor-pointer transition-all"
                               >
                                 {isCopied ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
-                                <span>{isCopied ? 'Copied!' : 'Copy Link'}</span>
+                                <span>{isCopied ? 'Copied' : 'Copy link'}</span>
                               </button>
 
                               <button
@@ -1751,7 +1751,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                                   showToast('Invite revoked.');
                                 }}
                                 className="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-950/40 transition-colors cursor-pointer"
-                                title="Revoke Invite"
+                                title="Revoke invite"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
@@ -1777,11 +1777,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-amber-400" />
                     <h3 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                      Current User Workspace Subscription Tier
+                      Your workspace plan
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Active Plan: <span className="text-sky-400 font-bold uppercase">{platformSettings.plans[activePlanTier].name}</span> (FJD ${platformSettings.plans[activePlanTier].price}/mo)
+                    Current plan: <span className="text-sky-400 font-bold uppercase">{platformSettings.plans[activePlanTier].name}</span> (FJD ${platformSettings.plans[activePlanTier].price}/mo)
                   </p>
                 </div>
 
@@ -1836,7 +1836,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div>
                       <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                         <Layers className="w-3.5 h-3.5 text-sky-400" />
-                        <span>Quota & Item Limits ({currentPlanConfig.name})</span>
+                        <span>Limits ({currentPlanConfig.name})</span>
                       </h4>
                       <p className="text-[10px] text-slate-400 mt-0.5">{currentPlanConfig.description}</p>
                     </div>
@@ -1845,7 +1845,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   {/* Monthly Pricing */}
                   <div>
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Monthly Subscription Price (FJD $)
+                      Monthly price (FJD $)
                     </label>
                     <div className="relative mt-1">
                       <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2" />
@@ -1863,7 +1863,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="space-y-3 pt-1">
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">Max Invoices / Month</label>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">Invoices per month</label>
                         <span className="text-[9px] text-slate-400">(-1 for unlimited)</span>
                       </div>
                       <input
@@ -1876,7 +1876,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">Max Clients Allowed</label>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">Clients</label>
                         <span className="text-[9px] text-slate-400">(-1 for unlimited)</span>
                       </div>
                       <input
@@ -1889,7 +1889,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">Max Services / Offerings</label>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">Services</label>
                         <span className="text-[9px] text-slate-400">(-1 for unlimited)</span>
                       </div>
                       <input
@@ -1902,8 +1902,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">Max Business Ventures</label>
-                        <span className="text-[9px] text-slate-400">Multi-brand studio limit</span>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">Businesses</label>
+                        <span className="text-[9px] text-slate-400">Businesses per account</span>
                       </div>
                       <input
                         type="number"
@@ -1916,7 +1916,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">Max Active Projects</label>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">Active projects</label>
                         <span className="text-[9px] text-slate-400">(-1 for unlimited)</span>
                       </div>
                       <input
@@ -1929,8 +1929,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                     <div>
                       <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-slate-300 uppercase">AI OCR Scans / Month</label>
-                        <span className="text-[9px] text-slate-400">Receipt scan monthly allotment</span>
+                        <label className="text-[10px] font-bold text-slate-300 uppercase">AI receipt scans per month</label>
+                        <span className="text-[9px] text-slate-400">Monthly allowance</span>
                       </div>
                       <input
                         type="number"
@@ -1947,10 +1947,10 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <div className="border-b border-slate-800 pb-2.5">
                     <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200 flex items-center gap-1.5">
                       <Sliders className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Feature Flags & Capabilities ({currentPlanConfig.name})</span>
+                      <span>Features ({currentPlanConfig.name})</span>
                     </h4>
                     <p className="text-[10px] text-slate-400 mt-0.5">
-                      Toggle platform features on or off based on the selected tier.
+                      Turn features on or off for this plan.
                     </p>
                   </div>
 

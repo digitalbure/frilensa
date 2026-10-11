@@ -28,7 +28,7 @@ const CATEGORY_PRESETS: Record<string, { label: string; value: string; isPreset:
     { label: 'Local delivery', value: 'FJD $5.00 via Post Fiji', isPreset: true }
   ],
   plumber: [
-    { label: 'Plumbing licence number', value: 'PL-2026-991', isPreset: true },
+    { label: 'Plumbing license number', value: 'PL-2026-991', isPreset: true },
     { label: 'Emergency phone', value: '+679 888 1234', isPreset: true },
     { label: 'Emergency surcharge', value: 'FJD $50.00 flat, after hours', isPreset: true },
     { label: 'Call-out diagnostic fee', value: 'FJD $30.00', isPreset: true }
@@ -638,9 +638,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       
       {/* Header */}
       <div>
-        <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-medium block">Fiji Freelancer CRM</span>
+        <span className="text-[10px] uppercase tracking-widest text-zinc-400 font-medium block">Frilensa</span>
         <h2 className="text-xl md:text-2xl font-display font-semibold text-zinc-900 tracking-tight flex items-center gap-1.5 mt-0.5">
-          <Settings className="w-5 h-5 text-zinc-400" /> Settings & System
+          <Settings className="w-5 h-5 text-zinc-400" /> Settings
         </h2>
       </div>
 
@@ -665,10 +665,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
       {/* Main configuration settings form */}
       <form onSubmit={handleSaveProfile} className="bg-white rounded-xl p-5 border border-zinc-100 shadow-xs space-y-4 text-xs text-zinc-600">
-        <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Consultant & Tax Profile</span>
+        <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Your profile and tax</span>
 
         <div>
-          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Consultant Full Name *</label>
+          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Full name *</label>
           <div className="relative mt-1">
             <span className="absolute left-3 top-2 text-zinc-400">
               <User className="w-3.5 h-3.5" />
@@ -685,10 +685,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
         <div>
           <div className="flex items-center justify-between">
-            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Primary billing email *</label>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Email *</label>
             {data.userProfile.emailVerified !== false && (
               <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
-                <CheckCircle className="w-2.5 h-2.5" /> Email Verified
+                <CheckCircle className="w-2.5 h-2.5" /> Email verified
               </span>
             )}
           </div>
@@ -703,10 +703,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
         <div>
           <div className="flex items-center justify-between">
-            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Mobile Phone Number (M-Paisa / SMS)</label>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Mobile number</label>
             {data.userProfile.phoneVerified !== false && (
               <span className="text-[9px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-semibold flex items-center gap-1">
-                <CheckCircle className="w-2.5 h-2.5" /> Phone Verified
+                <CheckCircle className="w-2.5 h-2.5" /> Phone verified
               </span>
             )}
           </div>
@@ -717,11 +717,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             placeholder="+679 991 2345"
             className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 font-mono text-zinc-800 focus:outline-none focus:border-zinc-900 focus:ring-0 transition-colors"
           />
-          <p className="text-[9px] text-zinc-400 mt-1">Used for 2FA SMS security and direct client M-Paisa payment confirmations</p>
+          <p className="text-[9px] text-zinc-400 mt-1">Used for M-PAiSA payments and so clients can reach you</p>
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Fiji Tax Identification Number (TIN)</label>
+          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">TIN (tax identification number)</label>
           <div className="relative mt-1">
             <span className="absolute left-3 top-2 text-zinc-400">
               <ShieldCheck className="w-3.5 h-3.5" />
@@ -733,7 +733,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 pl-8.5 pr-3 text-xs font-mono text-zinc-800 focus:outline-none focus:border-zinc-900 focus:ring-0 transition-colors"
             />
           </div>
-          <p className="text-[9px] text-zinc-400 mt-1">Required to generate lawful Fiji VAT Tax Invoices</p>
+          <p className="text-[9px] text-zinc-400 mt-1">Shown on your tax invoices</p>
         </div>
 
         {/* Global Tax Component Toggle */}
@@ -745,10 +745,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <Percent className={`w-4 h-4 ${enableTax ? 'text-sky-600' : 'text-amber-600'}`} />
               <div>
                 <span className="text-xs font-bold text-slate-800 block">
-                  Fiji Statutory Tax Component (12.5% VAT)
+                  VAT (12.5%)
                 </span>
                 <span className="text-[10px] text-slate-500 block">
-                  {enableTax ? 'VAT calculations enabled for all standard invoices' : 'Tax disabled / 0% VAT (Non-VAT Micro-Business Invoicing)'}
+                  {enableTax ? 'VAT is added to your invoices' : 'VAT is off. Invoices show no VAT.'}
                 </span>
               </div>
             </div>
@@ -761,11 +761,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   : 'bg-amber-600 text-white shadow-xs'
               }`}
             >
-              {enableTax ? 'Tax Engine: ON' : 'Tax Engine: OFF'}
+              {enableTax ? 'VAT on' : 'VAT off'}
             </button>
           </div>
           <p className="text-[9px] text-slate-500 mt-2 leading-relaxed">
-            <strong>Fiji VAT Act (Section 21 Exemption):</strong> Small businesses, sole proprietors, and freelancers with annual turnover under <strong>FJD $100,000</strong> are not legally required to register for VAT. When disabled, your invoices and quotes will automatically be issued tax-exempt without VAT surcharges.
+            <strong>Not VAT-registered?</strong> Businesses with annual turnover under <strong>FJD $100,000</strong> don't have to register for VAT. Turn VAT off and your invoices and quotes won't include it. Check with FRCS if you're unsure.
           </p>
         </div>
 
@@ -787,11 +787,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 className={`w-full bg-white border border-zinc-200 rounded-lg py-1.5 pl-8.5 pr-3 text-xs font-mono font-medium text-zinc-800 focus:outline-none focus:border-zinc-900 focus:ring-0 transition-colors ${!enableTax ? 'opacity-50 cursor-not-allowed bg-zinc-100' : ''}`}
               />
             </div>
-            <span className="text-[9px] text-zinc-400 mt-1 block">Fiji statutory rate is 12.5% (adjustable with decimal precision)</span>
+            <span className="text-[9px] text-zinc-400 mt-1 block">The standard rate in Fiji is 12.5%</span>
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Standard Currency</label>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Default currency</label>
             <select
               value={currency}
               onChange={(e) => setCurrency(e.target.value)}
@@ -802,7 +802,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <option value="AUD">AUD ($)</option>
               <option value="NZD">NZD ($)</option>
             </select>
-            <span className="text-[9px] text-zinc-400 mt-1 block">Default currency symbol</span>
+            <span className="text-[9px] text-zinc-400 mt-1 block">Used for new documents</span>
           </div>
         </div>
 
@@ -835,23 +835,23 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
               </div>
               <div>
-                <span className="block text-[11px] font-bold text-zinc-900">Inactivity Session Timeout</span>
-                <span className="text-[9px] text-zinc-500">Automatically logs out when idle to safeguard financial data & client records</span>
+                <span className="block text-[11px] font-bold text-zinc-900">Sign out when idle</span>
+                <span className="text-[9px] text-zinc-500">Signs you out after a period of no activity</span>
               </div>
             </div>
             <span className="text-[9px] font-mono font-bold bg-white text-zinc-800 px-2 py-0.5 rounded border border-zinc-200 shadow-2xs">
-              {inactivityTimeout === 0 ? 'Disabled (Stay Signed In)' : `${inactivityTimeout} Minutes`}
+              {inactivityTimeout === 0 ? 'Off' : `${inactivityTimeout} minutes`}
             </span>
           </div>
 
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5 pt-1">
             {[
-              { label: '5 Min', value: 5, desc: 'High Security' },
-              { label: '15 Min', value: 15, desc: 'Recommended' },
-              { label: '30 Min', value: 30, desc: 'Standard' },
-              { label: '1 Hour', value: 60, desc: 'Extended' },
-              { label: '2 Hours', value: 120, desc: 'All Day' },
-              { label: 'Disabled', value: 0, desc: 'Never' }
+              { label: '5 min', value: 5, desc: 'Strictest' },
+              { label: '15 min', value: 15, desc: 'Recommended' },
+              { label: '30 min', value: 30, desc: 'Standard' },
+              { label: '1 hour', value: 60, desc: 'Longer' },
+              { label: '2 hours', value: 120, desc: 'Longest' },
+              { label: 'Off', value: 0, desc: 'Never' }
             ].map((option) => (
               <button
                 key={option.value}
@@ -869,7 +869,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             ))}
           </div>
           <p className="text-[9px] text-zinc-400 leading-tight">
-            When active, a 60-second warning countdown will appear before auto-logout occurs. Any mouse movement, click, or keystroke immediately resets the idle timer.
+            You get a 60-second warning first. Moving the mouse, tapping or typing resets the timer.
           </p>
         </div>
 
@@ -877,7 +877,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="submit"
           className="w-full bg-zinc-900 hover:bg-zinc-850 text-white font-medium py-2 rounded-lg text-xs transition-all shadow-xs cursor-pointer"
         >
-          Update Settings Profile & Security
+          Save settings
         </button>
       </form>
 
@@ -886,7 +886,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
           <div className="flex items-center gap-1.5">
             <Building className="w-4 h-4 text-zinc-500" />
-            <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Venture Profile Manager</span>
+            <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Businesses</span>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -895,7 +895,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               className="bg-sky-50 text-sky-700 hover:bg-sky-100 text-[9px] font-bold px-2 py-1 rounded-lg border border-sky-200 uppercase tracking-wide flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Wand2 className="w-3 h-3 text-sky-600" />
-              <span>Brand Studio & Palette</span>
+              <span>Logo and colors</span>
             </button>
             {bizIsPrimary && (
               <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider flex items-center gap-0.5 shrink-0">
@@ -906,7 +906,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Select Venture to Configure</label>
+          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Business</label>
           <select
             value={selectedBizId}
             onChange={(e) => setSelectedBizId(e.target.value)}
@@ -924,7 +924,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <form onSubmit={handleSaveBusinessProfile} className="space-y-4 pt-1">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Venture Name *</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Business name *</label>
               <input
                 type="text"
                 required
@@ -935,7 +935,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Venture TIN *</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">TIN *</label>
               <input
                 type="text"
                 required
@@ -946,7 +946,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Business / Company Reg #</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Registration number</label>
               <input
                 type="text"
                 value={bizRegNumber}
@@ -959,7 +959,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Billing Email</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Billing email</label>
               <input
                 type="email"
                 value={bizEmail}
@@ -968,7 +968,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               />
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Phone Contact</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Phone</label>
               <input
                 type="text"
                 value={bizPhone}
@@ -979,7 +979,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Physical Address</label>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Address</label>
             <input
               type="text"
               value={bizAddress}
@@ -994,10 +994,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <div>
                 <label className="block text-[10px] font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1.5">
                   <Share2 className="w-3 h-3 text-zinc-400" />
-                  <span>Socials & Messaging Channels</span>
+                  <span>Social and messaging</span>
                 </label>
                 <p className="text-[9px] text-zinc-400">
-                  Add Viber, WhatsApp, Facebook, Instagram, LinkedIn, TikTok, etc. for invoices & customer portal.
+                  Viber, WhatsApp, Facebook and others, shown on invoices and in the client portal.
                 </p>
               </div>
               {!showAddSocial && (
@@ -1010,7 +1010,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   className="bg-zinc-100 hover:bg-zinc-200 text-zinc-800 text-[10px] font-bold py-1 px-2.5 rounded-lg flex items-center gap-1 transition-all active:scale-95 cursor-pointer shadow-2xs"
                 >
                   <Plus className="w-3 h-3 text-zinc-600" />
-                  <span>Add Social</span>
+                  <span>Add</span>
                 </button>
               )}
             </div>
@@ -1018,13 +1018,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             {/* List of existing socials */}
             {bizSocials.length === 0 && !showAddSocial ? (
               <div className="bg-zinc-50 border border-dashed border-zinc-200 rounded-xl p-3 text-center">
-                <p className="text-[10px] text-zinc-400">No social or messaging channels linked yet.</p>
+                <p className="text-[10px] text-zinc-400">No social or messaging accounts yet.</p>
                 <button
                   type="button"
                   onClick={() => setShowAddSocial(true)}
                   className="mt-1.5 text-[10px] text-sky-600 hover:text-sky-700 font-bold inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <Plus className="w-3 h-3" /> Add Social Channel
+                  <Plus className="w-3 h-3" /> Add one
                 </button>
               </div>
             ) : (
@@ -1049,7 +1049,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                         type="button"
                         onClick={() => handleRemoveSocial(idx)}
                         className="p-1 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors cursor-pointer"
-                        title="Remove social handle"
+                        title="Remove"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -1065,7 +1065,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-bold text-sky-900 uppercase tracking-wider flex items-center gap-1">
                     <Plus className="w-3 h-3 text-sky-600" />
-                    <span>Select Platform & Handle</span>
+                    <span>Add account</span>
                   </span>
                   <button
                     type="button"
@@ -1094,7 +1094,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
                   <div className="sm:col-span-2">
                     <label className="block text-[9px] font-bold text-sky-800 uppercase mb-0.5">
-                      Handle / Username / Mobile / URL
+                      Handle, number or link
                     </label>
                     <input
                       type="text"
@@ -1126,7 +1126,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                     className="px-3 py-1 bg-sky-600 hover:bg-sky-700 text-white text-[10px] font-bold rounded-lg transition-colors shadow-2xs flex items-center gap-1 cursor-pointer"
                   >
                     <Check className="w-3 h-3" />
-                    Add Channel
+                    Add
                   </button>
                 </div>
               </div>
@@ -1135,7 +1135,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">M-Paisa Business ID</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">M-PAiSA business ID</label>
               <input
                 type="text"
                 value={mPaisaId}
@@ -1157,12 +1157,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           </div>
 
           <div>
-            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Fiji Bank Settlement Details</label>
+            <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Bank details</label>
             <textarea
               value={bizBank}
               onChange={(e) => setBizBank(e.target.value)}
               rows={3}
-              placeholder="Bank Name, Account, Branch & BSB Code"
+              placeholder="Bank, account number, branch and BSB"
               className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 text-zinc-850 font-mono"
             />
           </div>
@@ -1170,7 +1170,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="grid grid-cols-2 gap-3">
             <div>
               <div className="flex justify-between items-center">
-                <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Venture Theme Color</label>
+                <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Brand color</label>
                 {bizLogoUrl && (
                   <button
                     type="button"
@@ -1178,7 +1178,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                     className="text-[9px] text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 cursor-pointer"
                   >
                     <Wand2 className={`w-2.5 h-2.5 ${isExtractingBizColors ? 'animate-spin' : ''}`} />
-                    Auto-extract from Logo
+                    Get from logo
                   </button>
                 )}
               </div>
@@ -1193,7 +1193,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               </div>
               {bizExtractedPalette && (
                 <div className="flex items-center gap-1.5 mt-1.5">
-                  <span className="text-[8px] text-zinc-400 font-bold uppercase">Logo Swatches:</span>
+                  <span className="text-[8px] text-zinc-400 font-bold uppercase">From logo:</span>
                   {bizExtractedPalette.palette.map((swatch, idx) => (
                     <button
                       key={`${swatch}-${idx}`}
@@ -1203,21 +1203,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                         bizColor.toLowerCase() === swatch.toLowerCase() ? 'ring-2 ring-sky-600' : ''
                       }`}
                       style={{ backgroundColor: swatch }}
-                      title={`Extracted color: ${swatch}`}
+                      title={`Use ${swatch}`}
                     />
                   ))}
                 </div>
               )}
             </div>
             <div>
-              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Venture Model Type</label>
+              <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Business type</label>
               <select
                 value={bizType}
                 onChange={(e) => setBizType(e.target.value as 'studio' | 'saas')}
                 className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 font-semibold text-zinc-850"
               >
-                <option value="studio">Tech/Creative Studio</option>
-                <option value="saas">SaaS Subscription Product</option>
+                <option value="studio">Studio or services</option>
+                <option value="saas">Software subscription</option>
               </select>
             </div>
           </div>
@@ -1226,18 +1226,18 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="space-y-3 pt-2 border-t border-dashed border-zinc-200">
             <div className="flex justify-between items-center">
               <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
-                Logo & Client Portal Branding
+                Logo and portal branding
               </label>
               <span className="text-[8px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
-                White-Label Sync
+                Used in client portal
               </span>
             </div>
 
             <div>
-              <label className="block text-[9.5px] font-medium text-zinc-400 uppercase">Brand Slogan / Tagline</label>
+              <label className="block text-[9.5px] font-medium text-zinc-400 uppercase">Tagline</label>
               <input
                 type="text"
-                placeholder="e.g. Web Design & Bespoke App Development"
+                placeholder="e.g. Web design and app development"
                 value={bizBrandSlogan}
                 onChange={(e) => setBizBrandSlogan(e.target.value)}
                 className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-3 text-xs mt-1 text-zinc-850"
@@ -1246,33 +1246,33 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-[9px] font-medium text-zinc-400 uppercase">Logo Format</label>
+                <label className="block text-[9px] font-medium text-zinc-400 uppercase">Logo type</label>
                 <select
                   value={bizLogoType}
                   onChange={(e) => setBizLogoType(e.target.value as 'text' | 'symbol' | 'image')}
                   className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2 text-xs mt-1 text-zinc-850"
                 >
-                  <option value="image">Custom Image / PNG</option>
-                  <option value="symbol">Symbol Icon</option>
-                  <option value="text">Monogram / Text</option>
+                  <option value="image">Image</option>
+                  <option value="symbol">Symbol</option>
+                  <option value="text">Initials</option>
                 </select>
               </div>
 
               {bizLogoType === 'symbol' && (
                 <div className="col-span-2">
-                  <label className="block text-[9px] font-medium text-zinc-400 uppercase">Brand Symbol Icon</label>
+                  <label className="block text-[9px] font-medium text-zinc-400 uppercase">Symbol</label>
                   <select
                     value={bizLogoSymbol}
                     onChange={(e) => setBizLogoSymbol(e.target.value)}
                     className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2 text-xs mt-1 text-zinc-850"
                   >
-                    <option value="Sparkles">✨ Sparkles (Creative / Tech)</option>
-                    <option value="Waves">🌊 Waves (Pacific / Ocean)</option>
-                    <option value="Briefcase">💼 Briefcase (Consulting)</option>
-                    <option value="Building2">🏢 Building (Corporate)</option>
-                    <option value="ShieldCheck">🛡️ Shield (Security / Compliance)</option>
-                    <option value="Globe">🌐 Globe (International / SaaS)</option>
-                    <option value="Heart">❤️ Heart (Hospitality / Wellness)</option>
+                    <option value="Sparkles">Sparkles (creative, tech)</option>
+                    <option value="Waves">Waves (Pacific, ocean)</option>
+                    <option value="Briefcase">Briefcase (consulting)</option>
+                    <option value="Building2">Building (corporate)</option>
+                    <option value="ShieldCheck">Shield (security)</option>
+                    <option value="Globe">Globe (international)</option>
+                    <option value="Heart">Heart (hospitality, wellness)</option>
                   </select>
                 </div>
               )}
@@ -1280,13 +1280,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               {bizLogoType === 'image' && (
                 <div className="col-span-2 space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <label className="block text-[9px] font-medium text-zinc-400 uppercase">Logo Image File or URL</label>
+                    <label className="block text-[9px] font-medium text-zinc-400 uppercase">Logo file or link</label>
                     <button
                       type="button"
                       onClick={() => bizFileInputRef.current?.click()}
                       className="text-[9px] text-sky-600 hover:text-sky-800 font-bold flex items-center gap-1 cursor-pointer"
                     >
-                      <Upload className="w-2.5 h-2.5" /> Upload File
+                      <Upload className="w-2.5 h-2.5" /> Upload
                     </button>
                     <input
                       ref={bizFileInputRef}
@@ -1298,7 +1298,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   </div>
                   <input
                     type="url"
-                    placeholder="https://example.com/logo.png or uploaded image"
+                    placeholder="https://example.com/logo.png"
                     value={bizLogoUrl}
                     onChange={(e) => {
                       setBizLogoUrl(e.target.value);
@@ -1311,7 +1311,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
               {bizLogoType === 'text' && (
                 <div className="col-span-2">
-                  <label className="block text-[9px] font-medium text-zinc-400 uppercase">Monogram / Abbreviation</label>
+                  <label className="block text-[9px] font-medium text-zinc-400 uppercase">Initials</label>
                   <input
                     type="text"
                     maxLength={8}
@@ -1340,8 +1340,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   )}
                 </div>
                 <div>
-                  <span className="font-bold text-xs text-zinc-900 block">{bizName || 'Business Venture'}</span>
-                  <span className="text-[9px] text-zinc-400 block">{bizBrandSlogan || 'Client Portal Brand Preview'}</span>
+                  <span className="font-bold text-xs text-zinc-900 block">{bizName || 'Your business'}</span>
+                  <span className="text-[9px] text-zinc-400 block">{bizBrandSlogan || 'Client portal preview'}</span>
                 </div>
               </div>
               <span className="text-[9px] font-mono font-bold px-2 py-0.5 rounded border border-zinc-200 bg-white" style={{ color: bizColor }}>
@@ -1353,8 +1353,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           {/* Primary Designation toggle */}
           <div className="flex items-center justify-between bg-zinc-50 p-2.5 rounded-lg border border-zinc-150">
             <div className="flex-1 pr-2">
-              <span className="font-bold text-zinc-750 block">Designate as Primary Profile</span>
-              <p className="text-[9px] text-zinc-400">All default contracts, quotes and tax documents will load this company first.</p>
+              <span className="font-bold text-zinc-750 block">Main business</span>
+              <p className="text-[9px] text-zinc-400">New quotes, invoices and contracts use this business by default.</p>
             </div>
             <input
               type="checkbox"
@@ -1368,8 +1368,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           {/* Venture Profession Category & Presets */}
           <div className="space-y-2 pt-2 border-t border-dashed border-zinc-200">
             <div className="flex justify-between items-center">
-              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Profession Category</label>
-              <span className="text-[8px] bg-sky-50 text-sky-700 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide">Adjust Custom presets</span>
+              <label className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Type of work</label>
+              <span className="text-[8px] bg-sky-50 text-sky-700 font-extrabold px-1.5 py-0.5 rounded uppercase tracking-wide">Field presets</span>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <select
@@ -1377,13 +1377,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 onChange={(e) => setBizCategory(e.target.value)}
                 className="col-span-1 bg-white border border-zinc-200 rounded-lg py-1.5 px-2.5 text-xs text-zinc-800"
               >
-                <option value="general">💼 General / Freelance</option>
-                <option value="boutique">👔 Boutique Clothing</option>
-                <option value="plumber">🔧 Plumber</option>
-                <option value="mc">🎙️ Professional MC</option>
-                <option value="band">🎸 Music Band</option>
-                <option value="production">🎬 Production Company</option>
-                <option value="taxi">🚕 Taxi / Transport</option>
+                <option value="general">General / freelance</option>
+                <option value="boutique">Clothing boutique</option>
+                <option value="plumber">Plumber</option>
+                <option value="mc">MC</option>
+                <option value="band">Band</option>
+                <option value="production">Video production</option>
+                <option value="taxi">Taxi / transport</option>
               </select>
 
               <button
@@ -1391,21 +1391,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 onClick={() => handleApplyCategoryPresets(bizCategory)}
                 className="col-span-1 bg-sky-50 hover:bg-sky-100 text-sky-700 font-extrabold py-1 px-2.5 rounded-lg text-[10px] border border-sky-100/60 transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
-                <Sliders className="w-3.5 h-3.5" /> Load Field Presets
+                <Sliders className="w-3.5 h-3.5" /> Load fields
               </button>
             </div>
             <p className="text-[9px] text-zinc-400">
-              Switching profession category and loading presets automatically configures custom data specifications (like vehicle plate, plumbing license, MC riders) onto your Tax Invoices and proposals.
+              Loads fields for your type of work (such as plate number, plumbing license or MC rider) to show on invoices and proposals.
             </p>
           </div>
 
           {/* Dynamic Custom Fields Editor */}
           <div className="space-y-3 pt-3 border-t border-dashed border-zinc-200">
-            <span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Venture-Specific Parameters & Custom Fields</span>
+            <span className="block text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Custom fields</span>
             
             {bizCustomFields.length === 0 ? (
               <div className="text-center py-4 bg-zinc-50 border border-dashed border-zinc-200 rounded-xl text-zinc-400 text-[10px]">
-                No custom fields are loaded for this business yet. Use presets above or add customized inputs below!
+                No custom fields yet. Load presets above or add one below.
               </div>
             ) : (
               <div className="space-y-2">
@@ -1439,18 +1439,18 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
             {/* Form component to add arbitrary custom fields */}
             <div className="bg-zinc-50/60 p-2.5 rounded-lg border border-zinc-150 space-y-2">
-              <span className="block text-[8.5px] font-extrabold text-zinc-500 uppercase tracking-wider">Add Custom Field Input</span>
+              <span className="block text-[8.5px] font-extrabold text-zinc-500 uppercase tracking-wider">Add a field</span>
               <div className="grid grid-cols-2 gap-2">
                 <input
                   type="text"
-                  placeholder="e.g. License Number"
+                  placeholder="e.g. License number"
                   value={newCustomLabel}
                   onChange={(e) => setNewCustomLabel(e.target.value)}
                   className="bg-white border border-zinc-200 rounded py-1 px-2 text-[10px] text-zinc-800"
                 />
                 <input
                   type="text"
-                  placeholder="Value details"
+                  placeholder="Value"
                   value={newCustomValue}
                   onChange={(e) => setNewCustomValue(e.target.value)}
                   className="bg-white border border-zinc-200 rounded py-1 px-2 text-[10px] text-zinc-800"
@@ -1461,7 +1461,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 onClick={handleAddCustomField}
                 className="w-full bg-zinc-200 hover:bg-zinc-250 text-zinc-700 font-bold py-1 px-2.5 rounded text-[9.5px] transition-all flex items-center justify-center gap-1 cursor-pointer"
               >
-                <Plus className="w-3 h-3" /> Insert New Custom Parameter
+                <Plus className="w-3 h-3" /> Add field
               </button>
             </div>
           </div>
@@ -1472,14 +1472,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <div>
                 <span className="block text-[10px] font-bold text-zinc-600 uppercase tracking-wider flex items-center gap-1.5">
                   <Globe className="w-3.5 h-3.5 text-sky-600" />
-                  International Project Currencies
+                  Currencies
                 </span>
                 <span className="text-[9.5px] text-zinc-400 block mt-0.5">
-                  Define working currencies accepted for cross-border client invoices, quotes, and foreign expenses.
+                  Currencies you can use on invoices, quotes and expenses for overseas clients.
                 </span>
               </div>
               <span className="text-[8.5px] font-bold uppercase tracking-wider text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
-                Multi-Currency
+                Multiple currencies
               </span>
             </div>
 
@@ -1488,10 +1488,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               <div className="flex items-center justify-between">
                 <label className="text-[9.5px] font-bold text-zinc-500 uppercase tracking-wide flex items-center gap-1">
                   <Coins className="w-3 h-3 text-amber-500" />
-                  Primary Base Currency (Ledger & Reports)
+                  Base currency (books and reports)
                 </label>
                 <span className="text-[8px] bg-amber-50 text-amber-800 font-bold px-1.5 py-0.2 rounded border border-amber-200">
-                  FRCS Tax Base
+                  Used for tax
                 </span>
               </div>
               <select
@@ -1512,7 +1512,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 ))}
               </select>
               <p className="text-[9px] text-zinc-400 leading-tight">
-                All venture revenue summaries, tax calculations, and FRCS VAT reports consolidate into this base currency.
+                Revenue summaries, tax calculations and VAT reports are shown in this currency.
               </p>
             </div>
 
@@ -1520,9 +1520,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[9.5px] font-bold text-zinc-500 uppercase tracking-wide">
-                  Active Working Currencies ({bizWorkingCurrencies.length})
+                  Your currencies ({bizWorkingCurrencies.length})
                 </label>
-                <span className="text-[9px] text-zinc-400">Available in Billing & Expenses</span>
+                <span className="text-[9px] text-zinc-400">Available in billing and expenses</span>
               </div>
 
               <div className="flex flex-wrap gap-1.5">
@@ -1554,7 +1554,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                           )}
                           {hasCustomRate && (
                             <span className="text-[7.5px] font-black uppercase tracking-wider bg-sky-200/80 text-sky-800 px-1 rounded">
-                              Custom FX
+                              Custom rate
                             </span>
                           )}
                         </div>
@@ -1569,7 +1569,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                           type="button"
                           onClick={() => handleRemoveWorkingCurrency(code)}
                           className="ml-1 text-zinc-400 hover:text-rose-600 transition-colors p-0.5 rounded cursor-pointer"
-                          title={`Remove ${code} from working currencies`}
+                          title={`Remove ${code}`}
                         >
                           <X className="w-3 h-3" />
                         </button>
@@ -1582,7 +1582,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               {/* Quick Add Presets */}
               <div className="pt-1">
                 <span className="text-[8.5px] font-bold text-zinc-400 uppercase tracking-wider block mb-1">
-                  Quick Add Regional / Global Currencies:
+                  Quick add:
                 </span>
                 <div className="flex flex-wrap gap-1">
                   {['AUD', 'NZD', 'USD', 'EUR', 'GBP', 'CAD', 'SGD', 'PGK', 'WST', 'SBD', 'VUV', 'TOP', 'JPY', 'CNY'].map(code => {
@@ -1620,7 +1620,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   onChange={(e) => setSelectedCurrencyToAdd(e.target.value)}
                   className="flex-1 bg-white border border-zinc-200 rounded-lg py-1 px-2 text-xs text-zinc-800"
                 >
-                  <option value="">Select other world currency to add...</option>
+                  <option value="">Add another currency…</option>
                   {SUPPORTED_CURRENCIES.filter(c => !bizWorkingCurrencies.includes(c.code)).map(c => (
                     <option key={c.code} value={c.code}>
                       {c.flag} {c.code} ({c.symbol}) &mdash; {c.name}
@@ -1644,7 +1644,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 <div className="flex items-center gap-1.5">
                   <ArrowRightLeft className="w-3.5 h-3.5 text-sky-600" />
                   <span className="text-[10px] font-bold text-sky-950 uppercase tracking-wide">
-                    Custom Exchange Rate Overrides
+                    Your exchange rates
                   </span>
                 </div>
                 <button
@@ -1652,14 +1652,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   onClick={() => setShowRateOverrideEditor(!showRateOverrideEditor)}
                   className="text-[9.5px] font-bold text-sky-700 hover:text-sky-900 cursor-pointer"
                 >
-                  {showRateOverrideEditor ? 'Hide Overrides' : 'Customize Rates'}
+                  {showRateOverrideEditor ? 'Hide' : 'Set rates'}
                 </button>
               </div>
 
               {showRateOverrideEditor && (
                 <div className="space-y-2.5 pt-1">
                   <p className="text-[9px] text-zinc-500 leading-normal">
-                    Lock in contracted or agreed currency exchange rates with international clients (e.g. 1 AUD = 1.485 FJD) rather than market float benchmarks.
+                    Use a rate you've agreed with a client (e.g. 1 AUD = 1.485 FJD) instead of the default rate.
                   </p>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -1700,12 +1700,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                         onClick={handleSaveCustomRateOverride}
                         className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-bold py-1 px-2.5 rounded-lg text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
                       >
-                        <Check className="w-3 h-3" /> Save Rate
+                        <Check className="w-3 h-3" /> Set rate
                       </button>
                       <button
                         type="button"
                         onClick={() => handleResetCustomRate(editingRateCode)}
-                        title="Reset to benchmark"
+                        title="Reset to the default rate"
                         className="bg-white hover:bg-zinc-100 text-zinc-600 border border-zinc-200 font-semibold py-1 px-2 rounded-lg text-xs transition-colors cursor-pointer"
                       >
                         Reset
@@ -1716,7 +1716,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   {/* Active Overrides Summary */}
                   {Object.keys(bizCustomExchangeRates).length > 0 && (
                     <div className="bg-white p-2 rounded-lg border border-sky-100 text-[9.5px] space-y-1">
-                      <span className="font-bold text-sky-900 block">Active Contracted Overrides:</span>
+                      <span className="font-bold text-sky-900 block">Your rates:</span>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(bizCustomExchangeRates).map(([code, rate]) => (
                           <span
@@ -1745,7 +1745,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             type="submit"
             className="w-full bg-zinc-900 hover:bg-zinc-850 text-white font-semibold py-2 rounded-lg text-xs transition-all shadow-xs cursor-pointer flex items-center justify-center gap-1.5"
           >
-            <Check className="w-3.5 h-3.5" /> Save Venture Specifications
+            <Check className="w-3.5 h-3.5" /> Save business
           </button>
         </form>
       </div>
@@ -1754,11 +1754,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       <div className="bg-white rounded-xl p-5 border border-zinc-100 shadow-xs space-y-3 text-xs text-zinc-600">
         <div className="flex items-center gap-1.5 pb-2 border-b border-zinc-100">
           <Globe className="w-4 h-4 text-zinc-500" />
-          <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">South Pacific SaaS Expansion Target</span>
+          <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Countries</span>
         </div>
 
         <p className="text-[10px] text-zinc-400 leading-normal">
-          This SaaS billing engine and mobile payment sync are currently tailored exclusively for <strong>Fiji (FJD)</strong>. Explore compliance requirements and future rollout roadmaps for neighboring South Pacific countries.
+          Frilensa is built for <strong>Fiji (FJD)</strong>. Other Pacific countries are planned. Tap one to see its tax notes.
         </p>
 
         <div className="grid grid-cols-5 gap-1.5 text-center">
@@ -1774,7 +1774,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               type="button"
               onClick={() => {
                 setSelectedRegion(region.code as any);
-                triggerStatus(`Strategy updated for ${region.name} sandbox compliance studies!`, 'success');
+                triggerStatus(`Showing ${region.name}`, 'info');
               }}
               className={`p-2 rounded-xl border text-center transition-all cursor-pointer ${
                 selectedRegion === region.code
@@ -1790,21 +1790,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
         {selectedRegion === 'FJ' && (
           <div className="bg-emerald-50/50 border border-emerald-100 rounded-lg p-2.5 text-[9.5px] text-emerald-850 space-y-1">
-            <span className="font-extrabold text-[8px] uppercase tracking-wider block">Fiji Sandboxing Status:</span>
+            <span className="font-extrabold text-[8px] uppercase tracking-wider block">Fiji:</span>
             <p className="leading-tight text-emerald-800">
-              🟢 Fully compliant with Fiji Revenue (FRCS) {data.userProfile.defaultVatRate ?? 12.5}% VAT Tax invoice guidelines. Integrates natively with <strong>M-Paisa Merchant ID</strong> and <strong>Digicel MyCash QR</strong> settlements.
+              Invoices include {data.userProfile.defaultVatRate ?? 12.5}% VAT and your TIN. Clients can pay by <strong>M-PAiSA</strong> or <strong>MyCash</strong> using the details you add above.
             </p>
           </div>
         )}
 
         {selectedRegion !== 'FJ' && (
           <div className="bg-sky-50/50 border border-sky-100 rounded-lg p-2.5 text-[9.5px] text-sky-850 space-y-1">
-            <span className="font-extrabold text-[8px] uppercase tracking-wider block">Rollout Feasibility & Tax Analysis:</span>
+            <span className="font-extrabold text-[8px] uppercase tracking-wider block">Planned:</span>
             <p className="leading-tight text-sky-800">
-              {selectedRegion === 'WS' && 'Samoa (WST) target VAT is 15%. Direct M-Tala / MyCash settlement sandbox required for local service providers.'}
-              {selectedRegion === 'TO' && 'Tonga (TOP) target Consumption Tax is 15%. Tonga Development Bank digital ledger interface study study underway.'}
-              {selectedRegion === 'VU' && 'Vanuatu (VUV) target VAT is 15%. Telecom Vanuatu M-Vatu API documentation audit pending.'}
-              {selectedRegion === 'SB' && 'Solomon Islands (SBD) target Goods & Services Tax (GST) is 10%. E-Wallet integration pending regulatory sandbox approval.'}
+              {selectedRegion === 'WS' && 'Samoa (WST): VAGST is 15%. Not available yet.'}
+              {selectedRegion === 'TO' && 'Tonga (TOP): consumption tax is 15%. Not available yet.'}
+              {selectedRegion === 'VU' && 'Vanuatu (VUV): VAT is 15%. Not available yet.'}
+              {selectedRegion === 'SB' && 'Solomon Islands (SBD): GST is 10%. Not available yet.'}
             </p>
           </div>
         )}
@@ -1813,14 +1813,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       {/* Document Prefix & Numbering Section */}
       <form onSubmit={handleSaveNumberingSettings} className="bg-white rounded-xl p-5 border border-zinc-100 shadow-xs space-y-4 text-xs text-zinc-600">
         <div className="flex justify-between items-center">
-          <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Prefix & Numbering Settings</span>
+          <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">Document numbering</span>
           <span className="text-[8px] bg-zinc-100 text-zinc-700 font-extrabold px-1.5 py-0.5 rounded tracking-wider uppercase font-mono max-w-[120px] truncate">
-            💼 {activeBusiness?.name}
+            {activeBusiness?.name}
           </span>
         </div>
 
         <div>
-          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Numbering Mode</label>
+          <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">Numbering</label>
           <div className="grid grid-cols-2 gap-2 mt-1">
             <button
               type="button"
@@ -1831,7 +1831,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   : 'bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100'
               }`}
             >
-              Auto Prefix & Number
+              Automatic
             </button>
             <button
               type="button"
@@ -1842,13 +1842,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   : 'bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100'
               }`}
             >
-              Set Manually
+              Manual
             </button>
           </div>
           <p className="text-[9px] text-zinc-400 mt-1">
             {docNumberMode === 'auto' 
-              ? 'Invoices, Receipts, and Quotes will be automatically prefixed and numbered.' 
-              : 'You will manually type the document number/serial on creation.'}
+              ? 'Invoices, receipts and quotes are numbered for you.' 
+              : 'You type the number when you create each document.'}
           </p>
         </div>
 
@@ -1950,7 +1950,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="submit"
           className="w-full bg-zinc-950 hover:bg-zinc-850 text-white font-medium py-2 rounded-lg text-xs transition-all shadow-xs cursor-pointer"
         >
-          Save Prefix & Numbering Rules
+          Save numbering
         </button>
       </form>
 
@@ -1960,7 +1960,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="flex items-center gap-1.5">
             <Percent className="w-4 h-4 text-zinc-500" />
             <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
-              Business Custom Fees & Surcharges
+              Fees and surcharges
             </span>
           </div>
           <span className="text-[10px] font-mono text-zinc-400 bg-zinc-50 px-2 py-0.5 rounded-full border border-zinc-100">
@@ -1969,14 +1969,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
 
         <p className="text-[10px] text-zinc-400 leading-normal">
-          Define custom handling fees, agency service charges, payment processing fees, or emergency callout surcharges for this business venture.
+          Add fees you charge on top of your work, such as handling, service, card processing or call-out fees.
         </p>
 
         {/* Existing Custom Fees for Active Venture */}
         <div className="space-y-2">
           {((data.businessFees || []).filter(f => !f.businessId || f.businessId === data.activeBusinessId)).length === 0 ? (
             <div className="p-3 bg-zinc-50 rounded-xl text-center text-[10px] text-zinc-400 italic">
-              No custom fees configured for this venture yet. Add one below.
+              No fees yet. Add one below.
             </div>
           ) : (
             (data.businessFees || [])
@@ -2016,7 +2016,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                         onUpdateData({ ...data, businessFees: updated });
                       }}
                       className="p-1 text-zinc-400 hover:text-zinc-700 rounded transition-colors"
-                      title={fee.isActive ? 'Disable Fee' : 'Enable Fee'}
+                      title={fee.isActive ? 'Turn off' : 'Turn on'}
                     >
                       {fee.isActive ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-zinc-300" />}
                     </button>
@@ -2026,10 +2026,10 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                       onClick={() => {
                         const updated = (data.businessFees || []).filter(f => f.id !== fee.id);
                         onUpdateData({ ...data, businessFees: updated });
-                        triggerStatus('Custom fee deleted from venture.', 'success');
+                        triggerStatus('Fee deleted', 'success');
                       }}
                       className="p-1 text-zinc-400 hover:text-rose-600 rounded transition-colors"
-                      title="Delete Fee"
+                      title="Delete fee"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -2044,7 +2044,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           onSubmit={(e) => {
             e.preventDefault();
             if (!newFeeName.trim()) {
-              triggerStatus('Fee title cannot be empty.', 'error');
+              triggerStatus('Enter a fee name.', 'error');
               return;
             }
             const newFee: FeeConfig = {
@@ -2066,21 +2066,21 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             setNewFeeRate(5.0);
             setNewFeeDescription('');
             setNewFeeIsDefault(false);
-            triggerStatus(`Added fee "${newFee.name}" to ${activeBusiness?.name}!`, 'success');
+            triggerStatus(`Added "${newFee.name}" to ${activeBusiness?.name}`, 'success');
           }}
           className="bg-zinc-50/70 border border-zinc-100 rounded-xl p-3.5 space-y-3"
         >
           <span className="block text-[9px] font-bold text-zinc-500 uppercase tracking-wide">
-            Add New Venture Fee or Surcharge
+            Add a fee
           </span>
 
           <div className="space-y-2">
             <div>
-              <label className="block text-[9px] font-medium text-zinc-400 uppercase">Fee Name / Surcharge Title *</label>
+              <label className="block text-[9px] font-medium text-zinc-400 uppercase">Fee name *</label>
               <input
                 type="text"
                 required
-                placeholder="e.g. Handling & Service Charge, Emergency Callout Fee"
+                placeholder="e.g. Service charge, call-out fee"
                 value={newFeeName}
                 onChange={(e) => setNewFeeName(e.target.value)}
                 className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 transition-colors mt-0.5"
@@ -2089,14 +2089,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
             <div className="grid grid-cols-2 gap-2">
               <div>
-                <label className="block text-[9px] font-medium text-zinc-400 uppercase">Charge Type</label>
+                <label className="block text-[9px] font-medium text-zinc-400 uppercase">Charge type</label>
                 <select
                   value={newFeeRateType}
                   onChange={(e) => setNewFeeRateType(e.target.value as 'percentage' | 'flat')}
                   className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 transition-colors mt-0.5"
                 >
                   <option value="percentage">Percentage (%)</option>
-                  <option value="flat">Flat Amount (FJD $)</option>
+                  <option value="flat">Flat amount (FJD $)</option>
                 </select>
               </div>
 
@@ -2124,12 +2124,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                   onChange={(e) => setNewFeeCategory(e.target.value as any)}
                   className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 transition-colors mt-0.5"
                 >
-                  <option value="service">Service Fee</option>
-                  <option value="handling">Handling Fee</option>
-                  <option value="processing">Processing Fee</option>
-                  <option value="delivery">Delivery / Rush</option>
-                  <option value="setup">Setup / Onboarding</option>
-                  <option value="custom">Custom Surcharge</option>
+                  <option value="service">Service fee</option>
+                  <option value="handling">Handling fee</option>
+                  <option value="processing">Processing fee</option>
+                  <option value="delivery">Delivery / rush</option>
+                  <option value="setup">Setup</option>
+                  <option value="custom">Other</option>
                 </select>
               </div>
 
@@ -2141,16 +2141,16 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                     onChange={(e) => setNewFeeIsDefault(e.target.checked)}
                     className="w-3.5 h-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-900"
                   />
-                  <span>Apply by default on new bills</span>
+                  <span>Add to new invoices by default</span>
                 </label>
               </div>
             </div>
 
             <div>
-              <label className="block text-[9px] font-medium text-zinc-400 uppercase">Description (Optional note)</label>
+              <label className="block text-[9px] font-medium text-zinc-400 uppercase">Description (optional)</label>
               <input
                 type="text"
-                placeholder="e.g. Pass-through cost for payment gateways or rush dispatch"
+                placeholder="e.g. Covers card fees or rush delivery"
                 value={newFeeDescription}
                 onChange={(e) => setNewFeeDescription(e.target.value)}
                 className="w-full bg-white border border-zinc-200 rounded-lg py-1.5 px-2.5 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 transition-colors mt-0.5"
@@ -2163,14 +2163,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-1.5 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-center gap-1"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>Add Venture Fee</span>
+            <span>Add fee</span>
           </button>
         </form>
 
         {/* Platform Statutory Taxes (Read-only Overview for Businesses) */}
         <div className="pt-2 border-t border-zinc-100">
           <span className="block text-[9.5px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
-            Statutory Fiji Taxes & Levies (Platform Governed)
+            Fiji taxes and levies (set by Frilensa)
           </span>
           <div className="space-y-1.5">
             {(data.platformTaxes || []).map((tax) => (
@@ -2193,7 +2193,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div className="flex items-center justify-between pb-2 border-b border-sky-50">
           <div className="flex items-center gap-1.5 text-sky-700">
             <Cloud className="w-4 h-4 text-sky-600" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-800">Cloud Database Synchronization</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-800">Cloud sync</span>
           </div>
           <span className="bg-emerald-50 text-emerald-700 text-[8px] font-extrabold px-2 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
@@ -2202,12 +2202,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
 
         <p className="text-[10px] text-zinc-500 leading-normal">
-          Your workspace and business data are synchronized automatically with the project's cloud database across both mobile and PC apps.
+          Your data syncs automatically, so it's the same on your phone and computer.
         </p>
 
         <div className="bg-sky-50/60 p-3 rounded-xl border border-sky-100 space-y-2 text-[10px] font-mono">
           <div className="flex justify-between items-center text-slate-700">
-            <span className="text-slate-500">Database Instance:</span>
+            <span className="text-slate-500">Project:</span>
             <span className="font-bold text-sky-900 truncate max-w-[200px]" title={firebaseConfig.projectId}>
               {firebaseConfig.projectId}
             </span>
@@ -2215,19 +2215,19 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="flex justify-between items-center text-slate-700">
             <span className="text-slate-500">Database:</span>
             <span className="font-bold text-sky-800 truncate max-w-[200px]" title={firebaseConfig.firestoreDatabaseId || '(default)'}>
-              {firebaseConfig.firestoreDatabaseId ? 'Frilensa Dedicated DB' : 'Default DB'}
+              {firebaseConfig.firestoreDatabaseId ? 'Frilensa' : 'Default'}
             </span>
           </div>
           <div className="flex justify-between items-center text-slate-700">
-            <span className="text-slate-500">Sync Account:</span>
+            <span className="text-slate-500">Account:</span>
             <span className="font-bold text-slate-800">
               {data.userProfile?.email || ''}
             </span>
           </div>
           <div className="flex justify-between items-center text-slate-700">
-            <span className="text-slate-500">Active Business:</span>
+            <span className="text-slate-500">Current business:</span>
             <span className="font-bold text-slate-800 truncate max-w-[180px]">
-              {data.businesses?.find(b => b.id === data.activeBusinessId)?.name || 'Street Level Digital Engagement Pte Ltd'}
+              {data.businesses?.find(b => b.id === data.activeBusinessId)?.name || '—'}
             </span>
           </div>
         </div>
@@ -2236,24 +2236,24 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="button"
           onClick={async () => {
             if (!onManualCloudSync) return;
-            triggerStatus('Synchronizing with the cloud database...', 'success');
+            triggerStatus('Syncing…', 'info');
             await onManualCloudSync();
             triggerStatus('Sync finished. Any problem is shown in the banner at the top of the page.', 'success');
           }}
           className="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 rounded-lg text-[10.5px] transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
         >
-          <RefreshCw className="w-3.5 h-3.5" /> Force Cloud Sync Now
+          <RefreshCw className="w-3.5 h-3.5" /> Sync now
         </button>
       </div>
 
       {/* Database & App Management backups */}
       <div className="bg-white rounded-xl p-5 border border-zinc-100 shadow-xs space-y-4 text-xs text-zinc-600">
         <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest flex items-center gap-1">
-          <Code className="w-3.5 h-3.5 text-zinc-400" /> Database & Backups
+          <Code className="w-3.5 h-3.5 text-zinc-400" /> Backups
         </span>
 
         <p className="text-[10px] text-zinc-400 leading-normal">
-          Your client profiles, multiple businesses, catalog and billing items are protected with multi-layered local backups and intelligent cloud synchronization.
+          Frilensa keeps an automatic backup on this device as well as syncing to the cloud. You can also download your own copy.
         </p>
 
         <div className="grid grid-cols-2 gap-2">
@@ -2261,13 +2261,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             type="button"
             onClick={handleDownloadBackupFile}
             className="bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-medium py-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all"
-            title="Download workspace JSON file to your device"
+            title="Download a backup file"
           >
-            <Download className="w-3.5 h-3.5 text-zinc-400" /> Download JSON File
+            <Download className="w-3.5 h-3.5 text-zinc-400" /> Download backup
           </button>
           
           <label className="bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-medium py-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all cursor-pointer">
-            <Upload className="w-3.5 h-3.5 text-zinc-400" /> Upload JSON File
+            <Upload className="w-3.5 h-3.5 text-zinc-400" /> Import backup
             <input 
               type="file" 
               accept=".json" 
@@ -2283,14 +2283,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             onClick={handleExportData}
             className="bg-zinc-50 hover:bg-zinc-100 text-zinc-700 font-medium py-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all"
           >
-            <Share2 className="w-3.5 h-3.5 text-zinc-400" /> Copy to Clipboard
+            <Share2 className="w-3.5 h-3.5 text-zinc-400" /> Copy backup
           </button>
           <button
             type="button"
             onClick={handleRestoreAutoBackup}
             className="bg-sky-50 hover:bg-sky-100 text-sky-700 font-medium py-2 rounded-lg text-[10px] flex items-center justify-center gap-1 transition-all"
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" /> Restore Auto-Backup
+            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" /> Restore auto-backup
           </button>
         </div>
 
@@ -2300,7 +2300,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             onClick={() => setShowBackupArea(!showBackupArea)}
             className="text-[10px] text-zinc-500 hover:text-zinc-800 underline underline-offset-2 flex items-center gap-1"
           >
-            {showBackupArea ? 'Hide Manual JSON Editor' : 'Paste Manual JSON Code'}
+            {showBackupArea ? 'Hide' : 'Paste a backup'}
           </button>
         </div>
 
@@ -2310,11 +2310,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             animate={{ opacity: 1, height: 'auto' }}
             className="space-y-2 pt-2 border-t border-zinc-100"
           >
-            <label className="block text-[9px] font-medium text-zinc-400 uppercase tracking-wider">Paste CRM Backup Code (JSON)</label>
+            <label className="block text-[9px] font-medium text-zinc-400 uppercase tracking-wider">Paste backup (JSON)</label>
             <textarea
               value={importJson}
               onChange={(e) => setImportJson(e.target.value)}
-              placeholder='Paste JSON database payload here...'
+              placeholder='Paste your backup here'
               rows={4}
               className="w-full bg-white border border-zinc-200 rounded-lg py-2 px-3 text-[10px] font-mono text-zinc-800"
             />
@@ -2323,7 +2323,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               onClick={handleImportData}
               className="w-full bg-zinc-900 hover:bg-zinc-850 text-white font-medium py-2 rounded-lg text-[10px] transition-all cursor-pointer"
             >
-              Confirm Restore Database
+              Restore
             </button>
           </motion.div>
         )}
@@ -2333,9 +2333,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       <div className="bg-zinc-50 border border-zinc-200 rounded-xl p-4 flex items-start gap-3 text-xs text-zinc-800">
         <Sparkles className="w-4 h-4 text-zinc-500 shrink-0 mt-0.5" />
         <div className="space-y-1">
-          <h4 className="font-medium font-sans">Fiji Tax Advisory Note</h4>
+          <h4 className="font-medium font-sans">Tax note</h4>
           <p className="text-[10px] leading-relaxed text-zinc-500">
-            Fiji's Standard Value Added Tax (VAT) rate is {data.userProfile.defaultVatRate ?? 12.5}%. Make sure your business and client Tax Identification Numbers (TIN) are filled correctly before issuing Tax Invoices to meet Fiji Revenue & Customs Authority (FRCA) invoicing requirements.
+            The VAT rate is set to {data.userProfile.defaultVatRate ?? 12.5}%. Check your TIN and your clients' TINs are correct before you send tax invoices. FRCS sets the rules for what a tax invoice must show.
           </p>
         </div>
       </div>
@@ -2346,7 +2346,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-sky-600" />
             <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Workspace Subscription</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Plan</span>
               <span className="text-xs font-bold text-zinc-900 uppercase">
                 {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.name || 'Free Starter'} Plan
               </span>
@@ -2357,13 +2357,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             onClick={() => setShowPaywall(true)}
             className="text-[10px] bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold px-2.5 py-1 rounded-lg border border-sky-200 transition-all"
           >
-            Manage / Upgrade
+            Change plan
           </button>
         </div>
 
         <div className="grid grid-cols-3 gap-2 pt-1 border-t border-zinc-100 text-center">
           <div className="bg-zinc-50 p-2 rounded-lg">
-            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Ventures</span>
+            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Businesses</span>
             <span className="text-xs font-mono font-bold text-zinc-800">
               {data.businesses.length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxBusinesses || 1}
             </span>
@@ -2375,7 +2375,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             </span>
           </div>
           <div className="bg-zinc-50 p-2 rounded-lg">
-            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Invoices / Mo</span>
+            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Invoices / month</span>
             <span className="text-xs font-mono font-bold text-zinc-800">
               {data.documents.filter(d => d.type === 'invoice').length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth === -1 ? '∞' : (data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth || 5)}
             </span>
@@ -2388,17 +2388,17 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
       <div className="bg-slate-900 text-slate-100 rounded-xl p-5 border border-slate-800 shadow-md space-y-3">
         <div className="flex items-center gap-1.5 text-sky-400">
           <ShieldCheck className="w-4 h-4" />
-          <span className="text-[10px] font-bold uppercase tracking-wider">SaaS Platform Management</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">Admin</span>
         </div>
         <p className="text-[9.5px] text-slate-400 leading-relaxed">
-          Access the super-administrator control center to monitor multi-tenant billing, approve bank/M-Paisa subscriptions, update global tax variables, and sandbox tenant databases.
+          Manage accounts, plans and platform tax settings.
         </p>
         <button
           type="button"
           onClick={onOpenAdminPanel}
           className="w-full bg-sky-500 hover:bg-sky-400 text-slate-950 font-extrabold py-2 rounded-lg text-[10.5px] transition-all flex items-center justify-center gap-1.5 shadow-sm active:scale-97"
         >
-          <span>Open SaaS Admin Panel</span>
+          <span>Open admin panel</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </button>
       </div>
@@ -2409,33 +2409,33 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div className="flex items-center justify-between pb-2 border-b border-zinc-100">
           <div className="flex items-center gap-1.5 text-sky-600">
             <Smartphone className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-700">Native Mobile App (PWA)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-700">Install the app</span>
           </div>
           <span className="bg-sky-50 text-sky-700 text-[8px] font-extrabold px-2 py-0.5 rounded-full border border-sky-100 uppercase tracking-wider">
-            Standalone Ready
+            Installable
           </span>
         </div>
 
         <p className="text-[10px] text-zinc-400 leading-normal">
-          Frilensa (frilensa.com) is built with Progressive Web App (PWA) capabilities. Install it on your iPhone, Android or iPad for full-screen display, offline receipt caching, and native touch responsiveness without needing the App Store.
+          Add Frilensa to the home screen of your iPhone, iPad or Android phone. It opens full screen like an app, with no App Store download.
         </p>
 
         <div className="space-y-2 bg-zinc-50 p-3 rounded-xl border border-zinc-150">
           <div className="flex items-center justify-between text-[10.5px]">
-            <span className="text-zinc-500 font-medium">Display Mode:</span>
+            <span className="text-zinc-500 font-medium">Display:</span>
             <span className="font-bold text-zinc-800 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Standalone Native
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> Full screen when installed
             </span>
           </div>
           <div className="flex items-center justify-between text-[10.5px]">
-            <span className="text-zinc-500 font-medium">Offline Storage:</span>
+            <span className="text-zinc-500 font-medium">Internet:</span>
             <span className="font-bold text-zinc-800 flex items-center gap-1">
-              <Wifi className="w-3.5 h-3.5 text-sky-500" /> Service Worker Active
+              <Wifi className="w-3.5 h-3.5 text-sky-500" /> Needs a connection
             </span>
           </div>
           <div className="flex items-center justify-between text-[10.5px]">
-            <span className="text-zinc-500 font-medium">Safe-Area Insets:</span>
-            <span className="font-bold text-zinc-800">Dynamic Notch & Home Bar</span>
+            <span className="text-zinc-500 font-medium">Screen fit:</span>
+            <span className="font-bold text-zinc-800">Works around notches</span>
           </div>
         </div>
 
@@ -2443,13 +2443,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           type="button"
           onClick={() => {
             sessionStorage.removeItem('pwa_install_prompt_dismissed');
-            triggerStatus('Install prompt ready! Tap "Install" or use browser Share menu to Add to Home Screen.', 'success');
+            triggerStatus('Reloading to show the install prompt. On iPhone, use Share, then Add to Home Screen.', 'info');
             // Dispatch a reload or prompt
             window.location.reload();
           }}
           className="w-full bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-bold py-2 rounded-lg text-[10.5px] transition-all flex items-center justify-center gap-1.5"
         >
-          <Download className="w-3.5 h-3.5" /> Re-trigger Install Prompt
+          <Download className="w-3.5 h-3.5" /> Show install prompt
         </button>
       </div>
 
@@ -2461,11 +2461,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         <div className="flex items-center justify-between">
           <div>
             <span className="block text-[10px] font-semibold text-zinc-400 uppercase tracking-widest">
-              Messaging &amp; Delivery Pipelines
+              Email
             </span>
             <h3 className="text-sm font-bold text-zinc-800 flex items-center gap-1.5 mt-0.5">
               <Mail className="w-4 h-4 text-sky-600" />
-              Transactional Email Delivery (Invoices, Receipts, Quotes)
+              Sending invoices, receipts and quotes
             </h3>
           </div>
           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -2475,7 +2475,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
 
         <p className="text-[11px] text-zinc-500 leading-relaxed">
-          Frilensa delivers branded client communications using a multi-channel architecture. Invoices and official receipts include attached high-resolution PDF documents, itemized pricing, and direct links to the interactive client payment portal.
+          Emails to clients carry your business name and include the PDF, the line items and a link to view and pay online.
         </p>
 
         {/* Provider statuses */}
@@ -2485,22 +2485,22 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 font-bold text-zinc-800">
                 <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
-                <span>Twilio SendGrid Direct API</span>
+                <span>SendGrid</span>
               </div>
               {emailConfig?.sendgridConfigured ? (
                 <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                  Live Active
+                  Connected
                 </span>
               ) : (
-                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="Add SENDGRID_API_KEY to .env for live relay">
-                  Key Optional
+                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800" title="Set SENDGRID_API_KEY on the server to send email">
+                  Not set up
                 </span>
               )}
             </div>
             <p className="text-[10px] text-zinc-500">
               {emailConfig?.sendgridConfigured
-                ? `Active sender: ${emailConfig.sendgridFromEmail || 'billing@frilensa.com'}`
-                : 'Direct REST API relay for high-volume delivery. Provide SENDGRID_API_KEY in Settings / environment for instant live outbound delivery.'}
+                ? `Sends from ${emailConfig.sendgridFromEmail || 'billing@frilensa.com'}`
+                : 'Set SENDGRID_API_KEY on the server to send email.'}
             </p>
           </div>
 
@@ -2509,14 +2509,14 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5 font-bold text-zinc-800">
                 <Cloud className="w-3.5 h-3.5 text-amber-600" />
-                <span>Firebase Trigger Email</span>
+                <span>Email queue</span>
               </div>
               <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
-                Ready &bull; mail collection
+                Fallback
               </span>
             </div>
             <p className="text-[10px] text-zinc-500">
-              Queues documents directly in Firestore <code className="bg-zinc-200/60 px-1 py-0.5 rounded text-[9px]">mail</code> collection for the official Firebase Trigger Email extension (SMTP/SendGrid/Postmark).
+              Adds emails to the server's <code className="bg-zinc-200/60 px-1 py-0.5 rounded text-[9px]">mail</code> queue, for a mail extension to send by SMTP, SendGrid or Postmark.
             </p>
           </div>
         </div>
@@ -2524,7 +2524,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         {/* Live Test Sender */}
         <div className="pt-2 border-t border-zinc-100 space-y-2">
           <label className="block text-[10px] font-medium text-zinc-400 uppercase tracking-wider">
-            Test Email Dispatch Pipeline
+            Send a test email
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-1">
@@ -2535,7 +2535,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
                 type="email"
                 value={testEmailRecipient}
                 onChange={(e) => setTestEmailRecipient(e.target.value)}
-                placeholder="Enter recipient email..."
+                placeholder="Email address"
                 className="w-full bg-zinc-50 border border-zinc-200 rounded-lg py-2 pl-8.5 pr-3 text-xs text-zinc-800 focus:outline-none focus:border-zinc-900 transition-colors"
               />
             </div>
@@ -2552,12 +2552,12 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               {isTestingEmail ? (
                 <>
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Dispatching...</span>
+                  <span>Sending…</span>
                 </>
               ) : (
                 <>
                   <Send className="w-3.5 h-3.5" />
-                  <span>Send Test Email</span>
+                  <span>Send test</span>
                 </>
               )}
             </button>
@@ -2587,13 +2587,13 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           onClick={onSignOut}
           className="w-full bg-zinc-100 hover:bg-zinc-200 text-zinc-700 font-medium py-2.5 rounded-lg text-xs flex items-center justify-center gap-1.5 transition-all"
         >
-          <LogOut className="w-4 h-4 text-zinc-500" /> Log Out of CRM Profile
+          <LogOut className="w-4 h-4 text-zinc-500" /> Sign out
         </button>
       </div>
 
       {/* Credits */}
       <p className="text-center text-[9px] text-zinc-400 font-medium">
-        Vinaka vakalevu • Frilensa Version 2.8.0
+        Vinaka vakalevu • Frilensa
       </p>
 
       {/* Brand Designer & Auto-Color Studio Modal */}
@@ -2616,7 +2616,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               setBizBrandSlogan(updatedBiz.brandSlogan || '');
             }
             setShowBrandDesignerModal(false);
-            triggerStatus(`Brand styling and logo color scheme updated for ${updatedBiz.name}!`, 'success');
+            triggerStatus(`Logo and colors saved for ${updatedBiz.name}`, 'success');
           }}
           onClose={() => setShowBrandDesignerModal(false)}
         />

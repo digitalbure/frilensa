@@ -417,9 +417,9 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
       {/* Top Welcome Panel & Business Switcher */}
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Fiji & Pacific Freelance CRM</span>
+          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">Home</span>
           <h2 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-1.5 font-display">
-            Bula, {data.userProfile.name.split(' ')[0]}! <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500 animate-pulse" />
+            Bula, {data.userProfile.name.split(' ')[0]} <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500 animate-pulse" />
           </h2>
         </div>
         
@@ -435,11 +435,11 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                   : 'bg-white hover:bg-slate-50 text-slate-700 border-slate-200/90'
               }`}
-              title="Sync workspace across devices via Cloud Firestore"
+              title="Sync with your other devices"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-sky-600' : syncSuccess ? 'text-emerald-600' : 'text-slate-500'}`} />
               <span className="hidden sm:inline">Cloud</span>
-              <span>{syncSuccess ? 'Synced' : isSyncing ? 'Syncing...' : 'Sync'}</span>
+              <span>{syncSuccess ? 'Synced' : isSyncing ? 'Syncing…' : 'Sync'}</span>
             </button>
           )}
 
@@ -447,11 +447,11 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
             type="button"
             onClick={() => setShowQuickPulse(true)}
             className="bg-gradient-to-r from-sky-500/10 to-teal-500/10 hover:from-sky-500/20 hover:to-teal-500/20 text-sky-700 border border-sky-200/80 px-3 py-1.5 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer active:scale-95"
-            title="Open Activity Summary & Quick Access"
+            title="Recent activity"
           >
             <Zap className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
-            <span className="hidden sm:inline">Activity</span>
-            <span>Pulse</span>
+            <span className="hidden sm:inline"></span>
+            <span>Activity</span>
           </button>
 
           <div className="w-9 h-9 bg-slate-100 rounded-full border border-slate-200 flex items-center justify-center text-xs font-bold text-sky-700 shadow-xs">
@@ -482,7 +482,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onFocus={() => setIsSearchFocused(true)}
-            placeholder="Search invoices, clients, projects (e.g. INV-2026, Vodafone)..."
+            placeholder="Search invoices, clients and projects…"
             className="w-full bg-transparent text-xs text-slate-800 placeholder-slate-400 font-medium focus:outline-none"
           />
 
@@ -538,7 +538,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     }`}
                   >
                     <FileText className="w-3 h-3" />
-                    Invoices {searchQuery && `(${searchResults.documents.length})`}
+                    Documents {searchQuery && `(${searchResults.documents.length})`}
                   </button>
                   <button
                     type="button"
@@ -588,7 +588,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     {/* Quick Filters */}
                     <div>
                       <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block mb-1.5 px-1">
-                        Quick Filters
+                        Quick filters
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         <button
@@ -603,7 +603,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                           onClick={() => setSearchQuery('paid')}
                           className="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-lg border border-emerald-200/60 transition-colors flex items-center gap-1"
                         >
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Paid Status
+                          <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Paid
                         </button>
                         <button
                           type="button"
@@ -627,7 +627,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                       <div>
                         <div className="flex items-center justify-between mb-1.5 px-1">
                           <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
-                            Recent Invoices & Quotes
+                            Recent documents
                           </span>
                           <span className="text-[9px] text-slate-400 font-mono">Latest 3</span>
                         </div>
@@ -676,7 +676,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                       <div>
                         <div className="flex items-center justify-between mb-1.5 px-1">
                           <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">
-                            Active Projects
+                            Projects
                           </span>
                         </div>
                         <div className="space-y-1">
@@ -693,7 +693,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                     {proj.name}
                                   </p>
                                   <p className="text-[9px] text-slate-400">
-                                    {proj.status === 'in_progress' ? '⚡ In Progress' : proj.status === 'completed' ? '✓ Completed' : '⏸ On Hold'}
+                                    {proj.status === 'in_progress' ? 'In progress' : proj.status === 'completed' ? '✓ Completed' : 'On hold'}
                                   </p>
                                 </div>
                               </div>
@@ -714,9 +714,9 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     <div className="w-10 h-10 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-2">
                       <Search className="w-5 h-5" />
                     </div>
-                    <p className="text-xs font-bold text-slate-700">No matching records found</p>
+                    <p className="text-xs font-bold text-slate-700">No results</p>
                     <p className="text-[10px] text-slate-400 mt-1 max-w-xs mx-auto">
-                      No invoices, clients, or projects match "<span className="font-semibold text-slate-600">{searchQuery}</span>". Try searching by ID (e.g. INV-2026), client name, or service term.
+                      Nothing matches "<span className="font-semibold text-slate-600">{searchQuery}</span>". Try a document number (e.g. INV-2026) or a client name.
                     </p>
                   </div>
                 )}
@@ -727,7 +727,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     <div className="flex items-center justify-between mb-1.5 px-1">
                       <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-500 flex items-center gap-1">
                         <FileText className="w-3 h-3 text-sky-600" />
-                        Invoices & Billing ({searchResults.documents.length})
+                        Documents ({searchResults.documents.length})
                       </span>
                     </div>
                     <div className="space-y-1">
@@ -776,7 +776,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                 {data.userProfile.defaultCurrency} {doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                               </span>
                               <span className="text-[8.5px] text-sky-600 font-bold group-hover:underline flex items-center justify-end gap-0.5">
-                                Open Editor <ChevronRight className="w-2.5 h-2.5" />
+                                Open <ChevronRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                           </div>
@@ -813,7 +813,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                   {client.name}
                                 </p>
                                 <p className="text-[9px] text-slate-400 truncate mt-0.5">
-                                  {client.email || client.phone || (client.tin ? `TIN: ${client.tin}` : client.address || 'Client Contact')}
+                                  {client.email || client.phone || (client.tin ? `TIN: ${client.tin}` : client.address || 'No contact details')}
                                 </p>
                               </div>
                             </div>
@@ -822,7 +822,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                 {clientDocs.length} {clientDocs.length === 1 ? 'doc' : 'docs'}
                               </span>
                               <span className="text-[8.5px] text-indigo-600 font-bold group-hover:underline flex items-center justify-end gap-0.5">
-                                View Profile <ChevronRight className="w-2.5 h-2.5" />
+                                View <ChevronRight className="w-2.5 h-2.5" />
                               </span>
                             </div>
                           </div>
@@ -861,7 +861,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                                     {proj.name}
                                   </p>
                                   <p className="text-[9px] text-slate-400 truncate flex items-center gap-1">
-                                    <span>{client?.name || 'Venture Project'}</span>
+                                    <span>{client?.name || 'No client'}</span>
                                     <span>•</span>
                                     <ProjectCurrencyDisplay 
                                       amount={proj.cost} 
@@ -886,7 +886,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                             {totalTasks > 0 && (
                               <div className="space-y-0.5">
                                 <div className="flex justify-between text-[8px] text-slate-400 font-medium">
-                                  <span>Milestone Progress</span>
+                                  <span>Progress</span>
                                   <span>{progress}% ({doneTasks}/{totalTasks})</span>
                                 </div>
                                 <div className="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
@@ -914,13 +914,13 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
       <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <label className="text-xs font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1.5">
-            <Building2 className="w-4 h-4 text-sky-600" /> Active Venture
+            <Building2 className="w-4 h-4 text-sky-600" /> Business
           </label>
           <button 
             onClick={() => setShowAddBusiness(true)}
             className="text-[11px] font-semibold text-sky-600 hover:text-sky-700 flex items-center gap-0.5 transition-all"
           >
-            <Plus className="w-3.5 h-3.5" /> New Venture
+            <Plus className="w-3.5 h-3.5" /> Add business
           </button>
         </div>
 
@@ -953,7 +953,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               <div className="flex items-center gap-1.5">
                 {activeBusiness.isPrimary ? (
                   <span className="bg-emerald-50 text-emerald-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border border-emerald-100 uppercase tracking-wider flex items-center gap-0.5">
-                    🇫🇯 Primary Fiji Business
+                    Primary business
                   </span>
                 ) : (
                   <button
@@ -966,24 +966,24 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     }}
                     className="bg-slate-200/80 hover:bg-slate-250 text-slate-700 text-[9px] font-bold px-2 py-0.5 rounded-full border border-slate-300 uppercase tracking-wider transition-all cursor-pointer"
                   >
-                    Set as Primary
+                    Set as primary
                   </button>
                 )}
                 
                 <span className="bg-sky-50 text-sky-700 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full border border-sky-100 uppercase tracking-wider">
-                  {activeBusiness.category === 'boutique' && '👔 Boutique Clothing'}
-                  {activeBusiness.category === 'plumber' && '🔧 Plumbing Service'}
-                  {activeBusiness.category === 'mc' && '🎙️ Professional MC'}
-                  {activeBusiness.category === 'band' && '🎸 Music Band'}
-                  {activeBusiness.category === 'production' && '🎬 Production Co'}
-                  {activeBusiness.category === 'taxi' && '🚕 Taxi / Transport'}
-                  {(!activeBusiness.category || activeBusiness.category === 'general') && '💼 General Niche'}
+                  {activeBusiness.category === 'boutique' && 'Clothing boutique'}
+                  {activeBusiness.category === 'plumber' && 'Plumbing'}
+                  {activeBusiness.category === 'mc' && 'MC'}
+                  {activeBusiness.category === 'band' && 'Band'}
+                  {activeBusiness.category === 'production' && 'Production'}
+                  {activeBusiness.category === 'taxi' && 'Taxi and transport'}
+                  {(!activeBusiness.category || activeBusiness.category === 'general') && 'General'}
                 </span>
               </div>
               
               {activeBusiness.mPaisaId && (
                 <span className="bg-rose-50 text-rose-700 text-[9px] font-mono font-extrabold px-2 py-0.5 rounded-full border border-rose-100">
-                  📱 m-Paisa: {activeBusiness.mPaisaId}
+                  M-PAiSA: {activeBusiness.mPaisaId}
                 </span>
               )}
             </div>
@@ -1020,9 +1020,9 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   />
                 )}
                 <div>
-                  <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Brand Identity</span>
+                  <span className="text-[9px] uppercase tracking-wider text-slate-400 font-bold block">Brand</span>
                   <span className="text-[11px] font-semibold text-slate-700 block truncate max-w-[150px]">
-                    {activeBusiness.brandSlogan ? `"${activeBusiness.brandSlogan}"` : 'No Slogan Registered'}
+                    {activeBusiness.brandSlogan ? `"${activeBusiness.brandSlogan}"` : 'No slogan yet'}
                   </span>
                 </div>
               </div>
@@ -1031,26 +1031,26 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 <button
                   onClick={() => setShowEditVenture(true)}
                   className="text-[10px] bg-sky-50 text-sky-700 hover:bg-sky-100 border border-sky-200/60 font-semibold py-1 px-2.5 rounded-lg transition-all flex items-center gap-1 shrink-0 cursor-pointer"
-                  title="Edit Venture Profile, Legal TIN & Banking Credentials"
+                  title="Edit business details, TIN and bank details"
                 >
-                  <Building2 className="w-3 h-3" /> Edit Profile
+                  <Building2 className="w-3 h-3" /> Edit profile
                 </button>
                 <button
                   onClick={() => setShowBrandDesigner(true)}
                   className="text-[10px] bg-slate-200/70 text-slate-700 font-semibold py-1 px-2.5 rounded-lg hover:bg-slate-250 transition-all flex items-center gap-1 shrink-0 cursor-pointer"
                 >
-                  <Palette className="w-3 h-3" /> Design Logo
+                  <Palette className="w-3 h-3" /> Edit logo
                 </button>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-500">
               <div>
-                <span className="font-semibold block text-[10px] text-slate-400">BUSINESS TIN</span>
-                <span className="font-mono text-[10px]">{activeBusiness.tin || 'Not Configured'}</span>
+                <span className="font-semibold block text-[10px] text-slate-400">TIN</span>
+                <span className="font-mono text-[10px]">{activeBusiness.tin || 'Not set'}</span>
               </div>
               <div>
-                <span className="font-semibold block text-[10px] text-slate-400">VENTURE MODEL</span>
+                <span className="font-semibold block text-[10px] text-slate-400">TYPE</span>
                 <span className={`font-semibold capitalize inline-flex items-center gap-1 ${activeVenture.badgeText}`}>
                   <span>{activeVenture.shortLabel}</span>
                 </span>
@@ -1060,7 +1060,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   {activeBusiness.type === 'saas' ? 'CATEGORY' : 'INDUSTRY / VAT'}
                 </span>
                 <span className="font-semibold text-slate-700 truncate block">
-                  {activeBusiness.saasAppCategory || activeBusiness.category || `${data.userProfile.defaultVatRate ?? 12.5}% Standard`}
+                  {activeBusiness.saasAppCategory || activeBusiness.category || `${data.userProfile.defaultVatRate ?? 12.5}% standard`}
                 </span>
               </div>
             </div>
@@ -1080,7 +1080,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               }`}
             >
               <Activity className="w-3.5 h-3.5" />
-              <span>{activeVenture.shortLabel} Specialized Metrics</span>
+              <span>{activeVenture.shortLabel} figures</span>
             </button>
             <button
               type="button"
@@ -1090,7 +1090,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               }`}
             >
               <FileText className="w-3.5 h-3.5" />
-              <span>Standard Cash & VAT Flow</span>
+              <span>Income and VAT</span>
             </button>
           </div>
         )}
@@ -1105,7 +1105,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <TrendingUp className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Monthly Recurring (MRR)</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Monthly recurring (MRR)</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xs opacity-90">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-extrabold tracking-tight">
@@ -1118,7 +1118,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative overflow-hidden">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Active Subscribers</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Active subscribers</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeSubsCount}</span>
                     <span className="text-xs text-slate-500 ml-1">accounts</span>
@@ -1129,7 +1129,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Customer LTV</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Customer lifetime value</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1137,7 +1137,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <Percent className="w-3 h-3 text-indigo-500" /> Avg Churn: {ventureMetrics.churn}%
+                    <Percent className="w-3 h-3 text-indigo-500" /> Churn (est.): {ventureMetrics.churn}%
                   </span>
                 </div>
               </>
@@ -1150,7 +1150,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <ShoppingBag className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Gross Merch Value (GMV)</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Gross sales (GMV)</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xs opacity-90">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-extrabold tracking-tight">
@@ -1163,18 +1163,18 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Units Delivered</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Units sold</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.unitsSold}</span>
                     <span className="text-xs text-slate-500 ml-1">downloads</span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <ShoppingBag className="w-3 h-3 text-emerald-500" /> Templates & assets
+                    <ShoppingBag className="w-3 h-3 text-emerald-500" /> Templates and assets
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average Order Value</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average order value</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1182,7 +1182,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                    <Percent className="w-3 h-3 text-sky-500" /> Cart spend per buyer
+                    <Percent className="w-3 h-3 text-sky-500" /> Per order
                   </span>
                 </div>
               </>
@@ -1195,28 +1195,28 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <Clock className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active Retainers</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active retainers</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeRetainers}</span>
                     <span className="text-xs opacity-90 ml-1">contracts</span>
                   </div>
                   <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Clock className="w-3 h-3" /> {ventureMetrics.allocatedHours} hrs committed pool
+                    <Clock className="w-3 h-3" /> {ventureMetrics.allocatedHours} hrs committed
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Capacity Utilization</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Hours used (est.)</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.capacityUtilization}%</span>
                   </div>
                   <span className="text-[9px] text-emerald-600 mt-2 block font-semibold">
-                    Optimal SLA bandwidth
+                    Of committed hours
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Overage Billables</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Overage billing</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1224,7 +1224,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-amber-600 mt-2 block">
-                    Beyond monthly quota
+                    Hours over the monthly allowance
                   </span>
                 </div>
               </>
@@ -1237,18 +1237,18 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <Camera className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Booked Shoots</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Booked shoots</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.bookedShoots}</span>
                     <span className="text-xs opacity-90 ml-1">production days</span>
                   </div>
                   <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Calendar className="w-3 h-3" /> Calendar schedule
+                    <Calendar className="w-3 h-3" /> Scheduled
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average Day Rate</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average day rate</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-extrabold tracking-tight">
@@ -1256,12 +1256,12 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block">
-                    Base filming & drone rate
+                    Per shoot day
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Usage Rights & Buyouts</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Licensing</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1269,7 +1269,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-rose-600 mt-2 block font-semibold">
-                    Broadcast & digital licenses
+                    Usage rights and buyouts
                   </span>
                 </div>
               </>
@@ -1282,29 +1282,29 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <GraduationCap className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active Coachees</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Active clients</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.activeClients}</span>
                     <span className="text-xs opacity-90 ml-1">clients</span>
                   </div>
                   <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Users className="w-3 h-3" /> In mentorship programs
+                    <Users className="w-3 h-3" /> In a programme
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Sessions Completed</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Sessions completed</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.sessionsCompleted}</span>
                     <span className="text-xs text-slate-500 ml-1">calls</span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block">
-                    1-on-1 and cohort workshops
+                    One-on-one and group
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Avg Package Deal</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average package</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1312,7 +1312,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-purple-600 mt-2 block font-semibold">
-                    Advisory bundle size
+                    Per client
                   </span>
                 </div>
               </>
@@ -1325,18 +1325,18 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <Wrench className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Completed Work Orders</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Completed jobs</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.workOrders}</span>
                     <span className="text-xs opacity-90 ml-1">jobs</span>
                   </div>
                   <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> Field labor & site visits
+                    <CheckCircle2 className="w-3 h-3" /> Labour and site visits
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average Job Value</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average job value</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-extrabold tracking-tight">
@@ -1344,12 +1344,12 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block">
-                    Labor + callout + parts
+                    Labour, call-out and parts
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Materials & Parts</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Materials and parts</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1357,7 +1357,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-amber-700 mt-2 block font-semibold">
-                    Hardware & consumables
+                    Hardware and consumables
                   </span>
                 </div>
               </>
@@ -1370,18 +1370,18 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <div className="absolute right-0 bottom-0 translate-x-3 translate-y-3 opacity-10">
                     <Palmtree className="w-24 h-24" />
                   </div>
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Total Guests Hosted</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Guests hosted</span>
                   <div className="mt-1 flex items-baseline gap-1">
                     <span className="text-xl font-extrabold tracking-tight">{ventureMetrics.guestBookings}</span>
                     <span className="text-xs opacity-90 ml-1">passengers</span>
                   </div>
                   <span className="text-[9px] opacity-85 mt-2 block flex items-center gap-1">
-                    <Palmtree className="w-3 h-3" /> Day tours & charters
+                    <Palmtree className="w-3 h-3" /> Day tours and charters
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Avg Spend / Guest</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Average spend per guest</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-extrabold tracking-tight">
@@ -1389,12 +1389,12 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-slate-400 mt-2 block">
-                    Tickets, lunch & add-ons
+                    Tickets, lunch and extras
                   </span>
                 </div>
 
                 <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Advance Deposits</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Deposits</span>
                   <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                     <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                     <span className="text-xl font-bold tracking-tight">
@@ -1402,7 +1402,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </span>
                   </div>
                   <span className="text-[9px] text-teal-600 mt-2 block font-semibold">
-                    Upcoming reservations
+                    For upcoming bookings
                   </span>
                 </div>
               </>
@@ -1418,7 +1418,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </span>
               </div>
               <span className="text-[9px] text-emerald-600 font-semibold mt-2 block flex items-center gap-1">
-                <Check className="w-2.5 h-2.5" /> {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? 'Zero-Rated Offshore Exports (0% VAT)' : 'Compliant VAT estimation'}
+                <Check className="w-2.5 h-2.5" /> {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? 'Zero-rated exports (0%)' : 'Estimate'}
               </span>
             </div>
           </div>
@@ -1432,10 +1432,10 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
               <div>
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Total Collected</span>
+                  <span className="text-[10px] uppercase font-bold tracking-wider opacity-85 block">Collected</span>
                   {stats.hasForeignIncome && (
                     <span className="bg-white/20 text-white text-[8.5px] font-bold px-1.5 py-0.5 rounded-full flex items-center gap-1 backdrop-blur-xs">
-                      <Globe className="w-2.5 h-2.5" /> Multi-Currency
+                      <Globe className="w-2.5 h-2.5" /> Multi-currency
                     </span>
                   )}
                 </div>
@@ -1452,10 +1452,10 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   <button 
                     onClick={() => setShowFxBreakdownModal(true)}
                     className="w-full text-left bg-black/15 hover:bg-black/25 text-white p-1.5 rounded-xl transition-all cursor-pointer flex items-center justify-between group"
-                    title="Click to view foreign currency conversion and ledger reconciliation breakdown"
+                    title="See foreign currency breakdown"
                   >
                     <div className="min-w-0 pr-1">
-                      <span className="text-[8px] uppercase font-bold opacity-80 block tracking-tight">Foreign Remittance</span>
+                      <span className="text-[8px] uppercase font-bold opacity-80 block tracking-tight">Foreign payments</span>
                       <span className="text-[10px] font-bold truncate block text-emerald-100">{stats.primaryForeignSummary}</span>
                     </div>
                     <ArrowUpRight className="w-3.5 h-3.5 opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all shrink-0" />
@@ -1463,14 +1463,14 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </div>
               ) : (
                 <span className="text-[9px] opacity-75 mt-2 block flex items-center gap-1">
-                  <TrendingUp className="w-3 h-3" /> Paid Invoices & Receipts
+                  <TrendingUp className="w-3 h-3" /> Paid invoices and receipts
                 </span>
               )}
             </div>
 
             {/* Pending Card */}
             <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm relative overflow-hidden">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Pending Invoices</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Unpaid invoices</span>
               <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                 <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                 <span className="text-xl font-extrabold tracking-tight">
@@ -1478,20 +1478,20 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                 </span>
               </div>
               <span className="text-[9px] text-slate-400 mt-2 block flex items-center gap-1">
-                <Clock className="w-3 h-3 text-amber-500" /> Draft & Sent Status
+                <Clock className="w-3 h-3 text-amber-500" /> Drafts and sent
               </span>
             </div>
 
             {/* Quotes Value */}
             <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Total Quotes Offered</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">Quotes</span>
               <div className="mt-1 flex items-baseline gap-1 text-slate-800">
                 <span className="text-xs text-slate-500">{data.userProfile.defaultCurrency}</span>
                 <span className="text-xl font-bold tracking-tight">
                   {stats.totalQuotes.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
-              <span className="text-[9px] text-slate-400 mt-2 block">Outstanding Proposals</span>
+              <span className="text-[9px] text-slate-400 mt-2 block">Open quotes</span>
             </div>
 
             {/* Total VAT Estimated / Collected */}
@@ -1505,11 +1505,11 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
               {stats.totalVatCollected === 0 && stats.totalPaid > 0 ? (
                 <span className="text-[9px] text-emerald-600 font-semibold mt-2 block flex items-center gap-1">
-                  <Check className="w-2.5 h-2.5" /> Zero-Rated Offshore Exports (0% VAT)
+                  <Check className="w-2.5 h-2.5" /> Zero-rated exports (0%)
                 </span>
               ) : (
                 <span className="text-[9px] text-teal-600 font-semibold mt-2 block flex items-center gap-1">
-                  <Check className="w-2.5 h-2.5" /> For VAT compliance return
+                  <Check className="w-2.5 h-2.5" /> For your VAT return
                 </span>
               )}
             </div>
@@ -1519,7 +1519,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
 
       {/* Quick Actions (Bento Grid Style) */}
       <div>
-        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Quick Actions</h3>
+        <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-3">Quick actions</h3>
         <div className="grid grid-cols-5 gap-2 sm:gap-3">
           <button
             onClick={() => onNavigateToTab('billing', 'NEW_QUOTE')}
@@ -1584,7 +1584,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-xs md:text-sm font-bold text-white tracking-tight font-display">Fiji Freelancer & Business Directory</h4>
+              <h4 className="text-xs md:text-sm font-bold text-white tracking-tight font-display">Directory</h4>
               <span className="bg-sky-500/20 text-sky-300 text-[8px] font-extrabold px-2 py-0.5 rounded-full uppercase border border-sky-400/30">
                 Bookings
               </span>
@@ -1605,7 +1605,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
         {/* Active Projects & Milestones Widget */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Venture Projects</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Projects</h3>
             <button 
               onClick={() => onNavigateToTab('projects')}
               className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center transition-all"
@@ -1616,12 +1616,12 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
 
           {activeProjects.length === 0 ? (
             <div className="bg-white rounded-2xl p-6 text-center border border-slate-100 shadow-xs h-[calc(100%-2rem)] flex flex-col items-center justify-center">
-              <p className="text-xs text-slate-400 leading-relaxed">No projects currently active for this venture.</p>
+              <p className="text-xs text-slate-400 leading-relaxed">No projects yet.</p>
               <button
                 onClick={() => onNavigateToTab('projects')}
                 className="mt-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-1.5 px-4 rounded-xl transition-colors cursor-pointer"
               >
-                Start New Project
+                New project
               </button>
             </div>
           ) : (
@@ -1675,23 +1675,23 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
         {/* Recent Activity List */}
         <div>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Recent Invoices & Quotes</h3>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wide">Recent documents</h3>
             <button 
               onClick={() => onNavigateToTab('billing')}
               className="text-xs font-semibold text-sky-600 hover:text-sky-700 flex items-center transition-all"
             >
-              All Docs
+              View all
             </button>
           </div>
 
           {filteredDocs.length === 0 ? (
             <div className="bg-white rounded-2xl p-6 text-center border border-dashed border-slate-200 h-[calc(100%-2rem)] flex flex-col items-center justify-center">
-              <p className="text-xs text-slate-400">No recent quotes, invoices or receipts generated yet for this venture.</p>
+              <p className="text-xs text-slate-400">No invoices, quotes or receipts yet.</p>
               <button
                 onClick={() => onNavigateToTab('billing', 'NEW_INVOICE')}
                 className="mt-3 text-xs bg-sky-600 text-white font-bold py-1.5 px-4 rounded-xl cursor-pointer hover:bg-sky-500 shadow-xs transition-colors"
               >
-                Generate First Invoice
+                New invoice
               </button>
             </div>
           ) : (
@@ -1727,7 +1727,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                       </div>
 
                       <div className="min-w-0">
-                        <h4 className="text-xs font-bold text-slate-800 truncate">{client?.name || 'Unknown Client'}</h4>
+                        <h4 className="text-xs font-bold text-slate-800 truncate">{client?.name || 'No client'}</h4>
                         <p className="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                           <span>{doc.issueDate}</span>
                           <span>•</span>
@@ -1784,7 +1784,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
           >
             <div className="flex justify-between items-center">
               <h3 className="text-sm font-bold text-slate-800 flex items-center gap-1.5">
-                <Building2 className="w-4 h-4 text-sky-600" /> New Consulting Business
+                <Building2 className="w-4 h-4 text-sky-600" /> Add a business
               </h3>
               <button 
                 onClick={() => setShowAddBusiness(false)}
@@ -1796,7 +1796,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
 
             <form onSubmit={handleAddBusiness} className="space-y-3.5">
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Business / Practice Name *</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Business name *</label>
                 <input
                   type="text"
                   required
@@ -1808,7 +1808,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Venture Business Model</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1.5">Business type</label>
                 <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
                   {ALL_VENTURE_TYPES.map((vType) => {
                     const cfg = VENTURE_MODELS[vType];
@@ -1841,7 +1841,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Industry / Category Niche</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Category</label>
                 <select
                   value={saasCategory || VENTURE_MODELS[bizType]?.defaultCategories[0] || ''}
                   onChange={(e) => setSaasCategory(e.target.value)}
@@ -1853,14 +1853,14 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                     </option>
                   ))}
                 </select>
-                <p className="text-[9px] text-slate-400 mt-0.5">Optimizes your invoicing templates, VAT rules, and KPI dashboards automatically.</p>
+                <p className="text-[9px] text-slate-400 mt-0.5">Shown on your business profile.</p>
               </div>
 
               {/* Primary Business Check */}
               <div className="flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
                 <div className="flex-1 pr-2">
-                  <span className="text-[10px] font-bold text-slate-700 block">Set as Primary Business</span>
-                  <p className="text-[9px] text-slate-400 leading-tight">Will load as your default billing profile.</p>
+                  <span className="text-[10px] font-bold text-slate-700 block">Primary business</span>
+                  <p className="text-[9px] text-slate-400 leading-tight">Used as your default billing profile.</p>
                 </div>
                 <input
                   type="checkbox"
@@ -1872,7 +1872,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Fiji TIN *</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase">TIN *</label>
                   <input
                     type="text"
                     required
@@ -1883,7 +1883,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Phone Number</label>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase">Phone</label>
                   <input
                     type="text"
                     value={bizPhone}
@@ -1895,7 +1895,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Email Address</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Email</label>
                 <input
                   type="email"
                   value={bizEmail}
@@ -1906,7 +1906,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Physical Address</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Address</label>
                 <input
                   type="text"
                   value={bizAddress}
@@ -1917,18 +1917,18 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Bank Payment Instructions</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Bank details</label>
                 <textarea
                   value={bizBank}
                   onChange={(e) => setBizBank(e.target.value)}
-                  placeholder="Bank: ANZ Fiji, Account No., Branch, M-Paisa ID"
+                  placeholder="Bank, account number, branch, M-PAiSA ID"
                   rows={2}
                   className="w-full bg-slate-50 border border-slate-100 rounded-xl py-1.5 px-3 text-xs mt-1 focus:outline-none focus:ring-1 focus:ring-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-slate-500 uppercase">Venture Brand Color</label>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase">Brand colour</label>
                 <div className="flex gap-2.5 mt-1.5">
                   {['#0284c7', '#059669', '#7c3aed', '#db2777', '#ea580c'].map((c) => (
                     <button
@@ -1956,7 +1956,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
                   type="submit"
                   className="flex-1 bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2 rounded-xl text-xs transition-all"
                 >
-                  Register Venture
+                  Add business
                 </button>
               </div>
             </form>

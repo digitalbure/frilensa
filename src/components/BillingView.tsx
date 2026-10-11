@@ -58,7 +58,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const [retPaymentTermsDays, setRetPaymentTermsDays] = useState(14);
   const [retAutoSendMode, setRetAutoSendMode] = useState<'draft' | 'sent'>('sent');
   const [retAutoGenerate, setRetAutoGenerate] = useState(true);
-  const [retNotes, setRetNotes] = useState('Monthly retainer fee. Ongoing consulting and maintenance SLA.');
+  const [retNotes, setRetNotes] = useState('Monthly retainer for ongoing consulting and maintenance.');
   const [retStartDate, setRetStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [retEndDate, setRetEndDate] = useState('');
   const [retStatus, setRetStatus] = useState<'active' | 'paused'>('active');
@@ -194,9 +194,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setItems([]);
     setNotes(
       type === 'quote' ? 'Proposed scope and estimates. Valid for 30 days.' :
-      type === 'receipt' ? 'Receipt of payment received. Vinaka vakalevu!' :
-      type === 'credit_note' ? 'Official FRCS Credit Note adjustment. Offset against original invoice.' :
-      'VAT Tax Invoice. Please make payment in accordance with bank details below.'
+      type === 'receipt' ? 'Payment received. Vinaka vakalevu.' :
+      type === 'credit_note' ? 'Credit note against the original invoice.' :
+      'Please pay using the bank details below.'
     );
     setPaymentMethod('Bank Transfer');
     setDocStatus(type === 'receipt' || type === 'credit_note' ? 'paid' : 'draft');
@@ -288,7 +288,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         issueDate: new Date().toISOString().split('T')[0],
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         status: 'sent',
-        notes: 'Converted from Quote #' + doc.documentNumber + '. Thank you for accepting!'
+        notes: 'Converted from quote #' + doc.documentNumber + '. Thank you for accepting.'
       };
 
       onUpdateData({
@@ -325,7 +325,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           customPartialAmount,
           doc.paymentMethod || 'Vodafone M-PAiSA',
           new Date().toISOString().split('T')[0],
-          'Partial milestone payment'
+          'Part payment'
         );
       } else {
         setPartialModalDoc(doc);
@@ -389,7 +389,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     if (selectedDoc && selectedDoc.id === docId) {
       setSelectedDoc(updated);
     }
-    setShareToast(`Partial payment of ${target.currency || data.userProfile.defaultCurrency || 'FJD'} $${partialAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded on #${target.documentNumber}!`);
+    setShareToast(`Part payment of ${target.currency || data.userProfile.defaultCurrency || 'FJD'} $${partialAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded on #${target.documentNumber}`);
     setTimeout(() => setShareToast(null), 4000);
   };
 
@@ -447,7 +447,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         feeTotal: docToCancel.feeTotal,
         total: docToCancel.total,
         status: 'paid',
-        notes: `Official FRCS Credit Note issued to offset cancelled Invoice #${docToCancel.documentNumber}.\nReason: ${cancelReason}${cancelNotes ? ` (${cancelNotes})` : ''}`,
+        notes: `Credit note for cancelled invoice #${docToCancel.documentNumber}.\nReason: ${cancelReason}${cancelNotes ? ` (${cancelNotes})` : ''}`,
         originalInvoiceId: docToCancel.id,
         isTaxExempt: docToCancel.isTaxExempt
       };
@@ -462,7 +462,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setSelectedDoc(updatedCancelledDoc);
     setShowCancelModal(false);
     setDocToCancel(null);
-    setShareToast(`Invoice #${docToCancel.documentNumber} has been officially cancelled.${generateCreditNote ? ` Credit Note ${creditNoteNum} issued.` : ''}`);
+    setShareToast(`Invoice #${docToCancel.documentNumber} cancelled.${generateCreditNote ? ` Credit note ${creditNoteNum} issued.` : ''}`);
     setTimeout(() => setShareToast(null), 5000);
   };
 
@@ -476,7 +476,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       return;
     }
     if (doc.status === 'draft') {
-      setShareToast('Heads up: drafts are hidden from clients. Mark it as sent so the link shows the document.');
+      setShareToast('Drafts are hidden from clients. Mark it as sent so the link shows the document.');
       setTimeout(() => setShareToast(null), 5000);
     }
     
@@ -486,7 +486,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
     const shareData = {
       title: `${docTitle} #${doc.documentNumber} - ${docBiz.name}`,
-      text: `Bula! Please view your ${docTitle} #${doc.documentNumber} from ${docBiz.name} (${data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
+      text: `Bula! Here is your ${docTitle} #${doc.documentNumber} from ${docBiz.name} (${data.userProfile.defaultCurrency} $${doc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}).`,
       url: shareUrl
     };
 
@@ -501,7 +501,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
     try {
       await navigator.clipboard.writeText(shareUrl);
-      setShareToast(`Link copied to clipboard! Ready to share via WhatsApp, Viber, or Email.`);
+      setShareToast(`Link copied. Paste it into WhatsApp, Viber or an email.`);
       setTimeout(() => setShareToast(null), 4000);
     } catch (err) {
       setShareToast(`Share link: ${shareUrl}`);
@@ -525,11 +525,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const docClient = data.clients.find(c => c.id === doc.clientId);
     try {
       downloadDocumentPdf(doc, docBiz, docClient, data.userProfile);
-      setShareToast(`PDF for ${doc.type.toUpperCase()} #${doc.documentNumber} downloaded successfully!`);
+      setShareToast(`PDF downloaded for #${doc.documentNumber}`);
       setTimeout(() => setShareToast(null), 3500);
     } catch (err) {
       console.error('Error generating PDF:', err);
-      setShareToast('Opening PDF Export settings...');
+      setShareToast('Couldn\'t download the PDF directly. Opening PDF options…');
       setPdfModalDoc(doc);
       setTimeout(() => setShareToast(null), 2500);
     }
@@ -537,7 +537,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   // Delete Document
   const handleDeleteDoc = (id: string) => {
-    if (confirm('Are you sure you want to delete this document permanently?')) {
+    if (confirm('Delete this document? This can\'t be undone.')) {
       const updatedDocs = data.documents.filter(d => d.id !== id);
       onUpdateData({
         ...data,
@@ -587,7 +587,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       updatedAt: new Date().toISOString()
     } : null);
 
-    setShareToast(`Payment of ${docCur} ${(paymentDetails.paidAmountForeign || targetDoc.total).toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded successfully!`);
+    setShareToast(`Payment of ${docCur} ${(paymentDetails.paidAmountForeign || targetDoc.total).toLocaleString(undefined, { minimumFractionDigits: 2 })} recorded`);
     setTimeout(() => setShareToast(null), 5000);
   };
 
@@ -615,7 +615,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       {
         id: `it-${Date.now()}`,
         name: `Professional Services (${currency})`,
-        description: `Billed in ${currency} @ exchange rate 1 ${currency} = ${exchangeRate.toFixed(4)} FJD (Gross equiv: FJ$ ${fjdEquivalent.toFixed(2)})`,
+        description: `Billed in ${currency} at 1 ${currency} = ${exchangeRate.toFixed(4)} FJD (about FJ$ ${fjdEquivalent.toFixed(2)})`,
         quantity: 1,
         rate: Number(amount.toFixed(2)),
         total: Number(amount.toFixed(2))
@@ -623,7 +623,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     ]);
     setNotes(fxNotes || 'Vinaka vakalevu for your business!');
     setShowEditor(true);
-    setShareToast(`Draft invoice pre-filled with ${currency} ${amount.toFixed(2)} at ${exchangeRate.toFixed(4)} FJD`);
+    setShareToast(`Draft invoice filled in with ${currency} ${amount.toFixed(2)} at ${exchangeRate.toFixed(4)} FJD`);
     setTimeout(() => setShareToast(null), 4000);
   };
 
@@ -768,7 +768,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const handleSubmitDocument = (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId || items.length === 0) {
-      alert('Please select a client and add at least one line item.');
+      alert('Choose a client and add at least one line item.');
       return;
     }
 
@@ -871,7 +871,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Compute Next Billing Date and Days Remaining for any retainer schedule
   const getNextBillingSchedule = (ret: RecurringInvoice) => {
     if (ret.status === 'paused') {
-      return { dateStr: 'Paused', daysRemaining: 9999, isDue: false, label: 'Schedule Paused' };
+      return { dateStr: 'Paused', daysRemaining: 9999, isDue: false, label: 'Paused' };
     }
 
     const today = new Date();
@@ -930,11 +930,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
     let label = '';
     if (isDue) {
-      label = '⚡ Due for Billing Today';
+      label = 'Due today';
     } else if (daysRemaining === 1) {
-      label = '🗓️ Due Tomorrow';
+      label = 'Due tomorrow';
     } else {
-      label = `🗓️ In ${daysRemaining} days (${formattedDate})`;
+      label = `In ${daysRemaining} days (${formattedDate})`;
     }
 
     return {
@@ -951,10 +951,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     if (created.length > 0) {
       const totalSpawnedValue = created.reduce((sum, d) => sum + d.total, 0);
       onUpdateData(next);
-      setAutoGenNotification(`Bula! Auto-billing generated ${created.length} retainer invoice(s) totaling ${data.userProfile.defaultCurrency} $${totalSpawnedValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}.`);
+      setAutoGenNotification(`Created ${created.length} retainer invoice(s) totalling ${data.userProfile.defaultCurrency} $${totalSpawnedValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}.`);
       setTimeout(() => setAutoGenNotification(null), 9000);
     } else if (!silent) {
-      setAutoGenNotification("Bula! All retainer schedules are currently up-to-date. No invoices due for generation today.");
+      setAutoGenNotification("No retainer invoices are due today.");
       setTimeout(() => setAutoGenNotification(null), 5000);
     }
   };
@@ -963,7 +963,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const handleTriggerRetainerInvoice = (ret: RecurringInvoice) => {
     const { data: next, invoice } = generateRetainerNow(data, ret, todayIn());
     onUpdateData(next);
-    setAutoGenNotification(`Successfully generated tax invoice ${invoice.documentNumber} (${invoice.currency} $${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}) for ${ret.projectName || 'this retainer'}.`);
+    setAutoGenNotification(`Created tax invoice ${invoice.documentNumber} (${invoice.currency} $${invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}) for ${ret.projectName || 'this retainer'}.`);
     setTimeout(() => setAutoGenNotification(null), 6000);
   };
 
@@ -976,7 +976,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setRetCurrency(doc.currency || data.userProfile.defaultCurrency || 'FJD');
     
     const client = data.clients.find(c => c.id === doc.clientId);
-    setRetProjectName(`${client?.name || 'Client'} Ongoing Retainer Plan`);
+    setRetProjectName(`${client?.name || 'Client'} retainer`);
     setRetInterval('monthly');
     setRetBillingDay(1);
     setRetPaymentTermsDays(14);
@@ -985,12 +985,12 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setRetStartDate(new Date().toISOString().split('T')[0]);
     setRetEndDate('');
     setRetStatus('active');
-    setRetNotes(doc.notes || 'Monthly recurring retainer plan. Tax invoice generated automatically.');
+    setRetNotes(doc.notes || 'Monthly retainer. Tax invoice created automatically.');
 
     // Clone line items from invoice
     setRetItems(doc.items && doc.items.length > 0 ? [...doc.items] : [{
       id: `ret-item-${Date.now()}`,
-      name: 'Monthly Retainer Service',
+      name: 'Monthly retainer',
       quantity: 1,
       rate: doc.subtotal,
       total: doc.subtotal
@@ -1018,12 +1018,12 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setRetStartDate(new Date().toISOString().split('T')[0]);
     setRetEndDate('');
     setRetStatus('active');
-    setRetNotes('Monthly retainer for ongoing maintenance and support services. Payment due via bank transfer / M-Paisa.');
+    setRetNotes('Monthly retainer for ongoing maintenance and support. Pay by bank transfer or M-PAiSA.');
     
     // Default initial line item
     setRetItems([{
       id: `ret-item-${Date.now()}`,
-      name: 'Monthly Consulting & Maintenance Retainer',
+      name: 'Monthly consulting and maintenance retainer',
       quantity: 1,
       rate: 1200,
       total: 1200
@@ -1062,7 +1062,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     } else {
       setRetItems([{
         id: `ret-item-${Date.now()}`,
-        name: `${ret.projectName || 'Monthly Retainer'} Service Plan`,
+        name: ret.projectName || 'Monthly retainer',
         quantity: 1,
         rate: ret.amount || 1000,
         total: ret.amount || 1000
@@ -1102,7 +1102,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   // Delete Retainer schedule
   const handleDeleteRetainer = (id: string) => {
-    if (confirm('Are you sure you want to delete this recurring retainer schedule? Ongoing automated billing runs will cease.')) {
+    if (confirm('Delete this retainer? No more invoices will be created from it.')) {
       const updated = (data.recurringInvoices || []).filter(r => r.id !== id);
       onUpdateData({
         ...data,
@@ -1115,7 +1115,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const handleSubmitRetainer = (e: React.FormEvent) => {
     e.preventDefault();
     if (!retClientId || !retProjectName || retItems.length === 0) {
-      alert('Please fill out the client, contract name, and add at least one line item.');
+      alert('Choose a client, enter a retainer name and add at least one line item.');
       return;
     }
 
@@ -1157,7 +1157,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     });
 
     setShowRetainerEditor(false);
-    setAutoGenNotification(`Saved recurring retainer schedule for ${retProjectName}. Automated billing configured for day ${retBillingDay} (${retInterval}).`);
+    setAutoGenNotification(`Retainer saved for ${retProjectName}. Billing on day ${retBillingDay} (${retInterval}).`);
     setTimeout(() => setAutoGenNotification(null), 6000);
   };
 
