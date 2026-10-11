@@ -15,6 +15,7 @@ import { mergeCRMData, loadLocalBackup, saveLocalBackup } from '../lib/db';
 import BrandDesignerModal from './BrandDesignerModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import ReleaseNotes from './ReleaseNotes';
+import HelpCenter from './HelpCenter';
 import AutomationSettingsCard from './AutomationSettingsCard';
 import ApiKeysCard from './ApiKeysCard';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount } from '../lib/currencies';
@@ -2453,6 +2454,9 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <Download className="w-3.5 h-3.5" /> Show install prompt
         </button>
       </div>
+
+      {/* Help articles (src/help/articles.ts) */}
+      <HelpCenter />
 
       {/* App Version & Release Notes (rendered from CHANGELOG.md) */}
       <ReleaseNotes />

@@ -49,6 +49,7 @@ Status as of v3.7.0 (October 2026). Each feature is marked by whether it actuall
 - ✅ P&L with category breakdown and VAT input/output summary.
 - ✅ VAT return for any period (invoice or payments basis) with warnings, CSV and print; CSV exports for accountants. *(3.7.0)*
 - ✅ Expense logging: manual, or camera/receipt OCR (Gemini, with a basic fallback parser). Receipts are kept in Cloud Storage (`FILES_BUCKET`, `server/files.ts`).
+- ✅ Assistant (Assistant tab, `server/assistant.ts`): Claude (`ANTHROPIC_API_KEY`, set from the Secret Manager secret `anthropic-api-key` by the deploy script). It answers from the help articles (`src/help/articles.ts`, also shown in Settings → Help) and looks up the user's data with the same reads as the public API. It proposes tasks, clients, draft quotes and invoices, and expenses, which are saved only when the user presses Confirm. It can't send, email, record payments or delete. Rate limit: 60 questions per user per hour.
 - ✅ Services and rates catalogue (Bookkeeping → Services): items per business with rate tiers, cost prices and margins, starter packs, price adjustments and a rate sheet.
 - ✅ Shareable rate card (`/?rates=<token>`, `server/rateCards.ts`): a business's services, rates and quote terms, printable, with a quote request form. Requests are stored server-side (`quote_requests`) and appear in the dashboard inbox, where "Create quote" makes a draft quote.
 - ✅ Default terms per business: invoice payment terms, quote validity and terms text, filled in on new quotes and invoices (app, API and retainers).
@@ -56,7 +57,6 @@ Status as of v3.7.0 (October 2026). Each feature is marked by whether it actuall
 - ✅ Bank statement import (BSP/ANZ/Westpac/M-PAiSA text and CSV), with AI categorisation and VAT split.
 - ✅ Transaction reconciler with AI-suggested matches, duplicate audit and clean-up, ledger history with undo.
 - ✅ Simple service list and dynamic rate rules (rush, weekend, VIP modifiers).
-- ⛔ The full Services & Rates Catalogue screen (bulk rate adjust, printable rate sheets, SKUs, margins) exists in code (`ServicesView`) but isn't linked anywhere.
 
 ### AI Copilot
 - ✅ Chat advisor with your business context, document and image attachments, a long-term memory bank, and saved conversations.
@@ -97,7 +97,7 @@ Ordered by impact on a live site. Effort: S ≈ a day, M ≈ a few days, L ≈ a
 | 1 | **Deploy v3.0.0 and its Firestore rules** | The live database is open to anyone until the new rules are deployed. | S |
 | 2 | ~~Remove the fabricated directory listings and seeded bookings~~ | Done in 3.1.0. | — |
 | 3 | ~~Make "View online" links and QR codes work~~ | Done in 3.1.0. Links on invoices sent before 3.1.0 still can't open directly; resend important ones. | — |
-| 4 | **Decide on the hidden features**: link up or delete the Rates Catalogue and Escrow screens (the escrow payment option was dropped in 3.1.0) | 2,700 lines of unreachable code, and the changelog advertises features users can't reach. | S–M |
+| 4 | **Decide on the hidden features**: link up or delete the Escrow screens (the escrow payment option was dropped in 3.1.0) | Unreachable code, and the changelog advertises features users can't reach. | S–M |
 | 5 | ~~Add AI Copilot to mobile navigation~~ | Done in 3.3.0. | — |
 
 ### P1: core value for Fiji freelancers

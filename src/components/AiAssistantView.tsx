@@ -144,7 +144,7 @@ I never send anything to clients or record payments. You do that in Frilensa.`,
       // Create initial session
       const newSession: AiConversationSession = {
         id: `session-${Date.now()}`,
-        title: `New consultation`,
+        title: `New chat`,
         businessId: data.activeBusinessId,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -697,7 +697,7 @@ I never send anything to clients or record payments. You do that in Frilensa.`,
             <button
               onClick={handleCreateNewSession}
               className="p-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-lg text-xs transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
-              title="New consultation"
+              title="New chat"
             >
               <Plus className="w-3.5 h-3.5" />
               <span className="text-[10px] font-bold pr-1">New</span>
@@ -1148,7 +1148,7 @@ I never send anything to clients or record payments. You do that in Frilensa.`,
               value={input}
               onChange={(e) => setInput(e.target.value)}
               disabled={isLoading}
-              placeholder={pendingAttachments.length > 0 ? "Add a message about these files" : "Ask about VAT, statements, receipts or growth"}
+              placeholder={pendingAttachments.length > 0 ? "Add a message about these files" : "Ask a question, or ask me to add a task or draft an invoice"}
               className="flex-1 bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500 disabled:opacity-50"
             />
 
@@ -1162,7 +1162,7 @@ I never send anything to clients or record payments. You do that in Frilensa.`,
           </form>
           <div className="flex items-center justify-between mt-1.5 px-1 text-[8px] text-slate-400">
             <span>Attach bank statements (PDF/CSV), receipts or invoices</span>
-            <span className="font-mono">Frilensa AI</span>
+            <span className="font-mono">Powered by Claude</span>
           </div>
         </div>
 

@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.10.0] - 2026-10-11
+
+### Added
+- **The assistant now runs on Claude** and works with your real records. Ask "who owes me money?", "what did I spend on fuel last quarter?" or "what tasks are due this week?" and it looks up your invoices, clients, expenses, projects and figures.
+- **It can set things up for you.** Ask it to add a task, a client, a draft quote or invoice, or an expense. It shows a card with the details, and nothing is saved until you press **Confirm**. It never sends anything to clients, records payments or deletes anything.
+- **Help** in Settings: searchable articles on how each part of Frilensa works. The assistant answers how-to questions from them.
+- **Tasks for Claude and the API:** Claude (via the connector) and the API can list your project tasks and add new ones (`list_tasks`, `create_task`, `GET`/`POST /api/v1/tasks`).
+- The deploy script asks once for an Anthropic API key and keeps it in Google Secret Manager.
+
+### Changed
+- If the assistant isn't set up or can't be reached, it says so plainly instead of giving canned answers.
+- Assistant replies show tables, and numbered steps are numbered properly. Before, every step showed as "1.".
+- Each user can ask the assistant up to 60 questions an hour.
+
 ## [3.9.0] - 2026-10-11
 
 ### Added
