@@ -1904,7 +1904,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                 // Retainer subtotal & total
                 const lineItems = ret.items && ret.items.length > 0 
                   ? ret.items 
-                  : [{ id: 'item-def', name: ret.projectName || 'Monthly Retainer', quantity: 1, rate: ret.amount, total: ret.amount }];
+                  : [{ id: 'item-def', name: ret.projectName || 'Monthly retainer', quantity: 1, rate: ret.amount, total: ret.amount }];
                 const subtotal = lineItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0);
                 const vatRate = retainerVatRate(data);
                 const vatAmount = subtotal * (vatRate / 100);
