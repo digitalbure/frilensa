@@ -82,7 +82,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   const [defaultCurrency, setDefaultCurrency] = useState(initialData.userProfile.defaultCurrency || 'FJD');
 
   // Free User Specific Fields
-  const [freelanceBio, setFreelanceBio] = useState('Independent consultant specializing in modern digital services');
+  const [freelanceBio, setFreelanceBio] = useState('');
   const [hourlyRate, setHourlyRate] = useState<number>(65);
 
   // Business Specific Fields
@@ -93,7 +93,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   const [invoicePrefix, setInvoicePrefix] = useState('INV');
   const [quotePrefix, setQuotePrefix] = useState('QT');
   const [brandColor, setBrandColor] = useState('#0284c7');
-  const [brandSlogan, setBrandSlogan] = useState('Premium Professional Services in Fiji & Pacific');
+  const [brandSlogan, setBrandSlogan] = useState('');
 
   // Commercial / Payment Details
   const [mPaisaId, setMPaisaId] = useState(phone || '+679 991 2345');
@@ -298,7 +298,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
       phone: phone.trim() || '+679 991 2345',
       bankDetails: bankAccount ? `${selectedBank}\nAccount: ${bankAccount}\nBranch: ${bankBranch}` : undefined,
       colorTheme: brandColor,
-      brandSlogan: accountType === 'business' ? (brandSlogan.trim() || undefined) : freelanceBio,
+      brandSlogan: accountType === 'business' ? (brandSlogan.trim() || undefined) : (freelanceBio.trim() || undefined),
       logoType: 'text',
       logoText: activeBizName.substring(0, 3).toUpperCase(),
       headerStyle: 'modern',

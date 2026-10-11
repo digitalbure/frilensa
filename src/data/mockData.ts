@@ -50,7 +50,7 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettings = {
   platformLogoUrl: '/pwa-icon.svg',
   platformPrimaryColor: '#0284c7',
   platformAccentColor: '#0d9488',
-  platformFooterNote: 'frilensa.com • Invoicing and escrow for Fiji businesses',
+  platformFooterNote: 'frilensa.com • Invoicing and bookkeeping for Fiji businesses',
   // Escrow Wallet Platform Configuration
   escrowEnabled: true,
   escrowFeeType: 'both',

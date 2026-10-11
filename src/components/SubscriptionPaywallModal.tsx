@@ -56,7 +56,6 @@ export default function SubscriptionPaywallModal({
         'AI receipt and invoice scanning',
         'Recurring invoices and retainers',
         'Your own logo and brand colour',
-        'Escrow wallet',
         'M-PAiSA and MyCash payments',
         'Standard support'
       ],
@@ -139,7 +138,7 @@ export default function SubscriptionPaywallModal({
                   Choose a plan
                 </h2>
                 <p className="text-slate-500 text-xs sm:text-sm">
-                  Invoices with Fiji VAT, M-PAiSA payments, escrow and room for more than one business.
+                  Invoices with Fiji VAT, M-PAiSA payment details and room for more than one business.
                 </p>
 
                 {/* Monthly / Annual Toggle */}

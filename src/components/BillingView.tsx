@@ -78,7 +78,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Document Cancellation Modal state
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [docToCancel, setDocToCancel] = useState<CRMDocument | null>(null);
-  const [cancelReason, setCancelReason] = useState('Client Requested Order Cancellation');
+  const [cancelReason, setCancelReason] = useState('Client cancelled the order');
   const [cancelNotes, setCancelNotes] = useState('');
   const [generateCreditNote, setGenerateCreditNote] = useState(true);
 
@@ -396,7 +396,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Open Invoice Cancellation Workflow Modal
   const handleOpenCancelModal = (doc: CRMDocument) => {
     setDocToCancel(doc);
-    setCancelReason('Client Requested Order Cancellation');
+    setCancelReason('Client cancelled the order');
     setCancelNotes('');
     setGenerateCreditNote(true);
     setShowCancelModal(true);
@@ -407,8 +407,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     if (!docToCancel) return;
 
     const todayStr = new Date().toISOString().split('T')[0];
-    const creditNoteNum = generateCreditNote 
-      ? `CN-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`
+    // Next number in this business's credit note series (CN-YYYY-1000, 1001, …).
+    const lastCreditNote = Math.max(999, ...data.documents
+      .filter(d => d.type === 'credit_note' && d.businessId === docToCancel.businessId)
+      .map(d => parseInt(String(d.documentNumber).split('-').pop() || '', 10))
+      .filter(n => !isNaN(n)));
+    const creditNoteNum = generateCreditNote
+      ? `CN-${new Date().getFullYear()}-${lastCreditNote + 1}`
       : undefined;
 
     const updatedCancelledDoc: CRMDocument = {
@@ -3611,6 +3616,58 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       )}
 
       {/* Online Document Portal Viewer Modal with Scannable QR Code */}
+      {/* Confirmation messages */}
+      {shareToast && (
+        <div role="status" className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[60] max-w-[calc(100%-2rem)] bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg">
+          {shareToast}
+        </div>
+      )}
+
+      {/* Cancel invoice */}
+      {showCancelModal && docToCancel && (
+        <div className="fixed inset-0 z-50 bg-slate-950/70 flex items-center justify-center p-4" onClick={() => setShowCancelModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-3 text-left" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-slate-900">Cancel invoice #{docToCancel.documentNumber}</h3>
+            <p className="text-xs text-slate-500">The invoice is marked cancelled and kept for your records.</p>
+            <label className="block text-[11px] font-semibold text-slate-700">
+              Reason
+              <select
+                value={cancelReason}
+                onChange={e => setCancelReason(e.target.value)}
+                className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs"
+              >
+                <option>Client cancelled the order</option>
+                <option>Issued by mistake</option>
+                <option>Wrong amount or details</option>
+                <option>Replaced by a new invoice</option>
+                <option>Other</option>
+              </select>
+            </label>
+            <label className="block text-[11px] font-semibold text-slate-700">
+              Notes (optional)
+              <textarea
+                value={cancelNotes}
+                onChange={e => setCancelNotes(e.target.value)}
+                rows={2}
+                className="mt-1 w-full border border-slate-200 rounded-lg px-2.5 py-2 text-xs"
+              />
+            </label>
+            <label className="flex items-start gap-2 text-xs text-slate-700 cursor-pointer">
+              <input type="checkbox" checked={generateCreditNote} onChange={e => setGenerateCreditNote(e.target.checked)} className="mt-0.5" />
+              <span>Issue a credit note for {docToCancel.currency || data.userProfile.defaultCurrency || 'FJD'} ${docToCancel.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            </label>
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={() => setShowCancelModal(false)} className="text-xs font-bold px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer">
+                Keep invoice
+              </button>
+              <button type="button" onClick={handleConfirmCancelInvoice} className="text-xs font-bold px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white cursor-pointer">
+                Cancel invoice
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showOnlineDocModal && selectedDoc && (
         <OnlineDocumentModal
           document={selectedDoc}
