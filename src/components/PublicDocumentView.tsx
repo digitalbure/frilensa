@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Clock, Download, FileText, AlertCircle, LogIn } from 'lucide-react';
 import { acceptPublicQuote, fetchPublicDocument, reportPublicPayment, type PublicDocumentData } from '../lib/api';
-import { downloadDocumentPdf } from '../lib/pdfGenerator';
+import { downloadDocumentPdf, numberLabel } from '../lib/pdfGenerator';
 import type { Business, Client } from '../types';
 import { publicFileUrl } from '../lib/files';
 import PayNowPanel from './PayNowPanel';
@@ -147,7 +147,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
           </div>
           <div className="sm:text-right space-y-1">
             <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: brand }}>{TYPE_LABEL[d.type] || 'Document'}</p>
-            <p className="text-base font-mono font-bold text-slate-900">#{d.documentNumber}</p>
+            <p className="text-base font-mono font-bold text-slate-900">{numberLabel(d.documentNumber)}</p>
             <p className="text-xs text-slate-500">Issued {d.issueDate}{d.dueDate ? ` · Due ${d.dueDate}` : ''}</p>
             <StatusBadge status={d.status} reported={Boolean(d.clientPaymentReport) && d.clientPaymentReport?.status !== 'rejected'} />
           </div>

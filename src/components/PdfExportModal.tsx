@@ -1,11 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   FileText, Download, Printer, Share2, Check, X, ShieldCheck, 
   Settings2, Eye, RefreshCw, Palette, ExternalLink, Sparkles, Building2, Mail
 } from 'lucide-react';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
-import { downloadDocumentPdf, getDocumentPdfDataUri, PdfExportOptions } from '../lib/pdfGenerator';
+import { downloadDocumentPdf, getDocumentPdfDataUri, preloadPdfLogo, PdfExportOptions } from '../lib/pdfGenerator';
 import { getCurrencyConfig } from '../lib/currencies';
 
 interface PdfExportModalProps {
@@ -56,6 +56,10 @@ export default function PdfExportModal({
     colorTheme: selectedColor || business.colorTheme || '#0284c7',
   }), [includeBankDetails, includeNotes, includeFrcsBadge, includeWatermark, selectedColor, business.colorTheme]);
 
+  // Load the logo at its real proportions, then redraw the preview.
+  const [logoReady, setLogoReady] = useState(0);
+  useEffect(() => { preloadPdfLogo(business.logoUrl).then(() => setLogoReady(n => n + 1)); }, [business.logoUrl]);
+
   // Generate live data URI preview for iframe
   const pdfDataUri = useMemo(() => {
     try {
@@ -64,15 +68,15 @@ export default function PdfExportModal({
       console.error('Error generating PDF preview URI', e);
       return '';
     }
-  }, [document, business, client, userProfile, options]);
+  }, [document, business, client, userProfile, options, logoReady]);
 
   const docCurrency = document.currency || userProfile.defaultCurrency || 'FJD';
   const currencyCfg = getCurrencyConfig(docCurrency);
 
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setIsDownloading(true);
     try {
-      downloadDocumentPdf(document, business, client, userProfile, options);
+      await downloadDocumentPdf(document, business, client, userProfile, options);
       setDownloadSuccess(true);
       setTimeout(() => setDownloadSuccess(false), 3000);
     } catch (err) {

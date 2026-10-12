@@ -1,5 +1,5 @@
 import { CRMDocument, Business, Client, UserProfile } from '../types';
-import { getDocumentPdfBase64, PdfExportOptions } from './pdfGenerator';
+import { getDocumentPdfBase64, preloadPdfLogo, PdfExportOptions } from './pdfGenerator';
 
 export interface SendDocumentEmailOptions {
   document: CRMDocument;
@@ -106,6 +106,7 @@ export async function sendDocumentEmail(options: SendDocumentEmailOptions): Prom
 
   if (attachPdf) {
     try {
+      await preloadPdfLogo(business?.logoUrl);
       const pdfData = getDocumentPdfBase64(document, business, client, userProfile, pdfExportOptions);
       attachPdfBase64 = pdfData.base64;
       pdfFilename = pdfData.filename;

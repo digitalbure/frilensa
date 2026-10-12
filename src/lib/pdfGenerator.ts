@@ -29,6 +29,47 @@ function hexToRgb(hex: string): [number, number, number] {
   return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
 }
 
+/** Brand colours that are too light to read on white (e.g. gold) are darkened for text and badges. */
+function readableOnWhite([r, g, b]: [number, number, number]): [number, number, number] {
+  const lin = (c: number) => { const v = c / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const luminance = 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  if (luminance <= 0.3) return [r, g, b];
+  const k = Math.min(0.6, 1 - 0.3 / luminance * 0.9);
+  return [Math.round(r * (1 - k)), Math.round(g * (1 - k)), Math.round(b * (1 - k))];
+}
+
+/** "#INV-1003" for "INV-1003", but no second # when the number already has one. */
+export function numberLabel(documentNumber: string) {
+  return String(documentNumber || '').includes('#') ? documentNumber : `#${documentNumber}`;
+}
+
+// Logos converted to PNG at their real proportions, loaded before a PDF is drawn (jsPDF can't
+// fetch images itself, and only reads PNG and JPEG).
+const logoCache = new Map<string, { dataUrl: string; w: number; h: number } | null>();
+
+export async function preloadPdfLogo(url?: string): Promise<void> {
+  if (!url || logoCache.has(url) || typeof Image === 'undefined') return;
+  const result = await new Promise<{ dataUrl: string; w: number; h: number } | null>(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const scale = Math.min(1, 600 / Math.max(img.naturalWidth, img.naturalHeight));
+        const w = Math.max(1, Math.round(img.naturalWidth * scale)), h = Math.max(1, Math.round(img.naturalHeight * scale));
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d')!.drawImage(img, 0, 0, w, h);
+        resolve({ dataUrl: canvas.toDataURL('image/png'), w, h });
+      } catch {
+        resolve(null);
+      }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+  logoCache.set(url, result);
+}
+
 /**
  * Synchronously renders a crisp vector QR code onto a jsPDF document
  */
@@ -93,7 +134,7 @@ export function generateDocumentPdf(
 
   // Color Palette mirroring the Bill Preview widget
   const rawTheme = colorTheme || business?.colorTheme || '#0284c7';
-  const primaryRgb = hexToRgb(rawTheme);
+  const primaryRgb = readableOnWhite(hexToRgb(rawTheme));
   const slate900: [number, number, number] = [15, 23, 42];    // #0f172a
   const slate800: [number, number, number] = [30, 41, 59];    // #1e293b
   const slate700: [number, number, number] = [51, 65, 85];    // #334155
@@ -168,7 +209,7 @@ export function generateDocumentPdf(
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
   doc.setTextColor(slate800[0], slate800[1], slate800[2]);
-  doc.text(`#${document.documentNumber}`, rightColRightX, rightY + 3.5, { align: 'right' });
+  doc.text(numberLabel(document.documentNumber), rightColRightX, rightY + 3.5, { align: 'right' });
   rightY += 5;
 
   // Issue Date
@@ -222,57 +263,69 @@ export function generateDocumentPdf(
   let leftY = headerTopY;
 
   let logoWidthUsed = 0;
+  let logoHeightUsed = 0;
   const logoType = business?.logoType || (business?.logoUrl ? 'image' : 'symbol');
+  const badge = (label: string) => {
+    doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+    doc.roundedRect(leftColX, leftY, 12, 12, 2.5, 2.5, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(label.slice(0, 2).toUpperCase(), leftColX + 6, leftY + 7.8, { align: 'center' });
+    logoWidthUsed = 15.5;
+    logoHeightUsed = 12;
+  };
 
   if (logoType === 'image' && business?.logoUrl) {
-    try {
-      const maxLogoW = 20;
-      const maxLogoH = 11;
-      doc.addImage(business.logoUrl, 'PNG', leftColX, leftY, maxLogoW, maxLogoH, undefined, 'FAST');
-      logoWidthUsed = maxLogoW + 3.5;
-    } catch (e) {
-      console.warn('PDF image logo rendering fallback:', e);
-      // Fallback symbol badge
-      doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-      doc.roundedRect(leftColX, leftY, 11, 11, 2.5, 2.5, 'F');
-      doc.setTextColor(255, 255, 255);
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8.5);
-      doc.text((business?.name || 'FJ').slice(0, 2).toUpperCase(), leftColX + 5.5, leftY + 7.2, { align: 'center' });
-      logoWidthUsed = 14.5;
+    // Fit the logo in a 30 × 14 mm box at its own proportions.
+    let img = logoCache.get(business.logoUrl) || null;
+    if (!img && business.logoUrl.startsWith('data:image/')) {
+      try {
+        const p = doc.getImageProperties(business.logoUrl);
+        img = { dataUrl: business.logoUrl, w: p.width, h: p.height };
+      } catch { img = null; }
+    }
+    if (img) {
+      try {
+        const scale = Math.min(30 / img.w, 14 / img.h);
+        const w = img.w * scale, h = img.h * scale;
+        doc.addImage(img.dataUrl, leftColX, leftY, w, h, undefined, 'FAST');
+        logoWidthUsed = w + 3.5;
+        logoHeightUsed = h;
+      } catch (e) {
+        console.warn('PDF logo could not be drawn:', e);
+        badge(business?.name || 'FJ');
+      }
+    } else {
+      badge(business?.name || 'FJ');
     }
   } else if (logoType === 'text' && business?.logoText) {
     doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
     const textBadgeW = Math.max(13, business.logoText.length * 3.4 + 4);
-    doc.roundedRect(leftColX, leftY, textBadgeW, 9.5, 2, 2, 'F');
+    doc.roundedRect(leftColX, leftY, textBadgeW, 10, 2, 2, 'F');
     doc.setTextColor(255, 255, 255);
     doc.setFont('courier', 'bold');
     doc.setFontSize(8);
-    doc.text(business.logoText.toUpperCase(), leftColX + (textBadgeW / 2), leftY + 6.3, { align: 'center' });
+    doc.text(business.logoText.toUpperCase(), leftColX + (textBadgeW / 2), leftY + 6.5, { align: 'center' });
     logoWidthUsed = textBadgeW + 3.5;
+    logoHeightUsed = 10;
   } else {
-    // Default symbol badge (rounded icon matching Bill Preview)
-    doc.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-    doc.roundedRect(leftColX, leftY, 11, 11, 2.5, 2.5, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    const symbolChar = (business?.name || userProfile?.name || 'FJ').slice(0, 2).toUpperCase();
-    doc.text(symbolChar, leftColX + 5.5, leftY + 7.2, { align: 'center' });
-    logoWidthUsed = 14.5;
+    badge(business?.name || userProfile?.name || 'FJ');
   }
 
   const bizTextStartX = leftColX + logoWidthUsed;
   const maxBizTextWidth = 100 - logoWidthUsed; // Strictly constrained to prevent collision with right column
 
-  // Business Name
+  // Business name, centred on the logo when it fits on one line.
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12.5);
+  doc.setFontSize(13);
   doc.setTextColor(slate800[0], slate800[1], slate800[2]);
   const businessName = business?.name || userProfile?.name || 'Frilensa Business';
   const splitBizName = doc.splitTextToSize(businessName, maxBizTextWidth);
-  doc.text(splitBizName, bizTextStartX, leftY + 4.5);
-  leftY += Math.max(12, (splitBizName.length * 4.8) + 2);
+  const nameBlockH = splitBizName.length * 5.2;
+  const nameTop = leftY + Math.max(0, (logoHeightUsed - nameBlockH) / 2);
+  doc.text(splitBizName, bizTextStartX, nameTop + 4.4);
+  leftY += Math.max(logoHeightUsed, nameBlockH) + 4.5;
 
   // Registered business name: "SLEDIEN Pte Ltd trading as Vibrant"
   const tradingAs = tradingAsLine(business);
@@ -657,13 +710,14 @@ export function generateDocumentPdf(
 /**
  * Downloads a generated PDF document with an appropriate formatted filename
  */
-export function downloadDocumentPdf(
+export async function downloadDocumentPdf(
   document: CRMDocument,
   business: Business,
   client?: Client | null,
   userProfile?: UserProfile | null,
   options: PdfExportOptions = {}
-): void {
+): Promise<void> {
+  await preloadPdfLogo(business?.logoType !== 'symbol' && business?.logoType !== 'text' ? business?.logoUrl : undefined);
   const doc = generateDocumentPdf(document, business, client, userProfile, options);
   const prefix = document.type === 'quote' ? 'Quote' :
                  document.type === 'receipt' ? 'Receipt' :

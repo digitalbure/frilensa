@@ -24,7 +24,7 @@ import PdfExportModal from './PdfExportModal';
 import PartialPaymentModal from './PartialPaymentModal';
 import EmailDocumentModal from './EmailDocumentModal';
 import PaymentAttachmentWidget from './PaymentAttachmentWidget';
-import { downloadDocumentPdf } from '../lib/pdfGenerator';
+import { downloadDocumentPdf, numberLabel } from '../lib/pdfGenerator';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
 import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 import { depositFor } from '../lib/bookings';
@@ -3243,7 +3243,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           <span className="font-mono font-black text-xs text-sky-700 uppercase block tracking-wider">
                             {selectedDoc.type === 'invoice' ? 'TAX INVOICE' : selectedDoc.type.toUpperCase()}
                           </span>
-                          <span className="font-mono font-bold text-slate-800 text-xs mt-0.5 block">#{selectedDoc.documentNumber}</span>
+                          <span className="font-mono font-bold text-slate-800 text-xs mt-0.5 block">{numberLabel(selectedDoc.documentNumber)}</span>
                           <span className="text-[10px] text-slate-400 mt-0.5 block">Issued: {selectedDoc.issueDate}</span>
                           {selectedDoc.dueDate && (
                             <span className="text-[10px] text-slate-400 block">Due: {selectedDoc.dueDate}</span>
