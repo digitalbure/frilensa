@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.16.2] - 2026-10-12
+
+### Removed
+- The **Escrow** tab in the admin panel. Its on/off switch, fees and contract list were placeholders: no money is ever held in escrow, and the switch changed nothing. The unused wallet and escrow screen behind it is gone too. Escrow may come back later through PayPal. Card, PayPal and manual payments through **Pay now** are unchanged.
+
 ## [3.16.1] - 2026-10-12
 
 ### Fixed
