@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.16.1] - 2026-10-12
+
+### Fixed
+- **Cents in amounts.** Several amount boxes only accepted whole numbers, so 12.50 was refused or rounded to 12 or 13. They now take cents. This covers:
+  - line item and retainer rates on quotes and invoices;
+  - project budgets, scope section costs and billing rates;
+  - your hourly rate and service rates during setup;
+  - escrow amounts and withdrawals, transfer fees in the exchange rate calculator, and flat changes in **Adjust rates**.
+- Totals on **Home**, **Billing**, **Projects** and in project profitability now show cents (for example FJD 1,250.50) instead of being rounded to whole dollars.
+
 ## [3.16.0] - 2026-10-12
 
 ### Added

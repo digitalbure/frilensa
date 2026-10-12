@@ -1221,6 +1221,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Budget *</label>
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
                       required
                       min={0}
                       value={projCost || ''}
@@ -1248,7 +1250,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <div className="flex items-center gap-1.5 text-sky-800">
                       <span className="text-sm">{getCurrencyConfig(projCurrency).flag}</span>
                       <span>
-                        In {data.userProfile.defaultCurrency}: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString()}</strong>
+                        In {data.userProfile.defaultCurrency}: <strong>{data.userProfile.defaultCurrency} ${(convertCurrency(projCost, projCurrency, data.userProfile.defaultCurrency).convertedAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                       </span>
                     </div>
                     <span className="text-[9px] text-sky-600 font-mono">
@@ -1560,13 +1562,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                         <p className="text-[10.5px] font-bold">
                           {costDifference === 0 
                             ? '✓ Scope total matches the project budget' 
-                            : `⚠ Scope total is ${projCurrency} ${projCfg.symbol}${totalScopeCost.toLocaleString()}, but the project budget is ${projCurrency} ${projCfg.symbol}${selectedProject.cost.toLocaleString()}`
+                            : `⚠ Scope total is ${projCurrency} ${projCfg.symbol}${totalScopeCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}, but the project budget is ${projCurrency} ${projCfg.symbol}${selectedProject.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                           }
                         </p>
                         <p className="text-[9px] opacity-80 leading-normal">
                           {costDifference === 0 
                             ? 'Section costs add up to the budget.' 
-                            : `Difference: ${projCurrency} ${projCfg.symbol}${Math.abs(costDifference).toLocaleString()}.`
+                            : `Difference: ${projCurrency} ${projCfg.symbol}${Math.abs(costDifference).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`
                           }
                         </p>
                       </div>
@@ -1662,11 +1664,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                             return (
                               <>
                                 <span className="text-xs font-black text-slate-900 font-mono">
-                                  {projCurrency} {projCfg.symbol}{section.cost.toLocaleString()}
+                                  {projCurrency} {projCfg.symbol}{section.cost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                                 {data.userProfile.enableTax !== false && (
                                   <span className="text-[8px] font-semibold text-slate-400 font-mono mt-0.5">
-                                    + {projCfg.symbol}{vatAmount.toLocaleString()} VAT
+                                    + {projCfg.symbol}{vatAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} VAT
                                   </span>
                                 )}
                               </>
@@ -2347,7 +2349,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       const clientName = data.clients.find(c => c.id === doc.clientId)?.name || 'Client';
                       return (
                         <option key={doc.id} value={doc.id}>
-                          {doc.type.toUpperCase()} #{doc.documentNumber} - {clientName} ({data.userProfile.defaultCurrency} {doc.total.toLocaleString()})
+                          {doc.type.toUpperCase()} #{doc.documentNumber} - {clientName} ({data.userProfile.defaultCurrency} {doc.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                         </option>
                       );
                     })}
@@ -2408,6 +2410,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     <span className="absolute left-3.5 top-2 text-xs text-slate-400 font-bold">$</span>
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
                       min="0"
                       required
                       placeholder="2500"
@@ -2529,6 +2533,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                   </label>
                   <input
                     type="number"
+                    step="0.01"
+                    inputMode="decimal"
                     required
                     min="1"
                     placeholder="e.g. 75"
@@ -2558,7 +2564,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       )
                       .map(invoice => (
                         <option key={invoice.id} value={invoice.id}>
-                          Add to draft #{invoice.documentNumber} ({data.userProfile.defaultCurrency} {invoice.total.toLocaleString()})
+                          Add to draft #{invoice.documentNumber} ({data.userProfile.defaultCurrency} {invoice.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                         </option>
                       ))
                     }

@@ -76,7 +76,7 @@ export default function ProjectProfitabilityChart({
       const profitMargin = recognizedRevenue > 0 ? Math.round((grossProfit / recognizedRevenue) * 100) : (baseEstimatedCost > 0 ? 100 : 0);
 
       // Hourly Realization ($ / hour) in base currency
-      const hourlyRealization = trackedHours > 0 ? Math.round(recognizedRevenue / trackedHours) : 0;
+      const hourlyRealization = trackedHours > 0 ? Math.round(recognizedRevenue / trackedHours * 100) / 100 : 0;
 
       return {
         id: proj.id,
@@ -85,11 +85,11 @@ export default function ProjectProfitabilityChart({
         currency: projCurrency,
         isForeign,
         rawEstimatedCost,
-        estimatedCost: Math.round(baseEstimatedCost),
-        actualCost: Math.round(totalActualCost),
-        expenseCosts: Math.round(expenseCosts),
-        invoicedRevenue: Math.round(recognizedRevenue),
-        grossProfit: Math.round(grossProfit),
+        estimatedCost: Math.round(baseEstimatedCost * 100) / 100,
+        actualCost: Math.round(totalActualCost * 100) / 100,
+        expenseCosts: Math.round(expenseCosts * 100) / 100,
+        invoicedRevenue: Math.round(recognizedRevenue * 100) / 100,
+        grossProfit: Math.round(grossProfit * 100) / 100,
         profitMargin,
         trackedHours: Number(trackedHours.toFixed(1)),
         hourlyRealization
@@ -116,7 +116,7 @@ export default function ProjectProfitabilityChart({
     const totalProfit = totalRevenue - totalActual;
     const overallMargin = totalRevenue > 0 ? Math.round((totalProfit / totalRevenue) * 100) : 0;
     const totalHours = projectMetrics.reduce((sum, p) => sum + p.trackedHours, 0);
-    const avgRealization = totalHours > 0 ? Math.round(totalRevenue / totalHours) : 0;
+    const avgRealization = totalHours > 0 ? Math.round(totalRevenue / totalHours * 100) / 100 : 0;
 
     return {
       totalEstimated,
@@ -175,7 +175,7 @@ export default function ProjectProfitabilityChart({
             <div className="bg-slate-50/80 border border-slate-150/60 p-3 rounded-xl">
               <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Estimated budget</span>
               <span className="text-sm font-extrabold text-slate-800 font-mono mt-0.5 block">
-                {defaultCurrency} ${portfolioSummary.totalEstimated.toLocaleString()}
+                {defaultCurrency} ${portfolioSummary.totalEstimated.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-slate-400 mt-0.5 block">Planned project cost</span>
             </div>
@@ -183,7 +183,7 @@ export default function ProjectProfitabilityChart({
             <div className="bg-amber-50/60 border border-amber-200/60 p-3 rounded-xl">
               <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-700 block">Actual costs</span>
               <span className="text-sm font-extrabold text-amber-900 font-mono mt-0.5 block">
-                {defaultCurrency} ${portfolioSummary.totalActual.toLocaleString()}
+                {defaultCurrency} ${portfolioSummary.totalActual.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-amber-700/80 mt-0.5 block">Expenses so far</span>
             </div>
@@ -191,7 +191,7 @@ export default function ProjectProfitabilityChart({
             <div className="bg-emerald-50/60 border border-emerald-200/60 p-3 rounded-xl">
               <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 block">Gross profit</span>
               <span className="text-sm font-extrabold text-emerald-900 font-mono mt-0.5 block flex items-center gap-1">
-                <span>{defaultCurrency} ${portfolioSummary.totalProfit.toLocaleString()}</span>
+                <span>{defaultCurrency} ${portfolioSummary.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 <span className="text-[10px] font-bold px-1 rounded bg-emerald-200/70 text-emerald-900">
                   {portfolioSummary.overallMargin}%
                 </span>
@@ -293,26 +293,26 @@ export default function ProjectProfitabilityChart({
                             <div className="flex justify-between text-slate-300">
                               <span>Estimated budget:</span>
                               <div className="text-right">
-                                <span className="font-mono font-bold text-white">${item?.estimatedCost.toLocaleString()} {defaultCurrency}</span>
+                                <span className="font-mono font-bold text-white">${item?.estimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCurrency}</span>
                                 {item?.isForeign && (
                                   <span className="block text-[9px] font-mono text-sky-300">
-                                    (Original: {item.currency} ${item.rawEstimatedCost.toLocaleString()})
+                                    (Original: {item.currency} ${item.rawEstimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
                                   </span>
                                 )}
                               </div>
                             </div>
                             <div className="flex justify-between text-amber-300">
                               <span>Actual cost:</span>
-                              <span className="font-mono font-bold text-amber-300">${item?.actualCost.toLocaleString()} {defaultCurrency}</span>
+                              <span className="font-mono font-bold text-amber-300">${item?.actualCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-emerald-400">
                               <span>Revenue:</span>
-                              <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString()} {defaultCurrency}</span>
+                              <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-800 font-semibold">
                               <span>Gross profit (margin):</span>
                               <span className={`font-mono ${(item?.grossProfit || 0) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-                                ${item?.grossProfit.toLocaleString()} ({item?.profitMargin}%)
+                                ${item?.grossProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ({item?.profitMargin}%)
                               </span>
                             </div>
                           </div>
@@ -375,7 +375,7 @@ export default function ProjectProfitabilityChart({
                             </div>
                             <div className="flex justify-between text-emerald-400">
                               <span>Revenue:</span>
-                              <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString()} {defaultCurrency}</span>
+                              <span className="font-mono font-bold text-emerald-400">${item?.invoicedRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {defaultCurrency}</span>
                             </div>
                             <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-800">
                               <span>Revenue per hour:</span>
@@ -417,7 +417,7 @@ export default function ProjectProfitabilityChart({
                         </span>
                         {p.isForeign && (
                           <span className="text-[8px] font-mono text-sky-600 font-semibold">
-                            {p.currency} {p.rawEstimatedCost.toLocaleString()}
+                            {p.currency} {p.rawEstimatedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         )}
                       </div>

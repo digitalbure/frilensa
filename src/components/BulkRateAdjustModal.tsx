@@ -229,7 +229,7 @@ export default function BulkRateAdjustModal({ data, onUpdateData, onClose }: Bul
                 <div className="flex flex-wrap items-center gap-2 mt-1">
                   <input
                     type="number"
-                    step="1"
+                    step="0.01"
                     value={flatDelta}
                     onChange={(e) => setFlatDelta(Number(e.target.value))}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-xs font-bold font-mono text-slate-800 focus:outline-none focus:ring-1 focus:ring-sky-500"

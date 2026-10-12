@@ -374,7 +374,7 @@ export default function ClientDetailDrawer({
                           </div>
                           <div className="text-right">
                             <span className="text-xs font-mono font-bold text-emerald-700 block">
-                              {currencyCode} ${sub.price.toLocaleString()}/{sub.billingInterval === 'annual' ? 'yr' : 'mo'}
+                              {currencyCode} ${sub.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/{sub.billingInterval === 'annual' ? 'yr' : 'mo'}
                             </span>
                             <span className="text-[9px] uppercase tracking-wider font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">
                               {sub.status}

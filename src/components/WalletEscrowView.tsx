@@ -230,7 +230,7 @@ export default function WalletEscrowView({
       status: 'pending',
       date: now.split('T')[0],
       title: `Escrow Protected: ${contract.clientName}`,
-      description: `Client funded ${currency} ${contract.totalAmount.toLocaleString()} for ${contract.contractNumber} (${contract.title}). Safely locked in escrow.`,
+      description: `Client funded ${currency} ${contract.totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} for ${contract.contractNumber} (${contract.title}). Safely locked in escrow.`,
       referenceId: contract.contractNumber
     };
 
@@ -273,7 +273,7 @@ export default function WalletEscrowView({
       status: 'completed',
       date: now.split('T')[0],
       title: `Escrow Release: ${contract.clientName}`,
-      description: `Milestone ${contract.contractNumber} approved by client! Net payout ${currency} ${contract.netFreelancerAmount.toLocaleString()} settled to available balance.`,
+      description: `Milestone ${contract.contractNumber} approved by client! Net payout ${currency} ${contract.netFreelancerAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} settled to available balance.`,
       referenceId: contract.contractNumber
     };
 
@@ -292,13 +292,13 @@ export default function WalletEscrowView({
       wallet: updatedWallet
     });
 
-    showToast(`Escrow Released! ${currency} ${contract.netFreelancerAmount.toLocaleString()} added to your Available Balance.`);
+    showToast(`Escrow Released! ${currency} ${contract.netFreelancerAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} added to your Available Balance.`);
   };
 
   const handleWithdrawal = (e: React.FormEvent) => {
     e.preventDefault();
     if (withdrawAmount <= 0 || withdrawAmount > wallet.availableBalance) {
-      alert(`Please enter an amount up to your available balance of ${currency} ${wallet.availableBalance.toLocaleString()}`);
+      alert(`Please enter an amount up to your available balance of ${currency} ${wallet.availableBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
       return;
     }
     if (!withdrawPhoneOrAccount.trim()) {
@@ -323,7 +323,7 @@ export default function WalletEscrowView({
         status: 'completed',
         date: now.split('T')[0],
         title: `Payout Withdrawal (${withdrawChannel.toUpperCase()})`,
-        description: `Disbursed ${currency} ${netPayout.toLocaleString()} to ${withdrawAccountName} (${withdrawPhoneOrAccount}). Ref: ${refCode}`,
+        description: `Disbursed ${currency} ${netPayout.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} to ${withdrawAccountName} (${withdrawPhoneOrAccount}). Ref: ${refCode}`,
         referenceId: refCode,
         payoutChannel: withdrawChannel,
         payoutRecipient: withdrawPhoneOrAccount
@@ -827,6 +827,8 @@ export default function WalletEscrowView({
                     <DollarSign className="w-4 h-4 text-zinc-400 absolute left-3 top-2.5" />
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
                       required
                       min={minEscrowAmount}
                       value={newAmount}
@@ -1002,7 +1004,7 @@ export default function WalletEscrowView({
                   </div>
                   <h4 className="text-base font-bold text-zinc-900">Payout Initiated Successfully!</h4>
                   <p className="text-xs text-zinc-500 leading-relaxed max-w-xs mx-auto">
-                    {currency} {withdrawSuccess.netAmount.toLocaleString()} has been queued for instant settlement to your {withdrawSuccess.payoutChannel?.toUpperCase()} ({withdrawSuccess.payoutRecipient}).
+                    {currency} {withdrawSuccess.netAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} has been queued for instant settlement to your {withdrawSuccess.payoutChannel?.toUpperCase()} ({withdrawSuccess.payoutRecipient}).
                   </p>
                   <div className="bg-zinc-50 p-2.5 rounded-xl border border-zinc-200 font-mono text-[10px] text-zinc-600">
                     Disbursement Ref: {withdrawSuccess.referenceId}
@@ -1039,6 +1041,8 @@ export default function WalletEscrowView({
                     </label>
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
                       required
                       min={5}
                       max={wallet.availableBalance}

@@ -1427,7 +1427,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                         <div className="text-center py-6 bg-zinc-50/50 rounded-xl border border-zinc-100 text-zinc-400">
                           <AlertCircle className="w-5 h-5 mx-auto text-zinc-300 mb-1" />
                           <p className="text-[10px] leading-relaxed max-w-[240px] mx-auto">
-                            No open invoice or subscription matches FJD ${Math.abs(tx.amount).toLocaleString()}.
+                            No open invoice or subscription matches FJD ${Math.abs(tx.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
                           </p>
                         </div>
                       ) : (
@@ -1451,7 +1451,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
 
                               <div className="text-right shrink-0 flex flex-col items-end">
                                 <span className="text-xs font-black text-zinc-900 font-mono">
-                                  FJD ${c.amount.toLocaleString()}
+                                  FJD ${c.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
                                 <button
                                   onClick={() => handleReconcileWithMatch(tx.id, c)}

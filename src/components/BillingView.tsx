@@ -1890,14 +1890,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
             <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
               <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Monthly</span>
               <span className="text-xs font-black text-sky-700 mt-0.5 block font-mono">
-                {data.userProfile.defaultCurrency} ${retainerMetrics.mrr.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {data.userProfile.defaultCurrency} ${retainerMetrics.mrr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-emerald-600 font-bold mt-0.5 block">Recurring revenue</span>
             </div>
             <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-xs">
               <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Yearly</span>
               <span className="text-xs font-black text-slate-800 mt-0.5 block font-mono">
-                {data.userProfile.defaultCurrency} ${retainerMetrics.arr.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                {data.userProfile.defaultCurrency} ${retainerMetrics.arr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
               <span className="text-[8.5px] text-slate-400 mt-0.5 block">Projected</span>
             </div>
@@ -2115,7 +2115,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         <div key={item.id || idx} className="flex justify-between text-[10px] text-slate-600">
                           <span className="truncate pr-2 font-medium">• {item.name} ({item.quantity}x)</span>
                           <span className="font-mono font-bold shrink-0">
-                            {data.userProfile.defaultCurrency} ${(item.total || item.quantity * item.rate).toLocaleString()}
+                            {data.userProfile.defaultCurrency} ${(item.total || item.quantity * item.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
                       ))}
@@ -2159,7 +2159,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                                     {gDoc.status}
                                   </span>
                                   <span className="font-mono font-bold text-slate-700">
-                                    {data.userProfile.defaultCurrency} ${gDoc.total.toLocaleString()}
+                                    {data.userProfile.defaultCurrency} ${gDoc.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                   </span>
                                   <ArrowUpRight className="w-3 h-3 text-slate-400" />
                                 </div>
@@ -2552,6 +2552,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       <label className="block text-[9px] font-bold text-slate-400 uppercase">Rate ({docCurrency})</label>
                       <input
                         type="number"
+                        step="0.01"
+                        inputMode="decimal"
                         min={0}
                         value={itemRate}
                         onChange={(e) => setItemRate(Number(e.target.value))}
@@ -2605,7 +2607,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           <div className="flex flex-wrap items-center gap-3 pt-1 text-[11px] text-slate-700">
                             <label className="flex items-center gap-1">
                               Markup
-                              <input type="number" min={0} max={100} value={expenseMarkup} onChange={ev => setExpenseMarkup(Math.max(0, Number(ev.target.value) || 0))} className="w-14 bg-white border border-slate-200 rounded px-1.5 py-0.5" />%
+                              <input type="number" min={0} max={100} step="any" inputMode="decimal" value={expenseMarkup} onChange={ev => setExpenseMarkup(Math.max(0, Number(ev.target.value) || 0))} className="w-14 bg-white border border-slate-200 rounded px-1.5 py-0.5" />%
                             </label>
                             <label className="flex items-center gap-1">
                               <input type="checkbox" checked={expenseChargeVat} onChange={ev => setExpenseChargeVat(ev.target.checked)} />
@@ -3695,6 +3697,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       <label className="block text-[8.5px] font-bold text-slate-400 uppercase">Rate ({data.userProfile.defaultCurrency})</label>
                       <input
                         type="number"
+                        step="0.01"
+                        inputMode="decimal"
                         min={0}
                         value={retItemRate}
                         onChange={(e) => setRetItemRate(Number(e.target.value))}
@@ -3726,7 +3730,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-slate-800">
-                          ${(it.total || it.quantity * it.rate).toLocaleString()}
+                          ${(it.total || it.quantity * it.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
                         <button
                           type="button"

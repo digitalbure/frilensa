@@ -103,7 +103,7 @@ export default function QuickAccessPrompt({
               <div className="bg-emerald-50/80 border border-emerald-200/70 rounded-2xl p-3 text-emerald-950">
                 <span className="text-[9px] font-extrabold uppercase tracking-wider text-emerald-700 block">Collected</span>
                 <p className="text-sm font-black mt-0.5 font-mono text-emerald-900 truncate">
-                  {userCurrency} {totalCollected.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {userCurrency} {totalCollected.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <span className="text-[9px] text-emerald-600 mt-0.5 flex items-center gap-0.5">
                   <CheckCircle2 className="w-2.5 h-2.5" /> {paidInvoices.length} paid
@@ -113,7 +113,7 @@ export default function QuickAccessPrompt({
               <div className="bg-amber-50/80 border border-amber-200/70 rounded-2xl p-3 text-amber-950">
                 <span className="text-[9px] font-extrabold uppercase tracking-wider text-amber-700 block">Pending</span>
                 <p className="text-sm font-black mt-0.5 font-mono text-amber-900 truncate">
-                  {userCurrency} {totalOutstanding.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  {userCurrency} {totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <span className="text-[9px] text-amber-600 mt-0.5 flex items-center gap-0.5">
                   <Clock className="w-2.5 h-2.5" /> {pendingInvoices.length} awaiting

@@ -34,8 +34,8 @@ export default function ProjectCurrencyDisplay({
   const { convertedAmount, rate } = convertCurrency(numAmount, projCurrencyCode, baseCurrencyCode);
 
   // Formatted strings
-  const formattedNative = `${projCfg.symbol}${numAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
-  const formattedConverted = `${baseCfg.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  const formattedNative = `${projCfg.symbol}${numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formattedConverted = `${baseCfg.symbol}${convertedAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const rateTypeSuffix = rateType ? (
     <span className="text-[8.5px] font-sans font-normal opacity-75 ml-0.5">
@@ -48,7 +48,7 @@ export default function ProjectCurrencyDisplay({
     return (
       <span className={`inline-flex items-center gap-1 font-mono font-bold ${className}`}>
         {showFlag && <span className="text-xs">{projCfg.flag}</span>}
-        <span>{projCurrencyCode} {numAmount.toLocaleString()}</span>
+        <span>{projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
         {rateTypeSuffix}
         {isForeign && showConversion && (
           <span className="text-sky-600 font-medium text-[9px] ml-1">
@@ -65,7 +65,7 @@ export default function ProjectCurrencyDisplay({
       <div className={`inline-flex flex-col items-end text-right ${className}`}>
         <div className="flex items-center gap-1 text-[10.5px] font-mono font-black text-slate-900">
           {showFlag && <span className="text-xs">{projCfg.flag}</span>}
-          <span>{projCurrencyCode} {numAmount.toLocaleString()}</span>
+          <span>{projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           {rateTypeSuffix}
         </div>
         {isForeign && showConversion && (
@@ -83,7 +83,7 @@ export default function ProjectCurrencyDisplay({
       return (
         <div className={`inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-xl text-slate-800 shadow-2xs font-mono ${className}`}>
           {showFlag && <span className="text-xs">{projCfg.flag}</span>}
-          <span className="text-[11px] font-black">{projCurrencyCode} {numAmount.toLocaleString()}</span>
+          <span className="text-[11px] font-black">{projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           {rateTypeSuffix}
         </div>
       );
@@ -97,7 +97,7 @@ export default function ProjectCurrencyDisplay({
       >
         <div className="flex items-center gap-1 text-[11px] font-mono font-black text-slate-900 leading-tight">
           {showFlag && <span className="text-xs shrink-0">{projCfg.flag}</span>}
-          <span>{projCurrencyCode} {numAmount.toLocaleString()}</span>
+          <span>{projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           {rateTypeSuffix}
         </div>
         <div className="flex items-center gap-0.5 text-[8.5px] font-semibold text-sky-700 font-mono tracking-tight mt-0.5">
@@ -115,7 +115,7 @@ export default function ProjectCurrencyDisplay({
         <div className="flex items-center gap-1.5">
           {showFlag && <span className="text-base">{projCfg.flag}</span>}
           <span className="text-sm font-black font-mono text-slate-900">
-            {projCurrencyCode} {numAmount.toLocaleString()}
+            {projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </span>
           <span className="text-[10px] font-semibold text-slate-500 font-sans px-1.5 py-0.5 rounded bg-slate-100 uppercase tracking-wider">
             {projCfg.name}
@@ -139,7 +139,7 @@ export default function ProjectCurrencyDisplay({
   return (
     <div className={`text-right ${className}`}>
       <span className="font-mono font-bold text-slate-800 text-xs">
-        {projCfg.flag} {projCurrencyCode} {numAmount.toLocaleString()}
+        {projCfg.flag} {projCurrencyCode} {numAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </span>
       {isForeign && showConversion && (
         <span className="block text-[9px] font-mono text-sky-600">

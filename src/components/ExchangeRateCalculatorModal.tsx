@@ -372,7 +372,7 @@ export default function ExchangeRateCalculatorModal({
                         : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    ${amt.toLocaleString()}
+                    ${amt.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </button>
                 ))}
               </div>
@@ -448,7 +448,7 @@ export default function ExchangeRateCalculatorModal({
                     <span className="absolute left-2.5 top-1.5 text-xs font-bold text-slate-400">FJ$</span>
                     <input
                       type="number"
-                      step="1"
+                      step="0.01"
                       min="0"
                       value={bankFeeAmount}
                       onChange={(e) => setBankFeeAmount(parseFloat(e.target.value) || 0)}

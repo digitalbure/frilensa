@@ -183,7 +183,7 @@ export default function ProjectKanbanBoard({
                       </span>
                     </div>
                     <span className="text-[9px] text-slate-500 font-mono block">
-                      {baseCfg.symbol}{columnTotalValueInBase.toLocaleString()} total
+                      {baseCfg.symbol}{columnTotalValueInBase.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} total
                     </span>
                   </div>
                 </div>

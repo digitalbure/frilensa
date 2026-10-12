@@ -345,7 +345,7 @@ export default function ClientOverviewView({
                     <div>
                       <span className="text-[8px] text-zinc-400 font-bold uppercase block">Value</span>
                       <span className="font-mono font-bold text-zinc-900 block mt-0.5">
-                        FJD ${project.cost?.toLocaleString() || '0'}
+                        FJD ${project.cost?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0'}
                       </span>
                       <span className="text-[7.5px] text-zinc-400 capitalize">({project.rateType || 'flat'})</span>
                     </div>

@@ -1668,6 +1668,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <DollarSign className="w-4 h-4 text-slate-400 absolute left-3 top-2" />
                       <input
                         type="number"
+                        step="0.01"
+                        inputMode="decimal"
                         min="0"
                         value={currentPlanConfig.price}
                         onChange={(e) => handleUpdatePlanPrice(selectedPlanTab, Number(e.target.value))}
@@ -2072,7 +2074,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                         <DollarSign className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-2" />
                         <input
                           type="number"
-                          step="0.5"
+                          step="0.01"
                           min="0"
                           value={platformSettings.escrowFlatFee ?? 5.0}
                           onChange={(e) => commitPlatformSettings({ ...platformSettings, escrowFlatFee: Number(e.target.value) })}
@@ -2093,6 +2095,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <label className="text-[10px] font-bold text-slate-400 uppercase block">Minimum contract amount (FJD $)</label>
                       <input
                         type="number"
+                        step="0.01"
+                        inputMode="decimal"
                         min="5"
                         value={platformSettings.escrowMinAmount ?? 20.0}
                         onChange={(e) => commitPlatformSettings({ ...platformSettings, escrowMinAmount: Number(e.target.value) })}
@@ -2104,7 +2108,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       <label className="text-[10px] font-bold text-slate-400 uppercase block">Withdrawal fee (FJD $)</label>
                       <input
                         type="number"
-                        step="0.5"
+                        step="0.01"
                         min="0"
                         value={platformSettings.escrowPayoutFee ?? 1.0}
                         onChange={(e) => commitPlatformSettings({ ...platformSettings, escrowPayoutFee: Number(e.target.value) })}

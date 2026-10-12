@@ -595,6 +595,8 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                     <span className="absolute left-3 top-2.5 text-slate-400 font-bold">$</span>
                     <input
                       type="number"
+                      step="0.01"
+                      inputMode="decimal"
                       value={hourlyRate}
                       onChange={(e) => setHourlyRate(Number(e.target.value))}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2 pl-7 pr-3 text-xs font-mono font-bold focus:ring-2 focus:ring-slate-900 focus:outline-none"
@@ -976,6 +978,8 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 />
                 <input
                   type="number"
+                  step="0.01"
+                  inputMode="decimal"
                   value={newServiceRate}
                   onChange={(e) => setNewServiceRate(Number(e.target.value))}
                   className="w-20 bg-white border border-slate-200 rounded-xl py-1.5 px-2 text-xs font-mono"

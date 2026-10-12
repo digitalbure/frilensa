@@ -174,13 +174,13 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
   type KpiCard = { label: string; value: number | null; money?: boolean; unit?: string; note: string };
   const ventureCards: { icon: React.ElementType; gradient: string; cards: KpiCard[] } | null = (() => {
     const m = ventureMetrics;
-    const paid: KpiCard = { label: 'Paid invoices', value: stats.paidInvoicesCount, unit: 'invoices', note: `${data.userProfile.defaultCurrency} ${stats.totalPaid.toLocaleString(undefined, { maximumFractionDigits: 0 })} received` };
+    const paid: KpiCard = { label: 'Paid invoices', value: stats.paidInvoicesCount, unit: 'invoices', note: `${data.userProfile.defaultCurrency} ${stats.totalPaid.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} received` };
     const avg: KpiCard = { label: 'Average paid invoice', value: m.avgPaidInvoice, money: true, note: 'Across paid invoices' };
     const outstanding: KpiCard = { label: 'Outstanding', value: stats.totalPending, money: true, note: 'Sent, not yet paid' };
     switch (activeBusiness?.type) {
       case 'saas': return { icon: TrendingUp, gradient: 'from-emerald-600 to-teal-700', cards: [
-        { label: 'Monthly recurring (MRR)', value: m.mrr, money: true, note: `ARR: ${data.userProfile.defaultCurrency} ${m.arr.toLocaleString(undefined, { maximumFractionDigits: 0 })}/yr` },
-        { label: 'Active subscribers', value: m.activeSubsCount, unit: 'accounts', note: m.arpu === null ? 'Add subscriptions on client profiles' : `ARPU: ${data.userProfile.defaultCurrency} ${m.arpu.toFixed(0)}/mo` },
+        { label: 'Monthly recurring (MRR)', value: m.mrr, money: true, note: `ARR: ${data.userProfile.defaultCurrency} ${m.arr.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}/yr` },
+        { label: 'Active subscribers', value: m.activeSubsCount, unit: 'accounts', note: m.arpu === null ? 'Add subscriptions on client profiles' : `ARPU: ${data.userProfile.defaultCurrency} ${m.arpu.toFixed(2)}/mo` },
         outstanding ] };
       case 'digital_products': return { icon: ShoppingBag, gradient: 'from-emerald-600 to-teal-700', cards: [
         { label: 'Sales received', value: stats.totalPaid, money: true, note: 'Paid invoices' },
