@@ -361,6 +361,57 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
     triggerStatus('Settings saved', 'success');
   };
 
+  // Delete a business with everything filed under it (documents, projects, services, retainers,
+  // expenses and ledger entries). Clients are shared between businesses and are kept.
+  const handleDeleteBusiness = async () => {
+    const biz = data.businesses.find(b => b.id === selectedBizId);
+    if (!biz) return;
+    if (data.businesses.length <= 1) {
+      triggerStatus("You can't delete your only business. Rename it instead.", 'error');
+      return;
+    }
+    const mine = <T extends { businessId?: string }>(list?: T[]) => (list || []).filter(x => x.businessId === biz.id);
+    const docs = mine(data.documents);
+    const issued = docs.filter(d => d.status !== 'draft');
+    const counts = [
+      docs.length && `${docs.length} quote${docs.length === 1 ? '' : 's'}, invoice${docs.length === 1 ? '' : 's'} or receipt${docs.length === 1 ? '' : 's'}`,
+      mine(data.projects).length && `${mine(data.projects).length} project${mine(data.projects).length === 1 ? '' : 's'}`,
+      mine(data.services).length && `${mine(data.services).length} service${mine(data.services).length === 1 ? '' : 's'}`,
+      mine(data.recurringInvoices).length && `${mine(data.recurringInvoices).length} retainer${mine(data.recurringInvoices).length === 1 ? '' : 's'}`,
+      (mine(data.expenses).length + mine(data.transactions).length) && `${mine(data.expenses).length + mine(data.transactions).length} expense${mine(data.expenses).length + mine(data.transactions).length === 1 ? '' : 's'} and ledger entries`
+    ].filter(Boolean) as string[];
+    if (counts.length) {
+      const warning = `Delete "${biz.name}" and everything filed under it: ${counts.join(', ')}?${issued.length ? `\n\n${issued.length} of the documents have been issued. They may be tax records you need to keep. Download any you need first.` : ''}\n\nClients are kept. This can't be undone.\n\nType the business name to confirm:`;
+      const typed = window.prompt(warning);
+      if (typed === null) return;
+      if (typed.trim().toLowerCase() !== biz.name.trim().toLowerCase()) {
+        triggerStatus("The name didn't match, so nothing was deleted.", 'error');
+        return;
+      }
+    } else if (!window.confirm(`Delete "${biz.name}"? This can't be undone.`)) {
+      return;
+    }
+    const keep = <T extends { businessId?: string }>(list?: T[]) => (list || []).filter(x => x.businessId !== biz.id);
+    let businesses = data.businesses.filter(b => b.id !== biz.id);
+    if (!businesses.some(b => b.isPrimary)) businesses = businesses.map((b, i) => i === 0 ? { ...b, isPrimary: true, updatedAt: new Date().toISOString() } : b);
+    const nextActive = data.activeBusinessId === biz.id ? (businesses.find(b => b.isPrimary) || businesses[0]).id : data.activeBusinessId;
+    onUpdateData({
+      ...data,
+      businesses,
+      activeBusinessId: nextActive,
+      documents: keep(data.documents),
+      projects: keep(data.projects),
+      services: keep(data.services),
+      recurringInvoices: keep(data.recurringInvoices),
+      expenses: keep(data.expenses),
+      transactions: keep(data.transactions)
+    });
+    setSelectedBizId(nextActive);
+    // Take it out of the public directory too, if it was listed there.
+    fetch(`/api/directory/listing?businessId=${encodeURIComponent(biz.id)}`, { method: 'DELETE' }).catch(() => {});
+    triggerStatus(`${biz.name} deleted.`, 'success');
+  };
+
   const handleSaveBusinessProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bizName || !bizTin) {
@@ -395,7 +446,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           myCashId,
           currency: bizCurrency,
           workingCurrencies: bizWorkingCurrencies,
-          customExchangeRates: bizCustomExchangeRates
+          customExchangeRates: bizCustomExchangeRates,
+          updatedAt: new Date().toISOString()
         };
       }
       return b;
@@ -1773,6 +1825,15 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           >
             <Check className="w-3.5 h-3.5" /> Save business
           </button>
+          {data.businesses.length > 1 && (
+            <button
+              type="button"
+              onClick={handleDeleteBusiness}
+              className="w-full text-rose-600 hover:bg-rose-50 font-semibold py-2 rounded-lg text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete this business
+            </button>
+          )}
         </form>
       </div>
 

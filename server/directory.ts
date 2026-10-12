@@ -80,14 +80,19 @@ export function createDirectoryRouter() {
   router.put("/listing", rateLimit({ name: "dir-write", max: 30, windowMs: 60_000 }), async (req: AuthedRequest, res) => {
     const listing = listingFromBody(req.user!.uid, req.body);
     if (!listing.name || !listing.businessId) return res.status(400).json({ error: "Your business needs a name before it can be listed." });
-    await getAdminDb().collection(LISTINGS).doc(req.user!.uid).set(listing);
+    // Merge, so the admin's verified badge survives the owner's edits.
+    await getAdminDb().collection(LISTINGS).doc(req.user!.uid).set(listing, { merge: true });
     res.json({ listing });
   });
 
   // Remove the caller's listing.
   router.delete("/listing", async (req: AuthedRequest, res) => {
-    await getAdminDb().collection(LISTINGS).doc(req.user!.uid).delete();
-    res.json({ ok: true });
+    const ref = getAdminDb().collection(LISTINGS).doc(req.user!.uid);
+    // With ?businessId=, only when the listing is for that business (used when a business is deleted).
+    const only = typeof req.query.businessId === "string" ? req.query.businessId : "";
+    if (only && (await ref.get()).data()?.businessId !== only) return res.json({ ok: true, removed: false });
+    await ref.delete();
+    res.json({ ok: true, removed: true });
   });
 
   // Bookings the caller sent and received.

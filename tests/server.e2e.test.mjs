@@ -166,7 +166,7 @@ const waitHook = async (match, ms = 5000) => {
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1', ADMIN_EMAILS: 'alice@studio.fj' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -1053,6 +1053,42 @@ try {
     assert.equal((await post(carolKey, dated(monday, 'AV-4'))).status, 200, 'a repeat of an accepted booking still returns it');
     const f = (await j(await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(carolReadKey) }))).body;
     assert.ok(f.availability.fullDates.includes(monday));
+  });
+
+  // --- Platform admin: directory listings and bookings ---
+  await check('admin tools are for platform admins only', async () => {
+    assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
+    assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);
+    assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(A) })).status, 200);
+  });
+  await check('an admin can edit, verify, hide and delete a listing, and the badge survives owner edits', async () => {
+    assert.equal((await fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(C), body: JSON.stringify({ businessId: 'cb1', name: 'Carol Photo', category: 'Photography', city: 'Suva' }) })).status, 200);
+    const list = (await j(await fetch(`${API}/api/admin/directory`, { headers: auth(A) }))).body;
+    assert.ok(list.listings.some(l => l.uid === C.uid));
+    const p = await j(await fetch(`${API}/api/admin/directory/listings/${C.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ name: 'Carol Photography', isFrcsVerified: true, ownerUid: 'x' }) }));
+    assert.equal(p.status, 200); assert.equal(p.body.listing.name, 'Carol Photography'); assert.equal(p.body.listing.isFrcsVerified, true);
+    await fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(C), body: JSON.stringify({ businessId: 'cb1', name: 'Carol Photo', category: 'Photography' }) });
+    assert.equal((await get(`directory_listings/${C.uid}`)).isFrcsVerified, true, 'kept after the owner saves');
+    await fetch(`${API}/api/admin/directory/listings/${C.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ listed: false }) });
+    const pub = (await j(await fetch(`${API}/api/directory`, { headers: auth(B) }))).body.listings;
+    assert.equal(pub.some(l => l.uid === C.uid), false, 'hidden from the directory');
+    assert.equal((await fetch(`${API}/api/admin/directory/listings/${C.uid}`, { method: 'DELETE', headers: auth(B) })).status, 403);
+    assert.equal((await fetch(`${API}/api/admin/directory/listings/${C.uid}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal(await get(`directory_listings/${C.uid}`), null);
+  });
+  await check('removing a listing for one business leaves a listing for another', async () => {
+    await fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(C), body: JSON.stringify({ businessId: 'cb1', name: 'Carol Photo' }) });
+    const r = await j(await fetch(`${API}/api/directory/listing?businessId=cb2`, { method: 'DELETE', headers: auth(C) }));
+    assert.equal(r.body.removed, false); assert.ok(await get(`directory_listings/${C.uid}`));
+    assert.equal((await j(await fetch(`${API}/api/directory/listing?businessId=cb1`, { method: 'DELETE', headers: auth(C) }))).body.removed, true);
+  });
+  await check('an admin can delete a directory booking and its unhandled inbox copy', async () => {
+    const all = (await j(await fetch(`${API}/api/admin/directory`, { headers: auth(A) }))).body.bookings;
+    const bk = all[0]; assert.ok(bk, 'a booking exists from the directory tests');
+    await put(`quote_requests/dirtest1`, { id: 'dirtest1', uid: A.uid, directoryBookingId: bk.id, status: 'new', channel: 'directory', createdAt: '2026-10-01' });
+    assert.equal((await fetch(`${API}/api/admin/directory/bookings/${bk.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal(await get(`directory_bookings/${bk.id}`), null);
+    assert.equal(await get(`quote_requests/dirtest1`), null);
   });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.

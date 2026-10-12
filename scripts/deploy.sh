@@ -200,7 +200,7 @@ JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 # PAYMENT_SECRETS_KEY encrypts saved PayPal keys. It is created once and never changed: a new key would disconnect every PayPal account.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET" "PAYMENT_SECRETS_KEY=$(openssl rand -hex 32)" "${ASSISTANT_ENV[@]}"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET" "PAYMENT_SECRETS_KEY=$(openssl rand -hex 32)" ${ADMIN_EMAILS:+"ADMIN_EMAILS:=$ADMIN_EMAILS"} "${ASSISTANT_ENV[@]}"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---

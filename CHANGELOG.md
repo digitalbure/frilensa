@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [3.16.0] - 2026-10-12
+
+### Added
+- **Delete a business** in **Settings → Businesses** when you have more than one. Its documents, projects, services, retainers, expenses and bookkeeping entries go with it, and its directory listing is removed. Your clients are kept. If the business has records, you type its name to confirm.
+- **Directory management for admins.** The admin panel's **Directory** tab now shows the live directory. Admins can edit a listing's details, hide or show it, give or remove the **Verified** badge, and delete listings and bookings.
+- **Remove demo copies.** Old sample businesses and bookings saved in your workspace from earlier versions can be cleared from the admin panel in one click.
+
+### Fixed
+- **Invoice PDF header.** Logos keep their shape instead of being stretched, and no longer overlap the business address. The business name sits beside the logo.
+- Light brand colours (such as pale gold) are darkened on PDFs so headings stay readable on white.
+- Document numbers that already start with "#" no longer show "##" on PDFs, in Billing and on the online invoice.
+- A Verified badge given by Frilensa is kept when the business updates its listing.
+
 ## [3.15.0] - 2026-10-11
 
 ### Added

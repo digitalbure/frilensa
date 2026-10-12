@@ -18,7 +18,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
     id: 'businesses',
     title: 'Set up your businesses',
     summary: 'Add a business, switch between businesses, and fill in the details shown on your documents.',
-    keywords: ['business', 'venture', 'workspace', 'switch', 'TIN', 'bank details', 'M-PAiSA', 'MyCash', 'logo', 'brand', 'primary', 'profile', 'getting started', 'trading as', 'T/A', 'business name', 'registered owner'],
+    keywords: ['business', 'venture', 'workspace', 'switch', 'TIN', 'bank details', 'M-PAiSA', 'MyCash', 'logo', 'brand', 'primary', 'profile', 'getting started', 'trading as', 'T/A', 'business name', 'registered owner', 'delete business', 'remove business'],
     body: `Frilensa keeps each business (or brand) separately: its own details, clients' documents, numbering, services, rate card and terms. The business you have selected is the active business, and new quotes, invoices and expenses use it.
 
 ### Switch business
@@ -41,6 +41,12 @@ Open **Home → Edit profile**, or go to **Settings → Businesses** and press *
 If the name is a registered business name owned by your company or by you, rather than a separate company (for example SLEDIEN Pte Ltd registered "Vibrant" as a business name), set it up as a business called Vibrant and fill in **Registered owner (if this is a business name)** with "SLEDIEN Pte Ltd". Quotes, invoices, receipts, PDFs, emails and the online invoice then show "SLEDIEN Pte Ltd trading as Vibrant" under the name. Use the owner's TIN, and put the business name registration number in **Registration number**. You can add a business like this for each name you trade under, each with its own branding, numbering and bank details.
 
 Mark one business as the main one with **Set as primary** on **Home**. It's used by default for new documents.
+
+### Delete a business
+Go to **Settings → Businesses**, select the business and press **Delete this business** under **Save business**. You can only do this when you have more than one business.
+- The business's quotes, invoices, receipts, projects, services, retainers, expenses and bookkeeping entries are deleted with it, and its directory listing is removed. Your clients are kept.
+- If it has any records, you're asked to type the business name to confirm.
+- Issued tax invoices are tax records. Download or export them first if you may need them later.
 
 Check your TIN and your clients' TINs before you send tax invoices. FRCS sets the rules for what a tax invoice must show.`
   },
@@ -455,7 +461,7 @@ New requests appear under **Needs your attention** on **Home** (press **Review**
 - For an accepted booking, **Create invoice** makes a draft invoice using your invoice numbering. Check it in **Billing** before sending.
 - **Email client** opens an email to them.
 
-Bookings and listings aren't reviewed or verified by Frilensa.`
+Bookings and listings aren't reviewed by Frilensa. A **Verified** badge means the Frilensa team has checked the business's FRCS registration. The team can hide or remove listings and bookings that break the rules.`
   },
   {
     id: 'assistant',

@@ -22,6 +22,7 @@ import { createAssistantRouter, assistantConfigured } from "./server/assistant";
 import { createPaymentsRouter } from "./server/payNow";
 import { createPublicBookingRouter, createBookingPageRouter } from "./server/bookingPage";
 import { createWebhooksRouter, createEventsRouter, startWebhookRetries } from "./server/webhooks";
+import { createAdminRouter } from "./server/admin";
 import pkg from "./package.json";
 
 dotenv.config();
@@ -218,6 +219,7 @@ async function startServer() {
   app.use("/api/booking-page", express.json({ limit: "10kb" }), createBookingPageRouter());
   app.use("/api/webhooks", express.json({ limit: "10kb" }), createWebhooksRouter());
   app.use("/api/events", express.json({ limit: "2kb" }), createEventsRouter());
+  app.use("/api/admin", express.json({ limit: "20kb" }), createAdminRouter());
   startWebhookRetries();
   app.use("/api/jobs", express.json({ limit: "10kb" }), createJobsRouter());
   app.use("/api/automation", express.json({ limit: "10kb" }), createAutomationRouter());
