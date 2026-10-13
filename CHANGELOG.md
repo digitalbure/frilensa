@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-10-13
+
+### Fixed
+- **Finance → Services** showed "This screen couldn't be shown" for a business with no services yet. It now opens, ready for you to add your first service.
+
 ## [4.0.0] - 2026-10-13
 
 ### Changed

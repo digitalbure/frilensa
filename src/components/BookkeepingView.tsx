@@ -884,7 +884,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
   const selectedService = data.services.find(s => s.id === selectedPlaygroundSrv) || data.services[0];
   
   const calculatePlaygroundRate = () => {
-    if (!selectedService) return { baseRate: 0, subtotal: 0, surcharges: 0, discounts: 0, multiplierLabel: '', rawTotal: 0, vatAmount: 0, totalRate: 0, breakdownSteps: [] as string[] };
+    if (!selectedService) return { baseRate: 0, subtotal: 0, surcharges: 0, discounts: 0, multiplierLabel: '', rawTotal: 0, vatAmount: 0, totalRate: 0, finalRatePerUnit: 0, breakdownSteps: [] as string[] };
 
     let currentRate = selectedService.rate;
     let baseRate = selectedService.rate;
