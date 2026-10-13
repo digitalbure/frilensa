@@ -6,6 +6,7 @@ import DashboardView from './components/DashboardView';
 import BillingView from './components/BillingView';
 import ClientsView from './components/ClientsView';
 import BookkeepingView from './components/BookkeepingView';
+import CatalogueView from './components/CatalogueView';
 import SettingsView from './components/SettingsView';
 import ProjectsView from './components/ProjectsView';
 import ClientPortalView from './components/ClientPortalView';
@@ -45,8 +46,8 @@ import ScreenErrorBoundary from './components/ScreenErrorBoundary';
 import OAuthConsent from './components/OAuthConsent';
 import { inboxDocumentCount } from './lib/inbox';
 
-type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
-const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'services', 'settings', 'projects', 'assistant'];
+type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
+const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'catalogue', 'services', 'settings', 'projects', 'assistant'];
 const LAST_ACTIVE_KEY = 'fiji_crm_last_active_timestamp';
 const SAVE_DEBOUNCE_MS = 1200;
 
@@ -393,7 +394,7 @@ export default function App() {
 
   // Safe navigation function with action payloads (e.g., jump from Dashboard click directly to Creator in Billing)
   const handleNavigateWithAction = (
-    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant', 
+    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', 
     docActionId?: string
   ) => {
     setActiveTab(tab);
@@ -625,6 +626,10 @@ export default function App() {
               onUpdateData={handleUpdateData}
               onNavigateToTab={handleNavigateWithAction}
             />
+          )}
+
+          {activeTab === 'catalogue' && (
+            <CatalogueView data={crmData} onUpdateData={handleUpdateData} />
           )}
 
           {activeTab === 'services' && (

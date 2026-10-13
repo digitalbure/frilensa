@@ -19,7 +19,7 @@ import ClientDetailDrawer from './clients/ClientDetailDrawer';
 interface ClientsViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
-  onNavigateToTab: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'settings', selectedDocId?: string) => void;
+  onNavigateToTab: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings', selectedDocId?: string) => void;
 }
 
 export default function ClientsView({ data, onUpdateData, onNavigateToTab }: ClientsViewProps) {

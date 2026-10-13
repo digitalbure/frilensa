@@ -21,7 +21,7 @@ interface DirectoryViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
   onOpenAdminPanel?: () => void;
-  onNavigateToTab?: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects', selectedDocId?: string) => void;
+  onNavigateToTab?: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects', selectedDocId?: string) => void;
 }
 
 export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, onNavigateToTab }: DirectoryViewProps) {

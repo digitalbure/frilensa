@@ -291,22 +291,22 @@ Reimbursed costs are left out of profit and loss and listed separately in the VA
     title: 'Services, rate card and default terms',
     summary: 'Keep a catalogue of services and rates, share a rate card, take booking requests from your rate card, apps and websites, choose what can be booked and what to ask, and set default terms for each business.',
     keywords: ['services', 'rates', 'catalogue', 'catalog', 'price list', 'rate card', 'rate sheet', 'quote request', 'booking', 'booking request', 'booking questions', 'bookable', 'business id', 'booking page', 'widget', 'embed', 'website', 'book now', 'availability', 'blocked dates', 'deposit', 'deposit invoice', 'webhook', 'terms', 'payment terms', 'quote validity', 'margin', 'starter pack', 'adjust prices', 'rate rules'],
-    body: `Everything here is in **Finance → Services**, for the active business.
+    body: `Everything here is on the **Services** tab in the menu, for the active business. It has four tabs: **Services**, **Rate card & terms**, **Bookings** and **Rate rules**.
 
 ### Your catalogue
 Press **Add item** and enter the name, unit (**Per**) and rate. You can add an item code, category, description, your cost (to see margins), rush, weekend and retainer rates, a minimum quantity and stock. Items appear under **From catalog** when you write quotes and invoices.
 - Tabs: **Catalogue**, **Rate tiers**, **Margins** and **Starter packs** (ready-made items for common trades; pick the ones to add).
 - **Adjust prices** changes rates in bulk. **Rate sheet** gives you a printable price list.
-- **Rate rules** below the catalogue add weekend, rush or after-hours modifiers, and the rate calculator shows what a job costs with them.
+- The **Rate rules** tab adds weekend, rush or after-hours modifiers, and its rate calculator shows what a job costs with them.
 
 ### Rate card
-Under **Rate card**, press **Create rate card link**. The link opens a page with your services, rates and quote terms. Clients can print it or save it as a PDF, pick quantities to see an estimate, and send you a booking request. Untick **Show on rate card** on an item to hide it. **New link** replaces the link and **Turn off** stops it working.
+On **Rate card & terms**, press **Create rate card link**. The link opens a page with your services, rates and quote terms. Clients can print it or save it as a PDF, pick quantities to see an estimate, and send you a booking request. Untick **Show on rate card** on an item to hide it. **New link** replaces the link and **Turn off** stops it working.
 
 ### Booking requests
 Every booking request, from your rate card, the directory, or an app or website connected with an API key, appears under **Needs your attention** on **Home**, and you're emailed about each one. Each shows where it came from (for example "Booked via Soqo Stream"), the customer's answers, and the event date, time and location. The soonest events are listed first. **Open in** goes to the booking in the app it came from. **Create quote** makes a draft quote with the requested services and a **Booking details** block in its notes, so the customer sees what they're being quoted for. It adds the person as a client if they aren't one already. Check it and send it from **Billing**.
 
 ### Bookings settings
-Under **Bookings for** your business:
+On the **Bookings** tab, under **Bookings for** your business:
 - **Bookable services**: everything on your rate card can be booked unless you untick it. Set a minimum or maximum quantity per service.
 - **Booking questions**: switch on the event or job date, start time and location, and add your own questions (short or long text, number, date, time, single or multiple choice, yes or no). Each can be required, have help text, and be asked only when certain services are chosen. Use the arrows to order them.
 - **Intro text** and **After-booking message**, shown to customers by apps that use them.
@@ -326,7 +326,7 @@ Under **Deposit**, ask for a percentage or a fixed amount. A service can have it
 Tick **Email the customer a copy of their request** to send them a short "We've got your booking request" email with their answers and your after-booking message, in your business's name. **Turn off** stops the page and the button working. When the page is on, your rate card shows a **Book now** button too.
 
 ### Default terms
-Under **Terms for** your business, set **Invoices due after (days)**, **Quotes valid for (days)**, **Invoice terms and notes** and **Quote terms and conditions**, then press **Save terms**. New quotes and invoices fill these in (you can still change them on each one), including drafts made by the assistant or the API, and retainers with no terms of their own.`
+On **Rate card & terms**, under **Terms for** your business, set **Invoices due after (days)**, **Quotes valid for (days)**, **Invoice terms and notes** and **Quote terms and conditions**, then press **Save terms**. New quotes and invoices fill these in (you can still change them on each one), including drafts made by the assistant or the API, and retainers with no terms of their own.`
   },
   {
     id: 'projects-tasks',
@@ -516,7 +516,7 @@ You can have up to 10 keys. **Revoke** stops a key working immediately. Treat ke
 - **Read and create drafts**: also add clients, tasks and expenses, create draft quotes and invoices (which can include reimbursable expenses), and send you **booking requests**.
 
 ### Take bookings from your own website or app
-A developer building your booking page or app needs a **Read and create drafts** key (name it after the app, for example "Soqo Stream") and your **Business id** from **Finance → Services → Bookings**. The app reads your booking form (bookable services, prices and questions), sends booking requests, and can check how far each one has got: quoted, quote accepted, invoiced, part paid or paid. Prices always come from Frilensa. Requests land in your inbox like any other booking. The app's documentation is at frilensa.com in docs/API.md.
+A developer building your booking page or app needs a **Read and create drafts** key (name it after the app, for example "Soqo Stream") and your **Business id** from **Services → Bookings**. The app reads your booking form (bookable services, prices and questions), sends booking requests, and can check how far each one has got: quoted, quote accepted, invoiced, part paid or paid. Prices always come from Frilensa. Requests land in your inbox like any other booking. The app's documentation is at frilensa.com in docs/API.md.
 
 ### Webhooks
 Under **Settings → Webhooks**, a developer can add an address that Frilensa tells straight away when a booking arrives or moves on (quoted, accepted, invoiced, paid). Copy the signing secret when it's shown; it isn't shown again. **Send test** checks the address works, and **Recent deliveries** shows what was sent. Failed deliveries are retried for 24 hours.

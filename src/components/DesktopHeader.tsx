@@ -9,7 +9,7 @@ import firebaseConfig from '../../firebase-applet-config.json';
 import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 interface DesktopHeaderProps {
-  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
+  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
   crmData: CRMData;
   onOpenQuickPulse?: () => void;
   onOpenFxCalc?: () => void;
@@ -53,8 +53,10 @@ export default function DesktopHeader({
         return { title: 'Clients', subtitle: 'Your clients and their portal links' };
       case 'projects':
         return { title: 'Projects', subtitle: 'Boards, deliverables and tracked hours' };
+      case 'catalogue':
+        return { title: 'Services', subtitle: 'What you sell, your rate card, terms and bookings' };
       case 'services':
-        return { title: 'Finance', subtitle: 'Profit and loss, bookkeeping and bank reconciliation' };
+        return { title: 'Finance', subtitle: 'Profit and loss, VAT, bookkeeping and bank reconciliation' };
       case 'directory':
         return { title: 'Directory', subtitle: 'Fijian freelancers and businesses on Frilensa' };
       case 'assistant':

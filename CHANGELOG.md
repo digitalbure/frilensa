@@ -18,6 +18,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-10-13
+
+### Changed
+- **Services has its own place in the menu**, after Clients, instead of being the last tab in Finance. It has four tabs:
+  - **Services**: your catalogue, starter packs, margins and price adjustments.
+  - **Rate card & terms**: your shareable rate card and the default terms for quotes and invoices.
+  - **Bookings**: what can be booked, booking questions, availability, deposits, and the booking page and website button.
+  - **Rate rules**: weekend, rush and after-hours modifiers, with the rate calculator.
+- **Finance** now covers P&L and expenses, VAT return, Reconcile, Ledger and **Currencies** (your working currencies and exchange rates).
+- On phones, **Services** is in the bottom bar.
+- The rate calculator only lists the active business's services, and says what to do when there are no services or rate rules yet.
+
 ## [4.0.1] - 2026-10-13
 
 ### Fixed

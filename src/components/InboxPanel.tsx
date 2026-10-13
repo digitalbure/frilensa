@@ -10,7 +10,7 @@ import RecordPaymentModal from './RecordPaymentModal';
 import { fetchQuoteRequests, resolveQuoteRequest, type QuoteRequest } from '../lib/rateCards';
 import { draftQuoteFromRequest } from '../lib/quoteRequests';
 
-type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
+type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
 
 interface InboxPanelProps {
   data: CRMData;

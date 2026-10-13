@@ -21,7 +21,7 @@ import { VENTURE_MODELS, ALL_VENTURE_TYPES, getVentureConfig } from '../lib/vent
 interface DashboardViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
-  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
+  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
   onManualCloudSync?: () => Promise<void>;
 }
 

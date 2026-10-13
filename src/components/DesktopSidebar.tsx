@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles,
   Building2, Plus, ChevronDown, Check, LogOut, ShieldCheck, Calculator, ArrowUpRight, Zap,
-  ShoppingBag, Clock, Camera, GraduationCap, Wrench, Palmtree, Edit2, Sliders
+  ShoppingBag, Clock, Camera, GraduationCap, Wrench, Palmtree, Edit2, Sliders, Tag
 } from 'lucide-react';
 import { CRMData, Business, VentureType } from '../types';
 import { VENTURE_MODELS, ALL_VENTURE_TYPES, getVentureConfig } from '../lib/ventureModels';
@@ -12,8 +12,8 @@ import EditVentureModal from './EditVentureModal';
 import { useOnlineStatus } from '../lib/useOnlineStatus';
 
 interface DesktopSidebarProps {
-  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
-  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant') => void;
+  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
+  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant') => void;
   crmData: CRMData;
   onUpdateData: (newData: CRMData) => void;
   onSignOut: () => void;
@@ -85,6 +85,7 @@ export default function DesktopSidebar({
     { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard, badge: attentionCount > 0 ? `${attentionCount} new` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'billing' as const, label: 'Billing', icon: Layers, badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} due` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'clients' as const, label: 'Clients', icon: Users, badge: crmData.clients?.length ? `${crmData.clients.length}` : undefined, badgeColor: 'bg-slate-800 text-slate-300 border-slate-700' },
+    { id: 'catalogue' as const, label: 'Services', icon: Tag, badge: crmData.services?.some(s => !s.businessId || s.businessId === crmData.activeBusinessId) ? undefined : 'Set up', badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
     { id: 'services' as const, label: 'Finance', icon: Briefcase, badge: undefined },
     { id: 'directory' as const, label: 'Directory', icon: Globe, badge: undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },

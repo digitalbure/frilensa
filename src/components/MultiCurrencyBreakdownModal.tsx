@@ -13,7 +13,7 @@ interface MultiCurrencyBreakdownModalProps {
   data: CRMData;
   activeBusiness?: Business;
   stats: BusinessFinancialStats;
-  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
+  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
 }
 
 export default function MultiCurrencyBreakdownModal({

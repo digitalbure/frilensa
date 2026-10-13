@@ -1,10 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles, Tag } from 'lucide-react';
 
 interface BottomNavProps {
-  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant';
-  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant') => void;
+  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
+  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant') => void;
   /** Items waiting on the user, shown as a badge on the Hub tab. */
   dashboardBadge?: number;
 }
@@ -16,6 +16,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
     { id: 'billing' as const, label: 'Billing', icon: Layers },
     { id: 'clients' as const, label: 'Clients', icon: Users },
+    { id: 'catalogue' as const, label: 'Services', icon: Tag },
     { id: 'services' as const, label: 'Finance', icon: Briefcase },
     { id: 'assistant' as const, label: 'Assistant', icon: Sparkles },
     { id: 'settings' as const, label: 'Settings', icon: Settings },

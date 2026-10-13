@@ -24,7 +24,7 @@ interface ClientDetailDrawerProps {
   data: CRMData;
   onClose: () => void;
   onUpdateData: (newData: CRMData) => void;
-  onNavigateToTab: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'settings', selectedDocId?: string) => void;
+  onNavigateToTab: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings', selectedDocId?: string) => void;
   onOpenEdit: (client: Client) => void;
   onOpenShareModal: (client: Client) => void;
   onGenerateAccessLink: (client: Client, e?: React.MouseEvent) => Promise<void>;

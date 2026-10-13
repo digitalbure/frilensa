@@ -110,7 +110,7 @@ billed (404 if unknown, 409 if already on an invoice). Reimbursed lines carry no
 `chargeVatOnExpenses` is true. Document items show `reimbursable`, `vatCharged` and `hasReceipt`.
 Receipt files themselves aren't available through the API; clients see them from the issued invoice.
 
-Draft quotes and invoices take the business's default terms (Bookkeeping → Services → Terms) for
+Draft quotes and invoices take the business's default terms (Services → Rate card & terms) for
 `notes` and the due date unless `notes` or `dueInDays` are given.
 
 Dates are `YYYY-MM-DD`. Unknown fields are rejected, so a typo can't be silently ignored.
@@ -130,7 +130,7 @@ the customer can pay online. The examples use Soqo Stream, a live-streaming plat
 customers book streaming crews, but any app works the same way.
 
 **Setting up (the business):** in Frilensa, put the services on the rate card, choose what's bookable
-and the booking questions in **Finance → Services → Bookings**, then create a **Read and create
+and the booking questions in **Services → Bookings**, then create a **Read and create
 drafts** key named after the app (for example "Soqo Stream") and give the developer the key and the
 **Business id** shown there. Keep the key in a secret store, never in code.
 
@@ -280,7 +280,7 @@ Routes (signed-in user): `GET/POST /api/webhooks`, `DELETE /api/webhooks/{id}`,
 
 ### Without writing code: booking page and widget
 
-A business can turn on a hosted booking page at `https://frilensa.com/book/<slug>` (Finance → Services →
+A business can turn on a hosted booking page at `https://frilensa.com/book/<slug>` (Services →
 Bookings → Booking page). It shows the same form (services, prices, questions) with the business's
 colours and logo. To add it to any website, paste:
 

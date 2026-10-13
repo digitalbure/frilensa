@@ -12,7 +12,7 @@ interface QuickAccessPromptProps {
   isOpen: boolean;
   onClose: () => void;
   onNavigateToTab: (
-    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant', 
+    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', 
     docActionId?: string
   ) => void;
 }
@@ -53,7 +53,7 @@ export default function QuickAccessPrompt({
   };
 
   const handleAction = (
-    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'settings' | 'projects' | 'assistant',
+    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant',
     docId?: string
   ) => {
     onClose();

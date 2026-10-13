@@ -21,7 +21,7 @@ import { generateShareToken } from '../lib/documentLinks';
 interface ProjectsViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
-  onNavigateToTab?: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'settings' | 'projects', selectedDocId?: string) => void;
+  onNavigateToTab?: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects', selectedDocId?: string) => void;
 }
 
 export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: ProjectsViewProps) {
