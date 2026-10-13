@@ -4,12 +4,15 @@ import {
   Download, Share2, PlusSquare, X, Smartphone, 
   CheckCircle2, Wifi, WifiOff, Sparkles, ShieldCheck 
 } from 'lucide-react';
+import BrandMark from './BrandMark';
+import { useBranding } from '../lib/branding';
 
 interface PwaInstallPromptProps {
   onDismiss?: () => void;
 }
 
 export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
+  const brand = useBranding();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -142,7 +145,7 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
             <CheckCircle2 className="w-5 h-5 text-white shrink-0" />
             <div className="text-xs">
               <p className="font-bold">App installed</p>
-              <p className="text-[10px] text-emerald-100">Open Frilensa from your home screen.</p>
+              <p className="text-[10px] text-emerald-100">Open {brand.name} from your home screen.</p>
             </div>
           </motion.div>
         )}
@@ -159,14 +162,12 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
             className="fixed bottom-20 left-3 right-3 z-40 max-w-md mx-auto bg-gradient-to-r from-slate-900 via-slate-900 to-slate-900 text-white p-3.5 rounded-2xl shadow-2xl border border-sky-500/30 backdrop-blur-xl"
           >
             <div className="flex items-center justify-between gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-400 p-0.5 shadow-md flex items-center justify-center shrink-0">
-                <img src="/pwa-icon.svg" alt="Frilensa" className="w-full h-full rounded-[10px]" />
-              </div>
+              <BrandMark size={40} />
 
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <h4 className="text-xs font-bold text-white tracking-tight truncate">
-                    Install Frilensa
+                    Install {brand.name}
                   </h4>
                   <span className="text-[8px] bg-sky-500/20 text-sky-300 font-bold px-1.5 py-0.2 rounded-full border border-sky-400/30">
                     Web app
@@ -216,12 +217,10 @@ export default function PwaInstallPrompt({ onDismiss }: PwaInstallPromptProps) {
               </button>
 
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 p-0.5 shadow-md flex items-center justify-center shrink-0">
-                  <img src="/pwa-icon.svg" alt="Frilensa" className="w-full h-full rounded-[14px]" />
-                </div>
+                <BrandMark size={48} rounded="rounded-2xl" />
                 <div>
                   <h3 className="text-sm font-bold text-slate-900">Install on iPhone / iPad</h3>
-                  <p className="text-[11px] text-slate-500">Add Frilensa to your home screen</p>
+                  <p className="text-[11px] text-slate-500">Add {brand.name} to your home screen</p>
                 </div>
               </div>
 

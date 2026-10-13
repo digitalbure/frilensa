@@ -7,6 +7,11 @@ Live at **frilensa.com**. React 19 + Vite SPA, Express server (`server.ts`, `ser
 - A workspace is a head document `consultants/{uid}` plus one record per item for the growing lists (`SPLIT_LISTS` in `src/lib/workspaceRecords.ts`, mirrored in `firestore.rules`). Older workspaces kept those lists as arrays in the head; reads combine both forms.
 - Server code reads and writes workspaces only through `server/workspace.ts` (`readWorkspace`, `updateWorkspace`, or `loadWorkspace` + `writeWorkspace` inside a transaction). Never read or write `consultants/{uid}` directly.
 
+## Branding
+
+- Frilensa's own branding (name, tagline, support contacts, logo, colours) lives in the server-only `platform` collection, managed in `server/branding.ts` (public `GET /api/public/branding`, admin `/api/admin/branding`, `/manifest.webmanifest`). The app reads it with `useBranding()` / `<BrandMark />`, never from a workspace. Logos are PNG, JPEG or WebP only, checked by their magic bytes; SVGs are converted in the browser.
+- A business's own branding (for its documents) is separate and stays on the business in the workspace.
+
 ## Every change must be logged
 
 - Add an entry under `## [Unreleased]` in `CHANGELOG.md` in the same commit as the change (Added / Changed / Fixed / Removed / Security). Write it for users: what changed for them, not file names.

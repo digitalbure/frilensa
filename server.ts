@@ -23,6 +23,7 @@ import { createPaymentsRouter } from "./server/payNow";
 import { createPublicBookingRouter, createBookingPageRouter } from "./server/bookingPage";
 import { createWebhooksRouter, createEventsRouter, startWebhookRetries } from "./server/webhooks";
 import { createAdminRouter } from "./server/admin";
+import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
 
@@ -220,6 +221,10 @@ async function startServer() {
   app.use("/api/booking-page", express.json({ limit: "10kb" }), createBookingPageRouter());
   app.use("/api/webhooks", express.json({ limit: "10kb" }), createWebhooksRouter());
   app.use("/api/events", express.json({ limit: "2kb" }), createEventsRouter());
+  // Logo uploads are larger than other admin requests, so they're parsed before the admin router's 20 KB limit.
+  app.use("/api/admin/branding", express.json({ limit: "700kb" }), createAdminBrandingRouter());
+  app.use("/api/public/branding", createPublicBrandingRouter());
+  app.get("/manifest.webmanifest", manifestHandler);
   app.use("/api/admin", express.json({ limit: "20kb" }), createAdminRouter());
   app.use("/api/client-errors", express.json({ limit: "16kb" }), createClientErrorsRouter());
   startWebhookRetries();

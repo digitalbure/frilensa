@@ -19,6 +19,8 @@ import {
   verifyEmailActionCode
 } from '../lib/firebase';
 import { startPortalSessionWithPin, type PortalSession } from '../lib/api';
+import BrandMark from './BrandMark';
+import { useBranding } from '../lib/branding';
 
 interface AuthViewProps {
   onSignIn: (profile: UserProfile, isNewRegistration?: boolean) => void;
@@ -42,6 +44,7 @@ export default function AuthView({
   onClearLogoutReason,
   initialMode = 'signin'
 }: AuthViewProps) {
+  const brand = useBranding();
   const currentSettings = platformSettings || DEFAULT_PLATFORM_SETTINGS;
   const registrationMode = currentSettings.registrationMode || 'open';
   const enableEmailOtp = currentSettings.enableEmailOtp !== false;
@@ -502,9 +505,9 @@ export default function AuthView({
             initial={{ scale: 0.85, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: "spring", stiffness: 220, damping: 18 }}
-            className="w-14 h-14 bg-gradient-to-tr from-sky-600 to-teal-500 rounded-2xl flex items-center justify-center shadow-xl shadow-sky-500/20 mb-3 border border-white/10"
+            className="mb-3"
           >
-            <Waves className="w-8 h-8 text-white" />
+            <BrandMark size={56} rounded="rounded-2xl" />
           </motion.div>
           
           <motion.h1 
@@ -513,7 +516,7 @@ export default function AuthView({
             transition={{ delay: 0.08 }}
             className="text-2xl font-black text-white tracking-tight"
           >
-            Frilensa
+            {brand.name}
           </motion.h1>
           
           <motion.p 
@@ -522,7 +525,7 @@ export default function AuthView({
             transition={{ delay: 0.15 }}
             className="text-xs text-slate-400 mt-1 max-w-xs leading-relaxed"
           >
-            Invoicing, bookkeeping and Fiji tax for freelancers
+            {brand.tagline}
           </motion.p>
         </div>
 
@@ -1010,7 +1013,7 @@ export default function AuthView({
               <div className="bg-slate-50 border border-slate-100 rounded-2xl p-3.5 space-y-2 text-[11px] text-slate-600">
                 <div className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">1</div>
-                  <p className="leading-snug">Open the email from <strong>Frilensa</strong>.</p>
+                  <p className="leading-snug">Open the email from <strong>{brand.name}</strong>.</p>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <div className="w-4 h-4 rounded-full bg-sky-100 text-sky-700 flex items-center justify-center font-bold text-[10px] shrink-0 mt-0.5">2</div>
@@ -1057,6 +1060,15 @@ export default function AuthView({
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 inline" />
             <span>Calculates Fiji VAT, ECAL and STT</span>
           </p>
+          {(brand.supportEmail || brand.supportPhone) && (
+            <p>
+              Need help?{' '}
+              {brand.supportEmail && <a href={`mailto:${brand.supportEmail}`} className="text-slate-300 underline">{brand.supportEmail}</a>}
+              {brand.supportEmail && brand.supportPhone && ' · '}
+              {brand.supportPhone && <a href={`tel:${brand.supportPhone.replace(/\s/g, '')}`} className="text-slate-300 underline">{brand.supportPhone}</a>}
+            </p>
+          )}
+          {brand.footerNote && <p>{brand.footerNote}</p>}
         </div>
       </div>
     </div>

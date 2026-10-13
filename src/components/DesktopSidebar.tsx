@@ -10,6 +10,8 @@ import { CRMData, Business, VentureType } from '../types';
 import { VENTURE_MODELS, ALL_VENTURE_TYPES, getVentureConfig } from '../lib/ventureModels';
 import EditVentureModal from './EditVentureModal';
 import { useOnlineStatus } from '../lib/useOnlineStatus';
+import BrandMark from './BrandMark';
+import { useBranding } from '../lib/branding';
 
 interface DesktopSidebarProps {
   activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
@@ -32,6 +34,7 @@ export default function DesktopSidebar({
   onOpenQuickPulse,
   onOpenFxCalc
 }: DesktopSidebarProps) {
+  const brand = useBranding();
   const online = useOnlineStatus();
   const plan = crmData.platformSettings?.activePlan || 'free';
   const [showBizDropdown, setShowBizDropdown] = useState(false);
@@ -140,12 +143,10 @@ export default function DesktopSidebar({
       {/* Brand Header */}
       <div className="p-4 lg:p-5 border-b border-slate-800/90 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-teal-400 flex items-center justify-center text-white font-black text-sm shadow-md shadow-sky-500/20">
-            F
-          </div>
+          <BrandMark size={36} />
           <div>
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-white text-base tracking-tight font-display">Frilensa</span>
+              <span className="font-extrabold text-white text-base tracking-tight font-display truncate max-w-[9rem]">{brand.name}</span>
               {plan !== 'free' && (
                 <span className="text-[8px] bg-sky-500/20 text-sky-300 font-extrabold px-1.5 py-0.5 rounded border border-sky-400/30 uppercase tracking-widest font-mono">
                   {plan}

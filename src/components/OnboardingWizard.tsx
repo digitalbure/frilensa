@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { CRMData, Business, ProductService, Client, UserProfile } from '../types';
 import { INDUSTRY_PRESETS, getIndustryPreset } from '../lib/industryPresets';
+import BrandMark from './BrandMark';
+import { useBranding } from '../lib/branding';
 
 interface OnboardingWizardProps {
   initialData: CRMData;
@@ -69,6 +71,7 @@ const COLOR_THEMES = [
 ];
 
 export default function OnboardingWizard({ initialData, onCompleteOnboarding, onSignOut }: OnboardingWizardProps) {
+  const brand = useBranding();
   // Step 1: Account Type ('free' or 'business')
   const [accountType, setAccountType] = useState<'free' | 'business'>('free');
   const [step, setStep] = useState<number>(1);
@@ -300,11 +303,9 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
         <div className="bg-slate-900 text-white px-6 py-5 shrink-0 border-b border-slate-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-teal-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
-                <Waves className="w-5 h-5" />
-              </div>
+              <BrandMark size={40} rounded="rounded-2xl" />
               <div>
-                <h2 className="text-base font-extrabold tracking-tight">Set up Frilensa</h2>
+                <h2 className="text-base font-extrabold tracking-tight">Set up {brand.name}</h2>
                 <p className="text-xs text-slate-400">
                   {accountType === 'free' ? 'Freelancer' : 'Business'}
                 </p>

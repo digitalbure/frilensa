@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.4.0] - 2026-10-13
+
+### Added
+- **Upload the Frilensa logo** in **Admin → Branding**. Drag a file in or choose one (PNG, JPG, WebP or SVG). It's resized for you and checked on the server. You can replace or remove it at any time. Before, the logo could only be a web address.
+- **Use logo colours** fills in the primary and accent colours from the uploaded logo.
+- A **live preview** of the sidebar, sign-in page, browser tab and phone home screen. It warns you when white letters would be hard to read on your colour, and when a logo is too small or not square enough for an app icon.
+
+### Changed
+- **Branding now shows for everyone.** It used to be saved only in the admin's own account, so nobody else ever saw it. The app name, logo, tagline and colours now appear on:
+  - the sign-in page, the sidebar, the setup wizard and the install prompt;
+  - the browser tab title and icon;
+  - the installed app's name, icon and colour.
+- The support email and phone show on the sign-in page and in Help, and the footer text shows on the sign-in page.
+- Branding changes are made in one go with **Save changes**, instead of being saved, with a pop-up, on every key press. **Defaults** restores the standard Frilensa look, and you then press Save to keep it.
+
 ## [4.3.0] - 2026-10-13
 
 ### Changed

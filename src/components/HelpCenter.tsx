@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { LifeBuoy, Search, ChevronDown, ChevronUp } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { HELP_ARTICLES, type HelpArticle } from '../help/articles';
+import { useBranding } from '../lib/branding';
 
 // Settings → Help: the in-app help articles (src/help/articles.ts), with search.
 // The articles are Markdown (### headings, paragraphs, "- " and "1. " lists, **bold**). Like the
@@ -57,6 +58,7 @@ const searchText = (a: HelpArticle) =>
   [a.title, a.summary, a.keywords.join(' '), a.body].join(' ').replace(/\*\*/g, '').toLowerCase();
 
 export default function HelpCenter() {
+  const brand = useBranding();
   const [query, setQuery] = useState('');
   const [openId, setOpenId] = useState<string | null>(null);
   const index = useMemo(() => HELP_ARTICLES.map(a => ({ article: a, text: searchText(a) })), []);
@@ -123,6 +125,14 @@ export default function HelpCenter() {
             );
           })}
         </ul>
+      )}
+      {(brand.supportEmail || brand.supportPhone) && (
+        <p className="pt-2 border-t border-zinc-100 text-[11px] text-zinc-500">
+          Still stuck? Contact {brand.name} support:{' '}
+          {brand.supportEmail && <a href={`mailto:${brand.supportEmail}`} className="text-indigo-600 font-semibold">{brand.supportEmail}</a>}
+          {brand.supportEmail && brand.supportPhone && ' · '}
+          {brand.supportPhone && <a href={`tel:${brand.supportPhone.replace(/\s/g, '')}`} className="text-indigo-600 font-semibold">{brand.supportPhone}</a>}
+        </p>
       )}
     </div>
   );

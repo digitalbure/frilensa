@@ -1111,6 +1111,39 @@ try {
     assert.equal((await fetch(`${API}/api/admin/workspaces/${B.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ plan: 'premium' }) })).status, 200);
     assert.equal((await get(`consultants/${B.uid}`)).platformSettings.activePlan, 'premium');
   });
+  await check('app branding: anyone reads it, only admins change it', async () => {
+    const pub = await j(await fetch(`${API}/api/public/branding`));
+    assert.equal(pub.status, 200); assert.equal(pub.body.branding.name, 'Frilensa'); assert.equal(pub.body.branding.logoType, 'default');
+    const put = (who, body) => fetch(`${API}/api/admin/branding`, { method: 'PUT', headers: auth(who), body: JSON.stringify(body) });
+    assert.equal((await fetch(`${API}/api/admin/branding`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
+    assert.equal((await put(B, { name: 'Hacked' })).status, 403);
+    assert.equal((await put(A, { supportEmail: 'not-an-email' })).status, 400);
+    assert.equal((await put(A, { logoType: 'image' })).status, 400, 'image logo without an upload');
+    const saved = await j(await put(A, { name: 'Frilensa Fiji', tagline: 'Books <b>made</b> easy', primaryColor: '#123ABC', accentColor: 'red', logoType: 'text', logoText: 'frx', supportEmail: 'help@frilensa.com' }));
+    assert.equal(saved.status, 200);
+    const b = saved.body.branding;
+    assert.deepEqual([b.name, b.tagline, b.primaryColor, b.accentColor, b.logoText, b.supportEmail], ['Frilensa Fiji', 'Books bmade/b easy', '#123abc', '#14b8a6', 'FRX', 'help@frilensa.com']);
+    assert.equal((await j(await fetch(`${API}/api/public/branding`))).body.branding.name, 'Frilensa Fiji');
+  });
+  await check('app logo upload: checked, served safely, used in the app manifest, removable', async () => {
+    const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const up = (who, dataUrl) => fetch(`${API}/api/admin/branding/logo`, { method: 'POST', headers: auth(who), body: JSON.stringify({ dataUrl }) });
+    assert.equal((await up(B, `data:image/png;base64,${PNG}`)).status, 403);
+    assert.equal((await up(A, 'data:image/svg+xml;base64,' + Buffer.from('<svg onload="alert(1)"/>').toString('base64'))).status, 400, 'SVG accepted');
+    assert.equal((await up(A, 'data:image/png;base64,' + Buffer.from('<html>not a png</html>').toString('base64'))).status, 400, 'fake PNG accepted');
+    const ok = await j(await up(A, `data:image/png;base64,${PNG}`));
+    assert.equal(ok.status, 200); assert.equal(ok.body.branding.logoType, 'image');
+    const logoUrl = ok.body.branding.logoUrl; assert.match(logoUrl, /^\/api\/public\/branding\/logo\?v=[0-9a-f]{16}$/);
+    const img = await fetch(`${API}${logoUrl}`);
+    assert.equal(img.status, 200); assert.equal(img.headers.get('content-type'), 'image/png');
+    assert.equal(img.headers.get('x-content-type-options'), 'nosniff'); assert.match(img.headers.get('cache-control'), /immutable/);
+    assert.deepEqual(Buffer.from(await img.arrayBuffer()), Buffer.from(PNG, 'base64'));
+    const manifest = await (await fetch(`${API}/manifest.webmanifest`)).json();
+    assert.equal(manifest.short_name, 'Frilensa Fij'); assert.equal(manifest.theme_color, '#123abc'); assert.equal(manifest.icons[0].src, logoUrl);
+    const removed = await j(await fetch(`${API}/api/admin/branding/logo`, { method: 'DELETE', headers: auth(A) }));
+    assert.equal(removed.body.branding.logoType, 'default'); assert.equal(removed.body.branding.logoUrl, '');
+    assert.equal((await fetch(`${API}/api/public/branding/logo`)).status, 404);
+  });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
     assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);
