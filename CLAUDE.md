@@ -2,6 +2,11 @@
 
 Live at **frilensa.com**. React 19 + Vite SPA, Express server (`server.ts`, `server/`), Firebase Auth + Firestore.
 
+## Workspace storage
+
+- A workspace is a head document `consultants/{uid}` plus one record per item for the growing lists (`SPLIT_LISTS` in `src/lib/workspaceRecords.ts`, mirrored in `firestore.rules`). Older workspaces kept those lists as arrays in the head; reads combine both forms.
+- Server code reads and writes workspaces only through `server/workspace.ts` (`readWorkspace`, `updateWorkspace`, or `loadWorkspace` + `writeWorkspace` inside a transaction). Never read or write `consultants/{uid}` directly.
+
 ## Every change must be logged
 
 - Add an entry under `## [Unreleased]` in `CHANGELOG.md` in the same commit as the change (Added / Changed / Fixed / Removed / Security). Write it for users: what changed for them, not file names.
@@ -16,7 +21,7 @@ Live at **frilensa.com**. React 19 + Vite SPA, Express server (`server.ts`, `ser
 
 ## Security invariants
 
-- Browser code only touches `consultants/{uid}`, `documents` and `support_messages`, as allowed by `firestore.rules`. Anything involving client credentials, other tenants or email goes through the server.
+- Browser code only touches `consultants/{uid}` (and its item records, `consultants/{uid}/{list}/{id}`), `documents` and `support_messages`, as allowed by `firestore.rules`. Anything involving client credentials, other tenants or email goes through the server.
 - Client portal data comes only from `/api/portal/*`. Never load a consultant's workspace in the portal.
 - New `/api` routes sit behind `requireUser` (or `requirePortal`) and a rate limit. The one exception is `/api/jobs/*` (Cloud Scheduler), which checks the `X-Job-Secret` header against `JOBS_SECRET` instead.
 - The public API (`/api/v1/*`) and MCP server (`/mcp`) use `requireApiKey` (personal keys, `server/apiKeys.ts`, or OAuth access tokens from `server/oauth.ts`) and per-key rate limits. They go through `server/apiService.ts`, which only reads and creates drafts: no route reachable with an API key may email clients, record payments, or expose portal tokens, PINs or attachments. Document both in `docs/API.md`.

@@ -29,7 +29,16 @@ export function flatDocumentId(uid: string, documentId: string) {
   return `${uid}_${documentId}`;
 }
 
-/** The flat 'documents' row for one of a consultant's documents. */
+/** Fields the flat row adds on top of the document itself (stripped again when the app reads it back). */
+export const FLAT_ROW_META_KEYS = [
+  'consultantId', 'consultantEmail', 'clientEmail', 'clientName', 'businessName',
+  'businessColorTheme', 'businessLogoType', 'businessLogoSymbol', 'businessLogoText',
+  'businessLogoUrl', 'businessBrandSlogan', 'businessAddress', 'businessEmail',
+  'businessPhone', 'businessTin', 'businessLegalName', 'businessRegistrationNumber',
+  'businessBankDetails', 'businessMPaisaId', 'businessMyCashId'
+];
+
+/** The flat 'documents' row for one of a consultant's documents. Keep FLAT_ROW_META_KEYS in step. */
 export function buildFlatDocumentRow(
   uid: string,
   consultantEmail: string,

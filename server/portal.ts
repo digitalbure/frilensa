@@ -1,6 +1,7 @@
 import { notifyConsultant, later } from "./notify";
 import { sendDocumentFile } from "./files";
 import { syncBookingStages } from "./webhooks";
+import { loadWorkspace, writeWorkspace } from "./workspace";
 import { payOptions, createPaypalOrder, capturePaypalOrder, PayError } from "./payNow";
 import express, { type Response, type NextFunction } from "express";
 import {
@@ -33,9 +34,8 @@ function pick<T extends Record<string, any>>(obj: T | undefined | null, keys: st
   return out;
 }
 
-async function loadWorkspace(consultantId: string) {
-  const snap = await getAdminDb().collection("consultants").doc(consultantId).get();
-  return snap.exists ? (snap.data() as any) : null;
+async function loadWorkspaceRaw(consultantId: string) {
+  return (await loadWorkspace(consultantId))?.raw || null;
 }
 
 function findClient(workspace: any, clientId: string, email: string) {
@@ -77,10 +77,8 @@ export async function updateClientDocument(
   // Flat copies are keyed "{consultantId}_{documentId}"; older builds used the bare id.
   const namespacedRef = db.collection("documents").doc(`${claims.consultantId}_${documentId}`);
   const flatRef = (await namespacedRef.get()).exists ? namespacedRef : db.collection("documents").doc(documentId);
-  const workspaceRef = db.collection("consultants").doc(claims.consultantId);
-
   return db.runTransaction(async tx => {
-    const [flatSnap, wsSnap] = await Promise.all([tx.get(flatRef), tx.get(workspaceRef)]);
+    const [flatSnap, ws] = await Promise.all([tx.get(flatRef), loadWorkspace(claims.consultantId, tx)]);
     const flat = flatSnap.exists ? flatSnap.data() : null;
     if (!flat || flat.consultantId !== claims.consultantId || flat.clientId !== claims.clientId || flat.status === "draft") {
       return { status: 404, error: "Document not found." };
@@ -90,10 +88,9 @@ export async function updateClientDocument(
 
     const changes = { ...patch(flat), updatedAt: new Date().toISOString() };
     tx.update(flatRef, changes);
-    if (wsSnap.exists) {
-      const ws = wsSnap.data() as any;
-      const documents = (ws.documents || []).map((d: any) => d.id === documentId ? { ...d, ...changes } : d);
-      tx.update(workspaceRef, { documents, updatedAt: changes.updatedAt });
+    if (ws) {
+      const documents = (ws.raw.documents || []).map((d: any) => d.id === documentId ? { ...d, ...changes } : d);
+      writeWorkspace(tx, ws, { documents, updatedAt: changes.updatedAt });
     }
     return { status: 200, doc: { ...flat, ...changes } };
   });
@@ -243,7 +240,7 @@ export function createPortalRouter() {
         const byHash = await db.collection(ACCESS).where("tokenHash", "==", sha256(token)).limit(1).get();
         if (!byHash.empty) {
           const a = byHash.docs[0].data();
-          const ws = await loadWorkspace(a.consultantId);
+          const ws = await loadWorkspaceRaw(a.consultantId);
           if (!findClient(ws, a.clientId, a.email)) return res.status(401).json({ error: "This portal link is no longer active." });
           return res.json(sessionResponse({ consultantId: a.consultantId, clientId: a.clientId, email: a.email, clientName: a.clientName || "" }));
         }
@@ -254,7 +251,7 @@ export function createPortalRouter() {
         if (legacy.exists) {
           const l = legacy.data() as any;
           const email = normEmail(l.email);
-          const ws = await loadWorkspace(l.consultantId);
+          const ws = await loadWorkspaceRaw(l.consultantId);
           const client = findClient(ws, l.clientId, email);
           if (client && client.accessToken === token) {
             await db.collection(ACCESS).doc(accessDocId(l.consultantId, email)).set({
@@ -287,7 +284,7 @@ export function createPortalRouter() {
   router.get("/data", requirePortal, async (req: PortalRequest, res) => {
     const claims = req.portal!;
     const db = getAdminDb();
-    const ws = await loadWorkspace(claims.consultantId);
+    const ws = await loadWorkspaceRaw(claims.consultantId);
     const client = findClient(ws, claims.clientId, claims.email);
     if (!ws || !client) return res.status(404).json({ error: "Your account could not be found. Please contact your consultant." });
 

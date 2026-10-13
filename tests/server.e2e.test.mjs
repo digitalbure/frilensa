@@ -19,15 +19,35 @@ async function user(email) {
 
 // --- Firestore seeding through the emulator REST API (bypasses rules with "owner") ---
 const fsVal = v => v === null ? { nullValue: null } : typeof v === 'string' ? { stringValue: v } : typeof v === 'number' ? { doubleValue: v } : typeof v === 'boolean' ? { booleanValue: v } : Array.isArray(v) ? { arrayValue: { values: v.map(fsVal) } } : { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsVal(x)])) } };
+const LISTS = ['businesses', 'clients', 'services', 'projects', 'documents', 'expenses', 'transactions', 'activityLogs', 'aiConversations', 'aiMemories'];
+const isWorkspace = path => /^consultants\/[^/]+$/.test(path);
+async function listRecords(path, list) {
+  const r = await (await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${path}/${list}?pageSize=1000`, { headers: { Authorization: 'Bearer owner' } })).json();
+  return r.documents || [];
+}
 async function put(path, data) {
+  // Seeding a workspace replaces it whole, records included (written in the old single-document form).
+  if (isWorkspace(path)) for (const list of LISTS) for (const d of await listRecords(path, list)) await fetch(`${FS}/v1/${d.name}`, { method: 'DELETE', headers: { Authorization: 'Bearer owner' } });
   const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${path}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer owner' }, body: JSON.stringify({ fields: fsVal(data).mapValue.fields }) });
   if (!r.ok) throw new Error(`seed ${path}: ${await r.text()}`);
 }
 async function get(path) {
   const r = await (await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${path}`, { headers: { Authorization: 'Bearer owner' } })).json();
   const un = f => 'stringValue' in f ? f.stringValue : 'doubleValue' in f ? f.doubleValue : 'integerValue' in f ? Number(f.integerValue) : 'booleanValue' in f ? f.booleanValue : 'nullValue' in f ? null : 'arrayValue' in f ? (f.arrayValue.values || []).map(un) : 'mapValue' in f ? Object.fromEntries(Object.entries(f.mapValue.fields || {}).map(([k, x]) => [k, un(x)])) : undefined;
-  return r.fields ? un({ mapValue: { fields: r.fields } }) : null;
+  const head = r.fields ? un({ mapValue: { fields: r.fields } }) : null;
+  if (!head || !isWorkspace(path) || get.raw) return head;
+  // A workspace read back in its classic shape: head plus records, in the stored order.
+  const { recordOrder = {}, ...ws } = head;
+  for (const list of LISTS) {
+    const recs = (await listRecords(path, list)).map(d => un({ mapValue: { fields: d.fields || {} } }));
+    if (!recs.length) { ws[list] = ws[list] || []; continue; }
+    const byId = new Map([...(ws[list] || []).map(x => [x.id, x]), ...recs.map(x => [x.id, x])]);
+    const ids = [...new Set([...(recordOrder[list] || []), ...byId.keys()])].filter(id => byId.has(id));
+    ws[list] = ids.map(id => byId.get(id));
+  }
+  return ws;
 }
+const getHead = async path => { get.raw = true; try { return await get(path); } finally { get.raw = false; } };
 
 // Fake SendGrid: records every email the server sends.
 const emails = [];
@@ -181,6 +201,14 @@ try {
     assert.equal((await fetch(`${API}/api/public/documents/${TOK_QUOTE}/accept`, { method: 'POST' })).status, 200);
     assert.equal((await get(`documents/${A.uid}_d3`)).status, 'accepted');
     assert.equal((await get(`consultants/${A.uid}`)).documents.find(d => d.id === 'd3').status, 'accepted');
+  });
+  await check('a server write moves the old documents list into records', async () => {
+    const head = await getHead(`consultants/${A.uid}`);
+    assert.equal(head.documents, undefined, 'documents array left in the workspace head');
+    assert.deepEqual(head.recordOrder.documents, ['d1', 'd2', 'd3']);
+    assert.equal((await listRecords(`consultants/${A.uid}`, 'documents')).length, 3);
+    assert.ok(Array.isArray(head.clients), 'untouched lists stay where they were until written');
+    assert.equal((await get(`consultants/${A.uid}`)).clients[0].id, 'c1');
   });
   await check('accepting twice is refused', async () => { assert.equal((await fetch(`${API}/api/public/documents/${TOK_QUOTE}/accept`, { method: 'POST' })).status, 409); });
   await check('cannot accept an invoice', async () => { assert.equal((await fetch(`${API}/api/public/documents/${TOK_INV}/accept`, { method: 'POST' })).status, 409); });

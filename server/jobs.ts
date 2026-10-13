@@ -7,7 +7,7 @@ import { appUrl, render } from "./notify";
 import { sendViaSendGrid } from "../src/lib/transactionalEmailServer";
 import { runDueRetainers, todayIn } from "../src/lib/retainers";
 import { planReminders, reminderMessage, type PlannedReminder } from "../src/lib/reminders";
-import { toData } from "./workspace";
+import { toData, loadWorkspace, writeWorkspace } from "./workspace";
 import { buildFlatDocumentRow, flatDocumentId, sanitizeForFirestore } from "../src/lib/flatDocuments";
 import type { CRMData, CRMDocument } from "../src/types";
 
@@ -36,11 +36,10 @@ function needsRun(raw: any): boolean {
 /** Creates the retainer invoices due today in one transaction (workspace + flat copies). */
 async function generateRetainerInvoices(uid: string, today: string) {
   const db = getAdminDb();
-  const wsRef = db.collection("consultants").doc(uid);
   return db.runTransaction(async tx => {
-    const snap = await tx.get(wsRef);
-    if (!snap.exists) return { raw: null as any, created: [] as CRMDocument[] };
-    const raw = snap.data() as any;
+    const ws = await loadWorkspace(uid, tx);
+    if (!ws) return { raw: null as any, created: [] as CRMDocument[] };
+    const raw = ws.raw;
     const { data: next, created } = runDueRetainers(toData(raw), today, { onlyAutoGenerate: true });
     if (created.length === 0) return { raw, created };
 
@@ -53,7 +52,7 @@ async function generateRetainerInvoices(uid: string, today: string) {
       return { ...r, lastGeneratedDate: updated.lastGeneratedDate, generatedDocIds: updated.generatedDocIds, updatedAt: now };
     });
     const documents = [...created.map(d => ({ ...d, updatedAt: now })), ...(raw.documents || [])];
-    tx.update(wsRef, sanitizeForFirestore({ documents, recurringInvoices, updatedAt: now }));
+    writeWorkspace(tx, ws, { documents, recurringInvoices, updatedAt: now });
 
     const consultantEmail = raw.consultantEmail || raw.userProfile?.email || "";
     for (const d of created) {
@@ -69,14 +68,13 @@ async function generateRetainerInvoices(uid: string, today: string) {
 async function patchDocuments(uid: string, patches: Map<string, (doc: any) => Record<string, any>>) {
   if (patches.size === 0) return;
   const db = getAdminDb();
-  const wsRef = db.collection("consultants").doc(uid);
   await db.runTransaction(async tx => {
     const flatRefs = [...patches.keys()].map(id => db.collection("documents").doc(flatDocumentId(uid, id)));
-    const [snap, ...flatSnaps] = await Promise.all([tx.get(wsRef), ...flatRefs.map(ref => tx.get(ref))]);
-    if (!snap.exists) return;
+    const [ws, ...flatSnaps] = await Promise.all([loadWorkspace(uid, tx), ...flatRefs.map(ref => tx.get(ref))]);
+    if (!ws) return;
     const flatExists = new Set(flatSnaps.filter(f => f.exists).map(f => f.id));
     const now = new Date().toISOString();
-    const raw = snap.data() as any;
+    const raw = ws.raw;
     const flatChanges: [string, Record<string, any>][] = [];
     const documents = (raw.documents || []).map((d: any) => {
       const patch = d && patches.get(d.id);
@@ -85,7 +83,7 @@ async function patchDocuments(uid: string, patches: Map<string, (doc: any) => Re
       flatChanges.push([d.id, changes]);
       return { ...d, ...changes };
     });
-    tx.update(wsRef, sanitizeForFirestore({ documents, updatedAt: now }));
+    writeWorkspace(tx, ws, { documents, updatedAt: now });
     for (const [id, changes] of flatChanges) {
       // Only update online copies that exist; the app writes the full copy on its next save.
       const ref = db.collection("documents").doc(flatDocumentId(uid, id));

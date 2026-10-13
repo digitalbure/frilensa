@@ -1,11 +1,14 @@
+import { FieldValue, type Transaction, type DocumentReference } from "firebase-admin/firestore";
 import { getAdminDb } from "./security";
 import { normalizeDocuments } from "../src/lib/normalizeDocuments";
 import { buildFlatDocumentRow, flatDocumentId, sanitizeForFirestore } from "../src/lib/flatDocuments";
+import { SPLIT_LISTS, ORDER_FIELD, isSplitList, assembleWorkspace, planListWrite, stableJson, type SplitList } from "../src/lib/workspaceRecords";
 import type { CRMData, CRMDocument } from "../src/types";
 
-// Server-side access to a consultant's workspace (consultants/{uid}), shared by the daily job,
-// the public API and the MCP server. Writes go through a transaction and keep the flat
-// 'documents' copies (client portal and "view online" links) in step.
+// Server-side access to a consultant's workspace, shared by the daily job, the public API, the
+// MCP server, the portal, bookings and Pay now. A workspace is a head document (consultants/{uid})
+// plus one record per item in subcollections (see src/lib/workspaceRecords.ts). Writes go through
+// a transaction and keep the flat 'documents' copies (client portal and "view online" links) in step.
 
 /** A workspace as stored, with missing lists defaulted and documents repaired. */
 export function toData(raw: any): CRMData {
@@ -25,11 +28,55 @@ export function toData(raw: any): CRMData {
   } as CRMData);
 }
 
+/** A workspace read inside a transaction, ready for writeWorkspace. */
+export interface LoadedWorkspace {
+  ref: DocumentReference;
+  head: Record<string, any>;
+  /** The workspace in its classic shape ({ documents: [...], clients: [...], ... }). */
+  raw: any;
+  stored: Record<SplitList, Map<string, string>>;
+}
+
+/** Reads a workspace (head and records), inside `tx` when given. Null if it doesn't exist. */
+export async function loadWorkspace(uid: string, tx?: Transaction): Promise<LoadedWorkspace | null> {
+  const ref = getAdminDb().collection("consultants").doc(uid);
+  const read = (q: any): Promise<any> => tx ? tx.get(q) : q.get();
+  const [headSnap, ...listSnaps] = await Promise.all([read(ref), ...SPLIT_LISTS.map(l => read(ref.collection(l)))]);
+  if (!headSnap.exists) return null;
+  const head = headSnap.data() as Record<string, any>;
+  const records: Partial<Record<SplitList, any[]>> = {};
+  const stored = {} as Record<SplitList, Map<string, string>>;
+  SPLIT_LISTS.forEach((list, i) => {
+    const docs = listSnaps[i].docs as any[];
+    records[list] = docs.map(d => d.data());
+    stored[list] = new Map(docs.map(d => [d.id, stableJson(d.data())]));
+  });
+  return { ref, head, raw: assembleWorkspace(head, records), stored };
+}
+
+/**
+ * Writes top-level workspace fields in `tx`. Split lists are given whole (as the classic arrays)
+ * and only the items that changed are written; other fields go to the head.
+ */
+export function writeWorkspace(tx: Transaction, ws: LoadedWorkspace, set: Record<string, unknown>) {
+  const headPatch: Record<string, any> = {};
+  const removals: Record<string, any> = {};
+  for (const [key, value] of Object.entries(set)) {
+    if (!isSplitList(key)) { headPatch[key] = value; continue; }
+    const plan = planListWrite(Array.isArray(value) ? value : [], ws.stored[key], "all",
+      id => console.warn(`[workspace] ${key} item ${id} is too large to store; skipped.`));
+    plan.sets.forEach(w => tx.set(ws.ref.collection(key).doc(w.docId), w.data));
+    plan.deletes.forEach(docId => tx.delete(ws.ref.collection(key).doc(docId)));
+    headPatch[`${ORDER_FIELD}.${key}`] = plan.order;
+    // The list now lives in records; drop the copy older builds kept in the head.
+    if (Array.isArray(ws.head[key])) removals[key] = FieldValue.delete();
+  }
+  tx.update(ws.ref, { ...sanitizeForFirestore(headPatch), ...removals });
+}
+
 export async function readWorkspace(uid: string): Promise<{ raw: any; data: CRMData } | null> {
-  const snap = await getAdminDb().collection("consultants").doc(uid).get();
-  if (!snap.exists) return null;
-  const raw = snap.data() as any;
-  return { raw, data: toData(raw) };
+  const ws = await loadWorkspace(uid);
+  return ws ? { raw: ws.raw, data: toData(ws.raw) } : null;
 }
 
 export interface WorkspaceChange<T> {
@@ -46,15 +93,14 @@ export interface WorkspaceChange<T> {
  */
 export async function updateWorkspace<T>(uid: string, change: (raw: any, data: CRMData) => WorkspaceChange<T>): Promise<T> {
   const db = getAdminDb();
-  const wsRef = db.collection("consultants").doc(uid);
   return db.runTransaction(async tx => {
-    const snap = await tx.get(wsRef);
-    if (!snap.exists) throw new WorkspaceMissing();
-    const raw = snap.data() as any;
+    const ws = await loadWorkspace(uid, tx);
+    if (!ws) throw new WorkspaceMissing();
+    const raw = ws.raw;
     const data = toData(raw);
     const { set, newDocuments = [], result } = change(raw, data);
     const now = new Date().toISOString();
-    tx.update(wsRef, sanitizeForFirestore({ ...set, updatedAt: now }));
+    writeWorkspace(tx, ws, { ...set, updatedAt: now });
     const consultantEmail = raw.consultantEmail || data.userProfile.email || "";
     for (const d of newDocuments) {
       const row = buildFlatDocumentRow(uid, consultantEmail, d,

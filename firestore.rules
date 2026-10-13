@@ -1,7 +1,8 @@
 rules_version = '2';
 
 // Access model
-// - A consultant's workspace lives at /consultants/{uid} and only that signed-in user can touch it.
+// - A consultant's workspace lives at /consultants/{uid} (head) plus one record per item in
+//   /consultants/{uid}/{list}/{id} for the lists that grow. Only that signed-in user can touch them.
 // - Older builds also wrote copies keyed by email (/consultants/{email}, /consultants_by_email/{email}).
 //   Those are readable (never writable) by the owner of that verified email so the app can import them once.
 // - Flat /documents and /support_messages rows carry consultantId and are scoped to it.
@@ -31,6 +32,14 @@ service cloud.firestore {
     match /consultants/{docId} {
       allow read: if ownsId(docId);
       allow write: if isUid(docId);
+
+      // Keep in step with SPLIT_LISTS in src/lib/workspaceRecords.ts.
+      match /{list}/{recordId} {
+        allow read, write: if isUid(docId) && list in [
+          'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
+          'transactions', 'activityLogs', 'aiConversations', 'aiMemories'
+        ];
+      }
     }
 
     match /consultants_by_email/{email} {

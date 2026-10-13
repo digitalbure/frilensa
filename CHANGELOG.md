@@ -18,6 +18,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-10-13
+
+### Changed
+- **Room to grow.** Your workspace used to be saved as one database record, and Firestore limits a record to 1 MB, so a busy business with years of invoices, expenses and bank lines would eventually be unable to save. Each client, document, project, expense, bank line, business and service is now saved as its own record, so there's no practical limit.
+  - Nothing to do: your workspace moves over by itself the first time you save after this update. Until then it opens as before.
+  - Saving is quicker on big workspaces: only what changed is sent.
+  - Safer when you use more than one device: a device only deletes items it knew about, so a booking or invoice that arrived from elsewhere is never removed by another device that hadn't seen it yet.
+- **For the operator:** this release changes `firestore.rules`. `scripts/deploy.sh` publishes them as its last step, as usual. Until they're published, the app keeps saving the old way.
+
+### Fixed
+- Business details added to online invoices (registered owner and registration number) no longer leak back into documents in the app.
+
 ## [3.16.2] - 2026-10-12
 
 ### Removed

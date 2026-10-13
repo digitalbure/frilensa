@@ -14,8 +14,9 @@ import {
   onSnapshot
 } from './firebase';
 import { CRMData, CRMDocument, SupportMessage } from '../types';
-import { sanitizeForFirestore, flatDocumentId, buildFlatDocumentRow } from './flatDocuments';
+import { sanitizeForFirestore, flatDocumentId, buildFlatDocumentRow, FLAT_ROW_META_KEYS } from './flatDocuments';
 import { documentsSaved } from './documentEvents';
+import { SPLIT_LISTS, ORDER_FIELD, assembleWorkspace, planListWrite, recordIds, stableJson, type SplitList } from './workspaceRecords';
 
 export { sanitizeForFirestore, flatDocumentId };
 
@@ -203,16 +204,11 @@ function currentIdentity(): { uid: string; email: string } | null {
   return { uid: user.uid, email: (user.email || '').trim().toLowerCase() };
 }
 
-const FLAT_DOC_META_KEYS = [
-  'consultantId', 'consultantEmail', 'clientEmail', 'clientName', 'businessName',
-  'businessColorTheme', 'businessLogoType', 'businessLogoSymbol', 'businessLogoText',
-  'businessLogoUrl', 'businessBrandSlogan', 'businessAddress', 'businessEmail',
-  'businessPhone', 'businessTin', 'businessBankDetails', 'businessMPaisaId', 'businessMyCashId'
-];
+
 
 function stripFlatDocMeta(raw: Record<string, any>): CRMDocument {
   const copy = { ...raw };
-  FLAT_DOC_META_KEYS.forEach(k => delete copy[k]);
+  FLAT_ROW_META_KEYS.forEach(k => delete copy[k]);
   return copy as CRMDocument;
 }
 
@@ -247,19 +243,54 @@ function toCRMData(raw: any): CRMData {
   } as CRMData;
 }
 
+// What this device knows is stored for the signed-in user: record doc id → stableJson per list,
+// the record ids its own copy held at the last load or save (only those may be deleted when they
+// go missing locally), and the flat 'documents' rows it last wrote.
+interface SyncState {
+  uid: string;
+  stored: Record<SplitList, Map<string, string>>;
+  localIds: Record<SplitList, Set<string>>;
+  flat: Map<string, string>;
+}
+let sync: SyncState | null = null;
+
+function syncFor(uid: string): SyncState {
+  if (!sync || sync.uid !== uid) {
+    const empty = <T,>(make: () => T) => Object.fromEntries(SPLIT_LISTS.map(l => [l, make()])) as Record<SplitList, T>;
+    sync = { uid, stored: empty(() => new Map()), localIds: empty(() => new Set()), flat: new Map() };
+  }
+  return sync;
+}
+
+function rememberStored(state: SyncState, list: SplitList, docs: { id: string; data: () => any }[]) {
+  state.stored[list] = new Map(docs.map(d => [d.id, stableJson(d.data())]));
+}
+
+/** Firestore's commit cap is 500 writes; stay well under it. */
+async function commitInBatches(ops: ((batch: ReturnType<typeof writeBatch>) => void)[], after?: (from: number, to: number) => void) {
+  for (let i = 0; i < ops.length; i += 400) {
+    const batch = writeBatch(db);
+    ops.slice(i, i + 400).forEach(op => op(batch));
+    await batch.commit();
+    after?.(i, Math.min(i + 400, ops.length));
+  }
+}
+
 /**
- * Saves the signed-in consultant's workspace to /consultants/{uid} and mirrors each
- * document into the flat 'documents' collection (used by the client portal).
- * Throws on failure so callers can surface "not saved" to the user.
+ * Saves the signed-in consultant's workspace: the items that changed go to their own records
+ * (consultants/{uid}/{list}/{id}), then the head document (consultants/{uid}) is replaced, which
+ * also drops the arrays older builds kept there. Documents are mirrored into the flat 'documents'
+ * collection (used by the client portal). Throws on failure so callers can surface "not saved".
  */
 export async function saveConsultantData(data: CRMData) {
   const identity = currentIdentity();
   if (!identity || !data) return;
   const { uid, email } = identity;
+  const state = syncFor(uid);
 
   saveLocalBackup(data);
 
-  // Keep the workspace document under Firestore's 1MB limit: large binaries live elsewhere.
+  // Large binaries live elsewhere (receipt files, the flat copy's PDF).
   const expenses = (data.expenses || []).map(exp => {
     if (exp?.receiptImage && typeof exp.receiptImage === 'string' && exp.receiptImage.length > 80_000) {
       return { ...exp, receiptImage: undefined, hasAttachedReceipt: true };
@@ -273,8 +304,7 @@ export async function saveConsultantData(data: CRMData) {
     return copy;
   });
 
-  const payload: Record<string, any> = sanitizeForFirestore({
-    userProfile: data.userProfile || {},
+  const lists: Record<SplitList, any[]> = {
     businesses: data.businesses || [],
     clients: data.clients || [],
     services: data.services || [],
@@ -282,6 +312,42 @@ export async function saveConsultantData(data: CRMData) {
     documents: embeddedDocuments,
     expenses,
     transactions: data.transactions || [],
+    activityLogs: (data.activityLogs || []).slice(0, 500),
+    aiConversations: data.aiConversations || [],
+    aiMemories: data.aiMemories || []
+  };
+
+  const consultantRef = doc(db, 'consultants', uid);
+  const recordOps: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
+  const applied: (() => void)[] = [];
+  const order: Record<string, string[]> = {};
+  for (const list of SPLIT_LISTS) {
+    const plan = planListWrite(lists[list], state.stored[list], state.localIds[list],
+      id => console.warn(`${list} item ${id} is too large to save to the cloud; it stays on this device.`));
+    order[list] = plan.order;
+    plan.sets.forEach(w => {
+      recordOps.push(batch => batch.set(doc(db, 'consultants', uid, list, w.docId), w.data));
+      applied.push(() => state.stored[list].set(w.docId, w.json));
+    });
+    plan.deletes.forEach(docId => {
+      recordOps.push(batch => batch.delete(doc(db, 'consultants', uid, list, docId)));
+      applied.push(() => state.stored[list].delete(docId));
+    });
+  }
+  // Records first: if the head write then fails, reads still combine both forms correctly.
+  let recordsSaved = true;
+  try {
+    await commitInBatches(recordOps, (from, to) => applied.slice(from, to).forEach(fn => fn()));
+  } catch (err: any) {
+    // Rules that don't allow records yet (the app went live a moment before its rules, or the rules
+    // were rolled back): save the old single-document way until they do.
+    if (err?.code !== 'permission-denied') throw err;
+    console.warn('Saving the workspace as one document: the database rules do not allow item records yet.');
+    recordsSaved = false;
+  }
+
+  const head: Record<string, any> = sanitizeForFirestore({
+    userProfile: data.userProfile || {},
     recurringInvoices: data.recurringInvoices || [],
     rateRules: data.rateRules || [],
     platformTaxes: data.platformTaxes || [],
@@ -293,45 +359,35 @@ export async function saveConsultantData(data: CRMData) {
     wallet: data.wallet || null,
     directoryBusinesses: data.directoryBusinesses || [],
     directoryBookings: data.directoryBookings || [],
-    aiConversations: data.aiConversations || [],
-    aiMemories: data.aiMemories || [],
-    activityLogs: (data.activityLogs || []).slice(0, 500),
     clientWallets: data.clientWallets || null,
+    ...(recordsSaved ? { [ORDER_FIELD]: order } : lists),
     activeBusinessId: data.activeBusinessId || '',
     onboardingCompleted: data.onboardingCompleted ?? true,
     updatedAt: new Date().toISOString(),
     consultantEmail: email
   });
-
-  const consultantRef = doc(db, 'consultants', uid);
-  try {
-    await setDoc(consultantRef, payload);
-  } catch (writeErr: any) {
-    const isSizeError = writeErr?.message?.includes('exceeds the maximum allowed size') ||
-      writeErr?.message?.includes('exceeds maximum allowed size') ||
-      writeErr?.message?.includes('1,048,576');
-    if (!isSizeError) throw writeErr;
-    console.warn('Workspace exceeds Firestore 1MB limit. Saving without receipt images and PDFs.');
-    await setDoc(consultantRef, {
-      ...payload,
-      expenses: (payload.expenses || []).map((e: any) => { const { receiptImage, ...rest } = e; return rest; }),
-      documents: (payload.documents || []).map((d: any) => { const { pdfDataUrl, signature, ...rest } = d; return rest; })
-    });
-  }
+  await setDoc(consultantRef, head);
+  if (recordsSaved) SPLIT_LISTS.forEach(list => { state.localIds[list] = recordIds(lists[list]); });
 
   documentsSaved(documents);
 
   // Mirror documents to the flat collection (ids are namespaced by owner so tenants can't collide)
   // and remove ones that were deleted locally, including un-namespaced copies from older builds.
+  // Only rows that changed since this device last wrote them are sent.
   const keepIds = new Set(documents.filter(d => d?.id).map(d => flatDocumentId(uid, d.id)));
   const businessesById = new Map((data.businesses || []).map(b => [b.id, b]));
   const clientsById = new Map((data.clients || []).map(c => [c.id, c]));
   const ops: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
+  const flatApplied: (() => void)[] = [];
 
   documents.forEach(crmDoc => {
     if (!crmDoc?.id) return;
+    const flatId = flatDocumentId(uid, crmDoc.id);
     const row = buildFlatDocumentRow(uid, email, crmDoc, businessesById.get(crmDoc.businessId), clientsById.get(crmDoc.clientId));
-    ops.push(batch => batch.set(doc(db, 'documents', flatDocumentId(uid, crmDoc.id)), row));
+    const json = stableJson(row);
+    if (state.flat.get(flatId) === json) return;
+    ops.push(batch => batch.set(doc(db, 'documents', flatId), row));
+    flatApplied.push(() => state.flat.set(flatId, json));
   });
 
   try {
@@ -346,18 +402,25 @@ export async function saveConsultantData(data: CRMData) {
       // Anything else is left untouched.
       if (isNamespaced ? !liveDocIds.has(docId) : liveDocIds.has(docId)) {
         ops.push(batch => batch.delete(snap.ref));
+        flatApplied.push(() => state.flat.delete(snap.id));
       }
     });
   } catch (err) {
     console.warn('Could not list flat documents for cleanup:', err);
   }
 
-  // Firestore batches are capped at 500 writes.
-  for (let i = 0; i < ops.length; i += 400) {
-    const batch = writeBatch(db);
-    ops.slice(i, i + 400).forEach(op => op(batch));
-    await batch.commit();
-  }
+  await commitInBatches(ops, (from, to) => flatApplied.slice(from, to).forEach(fn => fn()));
+}
+
+/** Reads every split list's records for a workspace. */
+async function loadRecords(uid: string, state: SyncState) {
+  const snaps = await Promise.all(SPLIT_LISTS.map(list => getDocs(collection(db, 'consultants', uid, list))));
+  const records: Partial<Record<SplitList, any[]>> = {};
+  SPLIT_LISTS.forEach((list, i) => {
+    records[list] = snaps[i].docs.map(d => d.data());
+    rememberStored(state, list, snaps[i].docs);
+  });
+  return records;
 }
 
 /**
@@ -373,9 +436,10 @@ export async function loadConsultantData(): Promise<{ data: CRMData; migratedFro
   let raw: any = null;
   let migratedFromLegacy = false;
 
+  const state = syncFor(uid);
   const snap = await getDoc(doc(db, 'consultants', uid));
   if (snap.exists()) {
-    raw = snap.data();
+    raw = assembleWorkspace(snap.data(), await loadRecords(uid, state));
   } else if (email && auth.currentUser?.emailVerified) {
     for (const path of ['consultants', 'consultants_by_email']) {
       try {
@@ -393,6 +457,7 @@ export async function loadConsultantData(): Promise<{ data: CRMData; migratedFro
 
   if (!raw) return null;
   const data = toCRMData(raw);
+  SPLIT_LISTS.forEach(list => { state.localIds[list] = recordIds((data as any)[list]); });
 
   // The workspace document is authoritative for which documents exist; the flat copies carry
   // full PDFs and any status changes made from the client portal.
@@ -424,18 +489,37 @@ export async function loadConsultantData(): Promise<{ data: CRMData; migratedFro
 }
 
 /**
- * Real-time listener for the signed-in consultant's workspace document.
+ * Real-time listener for the signed-in consultant's workspace (head document and records).
+ * Calls back once everything has loaded and after each change made elsewhere.
  */
 export function subscribeToConsultantData(onUpdate: (data: CRMData) => void) {
   const identity = currentIdentity();
   if (!identity) return () => {};
-  return onSnapshot(
-    doc(db, 'consultants', identity.uid),
-    snap => {
-      if (snap.exists() && !snap.metadata.hasPendingWrites) onUpdate(toCRMData(snap.data()));
-    },
-    error => console.warn('Workspace listener error:', error?.message || error)
-  );
+  const { uid } = identity;
+  const state = syncFor(uid);
+  let head: Record<string, any> | null = null;
+  let headReady = false;
+  const records: Partial<Record<SplitList, any[]>> = {};
+  const emit = () => {
+    if (!headReady || !head || SPLIT_LISTS.some(l => !records[l])) return;
+    onUpdate(toCRMData(assembleWorkspace(head, records)));
+  };
+  const onError = (error: any) => console.warn('Workspace listener error:', error?.message || error);
+  const unsubs = [
+    onSnapshot(doc(db, 'consultants', uid), snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      head = snap.exists() ? snap.data() : null;
+      headReady = true;
+      emit();
+    }, onError),
+    ...SPLIT_LISTS.map(list => onSnapshot(collection(db, 'consultants', uid, list), snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      records[list] = snap.docs.map(d => d.data());
+      rememberStored(state, list, snap.docs);
+      emit();
+    }, onError))
+  ];
+  return () => unsubs.forEach(u => u());
 }
 
 /**

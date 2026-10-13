@@ -10,6 +10,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   const db = ctx.firestore();
   await setDoc(doc(db, 'consultants/u1'), { userProfile: { email: 'one@x.co' } });
   await setDoc(doc(db, 'consultants/one@x.co'), { legacy: true });
+  await setDoc(doc(db, 'consultants/u1/documents/inv1'), { id: 'inv1', total: 10 });
   await setDoc(doc(db, 'documents/d1'), { consultantId: 'u1', clientId: 'c1' });
   await setDoc(doc(db, 'documents/legacy1'), { consultantId: 'one@x.co', clientId: 'c1' });
   await setDoc(doc(db, 'clients_auth/client@x.co'), { passcode: '1234' });
@@ -37,6 +38,13 @@ await check('unverified cannot read legacy email workspace', assertFails(getDoc(
 await check('nobody writes legacy email workspace', assertFails(setDoc(doc(u1, 'consultants/one@x.co'), { a: 1 })));
 await check('other user cannot read legacy email workspace', assertFails(getDoc(doc(u2, 'consultants/one@x.co'))));
 await check('cannot list all workspaces', assertFails(getDocs(collection(u1, 'consultants'))));
+await check('owner reads own records', assertSucceeds(getDocs(collection(u1, 'consultants/u1/documents'))));
+await check('owner writes own record', assertSucceeds(setDoc(doc(u1, 'consultants/u1/clients/c9'), { id: 'c9' })));
+await check('other user cannot read records', assertFails(getDocs(collection(u2, 'consultants/u1/documents'))));
+await check('other user cannot write a record', assertFails(setDoc(doc(u2, 'consultants/u1/documents/inv2'), { id: 'inv2' })));
+await check('anon cannot read a record', assertFails(getDoc(doc(anon, 'consultants/u1/documents/inv1'))));
+await check('owner cannot write an unknown list', assertFails(setDoc(doc(u1, 'consultants/u1/secrets/x'), { a: 1 })));
+await check('verified email owner cannot write records under the email doc', assertFails(setDoc(doc(u1, 'consultants/one@x.co/documents/x'), { id: 'x' })));
 await check('owner creates own document', assertSucceeds(setDoc(doc(u1, 'documents/d2'), { consultantId: 'u1' })));
 await check('cannot create document for someone else', assertFails(setDoc(doc(u2, 'documents/d3'), { consultantId: 'u1' })));
 await check('other user cannot read document', assertFails(getDoc(doc(u2, 'documents/d1'))));
