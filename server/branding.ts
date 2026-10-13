@@ -13,6 +13,11 @@ import { DEFAULT_BRANDING, cleanBranding, type AppBranding } from "../src/lib/br
 const COLLECTION = "platform";
 const BRANDING_DOC = "branding";
 const LOGO_DOC = "branding_logo";
+// Square 512×512 PNG app icons made from the logo in the browser: "icon" is the logo on a clear
+// background, "maskable" is the logo inside Android's safe zone on the primary colour (also used for iOS).
+const ICON_DOCS = { icon: "branding_icon", maskable: "branding_maskable" } as const;
+type IconKind = keyof typeof ICON_DOCS;
+const ICON_SIZE = 512;
 const LOGO_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 const MAX_LOGO_BYTES = 400 * 1024;
 
@@ -28,7 +33,9 @@ export async function getBranding(): Promise<AppBranding> {
   const value: AppBranding = {
     ...DEFAULT_BRANDING,
     ...cleanBranding(stored),
-    logoUrl: stored.logoVersion ? `/api/public/branding/logo?v=${stored.logoVersion}` : ""
+    logoUrl: stored.logoVersion ? `/api/public/branding/logo?v=${stored.logoVersion}` : "",
+    iconUrl: stored.logoVersion && stored.iconVersion ? `/api/public/branding/icon?v=${stored.iconVersion}` : "",
+    maskableUrl: stored.logoVersion && stored.maskableVersion ? `/api/public/branding/maskable?v=${stored.maskableVersion}` : ""
   };
   (value as any).logoMime = stored.logoMime || "";
   if (value.logoType === "image" && !value.logoUrl) value.logoType = "default";
@@ -44,7 +51,58 @@ function sniff(buf: Buffer): string | null {
   return null;
 }
 
-/** GET /api/public/branding and GET /api/public/branding/logo: anyone, IP rate limited. */
+/** Width and height from a PNG's header. */
+function pngSize(buf: Buffer): { w: number; h: number } | null {
+  if (sniff(buf) !== "image/png" || buf.length < 24) return null;
+  return { w: buf.readUInt32BE(16), h: buf.readUInt32BE(20) };
+}
+
+/** Decodes and checks an uploaded image. Icons must be 512×512 PNGs. */
+function parseImage(dataUrl: unknown, icon: boolean): { buf: Buffer; mime: string } | string {
+  const m = String(dataUrl || "").match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
+  if (!m) return icon ? "App icons must be PNG images." : "Upload a PNG, JPG or WebP image.";
+  const buf = Buffer.from(m[2], "base64");
+  if (buf.length > MAX_LOGO_BYTES) return "That image is too large. Use one under 400 KB.";
+  const mime = sniff(buf);
+  if (!mime || mime !== m[1]) return "That file isn't a valid PNG, JPG or WebP image.";
+  if (icon) {
+    const size = pngSize(buf);
+    if (!size || size.w !== ICON_SIZE || size.h !== ICON_SIZE) return `App icons must be ${ICON_SIZE}×${ICON_SIZE} PNG images.`;
+  }
+  return { buf, mime };
+}
+
+const version = (buf: Buffer) => crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16);
+
+/** Saves the app icons sent with a logo upload (or regenerated after a colour change). */
+async function saveIcons(body: any): Promise<string | Record<string, string>> {
+  const versions: Record<string, string> = {};
+  for (const kind of Object.keys(ICON_DOCS) as IconKind[]) {
+    const raw = body?.[`${kind}DataUrl`];
+    if (!raw) continue;
+    const img = parseImage(raw, true);
+    if (typeof img === "string") return img;
+    const v = version(img.buf);
+    await getAdminDb().collection(COLLECTION).doc(ICON_DOCS[kind]).set({ data: img.buf.toString("base64"), mime: img.mime, version: v, bytes: img.buf.length, updatedAt: new Date().toISOString() });
+    versions[`${kind}Version`] = v;
+  }
+  return versions;
+}
+
+async function sendStored(docId: string, req: Request, res: Response) {
+  const snap = await getAdminDb().collection(COLLECTION).doc(docId).get();
+  const file = snap.exists ? (snap.data() as any) : null;
+  if (!file?.data || !LOGO_TYPES[file.mime]) return false;
+  res.setHeader("Content-Type", file.mime);
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+  // Versioned links never change, so they can be cached for good.
+  res.setHeader("Cache-Control", req.query.v === file.version ? "public, max-age=31536000, immutable" : "public, max-age=3600");
+  res.send(Buffer.from(file.data, "base64"));
+  return true;
+}
+
+/** GET /api/public/branding and its images (logo, icon, maskable, app-icon): anyone, IP rate limited. */
 export function createPublicBrandingRouter() {
   const router = express.Router();
   router.use(rateLimit({ name: "public-branding", max: 240, windowMs: 60_000, key: req => req.ip || "anon" }));
@@ -52,16 +110,14 @@ export function createPublicBrandingRouter() {
     res.setHeader("Cache-Control", "public, max-age=60");
     res.json({ branding: await getBranding() });
   }));
-  router.get("/logo", wrap(async (req, res) => {
-    const snap = await getAdminDb().collection(COLLECTION).doc(LOGO_DOC).get();
-    const logo = snap.exists ? (snap.data() as any) : null;
-    if (!logo?.data || !LOGO_TYPES[logo.mime]) return res.status(404).end();
-    res.setHeader("Content-Type", logo.mime);
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
-    // Versioned links never change, so they can be cached for good.
-    res.setHeader("Cache-Control", req.query.v === logo.version ? "public, max-age=31536000, immutable" : "public, max-age=300");
-    res.send(Buffer.from(logo.data, "base64"));
+  router.get("/logo", wrap(async (req, res) => { if (!(await sendStored(LOGO_DOC, req, res))) res.status(404).end(); }));
+  router.get("/icon", wrap(async (req, res) => { if (!(await sendStored(ICON_DOCS.icon, req, res))) res.status(404).end(); }));
+  router.get("/maskable", wrap(async (req, res) => { if (!(await sendStored(ICON_DOCS.maskable, req, res))) res.status(404).end(); }));
+  // A fixed address for the current app icon (notifications), falling back to the standard icon.
+  router.get("/app-icon", wrap(async (req, res) => {
+    const b = await getBranding();
+    if (b.logoType === "image" && b.iconUrl && (await sendStored(ICON_DOCS.icon, req, res))) return;
+    res.redirect(302, "/pwa-icon.svg");
   }));
   return router;
 }
@@ -85,26 +141,35 @@ export function createAdminBrandingRouter() {
 
   // The browser sends a PNG/JPEG/WebP data URL it has already resized (SVGs are converted to PNG first).
   router.post("/logo", wrap(async (req, res) => {
-    const m = String(req.body?.dataUrl || "").match(/^data:(image\/(?:png|jpeg|webp));base64,([A-Za-z0-9+/=]+)$/);
-    if (!m) return res.status(400).json({ error: "Upload a PNG, JPG or WebP image." });
-    const buf = Buffer.from(m[2], "base64");
-    if (buf.length > MAX_LOGO_BYTES) return res.status(413).json({ error: "That image is too large. Use one under 400 KB." });
-    const mime = sniff(buf);
-    if (!mime || mime !== m[1]) return res.status(400).json({ error: "That file isn't a valid PNG, JPG or WebP image." });
-    const version = crypto.createHash("sha256").update(buf).digest("hex").slice(0, 16);
+    const img = parseImage(req.body?.dataUrl, false);
+    if (typeof img === "string") return res.status(img.includes("too large") ? 413 : 400).json({ error: img });
+    const icons = await saveIcons(req.body);
+    if (typeof icons === "string") return res.status(400).json({ error: icons });
+    const v = version(img.buf);
     const db = getAdminDb();
-    await db.collection(COLLECTION).doc(LOGO_DOC).set({ data: buf.toString("base64"), mime, version, bytes: buf.length, updatedAt: new Date().toISOString() });
-    await db.collection(COLLECTION).doc(BRANDING_DOC).set({ logoVersion: version, logoMime: mime, logoType: "image", updatedAt: new Date().toISOString(), updatedBy: req.user?.email || "" }, { merge: true });
+    await db.collection(COLLECTION).doc(LOGO_DOC).set({ data: img.buf.toString("base64"), mime: img.mime, version: v, bytes: img.buf.length, updatedAt: new Date().toISOString() });
+    await db.collection(COLLECTION).doc(BRANDING_DOC).set({ logoVersion: v, logoMime: img.mime, logoType: "image", iconVersion: "", maskableVersion: "", ...icons, updatedAt: new Date().toISOString(), updatedBy: req.user?.email || "" }, { merge: true });
+    cache = null;
+    res.json({ branding: await getBranding() });
+  }));
+
+  // New app icons for the current logo, e.g. after the primary colour changed.
+  router.post("/icons", wrap(async (req, res) => {
+    const ref = getAdminDb().collection(COLLECTION).doc(BRANDING_DOC);
+    if (!((await ref.get()).data() || {}).logoVersion) return res.status(400).json({ error: "Upload a logo first." });
+    const icons = await saveIcons(req.body);
+    if (typeof icons === "string") return res.status(400).json({ error: icons });
+    await ref.set({ ...icons, updatedAt: new Date().toISOString() }, { merge: true });
     cache = null;
     res.json({ branding: await getBranding() });
   }));
 
   router.delete("/logo", wrap(async (_req, res) => {
     const db = getAdminDb();
-    await db.collection(COLLECTION).doc(LOGO_DOC).delete();
+    await Promise.all([LOGO_DOC, ...Object.values(ICON_DOCS)].map(id => db.collection(COLLECTION).doc(id).delete()));
     const ref = db.collection(COLLECTION).doc(BRANDING_DOC);
     const current = (await ref.get()).data() || {};
-    await ref.set({ logoVersion: "", logoType: current.logoType === "image" ? "default" : current.logoType || "default", updatedAt: new Date().toISOString() }, { merge: true });
+    await ref.set({ logoVersion: "", iconVersion: "", maskableVersion: "", logoType: current.logoType === "image" ? "default" : current.logoType || "default", updatedAt: new Date().toISOString() }, { merge: true });
     cache = null;
     res.json({ branding: await getBranding() });
   }));
@@ -118,9 +183,16 @@ export function manifestHandler(req: Request, res: Response) {
   try { base = file ? JSON.parse(fs.readFileSync(file, "utf8")) : {}; } catch { base = {}; }
   getBranding().then((b: AppBranding & { logoMime?: string }) => {
     const manifest: any = { ...base, name: b.tagline ? `${b.name} — ${b.tagline}` : b.name, short_name: b.name.slice(0, 12), theme_color: b.primaryColor };
-    if (b.logoType === "image" && b.logoUrl) {
-      const icon = { src: b.logoUrl, sizes: "512x512", type: b.logoMime || "image/png" };
-      manifest.icons = [{ ...icon, purpose: "any" }, ...(base.icons || [])];
+    if (b.logoType === "image" && b.iconUrl && b.maskableUrl) {
+      // Only the uploaded logo's icons, so no device falls back to the standard Frilensa icon.
+      manifest.icons = [
+        { src: b.iconUrl, sizes: "512x512", type: "image/png", purpose: "any" },
+        { src: b.maskableUrl, sizes: "512x512", type: "image/png", purpose: "maskable" }
+      ];
+      manifest.shortcuts = (base.shortcuts || []).map((sc: any) => ({ ...sc, icons: [{ src: b.iconUrl, sizes: "512x512", type: "image/png" }] }));
+    } else if (b.logoType === "image" && b.logoUrl) {
+      // A logo uploaded before app icons were made: offer it first, with the standard icons as a fallback.
+      manifest.icons = [{ src: b.logoUrl, sizes: "512x512", type: b.logoMime || "image/png", purpose: "any" }, ...(base.icons || [])];
     }
     res.setHeader("Content-Type", "application/manifest+json");
     res.setHeader("Cache-Control", "public, max-age=300");

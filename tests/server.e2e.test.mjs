@@ -1131,18 +1131,39 @@ try {
     assert.equal((await up(B, `data:image/png;base64,${PNG}`)).status, 403);
     assert.equal((await up(A, 'data:image/svg+xml;base64,' + Buffer.from('<svg onload="alert(1)"/>').toString('base64'))).status, 400, 'SVG accepted');
     assert.equal((await up(A, 'data:image/png;base64,' + Buffer.from('<html>not a png</html>').toString('base64'))).status, 400, 'fake PNG accepted');
-    const ok = await j(await up(A, `data:image/png;base64,${PNG}`));
-    assert.equal(ok.status, 200); assert.equal(ok.body.branding.logoType, 'image');
+    // A real 512×512 PNG for the app icons (solid colour), and a 1×1 one that is the wrong size.
+    const zlib = await import('node:zlib');
+    const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const crc = Buffer.alloc(4); crc.writeUInt32BE(zlib.crc32(td)); return Buffer.concat([len, td, crc]); };
+    const png512 = (rgb) => { const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(512, 0); ihdr.writeUInt32BE(512, 4); ihdr[8] = 8; ihdr[9] = 2; const row = Buffer.concat([Buffer.from([0]), Buffer.alloc(512 * 3).fill(Buffer.from(rgb))]); return 'data:image/png;base64,' + Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(Buffer.concat(Array(512).fill(row)))), chunk('IEND', Buffer.alloc(0))]).toString('base64'); };
+    const tooSmall = await up(A, `data:image/png;base64,${PNG}`).then(() => fetch(`${API}/api/admin/branding/logo`, { method: 'POST', headers: auth(A), body: JSON.stringify({ dataUrl: `data:image/png;base64,${PNG}`, maskableDataUrl: `data:image/png;base64,${PNG}` }) }));
+    assert.equal(tooSmall.status, 400, 'a 1×1 app icon was accepted');
+    const ok = await j(await fetch(`${API}/api/admin/branding/logo`, { method: 'POST', headers: auth(A), body: JSON.stringify({ dataUrl: `data:image/png;base64,${PNG}`, iconDataUrl: png512([255, 255, 255]), maskableDataUrl: png512([18, 58, 188]) }) }));
+    assert.equal(ok.status, 200, JSON.stringify(ok.body)); assert.equal(ok.body.branding.logoType, 'image');
+    const { iconUrl, maskableUrl } = ok.body.branding;
+    assert.match(iconUrl, /^\/api\/public\/branding\/icon\?v=/); assert.match(maskableUrl, /^\/api\/public\/branding\/maskable\?v=/);
     const logoUrl = ok.body.branding.logoUrl; assert.match(logoUrl, /^\/api\/public\/branding\/logo\?v=[0-9a-f]{16}$/);
     const img = await fetch(`${API}${logoUrl}`);
     assert.equal(img.status, 200); assert.equal(img.headers.get('content-type'), 'image/png');
     assert.equal(img.headers.get('x-content-type-options'), 'nosniff'); assert.match(img.headers.get('cache-control'), /immutable/);
     assert.deepEqual(Buffer.from(await img.arrayBuffer()), Buffer.from(PNG, 'base64'));
     const manifest = await (await fetch(`${API}/manifest.webmanifest`)).json();
-    assert.equal(manifest.short_name, 'Frilensa Fij'); assert.equal(manifest.theme_color, '#123abc'); assert.equal(manifest.icons[0].src, logoUrl);
+    assert.equal(manifest.short_name, 'Frilensa Fij'); assert.equal(manifest.theme_color, '#123abc');
+    assert.deepEqual(manifest.icons.map(i => [i.src, i.purpose, i.sizes]), [[iconUrl, 'any', '512x512'], [maskableUrl, 'maskable', '512x512']], 'the standard icons are still offered');
+    assert.ok(manifest.shortcuts.every(sc => sc.icons[0].src === iconUrl));
+    const appIcon = await fetch(`${API}/api/public/branding/app-icon`, { redirect: 'manual' });
+    assert.equal(appIcon.status, 200); assert.equal(appIcon.headers.get('content-type'), 'image/png');
+    const mask = Buffer.from(await (await fetch(`${API}${maskableUrl}`)).arrayBuffer());
+    assert.equal(mask.readUInt32BE(16), 512);
+    // A new primary colour: the browser sends new icons.
+    const regen = await j(await fetch(`${API}/api/admin/branding/icons`, { method: 'POST', headers: auth(A), body: JSON.stringify({ maskableDataUrl: png512([200, 20, 20]) }) }));
+    assert.equal(regen.status, 200); assert.notEqual(regen.body.branding.maskableUrl, maskableUrl); assert.equal(regen.body.branding.iconUrl, iconUrl);
+    assert.equal((await fetch(`${API}/api/admin/branding/icons`, { method: 'POST', headers: auth(B), body: '{}' })).status, 403);
     const removed = await j(await fetch(`${API}/api/admin/branding/logo`, { method: 'DELETE', headers: auth(A) }));
     assert.equal(removed.body.branding.logoType, 'default'); assert.equal(removed.body.branding.logoUrl, '');
     assert.equal((await fetch(`${API}/api/public/branding/logo`)).status, 404);
+    assert.equal((await fetch(`${API}/api/public/branding/icon`)).status, 404);
+    const fallback = await fetch(`${API}/api/public/branding/app-icon`, { redirect: 'manual' });
+    assert.equal(fallback.status, 302); assert.equal(fallback.headers.get('location'), '/pwa-icon.svg');
   });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);

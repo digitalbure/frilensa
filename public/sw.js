@@ -37,7 +37,7 @@ self.addEventListener('push', (event) => {
     }
     const options = {
       body: data.body || 'New notification in Frilensa',
-      icon: '/pwa-icon.svg',
+      icon: '/api/public/branding/app-icon',
       badge: '/pwa-icon.svg',
       vibrate: [100, 50, 100],
       data: {

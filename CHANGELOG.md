@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.5.0] - 2026-10-13
+
+### Added
+- **App icons from your logo.** Uploading the Frilensa logo in **Admin → Branding** now also makes square 512×512 app icons:
+  - a plain one for the browser tab and for installing on computers and Android;
+  - a home-screen one with the logo on your primary colour, sized so the round and squircle shapes on Android phones don't cut it off. iPhones and iPads use this one too, so they don't show a black background.
+  - Wide or small logos are centred and fitted. Change the primary colour and press Save, and the home-screen icon is remade in the new colour.
+- Notifications show the app icon too.
+
+### Fixed
+- **Android home screens kept the old Frilensa icon** after a logo was uploaded, because the standard icon was still offered for Android's shaped icons. Once your icons exist, the install manifest lists only your logo's icons, including for app shortcuts.
+- A logo uploaded in 4.4.0 gets its icons the next time you press **Save changes** in Branding.
+
 ## [4.4.0] - 2026-10-13
 
 ### Added

@@ -27,8 +27,35 @@ function contrastWithWhite(hex: string) {
   return 1.05 / (lum + 0.05);
 }
 
+const ICON = 512;
+
+/** Draws the logo centred in a 512×512 square: clear background for "icon", primary colour and Android's safe zone for "maskable". */
+function makeIcon(img: HTMLImageElement | HTMLCanvasElement, kind: 'icon' | 'maskable', background: string): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = ICON; canvas.height = ICON;
+  const ctx = canvas.getContext('2d')!;
+  if (kind === 'maskable') { ctx.fillStyle = background; ctx.fillRect(0, 0, ICON, ICON); }
+  // Maskable icons can be cut to a circle 80% wide, so the logo stays inside the square that fits in it.
+  const box = kind === 'maskable' ? ICON * 0.56 : ICON * 0.88;
+  const w0 = (img as HTMLImageElement).naturalWidth || img.width, h0 = (img as HTMLImageElement).naturalHeight || img.height;
+  const scale = box / Math.max(w0, h0);
+  const w = w0 * scale, h = h0 * scale;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(img, (ICON - w) / 2, (ICON - h) / 2, w, h);
+  return canvas.toDataURL('image/png');
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('The logo could not be loaded to make app icons.'));
+    img.src = src;
+  });
+}
+
 /** Reads an image file (PNG, JPG, WebP or SVG), fits it in 512×512 and returns a PNG data URL (WebP if the PNG is too big). */
-function prepareLogo(file: File): Promise<{ dataUrl: string; width: number; height: number }> {
+function prepareLogo(file: File, background: string): Promise<{ dataUrl: string; iconDataUrl: string; maskableDataUrl: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     if (!/^image\/(png|jpeg|webp|svg\+xml)$/.test(file.type)) return reject(new Error('Choose a PNG, JPG, WebP or SVG image.'));
     if (file.size > 5 * 1024 * 1024) return reject(new Error('That file is over 5 MB. Choose a smaller image.'));
@@ -48,7 +75,7 @@ function prepareLogo(file: File): Promise<{ dataUrl: string; width: number; heig
       if (dataUrl.length * 0.75 > MAX_BYTES) dataUrl = canvas.toDataURL('image/webp', 0.9);
       if (!dataUrl.startsWith('data:image/webp') && !dataUrl.startsWith('data:image/png')) dataUrl = canvas.toDataURL('image/png');
       if (dataUrl.length * 0.75 > MAX_BYTES) return reject(new Error('That image is too detailed to use as a logo. Try a simpler or smaller one.'));
-      resolve({ dataUrl, width: w0, height: h0 });
+      resolve({ dataUrl, iconDataUrl: makeIcon(canvas, 'icon', background), maskableDataUrl: makeIcon(canvas, 'maskable', background), width: w0, height: h0 });
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('That file could not be opened as an image.')); };
     img.src = url;
@@ -76,7 +103,13 @@ export default function AdminBrandingView({ showToast }: { showToast: (msg: stri
   const save = async () => {
     setBusy('save'); setProblem(null);
     try {
-      const r = await json<{ branding: AppBranding }>(await fetch('/api/admin/branding', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) }));
+      let r = await json<{ branding: AppBranding }>(await fetch('/api/admin/branding', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(draft) }));
+      // The Android/iPhone icon sits on the primary colour, so remake it when that colour changes
+      // (and make icons for a logo uploaded before they existed).
+      if (r.branding.logoUrl && (draft.primaryColor !== live.primaryColor || !r.branding.maskableUrl || !r.branding.iconUrl)) {
+        const logo = await loadImage(r.branding.logoUrl);
+        r = await json<{ branding: AppBranding }>(await fetch('/api/admin/branding/icons', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ iconDataUrl: makeIcon(logo, 'icon', r.branding.primaryColor), maskableDataUrl: makeIcon(logo, 'maskable', r.branding.primaryColor) }) }));
+      }
       setBranding(r.branding); setDraft(r.branding); setTouched(false);
       showToast('Branding saved. Everyone sees it the next time they open Frilensa.');
     } catch (err: any) { setProblem(err.message); } finally { setBusy(null); }
@@ -86,10 +119,10 @@ export default function AdminBrandingView({ showToast }: { showToast: (msg: stri
     if (!file) return;
     setBusy('upload'); setProblem(null); setNote(null);
     try {
-      const { dataUrl, width, height } = await prepareLogo(file);
-      const r = await json<{ branding: AppBranding }>(await fetch('/api/admin/branding/logo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl }) }));
+      const { dataUrl, iconDataUrl, maskableDataUrl, width, height } = await prepareLogo(file, draft.primaryColor);
+      const r = await json<{ branding: AppBranding }>(await fetch('/api/admin/branding/logo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ dataUrl, iconDataUrl, maskableDataUrl }) }));
       setBranding(r.branding);
-      setDraft(d => ({ ...d, logoType: 'image', logoUrl: r.branding.logoUrl }));
+      setDraft(d => ({ ...d, logoType: 'image', logoUrl: r.branding.logoUrl, iconUrl: r.branding.iconUrl, maskableUrl: r.branding.maskableUrl }));
       if (Math.max(width, height) < 192) setNote(`This image is only ${width}×${height} pixels, so it may look blurry as an app icon. 512×512 or larger works best.`);
       else if (Math.abs(width - height) > Math.max(width, height) * 0.25) setNote('Square logos work best as app icons. Wide logos are shrunk to fit.');
       showToast('Logo uploaded and in use.');
@@ -266,7 +299,7 @@ export default function AdminBrandingView({ showToast }: { showToast: (msg: stri
             <div>
               <p className="text-[10px] text-slate-500 mb-1">Browser tab</p>
               <div className="bg-white rounded-t-lg px-2 py-1.5 flex items-center gap-1.5 text-[10px] text-slate-700 border border-slate-300">
-                {draft.logoType === 'image' && draft.logoUrl ? <img src={draft.logoUrl} alt="" className="w-3.5 h-3.5 object-contain" /> : <img src="/pwa-icon.svg" alt="" className="w-3.5 h-3.5" />}
+                {draft.logoType === 'image' && draft.logoUrl ? <img src={draft.iconUrl || draft.logoUrl} alt="" className="w-3.5 h-3.5 object-contain" /> : <img src="/pwa-icon.svg" alt="" className="w-3.5 h-3.5" />}
                 <span className="truncate">{draft.name}{draft.tagline ? ` — ${draft.tagline}` : ''}</span>
               </div>
             </div>
@@ -274,13 +307,15 @@ export default function AdminBrandingView({ showToast }: { showToast: (msg: stri
               <p className="text-[10px] text-slate-500 mb-1">Phone home screen</p>
               <div className="bg-gradient-to-br from-indigo-900 to-slate-800 rounded-xl p-3 flex flex-col items-center gap-1">
                 {draft.logoType === 'image' && draft.logoUrl
-                  ? <img src={draft.logoUrl} alt="" className="w-11 h-11 rounded-[12px] object-contain bg-white" />
+                  ? (draft.maskableUrl && draft.primaryColor === live.primaryColor
+                      ? <img src={draft.maskableUrl} alt="" className="w-11 h-11 rounded-[12px]" />
+                      : <div className="w-11 h-11 rounded-[12px] flex items-center justify-center" style={{ background: draft.primaryColor }}><img src={draft.logoUrl} alt="" className="w-6 h-6 object-contain" /></div>)
                   : <img src="/pwa-icon.svg" alt="" className="w-11 h-11 rounded-[12px]" />}
                 <span className="text-[10px] text-white truncate max-w-full">{(draft.name || 'Frilensa').slice(0, 12)}</span>
               </div>
             </div>
           </div>
-          <p className="text-[10px] text-slate-500">The browser tab and home screen need an image, so they use the standard icon unless you upload a logo. Phones that already installed the app may keep the old icon until it's reinstalled.</p>
+          <p className="text-[10px] text-slate-500">The browser tab and home screen need an image, so they use the standard icon unless you upload a logo. Uploading makes square app icons for you: the home screen icon puts your logo on the primary colour, sized so Android's round and squircle shapes don't cut it off. Phones that already installed the app may keep the old icon until it's reinstalled.</p>
         </section>
       </div>
     </div>

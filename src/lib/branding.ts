@@ -51,11 +51,15 @@ function applyToDocument(b: AppBranding) {
   if (typeof document === 'undefined') return;
   const tagline = b.tagline ? ` — ${b.tagline}` : '';
   if (/^Frilensa\b/.test(document.title) || document.title.startsWith(b.name) || document.title === '') document.title = `${b.name}${tagline}`;
-  const icon = b.logoType === 'image' && b.logoUrl ? b.logoUrl : '/pwa-icon.svg';
+  const uploaded = b.logoType === 'image' && b.logoUrl;
+  const favicon = uploaded ? (b.iconUrl || b.logoUrl) : '/pwa-icon.svg';
+  // iOS fills transparent areas with black, so the home screen uses the icon on the primary colour.
+  const touchIcon = uploaded ? (b.maskableUrl || b.iconUrl || b.logoUrl) : '/pwa-icon.svg';
   document.querySelectorAll<HTMLLinkElement>('link[rel="icon"], link[rel="apple-touch-icon"]').forEach(l => {
-    if (l.href !== new URL(icon, location.href).href) {
-      l.href = icon;
-      if (l.rel === 'icon') l.type = icon.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
+    const href = l.rel === 'icon' ? favicon : touchIcon;
+    if (l.href !== new URL(href, location.href).href) {
+      l.href = href;
+      if (l.rel === 'icon') l.type = href.endsWith('.svg') ? 'image/svg+xml' : 'image/png';
     }
   });
   document.querySelectorAll<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"], meta[name="application-name"]').forEach(m => { m.content = b.name; });

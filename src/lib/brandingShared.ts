@@ -15,6 +15,9 @@ export interface AppBranding {
   logoEmoji: string;
   /** Where the uploaded logo is served (set by the server). */
   logoUrl: string;
+  /** Square 512×512 app icons made from the logo (set by the server): plain, and padded on the primary colour. */
+  iconUrl?: string;
+  maskableUrl?: string;
   primaryColor: string;
   accentColor: string;
 }
