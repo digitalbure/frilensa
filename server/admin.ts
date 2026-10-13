@@ -1,6 +1,8 @@
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { CLIENT_ERRORS } from "./clientErrors";
+import { getAuth } from "firebase-admin/auth";
+import { listWorkspaceSummaries, updateWorkspace, WorkspaceMissing } from "./workspace";
 
 // Platform admin tools for the shared directory: every listing and every directory booking, with
 // edit and delete. Admins are the verified accounts in ADMIN_EMAILS (comma-separated), the same
@@ -24,6 +26,43 @@ const wrap = (h: (req: AuthedRequest, res: Response) => Promise<unknown>) => (re
 export function createAdminRouter() {
   const router = express.Router();
   router.use(requireUser, requireAdmin, rateLimit({ name: "admin", max: 120, windowMs: 60_000 }));
+
+  // Every workspace with its owner's sign-in details, newest activity first.
+  router.get("/workspaces", wrap(async (_req, res) => {
+    const summaries = await listWorkspaceSummaries();
+    const users = new Map<string, any>();
+    for (let i = 0; i < summaries.length; i += 100) {
+      const r = await getAuth().getUsers(summaries.slice(i, i + 100).map(s => ({ uid: s.uid }))).catch(() => ({ users: [] as any[] }));
+      r.users.forEach((u: any) => users.set(u.uid, u));
+    }
+    const workspaces = summaries.map(s => {
+      const u = users.get(s.uid);
+      return {
+        ...s,
+        email: s.email || u?.email || "",
+        name: s.name || u?.displayName || "",
+        signedUpAt: u?.metadata?.creationTime ? new Date(u.metadata.creationTime).toISOString() : "",
+        lastSignInAt: u?.metadata?.lastSignInTime ? new Date(u.metadata.lastSignInTime).toISOString() : "",
+        disabled: !!u?.disabled
+      };
+    }).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    res.json({ workspaces });
+  }));
+
+  // Change a workspace's plan (Free, Pro or Premium).
+  router.patch("/workspaces/:uid", wrap(async (req, res) => {
+    const plan = String(req.body?.plan || "");
+    if (!["free", "pro", "premium"].includes(plan)) return res.status(400).json({ error: "Choose Free, Pro or Premium." });
+    try {
+      await updateWorkspace(String(req.params.uid).slice(0, 128), raw => ({
+        set: { platformSettings: { ...(raw.platformSettings || {}), activePlan: plan } }, result: null
+      }));
+    } catch (err) {
+      if (err instanceof WorkspaceMissing) return res.status(404).json({ error: "Workspace not found." });
+      throw err;
+    }
+    res.json({ ok: true, plan });
+  }));
 
   // Crash reports from the app (server/clientErrors.ts), most recent first.
   router.get("/errors", wrap(async (_req, res) => {

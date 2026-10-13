@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.3.0] - 2026-10-13
+
+### Changed
+- **Admin → Workspaces shows your real users** instead of sample accounts:
+  - Each person's name, email and businesses.
+  - How many clients, documents and projects they have.
+  - When they joined, last signed in and last saved.
+  - You can search and change a person's plan (Free, Pro or Premium).
+- **Admin → Overview** counts real workspaces: total, active in the last 30 days, on a paid plan, and documents and clients across all of them. The made-up revenue figure is gone.
+
+### Removed
+- The sample payments in **Admin → Billing**. Nothing records subscription payments yet, so the list starts empty.
+- The **Inspect** button on workspaces. It only showed your own data.
+
 ## [4.2.0] - 2026-10-13
 
 ### Added

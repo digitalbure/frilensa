@@ -1,6 +1,7 @@
 import AdminDirectoryManager from './AdminDirectoryManager';
 import AdminErrorsView from './AdminErrorsView';
-import React, { useState } from 'react';
+import AdminWorkspacesView, { type AdminWorkspace } from './AdminWorkspacesView';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldAlert, Users, TrendingUp, Cpu, ToggleLeft, ToggleRight, 
@@ -14,20 +15,6 @@ import {
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 
-interface Tenant {
-  id: string;
-  name: string;
-  owner: string;
-  email: string;
-  location: string;
-  plan: PlanTier;
-  status: 'active' | 'trial' | 'suspended';
-  mrr: number;
-  clientsCount: number;
-  projectsCount: number;
-  aiUsage: number;
-  tin: string;
-}
 
 interface PendingSubscriptionPayment {
   id: string;
@@ -90,87 +77,25 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [newInviteNotes, setNewInviteNotes] = useState('');
   const [copiedInviteId, setCopiedInviteId] = useState<string | null>(null);
 
-  // Tenants Data
-  const [tenants, setTenants] = useState<Tenant[]>([
-    {
-      id: 'ten-current',
-      name: crmData.businesses[0]?.name || (crmData.userProfile?.name ? `${crmData.userProfile.name}'s workspace` : 'Main workspace'),
-      owner: crmData.userProfile?.name || 'Workspace owner',
-      email: crmData.userProfile?.email || 'admin@workspace.fj',
-      location: crmData.userProfile?.city || 'Suva, Viti Levu',
-      plan: activePlanTier,
-      status: 'active',
-      mrr: activePlanTier === 'premium' ? 50 : activePlanTier === 'pro' ? 25 : 0,
-      clientsCount: crmData.clients?.length || 0,
-      projectsCount: crmData.projects?.length || 0,
-      aiUsage: 4,
-      tin: crmData.userProfile?.tin || '50-12345-0-1'
-    },
-    {
-      id: 'ten-1',
-      name: 'Viti Creative Studio',
-      owner: 'Sereana Prasad',
-      email: 'sereana@viticreative.com',
-      location: 'Suva, Viti Levu',
-      plan: 'pro',
-      status: 'active',
-      mrr: 25,
-      clientsCount: 14,
-      projectsCount: 3,
-      aiUsage: 18,
-      tin: '50-10024-0-1'
-    },
-    {
-      id: 'ten-2',
-      name: 'Kava Software Solutions',
-      owner: 'Jone Waqanitoga',
-      email: 'jone@kavasoft.com',
-      location: 'Nadi, Viti Levu',
-      plan: 'premium',
-      status: 'active',
-      mrr: 50,
-      clientsCount: 29,
-      projectsCount: 8,
-      aiUsage: 42,
-      tin: '50-88321-2-9'
-    },
-    {
-      id: 'ten-3',
-      name: 'Coral Web Agency',
-      owner: 'Alisi Sovasova',
-      email: 'alisi@coralagency.fj',
-      location: 'Lautoka',
-      plan: 'pro',
-      status: 'trial',
-      mrr: 0,
-      clientsCount: 4,
-      projectsCount: 1,
-      aiUsage: 6,
-      tin: '50-77443-1-0'
-    }
-  ]);
+  // Every real workspace (server: GET /api/admin/workspaces)
+  const [workspaces, setWorkspaces] = useState<AdminWorkspace[] | null>(null);
+  const [workspacesError, setWorkspacesError] = useState<string | null>(null);
+  const loadWorkspaces = () => fetch('/api/admin/workspaces')
+    .then(async r => { const b = await r.json().catch(() => ({})); if (!r.ok) throw new Error(b?.error || `Request failed (${r.status})`); return b; })
+    .then(b => { setWorkspaces(b.workspaces); setWorkspacesError(null); })
+    .catch(err => setWorkspacesError(err.message));
+  useEffect(() => { loadWorkspaces(); }, []);
+  const changeWorkspacePlan = async (w: AdminWorkspace, plan: string) => {
+    const r = await fetch(`/api/admin/workspaces/${encodeURIComponent(w.uid)}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan }) });
+    const b = await r.json().catch(() => ({}));
+    if (!r.ok) { showToast(b?.error || 'Could not change the plan.'); return; }
+    setWorkspaces(list => (list || []).map(x => x.uid === w.uid ? { ...x, plan } : x));
+    showToast(`${w.name || w.email} is now on ${plan.charAt(0).toUpperCase() + plan.slice(1)}.`);
+  };
 
   // Pending M-Paisa / Bank offline payments
-  const [pendingPayments, setPendingPayments] = useState<PendingSubscriptionPayment[]>([
-    {
-      id: 'pay-101',
-      tenantName: 'Viti Creative Studio',
-      amount: 25.00,
-      plan: 'pro',
-      method: 'M-Paisa',
-      refCode: 'MP-994821',
-      date: '2026-08-23'
-    },
-    {
-      id: 'pay-102',
-      tenantName: 'Coral Web Agency',
-      amount: 50.00,
-      plan: 'premium',
-      method: 'BSP Transfer',
-      refCode: 'BSP-TX-88129',
-      date: '2026-08-24'
-    }
-  ]);
+  // Manual subscription payments to check. Nothing records these yet, so the list starts empty.
+  const [pendingPayments, setPendingPayments] = useState<PendingSubscriptionPayment[]>([]);
 
   const showToast = (msg: string) => {
     setSaveSuccessMsg(msg);
@@ -247,8 +172,6 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
       activePlan: planId
     };
     commitPlatformSettings(updatedSettings);
-    // Update current tenant record in UI list
-    setTenants(prev => prev.map(t => t.id === 'ten-current' ? { ...t, plan: planId, mrr: platformSettings.plans[planId].price } : t));
   };
 
   // Add Platform Tax
@@ -354,18 +277,6 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     const pay = pendingPayments.find(p => p.id === payId);
     if (!pay) return;
 
-    setTenants(prev => prev.map(t => {
-      if (t.name === pay.tenantName) {
-        return {
-          ...t,
-          status: 'active',
-          plan: pay.plan,
-          mrr: pay.amount
-        };
-      }
-      return t;
-    }));
-
     setPendingPayments(prev => prev.filter(p => p.id !== payId));
     showToast(`Payment of FJD $${pay.amount} approved for ${pay.tenantName}.`);
   };
@@ -378,8 +289,9 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
 
   // Metrics
-  const totalSaasMRR = tenants.reduce((acc, t) => acc + (t.status === 'active' ? t.mrr : 0), 0);
-  const activeTenantsCount = tenants.filter(t => t.status === 'active').length;
+  const monthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const activeWorkspacesCount = (workspaces || []).filter(w => new Date(w.lastSignInAt || w.updatedAt || 0).getTime() >= monthAgo).length;
+  const paidWorkspacesCount = (workspaces || []).filter(w => w.plan === 'pro' || w.plan === 'premium').length;
 
   const currentPlanConfig = platformSettings.plans[selectedPlanTab];
 
@@ -518,7 +430,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Users className="w-3.5 h-3.5" />
-            <span>Workspaces ({tenants.length})</span>
+            <span>Workspaces{workspaces ? ` (${workspaces.length})` : ''}</span>
           </button>
 
           <button
@@ -2150,85 +2062,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
           {/* ================= TAB 3: TENANTS MANAGEMENT ================= */}
           {activeTab === 'tenants' && (
-            <div className="space-y-4">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by business name or TIN"
-                    className="w-full bg-slate-900 border border-slate-800 rounded-xl py-2 pl-9 pr-4 text-xs text-slate-200 focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-              </div>
-
-              {/* Tenants Grid */}
-              <div className="space-y-2">
-                {tenants
-                  .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()) || t.tin.includes(searchQuery))
-                  .map((tenant) => (
-                    <div
-                      key={tenant.id}
-                      className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs hover:border-slate-700 transition-all"
-                    >
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-100">{tenant.name}</span>
-                          <span className="text-[9px] bg-slate-800 text-sky-300 uppercase font-mono font-black px-2 py-0.5 rounded-md border border-slate-700">
-                            {tenant.plan}
-                          </span>
-                          <span className={`text-[8.5px] px-1.5 py-0.5 rounded font-bold ${
-                            tenant.status === 'active' ? 'bg-emerald-950 text-emerald-400' : 'bg-amber-950 text-amber-400'
-                          }`}>
-                            {tenant.status}
-                          </span>
-                        </div>
-                        <p className="text-[10px] text-slate-400 mt-1">
-                          Owner: <span className="text-slate-300 font-medium">{tenant.owner}</span> • TIN: <span className="font-mono text-sky-400">{tenant.tin}</span> • {tenant.location}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <div className="text-right mr-2">
-                          <span className="text-xs font-mono font-black text-slate-200 block">FJD ${tenant.mrr}/mo</span>
-                          <span className="text-[9px] text-slate-500">{tenant.clientsCount} clients</span>
-                        </div>
-
-                        <select
-                          value={tenant.plan}
-                          onChange={(e) => {
-                            const newPlan = e.target.value as PlanTier;
-                            setTenants(prev => prev.map(t => t.id === tenant.id ? { ...t, plan: newPlan, mrr: platformSettings.plans[newPlan].price } : t));
-                            if (tenant.id === 'ten-current') {
-                              handleSwitchActivePlan(newPlan);
-                            }
-                          }}
-                          className="bg-slate-950 border border-slate-800 rounded-lg py-1 px-2 text-[10px] text-slate-200"
-                        >
-                          <option value="free">Free</option>
-                          <option value="pro">Pro</option>
-                          <option value="premium">Premium</option>
-                        </select>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onImpersonate(tenant.name, crmData);
-                          }}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1"
-                        >
-                          <Eye className="w-3 h-3" />
-                          <span>Inspect</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-
-            </div>
+            <AdminWorkspacesView workspaces={workspaces} error={workspacesError} onReload={loadWorkspaces} onChangePlan={changeWorkspacePlan} />
           )}
 
           {/* ================= TAB 4: BILLING & APPROVALS ================= */}
@@ -2295,35 +2129,22 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             </div>
           )}
 
-          {/* ================= TAB 5: MRR ANALYTICS ================= */}
+          {/* ================= TAB 5: OVERVIEW ================= */}
           {activeTab === 'overview' && (
             <div className="space-y-4">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Monthly recurring revenue</span>
-                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">FJD ${totalSaasMRR}</span>
-                  <span className="text-[9px] text-emerald-400 font-bold block mt-0.5">From subscriptions</span>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Active workspaces</span>
-                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">{activeTenantsCount}</span>
-                  <span className="text-[9px] text-sky-400 font-bold block mt-0.5">Workspaces in use</span>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">Clients</span>
-                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">
-                    {tenants.reduce((acc, t) => acc + t.clientsCount, 0)}
-                  </span>
-                  <span className="text-[9px] text-slate-400 block mt-0.5">Across all workspaces</span>
-                </div>
-
-                <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">AI receipt scans</span>
-                  <span className="text-xl font-black text-slate-100 font-mono mt-1 block">—</span>
-                  <span className="text-[9px] text-rose-400 block mt-0.5">Not tracked yet</span>
-                </div>
+                {[
+                  { label: 'Workspaces', value: workspaces ? workspaces.length : '…', note: 'Accounts on Frilensa' },
+                  { label: 'Active this month', value: workspaces ? activeWorkspacesCount : '…', note: 'Signed in or saved in the last 30 days' },
+                  { label: 'Paid plans', value: workspaces ? paidWorkspacesCount : '…', note: 'On Pro or Premium' },
+                  { label: 'Documents', value: workspaces ? workspaces.reduce((a, w) => a + w.documents, 0) : '…', note: `Quotes, invoices and receipts · ${workspaces ? workspaces.reduce((a, w) => a + w.clients, 0) : '…'} clients` }
+                ].map(c => (
+                  <div key={c.label} className="bg-slate-900 border border-slate-800 p-4 rounded-2xl">
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block">{c.label}</span>
+                    <span className="text-xl font-black text-slate-100 font-mono mt-1 block">{c.value}</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">{c.note}</span>
+                  </div>
+                ))}
               </div>
             </div>
           )}

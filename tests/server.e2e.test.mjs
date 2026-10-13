@@ -1097,6 +1097,20 @@ try {
     assert.equal((await fetch(`${API}/api/admin/errors/${e.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
     assert.ok(!(await j(await fetch(`${API}/api/admin/errors`, { headers: auth(A) }))).body.errors.some(x => x.id === e.id));
   });
+  await check('admins see every real workspace and can change its plan', async () => {
+    assert.equal((await fetch(`${API}/api/admin/workspaces`, { headers: auth(B) })).status, 403);
+    const list = (await j(await fetch(`${API}/api/admin/workspaces`, { headers: auth(A) }))).body.workspaces;
+    const bob = list.find(w => w.uid === B.uid);
+    assert.ok(bob, 'Bob missing'); assert.equal(bob.email, B.email);
+    assert.ok(bob.documents >= 1 && bob.clients >= 1, `counts ${bob.documents}/${bob.clients}`);
+    assert.ok(bob.businesses.length >= 1, 'business names missing');
+    assert.ok(bob.signedUpAt, 'sign-up date missing');
+    assert.ok(!list.some(w => w.uid.includes('@')), 'old email-keyed copies listed');
+    assert.equal((await fetch(`${API}/api/admin/workspaces/${B.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ plan: 'gold' }) })).status, 400);
+    assert.equal((await fetch(`${API}/api/admin/workspaces/nobody-here`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ plan: 'pro' }) })).status, 404);
+    assert.equal((await fetch(`${API}/api/admin/workspaces/${B.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ plan: 'premium' }) })).status, 200);
+    assert.equal((await get(`consultants/${B.uid}`)).platformSettings.activePlan, 'premium');
+  });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
     assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);

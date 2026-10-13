@@ -116,3 +116,45 @@ export class WorkspaceMissing extends Error {
     super("Open Frilensa once to set up your workspace before using the API.");
   }
 }
+
+export interface WorkspaceSummary {
+  uid: string;
+  name: string;
+  email: string;
+  plan: string;
+  businesses: string[];
+  clients: number;
+  documents: number;
+  projects: number;
+  updatedAt: string;
+}
+
+/** One line per workspace for the admin panel: owner, plan, business names and how much is in it. */
+export async function listWorkspaceSummaries(limit = 500): Promise<WorkspaceSummary[]> {
+  const db = getAdminDb();
+  const lists = ["businesses", "clients", "documents", "projects"] as const;
+  const heads = await db.collection("consultants")
+    .select("userProfile", "consultantEmail", "updatedAt", ORDER_FIELD, "platformSettings", ...lists)
+    .limit(limit).get();
+  const live = heads.docs.filter(d => !d.id.includes("@")); // email-keyed copies are left by older versions
+  return Promise.all(live.map(async d => {
+    const h = d.data() as any;
+    const count = (list: string) => Math.max(h[ORDER_FIELD]?.[list]?.length || 0, Array.isArray(h[list]) ? h[list].length : 0);
+    let businesses: string[] = Array.isArray(h.businesses) ? h.businesses.map((b: any) => b?.name).filter(Boolean) : [];
+    if (h[ORDER_FIELD]?.businesses?.length) {
+      const recs = await d.ref.collection("businesses").select("name").get();
+      businesses = [...new Set([...businesses, ...recs.docs.map(r => r.get("name")).filter(Boolean)])];
+    }
+    return {
+      uid: d.id,
+      name: h.userProfile?.name || "",
+      email: h.consultantEmail || h.userProfile?.email || "",
+      plan: h.platformSettings?.activePlan || "free",
+      businesses,
+      clients: count("clients"),
+      documents: count("documents"),
+      projects: count("projects"),
+      updatedAt: h.updatedAt || ""
+    };
+  }));
+}
