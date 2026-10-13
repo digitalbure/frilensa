@@ -1,4 +1,5 @@
 import AdminDirectoryManager from './AdminDirectoryManager';
+import AdminErrorsView from './AdminErrorsView';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -77,7 +78,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [newFeeDesc, setNewFeeDesc] = useState('');
   
   // Navigation Tabs within Admin Panel
-  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory'>('directory');
+  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory' | 'errors'>('directory');
   const [searchQuery, setSearchQuery] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
@@ -473,6 +474,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           </button>
 
           <button
+            onClick={() => setActiveTab('errors')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'errors'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>App errors</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('plans')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'plans'
@@ -535,6 +548,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-950/40">
+
+          {activeTab === 'errors' && <AdminErrorsView showToast={showToast} />}
 
           {/* ================= TAB: FIJI DIRECTORY & BOOKINGS CONTROL ================= */}
           {activeTab === 'directory' && (

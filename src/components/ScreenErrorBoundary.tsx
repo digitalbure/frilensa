@@ -4,6 +4,8 @@ import { AlertTriangle } from 'lucide-react';
 interface Props {
   children: ReactNode;
   onGoHome?: () => void;
+  /** Which screen this wraps, for the crash report. */
+  screen?: string;
 }
 
 /**
@@ -22,6 +24,18 @@ export default class ScreenErrorBoundary extends Component<Props, { error: Error
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('Screen crashed:', error, info.componentStack);
+    // Send the details to the server (Admin → App errors) so the crash can be fixed without a screenshot.
+    fetch('/api/client-errors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: String(error?.message || error),
+        stack: String(error?.stack || ''),
+        componentStack: String(info?.componentStack || ''),
+        screen: this.props.screen || '',
+        appVersion: typeof __APP_VERSION__ === 'string' ? __APP_VERSION__ : ''
+      })
+    }).catch(() => {});
   }
 
   render() {
@@ -32,7 +46,7 @@ export default class ScreenErrorBoundary extends Component<Props, { error: Error
         <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
         <h2 className="mt-3 text-sm font-bold text-slate-800">This screen couldn't be shown</h2>
         <p className="mt-1 text-xs text-slate-500">
-          Your data is safe. Try again, or go back to Home. If it keeps happening, send us this message:
+          Your data is safe, and we've been sent the details. Try again, or go back to Home. If it keeps happening, tell us what you were doing:
         </p>
         <p className="mt-3 text-[11px] font-mono text-slate-600 bg-slate-50 rounded-lg p-2 break-words">{error.message}</p>
         <div className="mt-4 flex justify-center gap-2">

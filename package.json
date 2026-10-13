@@ -1,7 +1,7 @@
 {
   "name": "frilensa",
   "private": true,
-  "version": "4.1.0",
+  "version": "4.2.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test:rules": "npx -y firebase-tools@13 emulators:exec --only firestore --project frilensa-rules-test \"node tests/firestore.rules.test.mjs\"",
     "test:e2e": "npx -y firebase-tools@13 emulators:exec --only firestore,auth,storage --project frilensa-e2e \"node tests/server.e2e.test.mjs . && node tests/clientSync.e2e.mjs\"",
-    "test:unit": "tsx tests/payments.test.ts && tsx tests/documents.test.ts && tsx tests/automation.test.ts && tsx tests/vat.test.ts && tsx tests/reimbursements.test.ts && tsx tests/rateCards.test.ts && tsx tests/bookings.test.ts && tsx tests/workspaceRecords.test.ts"
+    "test:unit": "tsx tests/payments.test.ts && tsx tests/documents.test.ts && tsx tests/automation.test.ts && tsx tests/vat.test.ts && tsx tests/reimbursements.test.ts && tsx tests/rateCards.test.ts && tsx tests/bookings.test.ts && tsx tests/workspaceRecords.test.ts && tsx tests/normalizeWorkspace.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",

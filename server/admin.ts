@@ -1,5 +1,6 @@
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
+import { CLIENT_ERRORS } from "./clientErrors";
 
 // Platform admin tools for the shared directory: every listing and every directory booking, with
 // edit and delete. Admins are the verified accounts in ADMIN_EMAILS (comma-separated), the same
@@ -23,6 +24,24 @@ const wrap = (h: (req: AuthedRequest, res: Response) => Promise<unknown>) => (re
 export function createAdminRouter() {
   const router = express.Router();
   router.use(requireUser, requireAdmin, rateLimit({ name: "admin", max: 120, windowMs: 60_000 }));
+
+  // Crash reports from the app (server/clientErrors.ts), most recent first.
+  router.get("/errors", wrap(async (_req, res) => {
+    const snap = await getAdminDb().collection(CLIENT_ERRORS).orderBy("lastSeen", "desc").limit(100).get();
+    res.json({ errors: snap.docs.map(d => ({ ...d.data(), id: d.id })) });
+  }));
+  router.delete("/errors/:id", wrap(async (req, res) => {
+    await getAdminDb().collection(CLIENT_ERRORS).doc(String(req.params.id).slice(0, 64)).delete();
+    res.json({ ok: true });
+  }));
+  router.delete("/errors", wrap(async (_req, res) => {
+    const db = getAdminDb();
+    const snap = await db.collection(CLIENT_ERRORS).limit(400).get();
+    const batch = db.batch();
+    snap.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+    res.json({ ok: true, removed: snap.size });
+  }));
 
   router.get("/directory", wrap(async (_req, res) => {
     const db = getAdminDb();

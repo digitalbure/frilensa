@@ -41,7 +41,7 @@ import {
 } from './lib/api';
 import { isPlatformAdmin } from './lib/admin';
 import { ensureShareTokens } from './lib/documentLinks';
-import { normalizeDocuments } from './lib/normalizeDocuments';
+import { normalizeWorkspace } from './lib/normalizeWorkspace';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
 import OAuthConsent from './components/OAuthConsent';
 import { inboxDocumentCount } from './lib/inbox';
@@ -132,9 +132,9 @@ export default function App() {
     15;
 
   const applyData = useCallback((incoming: CRMData) => {
-    // Repair documents with missing amounts or fields (they crashed Billing), then give every
+    // Repair documents and list items with missing amounts or fields (they crashed screens), then give every
     // document a share token so its "view online" link and QR code work.
-    const data = ensureShareTokens(normalizeDocuments(incoming));
+    const data = ensureShareTokens(normalizeWorkspace(incoming));
     crmDataRef.current = data;
     setCrmData(data);
     return data;
@@ -592,7 +592,7 @@ export default function App() {
 
         {/* Content Screens Router */}
         <main className="flex-1 md:overflow-y-auto pb-20 md:pb-8 bg-slate-50/70 smooth-scroll">
-          <ScreenErrorBoundary key={activeTab} onGoHome={() => setActiveTab('dashboard')}>
+          <ScreenErrorBoundary key={activeTab} screen={activeTab} onGoHome={() => setActiveTab('dashboard')}>
           {activeTab === 'dashboard' && (
             <DashboardView 
               data={crmData} 

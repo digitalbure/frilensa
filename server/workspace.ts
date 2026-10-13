@@ -1,6 +1,6 @@
 import { FieldValue, type Transaction, type DocumentReference } from "firebase-admin/firestore";
 import { getAdminDb } from "./security";
-import { normalizeDocuments } from "../src/lib/normalizeDocuments";
+import { normalizeWorkspace } from "../src/lib/normalizeWorkspace";
 import { buildFlatDocumentRow, flatDocumentId, sanitizeForFirestore } from "../src/lib/flatDocuments";
 import { SPLIT_LISTS, ORDER_FIELD, isSplitList, assembleWorkspace, planListWrite, stableJson, type SplitList } from "../src/lib/workspaceRecords";
 import type { CRMData, CRMDocument } from "../src/types";
@@ -12,7 +12,7 @@ import type { CRMData, CRMDocument } from "../src/types";
 
 /** A workspace as stored, with missing lists defaulted and documents repaired. */
 export function toData(raw: any): CRMData {
-  return normalizeDocuments({
+  return normalizeWorkspace({
     ...raw,
     userProfile: raw.userProfile || {},
     businesses: raw.businesses || [],

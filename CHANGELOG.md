@@ -18,6 +18,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.2.0] - 2026-10-13
+
+### Added
+- **App errors** in the admin panel. When a screen shows "This screen couldn't be shown", the details are now sent automatically, so the problem can be fixed without a screenshot. Each report shows the message, the screen, the app version, who hit it and how many times, and can be copied or cleared.
+
+### Fixed
+- **Fewer crashes from incomplete data.** Services, bank lines, expenses, rate rules, projects, retainers and clients with a missing or garbled amount, rate or name (from older versions, imports or connected apps) are repaired as they load. Before, one such item could stop a whole screen opening.
+
 ## [4.1.0] - 2026-10-13
 
 ### Changed

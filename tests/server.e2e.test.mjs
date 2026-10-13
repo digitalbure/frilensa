@@ -1084,6 +1084,19 @@ try {
   });
 
   // --- Platform admin: directory listings and bookings ---
+  await check('screen crashes are reported to admins, once per person and error', async () => {
+    const report = { message: "Cannot read properties of undefined (reading 'toFixed')", stack: "TypeError: x\n    at BookkeepingView (https://frilensa.com/assets/index.js?v=secret-token:1:2)", componentStack: '\n    at BookkeepingView', screen: 'services', appVersion: '4.2.0' };
+    assert.equal((await fetch(`${API}/api/client-errors`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(report) })).status, 401);
+    for (let i = 0; i < 2; i++) assert.equal((await fetch(`${API}/api/client-errors`, { method: 'POST', headers: auth(B), body: JSON.stringify(report) })).status, 204);
+    assert.equal((await fetch(`${API}/api/admin/errors`, { headers: auth(B) })).status, 403);
+    const list = (await j(await fetch(`${API}/api/admin/errors`, { headers: auth(A) }))).body.errors;
+    const e = list.find(x => x.email === B.email);
+    assert.ok(e, 'report not listed');
+    assert.equal(e.count, 2); assert.equal(e.screen, 'services'); assert.equal(e.appVersion, '4.2.0');
+    assert.ok(!e.stack.includes('secret-token'), 'query string kept in the stack'); assert.ok(e.stack.includes('index.js:1:2'), 'line numbers lost');
+    assert.equal((await fetch(`${API}/api/admin/errors/${e.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.ok(!(await j(await fetch(`${API}/api/admin/errors`, { headers: auth(A) }))).body.errors.some(x => x.id === e.id));
+  });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
     assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);
