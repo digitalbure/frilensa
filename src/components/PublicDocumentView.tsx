@@ -7,6 +7,7 @@ import { publicFileUrl } from '../lib/files';
 import PayNowPanel from './PayNowPanel';
 import { tradingAsLine } from '../lib/businessName';
 import { adjustmentRows } from '../lib/documentAdjustments';
+import { chargeLabel } from '../lib/invoiceTotals';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -78,7 +79,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
   const paidSoFar = d.status === 'paid' ? d.total : (d.partiallyPaidAmount || 0);
   const balance = Math.max(0, d.total - paidSoFar);
   const taxLines = d.appliedTaxes?.length
-    ? d.appliedTaxes.map(t => ({ label: `${t.name}${t.rateType === 'percentage' ? ` (${t.rate}%)` : ''}`, amount: t.amount }))
+    ? d.appliedTaxes.map(t => ({ label: chargeLabel(t), amount: t.amount }))
     : d.vatAmount ? [{ label: `VAT (${d.vatRate}%)`, amount: d.vatAmount }] : [];
   const feeLines = (d.appliedFees || []).map(f => ({ label: f.name, amount: f.amount }));
   const adjustments = adjustmentRows(d);

@@ -76,3 +76,11 @@ assert.equal(finalInv.roundingAdjustment, -50);
 assert.equal(cents(finalInv.total + 1125), 4000, `deposit + final should equal the quote, got ${finalInv.total} + 1125`);
 
 console.log("discount and rounding checks passed");
+
+// Tax and fee labels show the rate once.
+import("../src/lib/invoiceTotals").then(({ chargeLabel }) => {
+  assert.equal(chargeLabel({ name: "Fiji VAT (12.5%)", rate: 12.5, rateType: "percentage" }), "Fiji VAT (12.5%)");
+  assert.equal(chargeLabel({ name: "ECAL", rate: 5, rateType: "percentage" }), "ECAL (5%)");
+  assert.equal(chargeLabel({ name: "Handling fee", rate: 10, rateType: "flat" }), "Handling fee ($10)");
+  console.log("charge label checks passed");
+});

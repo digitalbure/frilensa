@@ -5,6 +5,7 @@ import { documentPublicUrl } from './documentLinks';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { getCurrencyConfig } from './currencies';
 import { adjustmentRows } from './documentAdjustments';
+import { chargeLabel } from './invoiceTotals';
 
 export interface PdfExportOptions {
   includeBankDetails?: boolean;
@@ -558,8 +559,7 @@ export function generateDocumentPdf(
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
       doc.setTextColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-      const taxRateLabel = tax.rateType === 'flat' ? `$${tax.rate}` : `${tax.rate}%`;
-      doc.text(`${tax.name} (${taxRateLabel}):`, totalsBoxX, totalsY);
+      doc.text(`${chargeLabel(tax)}:`, totalsBoxX, totalsY);
 
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);

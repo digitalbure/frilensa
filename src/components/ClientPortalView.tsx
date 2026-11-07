@@ -21,6 +21,7 @@ import {
 import ClientOverviewView from './ClientOverviewView';
 import { openPortalFile } from '../lib/files';
 import DocAdjustmentRows from './DocAdjustmentRows';
+import { chargeLabel } from '../lib/invoiceTotals';
 
 interface ClientPortalViewProps {
   session: PortalSession;
@@ -939,7 +940,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                     {selectedDoc.appliedTaxes && selectedDoc.appliedTaxes.length > 0 ? (
                       selectedDoc.appliedTaxes.map((tax: any, tIdx: number) => (
                         <div key={tIdx} className="flex justify-between max-w-[240px] ml-auto text-[10.5px]">
-                          <span className="text-zinc-400">{tax.name} ({tax.rate}%):</span>
+                          <span className="text-zinc-400">{chargeLabel(tax)}:</span>
                           <span className="font-mono text-zinc-600">{selectedDoc.currency || 'FJD'} {tax.amount.toFixed(2)}</span>
                         </div>
                       ))

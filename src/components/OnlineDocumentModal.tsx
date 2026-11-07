@@ -12,6 +12,7 @@ import {
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
 import DocAdjustmentRows from './DocAdjustmentRows';
+import { chargeLabel } from '../lib/invoiceTotals';
 
 interface OnlineDocumentModalProps {
   document: CRMDocument;
@@ -424,7 +425,7 @@ export default function OnlineDocumentModal({
                   {document.appliedTaxes && document.appliedTaxes.length > 0 ? (
                     document.appliedTaxes.map((tax) => (
                       <div key={tax.id} className="flex justify-between text-sky-800 text-[11px]">
-                        <span>{tax.name} ({tax.rateType === 'flat' ? `$${tax.rate}` : `${tax.rate}%`}):</span>
+                        <span>{chargeLabel(tax)}:</span>
                         <span className="font-mono font-bold">${tax.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                       </div>
                     ))

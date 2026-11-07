@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.6.1] - 2026-11-07
+
+### Fixed
+- VAT shows its rate once ("Fiji VAT (12.5%)") instead of twice ("Fiji VAT (12.5%) (12.5%)") on PDFs, the editor, the preview, the online copy, the client portal and emails. Other taxes still show their rate, for example "ECAL (5%)".
+
 ## [4.6.0] - 2026-11-07
 
 ### Added

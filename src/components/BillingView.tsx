@@ -19,7 +19,7 @@ import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/docum
 import { documentPublicUrl, generateShareToken } from '../lib/documentLinks';
 import { applyConfirmedPayment, addReceiptForInvoice, applyPartialPayment } from '../lib/payments';
 import { runDueRetainers, generateRetainerNow, retainerVatRate, todayIn } from '../lib/retainers';
-import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses, recalcDocumentTotals } from '../lib/invoiceTotals';
+import { lineTotals, isReimbursement, reimbursementLines, linkBilledExpenses, recalcDocumentTotals, chargeLabel } from '../lib/invoiceTotals';
 import { openOwnFile } from '../lib/files';
 import RecordPaymentModal from './RecordPaymentModal';
 import ExchangeRateCalculatorModal from './ExchangeRateCalculatorModal';
@@ -2937,7 +2937,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   ) : (
                     totals.appliedTaxes.map((tax) => (
                       <div key={tax.id} className="flex justify-between text-sky-800 text-[11px]">
-                        <span>{tax.name} ({tax.rateType === 'flat' ? `$${tax.rate}` : `${tax.rate}%`})</span>
+                        <span>{chargeLabel(tax)}</span>
                         <span className="font-mono">{docCurrency} ${tax.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                       </div>
                     ))
@@ -3435,7 +3435,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     {selectedDoc.appliedTaxes && selectedDoc.appliedTaxes.length > 0 ? (
                       selectedDoc.appliedTaxes.map((tax) => (
                         <div key={tax.id} className="flex justify-between text-sky-800">
-                          <span>{tax.name} ({tax.rateType === 'flat' ? `$${tax.rate}` : `${tax.rate}%`}):</span>
+                          <span>{chargeLabel(tax)}:</span>
                           <span className="font-mono">{selectedDoc.currency || data.userProfile.defaultCurrency} ${tax.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </div>
                       ))

@@ -116,3 +116,12 @@ export function recalcDocumentTotals<D extends Pick<CRMDocument, 'items' | 'vatR
     total: cents(beforeRounding + roundingAdjustment)
   };
 }
+
+/**
+ * A tax or fee's label with its rate, e.g. "ECAL (5%)" or "Handling fee ($10)". Names that already
+ * include the rate (VAT is stored as "Fiji VAT (12.5%)") aren't given it twice.
+ */
+export function chargeLabel(c: { name: string; rate: number; rateType?: 'percentage' | 'flat' | string }) {
+  const rate = c.rateType === 'flat' ? `$${c.rate}` : `${c.rate}%`;
+  return c.name.includes(rate) ? c.name : `${c.name} (${rate})`;
+}

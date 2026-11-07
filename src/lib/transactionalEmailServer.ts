@@ -1,6 +1,7 @@
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { tradingAsLine } from './businessName';
 import { adjustmentRows } from './documentAdjustments';
+import { chargeLabel } from './invoiceTotals';
 const escapeHtml = (v: string) => v.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
 
 function emailTotalsRow(label: string, value: string, colour: string) {
@@ -402,7 +403,7 @@ Sent using Frilensa (frilensa.com)
             ${document.appliedTaxes && document.appliedTaxes.length > 0 ? document.appliedTaxes.map(t => `
               <tr>
                 <td style="font-size: 12.5px; color: #0284c7; padding-bottom: 6px;">
-                  ${t.name} (${t.rateType === 'flat' ? '$' + t.rate : t.rate + '%'}):
+                  ${escapeHtml(chargeLabel(t))}:
                 </td>
                 <td style="text-align: right; font-family: monospace; font-weight: 600; color: #0284c7;">
                   ${docCurrency} $${t.amount.toFixed(2)}
