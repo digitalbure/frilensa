@@ -473,6 +473,34 @@ New requests appear under **Needs your attention** on **Home** (press **Review**
 Bookings and listings aren't reviewed by Frilensa. A **Verified** badge means the Frilensa team has checked the business's FRCS registration. The team can hide or remove listings and bookings that break the rules.`
   },
   {
+    id: 'marketplace',
+    title: 'Marketplace: rent, buy and hire',
+    summary: 'Rent or buy gear and find services from people in Fiji, and list your own.',
+    keywords: ['marketplace', 'rent', 'rental', 'hire', 'buy', 'sell', 'gear', 'equipment', 'camera', 'listing', 'list my gear', 'services', 'offer', 'request', 'agent', 'commission'],
+    body: `The **Marketplace** has two sides: **Gear**, which you can **Rent** or **Buy** (switch at the top), and **Services**. Anyone can browse it at frilensa.com/marketplace; you need an account to send a request or list something.
+
+### Find something
+Search by name, and filter by **industry**, **category** and **town**. Sort by newest or price. Open a listing to see its photos, details and who offers it. Listings marked **Listed by Frilensa** are arranged by the Frilensa team for the provider.
+
+### Send a request
+- **Rent**: choose the dates and how many days (or hours, weeks), and add a message.
+- **Buy**: make an offer (the asking price is filled in).
+- **Services**: choose a date if you have one, and describe what you need.
+
+The owner gets your request and replies with a quote; you agree payment with them. Your requests are under **My listings → Requests I sent**.
+
+### List your gear or services
+1. Go to **Marketplace → My listings** and press **New listing**.
+2. Choose **Gear to rent or sell** or **A service**, and fill in the title, industry, category, town and description.
+3. For gear, tick **For rent** (with a price per hour, day, week or month), **For sale** (with a price), or both. For a service, add a price per hour, day, job or session, or leave it empty to quote each time.
+4. Press **Save and add photos**, then add up to 6 photos.
+
+Your first listing is checked by Frilensa before it goes live, usually within a day. After that, your listings go live straight away. Use the eye icon to hide a listing for a while, the pencil to edit it, or the bin to delete it.
+
+### Requests for your listings
+They arrive in your inbox under **Needs your attention** on **Home**, marked "From the marketplace", and you're emailed about each one. Press **Create quote** to turn one into a draft quote, then send and invoice it as usual.`
+  },
+  {
     id: 'assistant',
     title: 'Using the assistant',
     summary: 'What the assistant can do: answer how-to questions, look up your figures, and propose tasks, clients, drafts and expenses for you to confirm.',

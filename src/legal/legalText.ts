@@ -15,6 +15,7 @@ ${name} is invoicing, bookkeeping and booking software for freelancers and small
 - **What you put in ${name}**: your business details (such as your TIN, address, bank, M-PAiSA and MyCash details and logo), clients, quotes, invoices, receipts, projects, services, expenses, receipts and bank statements you upload, notes and messages.
 - **Your clients' information**: names, contact details, TINs and amounts you add to documents, and anything your clients send through the client portal, such as a reported payment or a message.
 - **Requests from your public pages**: when someone uses your booking page, rate card or the directory, we collect what they enter (such as their name, email, the date and their answers) and pass it to you.
+- **The marketplace**: listings you publish (with their photos, prices and town) are public. When you send a request for someone's listing, we pass your name, email, any phone number and your message to them, or to the ${name} team for listings ${name} manages on a provider's behalf.
 - **Payments**: if you turn on Pay now, PayPal handles card and PayPal payments. We never see or store card numbers. We store your PayPal API keys encrypted, and the details of payments needed to mark invoices paid.
 - **Technical information**: IP addresses (to stop abuse and limit repeated requests), details of errors when a screen fails to load (so we can fix it), and usage statistics through Google Firebase Analytics.
 

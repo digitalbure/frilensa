@@ -16,7 +16,7 @@ import type { Business, CRMData, CRMDocument } from "../src/types";
 // Progress (quote → invoice → paid) is worked out when read, from the workspace documents.
 
 export const REQUESTS = "quote_requests";
-export type Channel = "rate_card" | "directory" | "api" | "booking_page" | "widget";
+export type Channel = "rate_card" | "directory" | "api" | "booking_page" | "widget" | "marketplace";
 
 async function load(uid: string): Promise<CRMData> {
   const ws = await readWorkspace(uid);
@@ -186,7 +186,7 @@ export async function saveBookingRequest(b: NewBooking): Promise<{ created: bool
   if (created.created) later(emitEvent(b.uid, "booking_request.created", { bookingRequest: bookingView(created.request, b.data.documents) }));
   if (created.created && !b.quiet) {
     const r = created.request;
-    const where = b.channel === "api" ? ` via ${b.via || b.source?.app || "an app"}` : b.channel === "rate_card" ? " from your rate card" : b.channel === "booking_page" ? " from your booking page" : b.channel === "widget" ? " from your website" : "";
+    const where = b.channel === "api" ? ` via ${b.via || b.source?.app || "an app"}` : b.channel === "rate_card" ? " from your rate card" : b.channel === "booking_page" ? " from your booking page" : b.channel === "widget" ? " from your website" : b.channel === "marketplace" ? " from the marketplace" : "";
     later(notifyConsultant(b.uid, {
       subject: `New booking request ${r.ref}${where}`,
       heading: `New booking request${where}`,

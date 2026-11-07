@@ -17,6 +17,7 @@ const OWNED: [collection: string, field: string][] = [
   ["portal_access", "consultantId"],
   ["paypal_captures", "consultantId"],
   ["quote_requests", "uid"],
+  ["quote_requests", "requesterUid"],
   ["webhooks", "uid"],
   ["webhook_deliveries", "uid"],
   ["api_keys", "uid"],

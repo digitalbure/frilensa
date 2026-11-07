@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.8.0] - 2026-11-07
+
+### Added
+- **Marketplace (beta)**, in the menu and public at frilensa.com/marketplace.
+  - **Gear** to **rent** or **buy** (switch at the top), and **Services**. Search, and filter by industry, category and town; sort by newest or price. Eleven industries, each with its own gear and service categories.
+  - **Send a request** to rent (choose the dates), make an offer to buy, or ask for a service quote. Anyone can browse; requests and listings need an account.
+  - **List your gear or services** under **Marketplace → My listings**, with up to 6 photos (resized on your phone before upload), rent and sale prices, condition, brand and model. You can edit, hide or delete them, and see the requests you sent.
+  - **Requests for your listings arrive in your inbox** on Home ("From the marketplace"), with an email, so you can **Create quote** and invoice as usual.
+  - A user's **first listing is reviewed** by the admins before it goes live; after one is approved, their listings go live straight away.
+- **Admin → Marketplace**: approve or reject listings waiting for review (the seller sees the reason), hide or delete any listing, and **list for a provider** with Frilensa as their agent. Those listings show "Listed by Frilensa", and their requests come to the admins, who record progress and the commission earned. The commission terms are never shown publicly.
+- On phones, **Market** replaces Directory in the bottom bar. The directory is still in the desktop menu and linked from **Marketplace → Services**.
+- The privacy policy now covers the marketplace.
+
 ## [4.7.0] - 2026-11-07
 
 ### Added

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles,
   Building2, Plus, ChevronDown, Check, LogOut, ShieldCheck, Calculator, ArrowUpRight, Zap,
-  ShoppingBag, Clock, Camera, GraduationCap, Wrench, Palmtree, Edit2, Sliders, Tag
+  ShoppingBag, Clock, Camera, GraduationCap, Wrench, Palmtree, Edit2, Sliders, Tag, Store
 } from 'lucide-react';
 import { CRMData, Business, VentureType } from '../types';
 import { VENTURE_MODELS, ALL_VENTURE_TYPES, getVentureConfig } from '../lib/ventureModels';
@@ -14,8 +14,8 @@ import BrandMark from './BrandMark';
 import { useBranding } from '../lib/branding';
 
 interface DesktopSidebarProps {
-  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
-  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant') => void;
+  activeTab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant';
+  onChangeTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant') => void;
   crmData: CRMData;
   onUpdateData: (newData: CRMData) => void;
   onSignOut: () => void;
@@ -91,6 +91,7 @@ export default function DesktopSidebar({
     { id: 'catalogue' as const, label: 'Services', icon: Tag, badge: crmData.services?.some(s => !s.businessId || s.businessId === crmData.activeBusinessId) ? undefined : 'Set up', badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban, badge: activeProjectsCount > 0 ? `${activeProjectsCount}` : undefined, badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-500/30' },
     { id: 'services' as const, label: 'Finance', icon: Briefcase, badge: undefined },
+    { id: 'marketplace' as const, label: 'Marketplace', icon: Store, badge: undefined },
     { id: 'directory' as const, label: 'Directory', icon: Globe, badge: undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
     { id: 'assistant' as const, label: 'Assistant', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
     { id: 'settings' as const, label: 'Settings', icon: Settings, badge: undefined },

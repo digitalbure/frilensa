@@ -23,6 +23,7 @@ import { createPaymentsRouter } from "./server/payNow";
 import { createPublicBookingRouter, createBookingPageRouter } from "./server/bookingPage";
 import { createWebhooksRouter, createEventsRouter, startWebhookRetries } from "./server/webhooks";
 import { createAdminRouter } from "./server/admin";
+import { createAdminMarketplaceRouter, createMarketplaceRouter, createPublicMarketplaceRouter } from "./server/marketplace";
 import { createAccountRouter } from "./server/account";
 import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistrationRouter } from "./server/access";
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
@@ -228,6 +229,10 @@ async function startServer() {
   app.use("/api/public/branding", createPublicBrandingRouter());
   app.get("/manifest.webmanifest", manifestHandler);
   app.use("/api/admin/access", express.json({ limit: "10kb" }), createAdminAccessRouter());
+  // Marketplace: photo uploads need more room than other requests.
+  app.use("/api/admin/marketplace", express.json({ limit: "3mb" }), createAdminMarketplaceRouter());
+  app.use("/api/public/marketplace", createPublicMarketplaceRouter());
+  app.use("/api/marketplace", express.json({ limit: "3mb" }), createMarketplaceRouter());
   app.use("/api/public/registration", express.json({ limit: "2kb" }), createPublicRegistrationRouter());
   app.use("/api/account", express.json({ limit: "2kb" }), createAccountAccessRouter());
   app.use("/api/account", express.json({ limit: "2kb" }), createAccountRouter());

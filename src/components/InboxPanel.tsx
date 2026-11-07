@@ -10,7 +10,7 @@ import RecordPaymentModal from './RecordPaymentModal';
 import { fetchQuoteRequests, resolveQuoteRequest, type QuoteRequest } from '../lib/rateCards';
 import { draftQuoteFromRequest } from '../lib/quoteRequests';
 
-type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
+type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant';
 
 interface InboxPanelProps {
   data: CRMData;
@@ -36,6 +36,7 @@ function channelLabel(r: QuoteRequest) {
     case 'api': return `Booked via ${r.source?.app || r.via || 'an app'}`;
     case 'directory': return 'Booked through the Frilensa directory';
     case 'booking_page': return 'Booked on your booking page';
+    case 'marketplace': return 'From the marketplace';
     case 'widget': return `Booked on your website${r.source?.url ? ` (${hostOf(r.source.url)})` : ''}`;
     default: return 'Booked on your rate card';
   }

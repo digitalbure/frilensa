@@ -13,9 +13,11 @@ import {
   Sliders, Lock, Unlock, Layers, FileText, Database, ShieldCheck,
   CheckCircle, Zap, Wallet, HandCoins, Scale, Palette, Globe, Mail, Phone, Image as ImageIcon,
   KeyRound, UserPlus, UserCheck, Copy, Send, Ban, Key, EyeOff, Calendar, Clock
+, Store
 } from 'lucide-react';
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
+import AdminMarketplaceView from './marketplace/AdminMarketplaceView';
 
 
 interface PendingSubscriptionPayment {
@@ -67,7 +69,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [newFeeDesc, setNewFeeDesc] = useState('');
   
   // Navigation Tabs within Admin Panel
-  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory' | 'errors'>('directory');
+  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory' | 'errors' | 'marketplace'>('directory');
   const [searchQuery, setSearchQuery] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
@@ -379,6 +381,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           </button>
 
           <button
+            onClick={() => setActiveTab('marketplace')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'marketplace'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <Store className="w-3.5 h-3.5" />
+            <span>Marketplace</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('errors')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'errors'
@@ -455,6 +469,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5 bg-slate-950/40">
 
           {activeTab === 'errors' && <AdminErrorsView showToast={showToast} />}
+          {activeTab === 'marketplace' && <AdminMarketplaceView showToast={showToast} />}
 
           {/* ================= TAB: FIJI DIRECTORY & BOOKINGS CONTROL ================= */}
           {activeTab === 'directory' && (

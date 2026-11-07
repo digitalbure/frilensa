@@ -25,7 +25,7 @@ import { SUPPORTED_CURRENCIES, getCurrencyConfig, getDocumentHomeValues } from '
 interface BookkeepingViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
-  onNavigateToTab?: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', options?: any) => void;
+  onNavigateToTab?: (tab: 'dashboard' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant', options?: any) => void;
 }
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {

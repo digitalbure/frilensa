@@ -50,9 +50,11 @@ import { DEFAULT_PLATFORM_SETTINGS } from './data/mockData';
 import type { PlanTier } from './types';
 import { registerAccount, AccessDenied } from './lib/api';
 import LegalPage from './components/LegalPage';
+import MarketplaceView from './components/marketplace/MarketplaceView';
+import PublicMarketplace from './components/marketplace/PublicMarketplace';
 
-type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
-const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'catalogue', 'services', 'settings', 'projects', 'assistant'];
+type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant';
+const TABS: Tab[] = ['dashboard', 'directory', 'marketplace', 'billing', 'clients', 'catalogue', 'services', 'settings', 'projects', 'assistant'];
 const LAST_ACTIVE_KEY = 'fiji_crm_last_active_timestamp';
 const SAVE_DEBOUNCE_MS = 1200;
 
@@ -123,6 +125,7 @@ export default function App() {
 
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab') as Tab | null;
+    if (window.location.pathname.replace(/\/$/, '') === '/marketplace') return 'marketplace';
     return tabParam && TABS.includes(tabParam) ? tabParam : 'dashboard';
   });
   const [selectedDocId, setSelectedDocId] = useState<string | null>(null);
@@ -138,6 +141,8 @@ export default function App() {
     crmData.platformSettings?.defaultInactivityTimeoutMinutes ??
     15;
 
+  // Visitors on /marketplace see it without signing in, until they choose to sign in.
+  const [showAuthFromMarketplace, setShowAuthFromMarketplace] = useState(false);
   // Set when the server hasn't approved this new account (invite-only or closed sign-ups).
   const [accessGate, setAccessGate] = useState<{ message: string; needsInvite: boolean } | null>(null);
 
@@ -422,7 +427,7 @@ export default function App() {
 
   // Safe navigation function with action payloads (e.g., jump from Dashboard click directly to Creator in Billing)
   const handleNavigateWithAction = (
-    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', 
+    tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant', 
     docActionId?: string
   ) => {
     setActiveTab(tab);
@@ -501,6 +506,10 @@ export default function App() {
 
   if (!authReady) {
     return <LoadingScreen label="Loading Frilensa…" />;
+  }
+
+  if (!isSignedIn && window.location.pathname.replace(/\/$/, '') === '/marketplace' && !showAuthFromMarketplace) {
+    return <PublicMarketplace onSignIn={() => setShowAuthFromMarketplace(true)} />;
   }
 
   if (!isSignedIn) {
@@ -641,6 +650,10 @@ export default function App() {
               onNavigateToTab={handleNavigateWithAction}
               onManualCloudSync={handleManualCloudSync}
             />
+          )}
+
+          {activeTab === 'marketplace' && (
+            <MarketplaceView signedIn businesses={crmData.businesses.map(b => ({ id: b.id, name: b.name }))} onOpenDirectory={() => setActiveTab('directory')} />
           )}
 
           {activeTab === 'directory' && (

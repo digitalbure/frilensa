@@ -724,7 +724,7 @@ export interface AiMemoryItem {
   createdAt: string;
 }
 
-export type AppTab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
+export type AppTab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant';
 
 export interface SupportMessage {
   id: string;

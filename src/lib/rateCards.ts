@@ -31,7 +31,7 @@ export interface QuoteRequest {
   currency: string;
   estimate: number;
   createdAt: string;
-  channel?: 'rate_card' | 'directory' | 'api' | 'booking_page' | 'widget';
+  channel?: 'rate_card' | 'directory' | 'api' | 'booking_page' | 'widget' | 'marketplace';
   details?: { label: string; value: string }[];
   eventDate?: string;
   startTime?: string;

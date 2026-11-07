@@ -1219,6 +1219,85 @@ try {
     assert.ok(signIn.error, 'the sign-in still works');
     assert.ok((await get(`consultants/${A.uid}`)), "another user's workspace was touched");
   });
+  // ---------- Marketplace ----------
+  const mkt = (who, path, method = 'GET', body) => fetch(`${API}/api/marketplace${path}`, { method, headers: auth(who), ...(body ? { body: JSON.stringify(body) } : {}) });
+  const browse = async q => (await j(await fetch(`${API}/api/public/marketplace/listings?${new URLSearchParams(q)}`))).body;
+  const camera = { kind: 'gear', title: 'Sony FX3 cinema camera', description: 'Full frame, two batteries', industry: 'film_photo', category: 'cameras', city: 'Suva', forRent: true, rent: { amount: 150, unit: 'day' }, forSale: false, condition: 'like_new', brand: 'Sony', model: 'FX3' };
+  let cameraId, drone, managedId;
+  await check('marketplace: a first listing waits for review, then the seller is trusted', async () => {
+    await put(`consultants/${C.uid}`, carolWs(''));
+    assert.equal((await mkt(C, '/listings', 'POST', { ...camera, rent: { amount: 0 } })).status, 400, 'listing without a price accepted');
+    assert.equal((await mkt(C, '/listings', 'POST', { ...camera, category: 'pa' })).status, 400, 'category from another industry accepted');
+    const created = await j(await mkt(C, '/listings', 'POST', camera));
+    assert.equal(created.status, 200); assert.equal(created.body.listing.status, 'pending');
+    cameraId = created.body.listing.id;
+    assert.equal(created.body.listing.providerName, 'Carol Photo');
+    assert.ok(!(await browse({ kind: 'gear' })).listings.some(l => l.id === cameraId), 'pending listing is public');
+    assert.equal((await fetch(`${API}/api/admin/marketplace/listings/${cameraId}`, { method: 'PATCH', headers: auth(B), body: JSON.stringify({ status: 'live' }) })).status, 403);
+    assert.equal((await fetch(`${API}/api/admin/marketplace/listings/${cameraId}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ status: 'live' }) })).status, 200);
+    const second = await j(await mkt(C, '/listings', 'POST', { ...camera, title: 'DJI Mavic 3 drone', category: 'drones', forRent: true, forSale: true, rent: { amount: 90, unit: 'day' }, salePrice: 3200, brand: 'DJI' }));
+    assert.equal(second.body.listing.status, 'live', 'a trusted seller waited for review again');
+    drone = second.body.listing;
+  });
+  await check('marketplace: browse by rent or buy, category, search and price', async () => {
+    const rent = await browse({ kind: 'gear', mode: 'rent' });
+    assert.ok(rent.listings.some(l => l.id === cameraId) && rent.listings.some(l => l.id === drone.id));
+    assert.equal(rent.listings.find(l => l.id === cameraId).ownerUid, undefined, 'owner id exposed');
+    const buy = await browse({ kind: 'gear', mode: 'buy' });
+    assert.deepEqual(buy.listings.map(l => l.id), [drone.id], 'buy shows only items for sale');
+    assert.deepEqual((await browse({ kind: 'gear', category: 'drones' })).listings.map(l => l.id), [drone.id]);
+    assert.deepEqual((await browse({ kind: 'gear', q: 'fx3 sony' })).listings.map(l => l.id), [cameraId]);
+    assert.deepEqual((await browse({ kind: 'gear', sort: 'price_asc' })).listings.map(l => l.id), [drone.id, cameraId]);
+    assert.ok((await browse({ kind: 'gear' })).cities.includes('Suva'));
+    assert.equal((await browse({ kind: 'service' })).listings.length, 0);
+  });
+  await check('marketplace: photos are checked and served', async () => {
+    const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    assert.equal((await mkt(C, `/listings/${cameraId}/photos`, 'POST', { dataUrl: 'data:image/png;base64,' + Buffer.from('<svg/>').toString('base64') })).status, 400);
+    assert.equal((await mkt(B, `/listings/${cameraId}/photos`, 'POST', { dataUrl: `data:image/png;base64,${PNG}` })).status, 404, 'someone else added a photo');
+    const ok = await j(await mkt(C, `/listings/${cameraId}/photos`, 'POST', { dataUrl: `data:image/png;base64,${PNG}` }));
+    assert.equal(ok.status, 200, JSON.stringify(ok.body));
+    const img = await fetch(`${API}${ok.body.listing.photos[0].url}`);
+    assert.equal(img.status, 200); assert.equal(img.headers.get('content-type'), 'image/png');
+  });
+  await check("marketplace: a request lands in the owner's booking inbox", async () => {
+    assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', quantity: 2 })).status, 400, 'rent without dates');
+    assert.equal((await mkt(C, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2 })).status, 400, 'own listing');
+    assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'buy', offer: 100 })).status, 400, 'bought an item not for sale');
+    const r = await j(await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2, message: 'For a wedding shoot', phone: '+679 999 1234' }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const req = await get(`quote_requests/${r.body.requestId}`);
+    assert.equal(req.uid, C.uid); assert.equal(req.channel, 'marketplace'); assert.equal(req.requesterUid, B.uid);
+    assert.equal(req.estimate, 300); assert.equal(req.items[0].name, 'Sony FX3 cinema camera');
+    await emailTo(C.email, /marketplace/i);
+    const mine = (await j(await mkt(B, '/mine'))).body;
+    assert.ok(mine.sent.some(x => x.listingId === cameraId), 'request not in "sent"');
+  });
+  await check('marketplace: agent listings send requests to admins, who record commission', async () => {
+    const svc = { kind: 'service', title: 'Wedding MC (English and iTaukei)', industry: 'audio_events', category: 'mc', city: 'Nadi', price: { amount: 800, unit: 'job', from: true }, providerName: 'Mere Vakaloloma', agent: { contactName: 'Mere', phone: '+679 777 0000', commissionPercent: 15 } };
+    assert.equal((await fetch(`${API}/api/admin/marketplace/listings`, { method: 'POST', headers: auth(B), body: JSON.stringify(svc) })).status, 403);
+    const made = await j(await fetch(`${API}/api/admin/marketplace/listings`, { method: 'POST', headers: auth(A), body: JSON.stringify(svc) }));
+    assert.equal(made.status, 200); assert.equal(made.body.listing.status, 'live'); assert.equal(made.body.listing.managed, true);
+    managedId = made.body.listing.id;
+    const pub = (await browse({ kind: 'service' })).listings.find(l => l.id === managedId);
+    assert.equal(pub.agent, undefined, 'commission terms exposed'); assert.equal(pub.managed, true);
+    const r = await j(await mkt(B, `/listings/${managedId}/requests`, 'POST', { from: '2026-12-24', message: 'Christmas Eve wedding' }));
+    assert.equal(r.status, 200);
+    const ar = await get(`marketplace_requests/${r.body.requestId}`);
+    assert.equal(ar.commissionPercent, 15); assert.equal(ar.requesterUid, B.uid);
+    await emailTo(A.email, /Marketplace request/);
+    const upd = await j(await fetch(`${API}/api/admin/marketplace/requests/${r.body.requestId}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ status: 'won', commissionAmount: 120 }) }));
+    assert.equal(upd.body.request.commissionAmount, 120);
+  });
+  await check('marketplace: only owners change their listings; hiding and deleting work', async () => {
+    assert.equal((await mkt(B, `/listings/${drone.id}`, 'PATCH', { title: 'Hijacked' })).status, 404);
+    assert.equal((await mkt(B, `/listings/${drone.id}`, 'DELETE')).status, 404);
+    assert.equal((await mkt(C, `/listings/${drone.id}`, 'PATCH', { status: 'hidden' })).status, 200);
+    assert.ok(!(await browse({ kind: 'gear' })).listings.some(l => l.id === drone.id), 'hidden listing is public');
+    assert.equal((await mkt(C, `/listings/${drone.id}`, 'DELETE')).status, 200);
+    assert.equal(await get(`marketplace_listings/${drone.id}`), null);
+    assert.equal((await fetch(`${API}/api/public/marketplace/listings/${drone.id}`)).status, 404);
+  });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
     assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);

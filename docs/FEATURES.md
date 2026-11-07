@@ -68,6 +68,9 @@ Status as of v3.7.0 (October 2026). Each feature is marked by whether it actuall
 - ⚠️ Email transcript works only with SendGrid configured.
 - ✅ Reachable on phones from the "AI" tab. *(3.3.0)*
 
+### Marketplace
+- ✅ Marketplace (`server/marketplace.ts`, `src/components/marketplace/`, taxonomy in `src/lib/marketplaceTaxonomy.ts`): gear to rent or buy and services, searchable and filterable by industry, category and town; public at `/marketplace`. Listings and photos are server-only (`marketplace_listings`, photos in `FILES_BUCKET` under `marketplace/`); a user's first listing waits for admin review (`marketplace_sellers` marks trusted sellers). Requests for a user's listing become booking requests in their inbox (`quote_requests`, channel `marketplace`); requests for listings Frilensa manages as an agent go to `marketplace_requests`, where admins track progress and commission. *(4.8.0)*
+
 ### Directory and bookings
 - ✅ Shared directory: list your business, browse other Frilensa businesses, and send booking requests that reach the provider. Providers accept, decline or complete; requesters can cancel. Accepted bookings convert to a draft invoice. *(3.1.0)*
 - ⚠️ No reviews or verification yet (the made-up ratings and "FRCS Verified" badges were removed in 3.1.0). Booking emails need SendGrid configured.

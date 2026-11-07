@@ -10,7 +10,7 @@ import { CRMData, ActivityLog, CRMDocument, Client } from '../types';
 
 interface RecentActivityLogProps {
   data: CRMData;
-  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
+  onNavigateToTab: (tab: 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'marketplace' | 'settings' | 'projects' | 'assistant', selectedDocId?: string) => void;
   maxDisplay?: number;
   showFullControls?: boolean;
 }
