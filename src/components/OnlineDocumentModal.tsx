@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { downloadDocumentPdf } from '../lib/pdfGenerator';
+import DocAdjustmentRows from './DocAdjustmentRows';
 
 interface OnlineDocumentModalProps {
   document: CRMDocument;
@@ -416,6 +417,7 @@ export default function OnlineDocumentModal({
                 <span>Subtotal:</span>
                 <span className="font-mono font-bold">${document.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
               </div>
+              <DocAdjustmentRows doc={document} currency="" position="before" className="flex justify-between text-[11px]" colon />
 
               {!isTaxExemptDoc && (
                 <>
@@ -444,6 +446,7 @@ export default function OnlineDocumentModal({
                 ))
               )}
 
+              <DocAdjustmentRows doc={document} currency="" position="after" className="flex justify-between text-[11px]" colon />
               <div className="pt-2 border-t border-slate-300 flex justify-between items-baseline text-slate-900 font-black text-sm">
                 <span>Total due</span>
                 <span className="font-mono text-sky-700 text-base">

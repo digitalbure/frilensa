@@ -6,6 +6,7 @@ import type { Business, Client } from '../types';
 import { publicFileUrl } from '../lib/files';
 import PayNowPanel from './PayNowPanel';
 import { tradingAsLine } from '../lib/businessName';
+import { adjustmentRows } from '../lib/documentAdjustments';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -80,6 +81,10 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
     ? d.appliedTaxes.map(t => ({ label: `${t.name}${t.rateType === 'percentage' ? ` (${t.rate}%)` : ''}`, amount: t.amount }))
     : d.vatAmount ? [{ label: `VAT (${d.vatRate}%)`, amount: d.vatAmount }] : [];
   const feeLines = (d.appliedFees || []).map(f => ({ label: f.name, amount: f.amount }));
+  const adjustments = adjustmentRows(d);
+  const signed = (n: number) => `${n < 0 ? '−' : '+'}${money(currency, Math.abs(n))}`;
+  const beforeTax = adjustments.filter(r => r.key === 'discount_before').map(r => ({ label: `${r.label} before tax`, value: signed(r.amount) }));
+  const afterTax = adjustments.filter(r => r.key !== 'discount_before').map(r => ({ label: r.key === 'discount_after' ? `${r.label} after tax` : r.label, value: signed(r.amount) }));
   // Hide the bookkeeping line the app adds when a client reports a payment.
   const clientNotes = (d.notes || '').split('\n').filter(line => !line.startsWith('[Client reported payment')).join('\n').trim();
 
@@ -195,7 +200,9 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
         {/* Totals */}
         <div className="ml-auto w-full sm:w-72 text-xs space-y-1.5">
           <Row label="Subtotal" value={money(currency, d.subtotal)} />
+          {beforeTax.map((l, i) => <Row key={`b${i}`} label={l.label} value={l.value} />)}
           {[...taxLines, ...feeLines].map((l, i) => <Row key={i} label={l.label} value={money(currency, l.amount)} />)}
+          {afterTax.map((l, i) => <Row key={`a${i}`} label={l.label} value={l.value} />)}
           <div className="border-t border-slate-200 pt-1.5">
             <Row label="Total" value={money(currency, d.total)} strong />
           </div>

@@ -18,6 +18,18 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.6.0] - 2026-11-07
+
+### Added
+- **Discounts on quotes and invoices.** Take a percentage or an amount off, with an optional label (for example "Returning client"), and choose when it applies:
+  - **Before tax**: VAT and other taxes are charged on the discounted amount.
+  - **After tax**: taken off the total after taxes, which stay as charged. Frilensa reminds you to check with your accountant when this is on a tax invoice.
+- **Round the total.** Round to the nearest $1 or $10, down to $10 or $100, or type an exact figure (for example 5000) and press **Set total**. A small "Rounding" line takes the total there, and keeps it there if you change the lines. You're warned when the adjustment is large, since a discount is clearer for your client.
+- Discounts and rounding appear on the PDF, the online copy, the client portal, emails, receipts and the in-app preview. They carry over when a quote becomes an invoice, and a final invoice less deposits keeps the quote's discount and rounding, so the deposit and final invoices add up to the quote.
+
+### Fixed
+- Emailed quotes and invoices now list fees (such as a surcharge) in the totals. Before, the total included them but the email didn't show them.
+
 ## [4.5.2] - 2026-11-07
 
 ### Changed

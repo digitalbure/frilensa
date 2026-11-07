@@ -4,6 +4,7 @@ import QRCode from 'qrcode';
 import { documentPublicUrl } from './documentLinks';
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { getCurrencyConfig } from './currencies';
+import { adjustmentRows } from './documentAdjustments';
 
 export interface PdfExportOptions {
   includeBankDetails?: boolean;
@@ -537,6 +538,20 @@ export function generateDocumentPdf(
   doc.text(subtotalFormatted, pageWidth - margin, totalsY, { align: 'right' });
   totalsY += 4.2;
 
+  // Discount and rounding (lib/documentAdjustments.ts): before-tax discount here, the rest above the total.
+  const adjustments = adjustmentRows(document);
+  const drawAdjustment = (row: (typeof adjustments)[number]) => {
+    const colour: [number, number, number] = row.key === 'rounding' ? [15, 118, 110] : [109, 40, 217];
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(colour[0], colour[1], colour[2]);
+    const label = row.key === 'discount_before' ? `${row.label} before tax:` : row.key === 'discount_after' ? `${row.label} after tax:` : `${row.label}:`;
+    doc.text(label, totalsBoxX, totalsY);
+    doc.text(`${row.amount < 0 ? '-' : '+'}${docCurrency} $${Math.abs(row.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, pageWidth - margin, totalsY, { align: 'right' });
+    totalsY += 4.2;
+  };
+  adjustments.filter(row => row.key === 'discount_before').forEach(drawAdjustment);
+
   // Taxes (Applied taxes or Fiji VAT)
   if (document.appliedTaxes && document.appliedTaxes.length > 0) {
     document.appliedTaxes.forEach(tax => {
@@ -595,6 +610,8 @@ export function generateDocumentPdf(
       totalsY += 4.2;
     });
   }
+
+  adjustments.filter(row => row.key !== 'discount_before').forEach(drawAdjustment);
 
   // Divider above Total Due
   doc.setDrawColor(slate200[0], slate200[1], slate200[2]);

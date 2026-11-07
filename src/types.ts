@@ -505,6 +505,9 @@ export interface CRMDocument {
   appliedFees?: AppliedChargeItem[]; // itemized fees (Handling, Service Fee, Processing)
   taxTotal?: number; // total tax sum
   feeTotal?: number; // total fee sum
+  discount?: import('./lib/documentAdjustments').DocumentDiscount; // before or after tax (see lib/documentAdjustments.ts)
+  roundingAdjustment?: number; // + or − so the total lands on a round figure
+  roundingRule?: import('./lib/documentAdjustments').RoundingRule; // how the rounding was chosen, for editing
   total: number;
   status: 'draft' | 'sent' | 'partial' | 'paid' | 'cancelled' | 'accepted';
   partiallyPaidAmount?: number; // Amount partially received so far

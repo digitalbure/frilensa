@@ -81,7 +81,7 @@ Use the edit and delete icons to change or remove a client.`
     id: 'quotes-invoices',
     title: 'Create quotes and invoices',
     summary: 'Build a quote, invoice or receipt with items from your catalogue, taxes and fees, and automatic numbering.',
-    keywords: ['quote', 'invoice', 'receipt', 'new invoice', 'line items', 'catalogue', 'catalog', 'VAT', 'tax', 'fees', 'surcharge', 'numbering', 'currency', 'draft', 'due date', 'terms'],
+    keywords: ['quote', 'invoice', 'receipt', 'new invoice', 'line items', 'catalogue', 'catalog', 'VAT', 'tax', 'fees', 'surcharge', 'numbering', 'currency', 'draft', 'due date', 'terms', 'discount', 'rounding', 'round off', 'budget', 'edit line'],
     body: `### Start a document
 - **Billing → New document** starts an invoice. **+ New quote** and **+ New receipt** are just below it.
 - On **Home**, use the **Quote**, **Invoice** or **Receipt** quick actions. On a computer, the sidebar has **New invoice**.
@@ -91,9 +91,18 @@ Use the edit and delete icons to change or remove a client.`
 1. Check the **Number**. Frilensa suggests the next one in the active business's series, like INV-2026-1000. Change prefixes and starting numbers in **Settings → Document numbering**, or switch to **Manual** numbering there.
 2. Choose the **Client**, and optionally a **Project**. The currency follows the project or client; change it under **Currency** if needed.
 3. Set the **Issue date** and the **Due date** (on a quote, the **Expiry date**). These start from your business's default terms.
-4. Add lines: pick an item **From catalog**, or choose **Custom item** and type a description. Enter **Qty / hours** and **Rate**, then press **Add line**.
+4. Add lines: pick an item **From catalog**, or choose **Custom item** and type a description. Enter **Qty / hours** and **Rate**, then press **Add line**. To change a line later, press its pencil. The totals update as you type, which helps you fit a client's budget.
 5. Open **Taxes and fees** with **Show options** to choose taxes and fees. VAT uses your VAT rate (12.5% by default). Press the **Tax on** switch to make a document tax exempt.
-6. Edit **Terms and notes** if needed, then press **Create**.
+6. On a quote or invoice, add a **Discount** or **Round the total** if needed (see below).
+7. Edit **Terms and notes** if needed, then press **Create**.
+
+### Discounts and rounding
+- **Discount**: choose **%** or an amount, enter it, and choose when it applies. You can give it a label, like "Returning client".
+  - **Before tax**: taken off the line items first, so VAT and other taxes are charged on the lower amount.
+  - **After tax**: taken off the total after taxes. The taxes stay as charged on the full amount. On a tax invoice, a discount before tax usually gives the right VAT; check with your accountant if unsure.
+- **Round the total**: press **Nearest $1**, **Nearest $10**, **Down to $10** or **Down to $100**. Or type a figure, for example 5000, and press **Set total**.
+  - A **Rounding** line (for example −FJD 1.33) brings the total to that figure. It stays on that figure if you change the lines, so check the rounding line after big changes. For larger amounts, use a discount.
+- Discounts and rounding show on the quote or invoice, its PDF, the online copy, the client portal and emails. They carry over when a quote becomes an invoice. When deposits were invoiced first, the deposit invoice and final invoice add up to the quote.
 
 New documents start as **Draft**. Drafts are hidden from clients until you send them or mark them **Sent**.
 

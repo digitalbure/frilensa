@@ -1,5 +1,27 @@
 import { CRMDocument, Business, Client, UserProfile } from '../types';
 import { tradingAsLine } from './businessName';
+import { adjustmentRows } from './documentAdjustments';
+const escapeHtml = (v: string) => v.replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch] as string));
+
+function emailTotalsRow(label: string, value: string, colour: string) {
+  return `<tr>
+                <td style="font-size: 12.5px; color: ${colour}; padding-bottom: 6px;">${label}:</td>
+                <td style="text-align: right; font-family: monospace; font-weight: 600; color: ${colour};">${value}</td>
+              </tr>`;
+}
+
+/** Discount and rounding lines for the email's totals (lib/documentAdjustments.ts). */
+function adjustmentRowsHtml(document: Pick<CRMDocument, 'discount' | 'roundingAdjustment'>, currency: string, position: 'before' | 'after') {
+  return adjustmentRows(document)
+    .filter(r => position === 'before' ? r.key === 'discount_before' : r.key !== 'discount_before')
+    .map(r => emailTotalsRow(
+      escapeHtml(r.key === 'discount_before' ? `${r.label} before tax` : r.key === 'discount_after' ? `${r.label} after tax` : r.label),
+      `${r.amount < 0 ? '&minus;' : '+'}${currency} $${Math.abs(r.amount).toFixed(2)}`,
+      r.key === 'rounding' ? '#0f766e' : '#6d28d9'
+    ))
+    .join('');
+}
+
 
 const escapeText = (v: string) => v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
@@ -375,6 +397,7 @@ Sent using Frilensa (frilensa.com)
                 ${docCurrency} $${document.subtotal.toFixed(2)}
               </td>
             </tr>
+            ${adjustmentRowsHtml(document, docCurrency, 'before')}
             
             ${document.appliedTaxes && document.appliedTaxes.length > 0 ? document.appliedTaxes.map(t => `
               <tr>
@@ -396,6 +419,8 @@ Sent using Frilensa (frilensa.com)
               </tr>
             `}
 
+            ${(document.appliedFees || []).map(f => emailTotalsRow(escapeHtml(f.name), `${docCurrency} $${f.amount.toFixed(2)}`, '#047857')).join('')}
+            ${adjustmentRowsHtml(document, docCurrency, 'after')}
             <tr>
               <td style="font-size: 15px; font-weight: 900; color: #0f172a; padding-top: 8px; border-top: 2px solid #cbd5e1;">
                 Total:

@@ -20,6 +20,7 @@ import {
 } from '../lib/api';
 import ClientOverviewView from './ClientOverviewView';
 import { openPortalFile } from '../lib/files';
+import DocAdjustmentRows from './DocAdjustmentRows';
 
 interface ClientPortalViewProps {
   session: PortalSession;
@@ -932,6 +933,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       <span className="text-zinc-400">Subtotal:</span>
                       <span className="font-mono font-medium">{selectedDoc.currency || 'FJD'} {selectedDoc.subtotal.toFixed(2)}</span>
                     </div>
+                    <DocAdjustmentRows doc={selectedDoc} currency={`${selectedDoc.currency || 'FJD'} `} position="before" className="flex justify-between max-w-[240px] ml-auto text-[10.5px]" colon />
 
                     {/* Itemized Taxes */}
                     {selectedDoc.appliedTaxes && selectedDoc.appliedTaxes.length > 0 ? (
@@ -960,6 +962,7 @@ export default function ClientPortalView({ session, onSignOut }: ClientPortalVie
                       ))
                     )}
 
+                    <DocAdjustmentRows doc={selectedDoc} currency={`${selectedDoc.currency || 'FJD'} `} position="after" className="flex justify-between max-w-[240px] ml-auto text-[10.5px]" colon />
                     <div className="flex justify-between max-w-[240px] ml-auto font-bold text-zinc-950 text-sm border-t border-zinc-200 pt-1.5">
                       <span>Total:</span>
                       <span className="font-mono text-emerald-700">{selectedDoc.currency || 'FJD'} {selectedDoc.total.toFixed(2)}</span>

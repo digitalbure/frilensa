@@ -11,6 +11,8 @@ import {
 import { CRMData, CRMDocument, Client, ProductService, DocumentItem, Business, RecurringInvoice, TaxConfig, FeeConfig, AppliedChargeItem, PlanTier, Transaction, PaymentAttachment } from '../types';
 import DateInput from './DateInput';
 import LineItemEditForm from './LineItemEditForm';
+import DiscountRoundingCard, { type DiscountDraft, type RoundingRule } from './DiscountRoundingCard';
+import { cents, cleanDiscount, beforeTaxDiscount, afterTaxDiscount, roundingFor } from '../lib/documentAdjustments';
 import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
@@ -30,10 +32,8 @@ import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
 import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 import { depositFor } from '../lib/bookings';
 import { tradingAsLine } from '../lib/businessName';
+import DocAdjustmentRows from './DocAdjustmentRows';
 
-/** Rounds money to the cent so taxes and totals match what's shown and paid. */
-// Scaling first and trimming float noise makes halves round up (12.5% of 4,444.44 = 555.555 → 555.56).
-const cents = (n: number) => Math.round(Number((n * 100).toFixed(6))) / 100;
 
 interface BillingViewProps {
   data: CRMData;
@@ -112,6 +112,10 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Line being edited in place (quote/invoice editor and retainer editor), and the line as typed so far.
   // Totals use the draft so they update while typing; saving the document keeps it.
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  // Discount and rounding on the quote or invoice being edited
+  const NO_DISCOUNT: DiscountDraft = { type: 'percent', value: '', timing: 'before_tax', label: '' };
+  const [discountDraft, setDiscountDraft] = useState<DiscountDraft>(NO_DISCOUNT);
+  const [roundingRule, setRoundingRule] = useState<RoundingRule | null>(null);
   const [draftLine, setDraftLine] = useState<DocumentItem | null>(null);
   const stopEditingLine = () => { setEditingLineId(null); setDraftLine(null); };
   const withDraft = (list: DocumentItem[]) => draftLine && editingLineId === draftLine.id
@@ -203,6 +207,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   const handleNewDocument = (type: 'quote' | 'invoice' | 'receipt' | 'credit_note', forcedClientId: string = '', forcedProjectId: string = '') => {
     setEditingDoc(null);
+    setDiscountDraft(NO_DISCOUNT);
+    setRoundingRule(null);
     setShowExpensePicker(false);
     setPickedExpenseIds([]);
     setExpenseMarkup(0);
@@ -275,6 +281,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setIssueDate(doc.issueDate);
     setDueDate(doc.dueDate || '');
     setItems(doc.items.map(it => ({ ...it })));
+    setDiscountDraft(doc.discount
+      ? { type: doc.discount.type, value: String(doc.discount.value), timing: doc.discount.timing, label: doc.discount.label || '' }
+      : NO_DISCOUNT);
+    // Older rounding without a rule is kept as a fixed total.
+    setRoundingRule(doc.roundingRule || (doc.roundingAdjustment ? { mode: 'target', target: doc.total } : null));
     setNotes(doc.notes || '');
     setPaymentMethod(doc.paymentMethod || 'Bank Transfer');
     setDocStatus(doc.status);
@@ -326,8 +337,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         quantity: 1, rate: -dep.subtotal, total: -dep.subtotal
       }))];
       const finalTotals = deposits.length
-        ? recalcDocumentTotals(doc, finalItems, data.userProfile.enableTax === false)
-        : { items: doc.items, subtotal: doc.subtotal, vatRate: doc.vatRate, vatAmount: doc.vatAmount, appliedTaxes: doc.appliedTaxes, appliedFees: doc.appliedFees, taxTotal: doc.taxTotal, feeTotal: doc.feeTotal, total: doc.total };
+        ? recalcDocumentTotals(doc, finalItems, data.userProfile.enableTax === false, { keepAdjustments: true })
+        : { items: doc.items, subtotal: doc.subtotal, vatRate: doc.vatRate, vatAmount: doc.vatAmount, appliedTaxes: doc.appliedTaxes, appliedFees: doc.appliedFees, taxTotal: doc.taxTotal, feeTotal: doc.feeTotal, discount: doc.discount, roundingAdjustment: doc.roundingAdjustment, roundingRule: doc.roundingRule, total: doc.total };
       const newInv: CRMDocument = {
         isTaxExempt: doc.isTaxExempt,
         id: `doc-${Date.now()}`,
@@ -784,7 +795,20 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const items = liveItems;
     const subtotal = cents(items.reduce((acc, curr) => acc + curr.total, 0));
     // Reimbursable expenses are passed on without VAT or fees unless the line is marked taxable.
-    const { taxableBase, reimbursementsNoVat } = lineTotals(items);
+    const { taxableBase: lineTaxableBase, reimbursementsNoVat } = lineTotals(items);
+    // A discount before tax lowers what taxes and percentage fees are charged on.
+    const discountRule = (docType === 'quote' || docType === 'invoice') ? cleanDiscount({ ...discountDraft, value: Number(discountDraft.value) }) : null;
+    const before = beforeTaxDiscount(discountRule, subtotal);
+    const taxableBase = cents(lineTaxableBase * before.factor);
+    // After-tax discount and rounding come last, on the taxed total.
+    const finish = (taxedTotal: number) => {
+      const afterAmount = afterTaxDiscount(discountRule, taxedTotal);
+      const totalBeforeRounding = cents(taxedTotal - afterAmount);
+      const rule = (docType === 'quote' || docType === 'invoice') ? roundingRule : null;
+      const roundingAdjustment = rule ? roundingFor(totalBeforeRounding, rule.mode === 'target' ? { target: rule.target } : { step: rule.step, direction: rule.direction }) : 0;
+      const discount = discountRule ? { ...discountRule, amount: discountRule.timing === 'before_tax' ? before.amount : afterAmount } : undefined;
+      return { discount, discountAmount: discount?.amount || 0, totalBeforeRounding, roundingAdjustment, total: cents(totalBeforeRounding + roundingAdjustment) };
+    };
 
     const availableTaxes = [
       ...(data.platformTaxes || []),
@@ -824,8 +848,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         feeTotal,
         vatRate: 0,
         vatAmount: 0,
-        total: cents(subtotal + feeTotal),
-        reimbursementsNoVat
+        reimbursementsNoVat,
+        ...finish(cents(subtotal - before.amount + feeTotal))
       };
     }
 
@@ -865,20 +889,18 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     const vatRate = vatTax ? vatTax.rate : (data.userProfile.defaultVatRate ?? 12.5);
     const vatAmount = vatTax ? vatTax.amount : cents(taxableBase * (vatRate / 100));
 
-    const total = cents(subtotal + taxTotal + feeTotal);
-
-    return { 
-      subtotal, 
-      appliedTaxes, 
-      appliedFees, 
-      taxTotal, 
-      feeTotal, 
-      vatRate, 
-      vatAmount, 
-      total,
-      reimbursementsNoVat
+    return {
+      subtotal,
+      appliedTaxes,
+      appliedFees,
+      taxTotal,
+      feeTotal,
+      vatRate,
+      vatAmount,
+      reimbursementsNoVat,
+      ...finish(cents(subtotal - before.amount + taxTotal + feeTotal))
     };
-  }, [liveItems, selectedTaxIds, selectedFeeIds, isTaxExempt, data.userProfile.enableTax, data.platformTaxes, data.platformFees, data.businessTaxes, data.businessFees, data.userProfile.defaultVatRate, data.activeBusinessId, editingDoc]);
+  }, [liveItems, selectedTaxIds, selectedFeeIds, isTaxExempt, data.userProfile.enableTax, data.platformTaxes, data.platformFees, data.businessTaxes, data.businessFees, data.userProfile.defaultVatRate, data.activeBusinessId, editingDoc, docType, discountDraft, roundingRule]);
 
   // Form Submission for standard document
   const handleSubmitDocument = (e: React.FormEvent) => {
@@ -906,6 +928,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       appliedFees: totals.appliedFees,
       taxTotal: totals.taxTotal,
       feeTotal: totals.feeTotal,
+      discount: totals.discount,
+      roundingAdjustment: totals.roundingAdjustment || undefined,
+      roundingRule: totals.roundingAdjustment || roundingRule ? roundingRule || undefined : undefined,
       total: totals.total,
       status: docStatus,
       currency: docCurrency || data.userProfile.defaultCurrency || 'FJD',
@@ -2890,6 +2915,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     <span className="font-mono">{docCurrency} ${totals.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
 
+                  {totals.discount && totals.discount.timing === 'before_tax' && totals.discountAmount > 0 && (
+                    <div className="flex justify-between text-violet-700 text-[11px]">
+                      <span>{totals.discount.label || 'Discount'}{totals.discount.type === 'percent' ? ` (${totals.discount.value}%)` : ''} before tax</span>
+                      <span className="font-mono">−{docCurrency} ${totals.discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
                   {totals.reimbursementsNoVat > 0 && (
                     <div className="flex justify-between text-amber-800 text-[11px]">
                       <span>Includes reimbursable expenses (no VAT)</span>
@@ -2918,12 +2950,40 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                     </div>
                   ))}
 
+                  {totals.discount && totals.discount.timing === 'after_tax' && totals.discountAmount > 0 && (
+                    <div className="flex justify-between text-violet-700 text-[11px]">
+                      <span>{totals.discount.label || 'Discount'}{totals.discount.type === 'percent' ? ` (${totals.discount.value}%)` : ''} after tax</span>
+                      <span className="font-mono">−{docCurrency} ${totals.discountAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
+                  {totals.roundingAdjustment !== 0 && (
+                    <div className="flex justify-between text-teal-700 text-[11px]">
+                      <span>Rounding</span>
+                      <span className="font-mono">{totals.roundingAdjustment > 0 ? '+' : '−'}{docCurrency} ${Math.abs(totals.roundingAdjustment).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                    </div>
+                  )}
+
                   <div className="flex justify-between text-sm font-extrabold text-slate-900 pt-1.5 border-t border-slate-200">
                     <span>Total</span>
                     <span className="font-mono text-sky-700">{docCurrency} ${totals.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                 </div>
               </div>
+
+              {(docType === 'quote' || docType === 'invoice') && (
+                <DiscountRoundingCard
+                  currency={docCurrency}
+                  discount={discountDraft}
+                  onDiscount={setDiscountDraft}
+                  discountAmount={totals.discountAmount}
+                  rounding={roundingRule}
+                  onRounding={setRoundingRule}
+                  roundingAdjustment={totals.roundingAdjustment}
+                  totalBeforeRounding={totals.totalBeforeRounding}
+                  isTaxInvoice={docType === 'invoice' && !isTaxExempt}
+                />
+              )}
 
               {/* Notes */}
               <div>
@@ -3370,6 +3430,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       <span>Subtotal:</span>
                       <span className="font-mono">{selectedDoc.currency || data.userProfile.defaultCurrency} ${selectedDoc.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                     </div>
+                    <DocAdjustmentRows doc={selectedDoc} currency={selectedDoc.currency || data.userProfile.defaultCurrency} position="before" colon />
 
                     {selectedDoc.appliedTaxes && selectedDoc.appliedTaxes.length > 0 ? (
                       selectedDoc.appliedTaxes.map((tax) => (
@@ -3394,6 +3455,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       ))
                     )}
 
+                    <DocAdjustmentRows doc={selectedDoc} currency={selectedDoc.currency || data.userProfile.defaultCurrency} position="after" colon />
                     <div className="flex justify-between text-slate-900 font-black text-xs pt-1.5 border-t border-slate-200">
                       <span>Total due:</span>
                       <span className="font-mono text-sky-700">{selectedDoc.currency || data.userProfile.defaultCurrency} ${selectedDoc.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>

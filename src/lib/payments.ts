@@ -184,6 +184,8 @@ export function buildReceiptFor(
     appliedFees: invoice.appliedFees,
     taxTotal: invoice.taxTotal,
     feeTotal: invoice.feeTotal,
+    discount: invoice.discount,
+    roundingAdjustment: invoice.roundingAdjustment,
     total: invoice.total,
     status: 'paid',
     paymentMethod: payment.paymentMethod || invoice.paymentMethod,

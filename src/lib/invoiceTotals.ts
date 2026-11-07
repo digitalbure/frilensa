@@ -1,4 +1,5 @@
 import type { CRMDocument, DocumentItem } from '../types';
+import { cents, cleanDiscount, beforeTaxDiscount, afterTaxDiscount, roundingFor } from './documentAdjustments';
 
 // Reimbursable expenses on invoices. A reimbursement line passes a cost on to the client; by
 // default no VAT, taxes or percentage fees are charged on it, unless the line is marked taxable.
@@ -71,23 +72,47 @@ export function linkBilledExpenses<E extends { id: string; billedDocumentId?: st
  * charges are re-applied to the taxable base, flat ones stay as they are. Tax-exempt documents
  * (or `taxOff`) get no VAT.
  */
-export function recalcDocumentTotals<D extends Pick<CRMDocument, 'items' | 'vatRate' | 'appliedTaxes' | 'appliedFees' | 'isTaxExempt'>>(doc: D, items: DocumentItem[], taxOff = false) {
-  const r2 = (n: number) => Math.round(n * 100) / 100;
-  const { subtotal, taxableBase } = lineTotals(items);
+/**
+ * Works a document's taxes, fees, discount, rounding and total out again for new lines.
+ * - Normally a percentage discount is re-applied to the new lines, an amount discount and a
+ *   "nearest $10"-style rounding are kept, and a "set the total to $X" rounding is dropped (the lines
+ *   changed, so the old figure no longer applies).
+ * - With `keepAdjustments` (a final invoice less deposits), the discount and rounding keep their
+ *   amounts, so the deposit and final invoices add up to the quote.
+ */
+export function recalcDocumentTotals<D extends Pick<CRMDocument, 'items' | 'vatRate' | 'appliedTaxes' | 'appliedFees' | 'isTaxExempt' | 'discount' | 'roundingAdjustment' | 'roundingRule'>>(
+  doc: D, items: DocumentItem[], taxOff = false, { keepAdjustments = false }: { keepAdjustments?: boolean } = {}
+) {
+  const { subtotal, taxableBase: lineTaxableBase } = lineTotals(items);
+  const rule = cleanDiscount(doc.discount);
+  const kept = keepAdjustments && doc.discount ? { ...rule!, type: 'amount' as const, value: doc.discount.amount } : rule;
+  const before = beforeTaxDiscount(kept, subtotal);
+  const taxableBase = cents(lineTaxableBase * before.factor);
   const noTax = taxOff || doc.isTaxExempt === true;
   const reapply = (c: { rateType: 'percentage' | 'flat'; rate: number; amount: number }) =>
-    c.rateType === 'percentage' ? r2(taxableBase * c.rate / 100) : c.amount;
+    c.rateType === 'percentage' ? cents(taxableBase * c.rate / 100) : c.amount;
   const appliedFees = (doc.appliedFees || []).map(f => ({ ...f, amount: reapply(f) }));
   const appliedTaxes = noTax ? [] : (doc.appliedTaxes || []).map(t => ({ ...t, amount: reapply(t) }));
   const vatTax = appliedTaxes.find(t => t.id === 'ptax-1' || t.name.toLowerCase().includes('vat'));
   const vatRate = noTax ? 0 : (vatTax ? vatTax.rate : doc.vatRate || 0);
-  const vatAmount = noTax ? 0 : (vatTax ? vatTax.amount : r2(taxableBase * vatRate / 100));
-  const taxTotal = appliedTaxes.length ? r2(appliedTaxes.reduce((s, t) => s + t.amount, 0)) : vatAmount;
-  const feeTotal = r2(appliedFees.reduce((s, f) => s + f.amount, 0));
+  const vatAmount = noTax ? 0 : (vatTax ? vatTax.amount : cents(taxableBase * vatRate / 100));
+  const taxTotal = appliedTaxes.length ? cents(appliedTaxes.reduce((s, t) => s + t.amount, 0)) : vatAmount;
+  const feeTotal = cents(appliedFees.reduce((s, f) => s + f.amount, 0));
+  const taxed = cents(subtotal - before.amount + taxTotal + feeTotal);
+  const afterAmount = afterTaxDiscount(kept, taxed);
+  const beforeRounding = cents(taxed - afterAmount);
+  const roundingRule = keepAdjustments ? undefined : doc.roundingRule?.mode === 'step' ? doc.roundingRule : undefined;
+  const roundingAdjustment = keepAdjustments
+    ? (doc.roundingAdjustment || 0)
+    : roundingRule?.mode === 'step' ? roundingFor(beforeRounding, { step: roundingRule.step, direction: roundingRule.direction }) : 0;
+  const discount = rule ? { ...rule, amount: rule.timing === 'before_tax' ? before.amount : afterAmount } : undefined;
   return {
     items, subtotal, vatRate, vatAmount,
     ...(doc.appliedTaxes ? { appliedTaxes, taxTotal } : {}),
     ...(doc.appliedFees ? { appliedFees, feeTotal } : {}),
-    total: r2(subtotal + taxTotal + feeTotal)
+    discount,
+    roundingAdjustment: roundingAdjustment || undefined,
+    roundingRule,
+    total: cents(beforeRounding + roundingAdjustment)
   };
 }
