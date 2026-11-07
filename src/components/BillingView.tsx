@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { CRMData, CRMDocument, Client, ProductService, DocumentItem, Business, RecurringInvoice, TaxConfig, FeeConfig, AppliedChargeItem, PlanTier, Transaction, PaymentAttachment } from '../types';
 import DateInput from './DateInput';
+import LineItemEditForm from './LineItemEditForm';
 import OnlineDocumentModal from './OnlineDocumentModal';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
 import { suggestDocumentNumber as suggestNextDocumentNumber } from '../lib/documentNumbers';
@@ -104,6 +105,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [items, setItems] = useState<DocumentItem[]>([]);
+  // Line being edited in place (quote/invoice editor and retainer editor)
+  const [editingLineId, setEditingLineId] = useState<string | null>(null);
   const [showExpensePicker, setShowExpensePicker] = useState(false);
   const [pickedExpenseIds, setPickedExpenseIds] = useState<string[]>([]);
   const [expenseMarkup, setExpenseMarkup] = useState(0);
@@ -760,6 +763,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   const handleRemoveItemLine = (lineId: string) => {
     setItems(items.filter(it => it.id !== lineId));
+    if (editingLineId === lineId) setEditingLineId(null);
   };
 
   // Compute subtotal, itemized taxes, itemized fees, and grand total
@@ -2642,13 +2646,25 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                   {items.length === 0 ? (
                     <p className="text-[10px] text-slate-400 italic text-center py-2">No line items yet. Add one above.</p>
                   ) : (
-                    items.map((it, idx) => (
+                    items.map((it, idx) => editingLineId !== null && editingLineId === it.id ? (
+                      <LineItemEditForm
+                        key={it.id}
+                        item={it}
+                        currency={docCurrency}
+                        amountLocked={isReimbursement(it)}
+                        onCancel={() => setEditingLineId(null)}
+                        onSave={updated => { setItems(items.map(x => x.id === it.id ? updated : x)); setEditingLineId(null); }}
+                      />
+                    ) : (
                       <div key={it.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-100 flex justify-between items-center text-[11px]">
                         <div className="min-w-0 pr-2">
                           <span className="font-bold text-slate-800 block truncate">{it.name}</span>
                           <span className="text-[10px] text-slate-400 block mt-0.5">
-                            {isReimbursement(it) ? (it.description || 'Reimbursable expense') : `${it.quantity} x ${docCurrency} $${it.rate}`}
+                            {isReimbursement(it) ? (it.description || 'Reimbursable expense') : `${it.quantity} x ${docCurrency} $${Number(it.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                           </span>
+                          {!isReimbursement(it) && it.description && (
+                            <span className="text-[10px] text-slate-500 block mt-0.5 line-clamp-2">{it.description}</span>
+                          )}
                           {isReimbursement(it) && (
                             <span className="flex flex-wrap items-center gap-2 mt-1">
                               <span className="text-[9px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded">Reimbursable</span>
@@ -2667,10 +2683,23 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                           <span className="font-bold text-slate-700 font-mono shrink-0">
                             {docCurrency} ${it.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                           </span>
+                          {it.id && (
+                            <button
+                              type="button"
+                              onClick={() => setEditingLineId(it.id)}
+                              className="p-1 text-slate-400 hover:text-sky-600 rounded cursor-pointer"
+                              aria-label={`Edit ${it.name}`}
+                              title="Edit line"
+                            >
+                              <Edit3 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                           <button
                             type="button"
                             onClick={() => handleRemoveItemLine(it.id)}
                             className="p-1 text-slate-400 hover:text-rose-500 rounded cursor-pointer"
+                            aria-label={`Delete ${it.name}`}
+                            title="Delete line"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -3720,22 +3749,44 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
                 {/* Items Added List */}
                 <div className="space-y-1.5">
-                  {retItems.map((it, idx) => (
+                  {retItems.map((it, idx) => editingLineId !== null && editingLineId === it.id ? (
+                    <LineItemEditForm
+                      key={it.id}
+                      item={it}
+                      currency={data.userProfile.defaultCurrency}
+                      onCancel={() => setEditingLineId(null)}
+                      onSave={updated => { setRetItems(retItems.map(x => x.id === it.id ? updated : x)); setEditingLineId(null); }}
+                    />
+                  ) : (
                     <div key={it.id || idx} className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center text-[10.5px]">
                       <div className="min-w-0 pr-2">
                         <span className="font-bold text-slate-800 block truncate">{it.name}</span>
                         <span className="text-[9px] text-slate-400">
-                          {it.quantity} x {data.userProfile.defaultCurrency} ${it.rate}
+                          {it.quantity} x {data.userProfile.defaultCurrency} ${Number(it.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
+                        {it.description && <span className="text-[9px] text-slate-500 block line-clamp-2">{it.description}</span>}
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-mono font-bold text-slate-800">
                           ${(it.total || it.quantity * it.rate).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
+                        {it.id && (
+                          <button
+                            type="button"
+                            onClick={() => setEditingLineId(it.id)}
+                            className="p-1 text-slate-400 hover:text-sky-600 rounded cursor-pointer"
+                            aria-label={`Edit ${it.name}`}
+                            title="Edit line"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                         <button
                           type="button"
                           onClick={() => handleRemoveRetItemLine(it.id)}
                           className="p-1 text-slate-400 hover:text-rose-500 rounded cursor-pointer"
+                          aria-label={`Delete ${it.name}`}
+                          title="Delete line"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

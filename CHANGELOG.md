@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.5.1] - 2026-11-07
+
+### Fixed
+- **Edit a line on a quote, invoice or retainer.** Press the pencil next to a line to change its name, details, quantity or rate in place, then **Save line** (or **Cancel**, or press Esc). The line total and the document totals update as you go. Before, you had to delete the line and add it again. For reimbursable expense lines you can change the wording, while the amount stays tied to the expense.
+- Line details now show under each line in the editor, and rates show with cents (for example 1,250.50).
+
 ## [4.5.0] - 2026-10-13
 
 ### Added
