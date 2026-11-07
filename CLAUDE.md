@@ -12,6 +12,7 @@ Live at **frilensa.com**. React 19 + Vite SPA, Express server (`server.ts`, `ser
 - Frilensa's own branding (name, tagline, support contacts, logo, colours) lives in the server-only `platform` collection, managed in `server/branding.ts` (public `GET /api/public/branding`, admin `/api/admin/branding`, `/manifest.webmanifest`). The app reads it with `useBranding()` / `<BrandMark />`, never from a workspace. Logos are PNG, JPEG or WebP only, checked by their magic bytes; SVGs are converted in the browser.
 - A business's own branding (for its documents) is separate and stays on the business in the workspace.
 - Platform-wide plans, taxes and fees and the standard VAT rate live in `platform/config` (`server/platformConfig.ts`: public `GET /api/public/platform-config`, admin `PUT /api/admin/platform-config`). The app overlays them on each workspace as it loads (`applyPlatformConfig` in `src/lib/platformConfigShared.ts`); a user's own plan choice and VAT rate stay in their workspace.
+- The directory switches (`directory.enabled`, `directory.paidOnly`) are in the same config and enforced in `server/directory.ts` (listing, browsing and booking), using the owner's plan from their workspace head (`readPlans`).
 
 ## Every change must be logged
 

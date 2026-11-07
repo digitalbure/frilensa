@@ -69,7 +69,7 @@ const docs = [
   { id: 'd2', type: 'invoice', status: 'draft', documentNumber: 'INV-2026-1002', total: 50, subtotal: 50, vatRate: 0, vatAmount: 0, shareToken: TOK_DRAFT, clientId: 'c1', businessId: 'b1', items: [] },
   { id: 'd3', type: 'quote', status: 'sent', documentNumber: 'QT-2026-1000', total: 200, subtotal: 200, vatRate: 0, vatAmount: 0, shareToken: TOK_QUOTE, clientId: 'c1', businessId: 'b1', items: [] }
 ];
-await put(`consultants/${A.uid}`, { consultantEmail: A.email, userProfile: { email: A.email }, clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
+await put(`consultants/${A.uid}`, { consultantEmail: A.email, userProfile: { email: A.email }, platformSettings: { activePlan: 'pro' }, clients: [{ id: 'c1', name: 'Client One', email: 'client@one.fj' }], businesses: [{ id: 'b1', name: 'Alice Studio', isPrimary: true }], documents: docs, projects: [] });
 for (const d of docs) await put(`documents/${A.uid}_${d.id}`, { ...d, consultantId: A.uid, clientEmail: 'client@one.fj', clientName: 'Client One', businessName: 'Alice Studio', businessBankDetails: 'BSP 123' });
 
 
@@ -112,6 +112,7 @@ const carolDocs = [
 ];
 const carolWs = rateCardToken => ({
   consultantEmail: C.email,
+  platformSettings: { activePlan: 'pro' },
   userProfile: { email: C.email, defaultCurrency: 'FJD', defaultVatRate: 12.5 },
   clients: [],
   businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, booking: carolBooking, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
@@ -1184,6 +1185,35 @@ try {
     assert.equal(after.config.plans.pro.name, 'Pro Studio'); assert.equal(after.config.plans.pro.price, 29.5);
     assert.equal(after.config.platformFees.length, 1); assert.equal(after.config.platformFees[0].scope, 'platform'); assert.ok(after.config.platformFees[0].id);
     assert.ok(!('updatedBy' in after), 'admin email not exposed');
+  });
+  await check('directory switches: paid plans only and closed are enforced by the server', async () => {
+    const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;
+    assert.deepEqual(cfg.directory, { enabled: true, paidOnly: true });
+    const setDir = directory => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify({ ...cfg, directory }) });
+    const D = await user('dan.free@studio.fj');
+    await put(`consultants/${D.uid}`, { consultantEmail: D.email, userProfile: { email: D.email }, platformSettings: { activePlan: 'free' }, businesses: [{ id: 'db1', name: 'Dan Free' }] });
+    const list = who => fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(who), body: JSON.stringify({ businessId: who === D ? 'db1' : 'cb1', name: who === D ? 'Dan Free' : 'Carol Photo' }) });
+    const browse = async () => (await j(await fetch(`${API}/api/directory`, { headers: auth(B) }))).body;
+    // Paid plans only: a free account can't list, and an old free listing is hidden and can't be booked.
+    assert.equal((await list(D)).status, 403);
+    await put(`directory_listings/${D.uid}`, { uid: D.uid, businessId: 'db1', name: 'Dan Free', listed: true, updatedAt: new Date().toISOString() });
+    assert.equal((await list(C)).status, 200);
+    let seen = await browse();
+    assert.ok(seen.listings.some(l => l.uid === C.uid)); assert.ok(!seen.listings.some(l => l.uid === D.uid), 'free listing shown');
+    assert.equal((await fetch(`${API}/api/directory/bookings`, { method: 'POST', headers: auth(B), body: JSON.stringify({ providerUid: D.uid, clientName: 'Bob', bookingDate: '2026-11-01' }) })).status, 404);
+    // Open to all plans: Dan can list and be found.
+    assert.equal((await setDir({ enabled: true, paidOnly: false })).status, 200);
+    assert.equal((await list(D)).status, 200);
+    assert.ok((await browse()).listings.some(l => l.uid === D.uid));
+    // Closed: nothing shows, nobody lists or books.
+    assert.equal((await setDir({ enabled: false, paidOnly: false })).status, 200);
+    seen = await browse(); assert.equal(seen.listings.length, 0); assert.equal(seen.settings.enabled, false);
+    assert.equal((await list(C)).status, 403);
+    assert.equal((await fetch(`${API}/api/directory/bookings`, { method: 'POST', headers: auth(B), body: JSON.stringify({ providerUid: C.uid, clientName: 'Bob', bookingDate: '2026-11-01' }) })).status, 403);
+    // Back to the defaults; tidy up.
+    assert.equal((await setDir({ enabled: true, paidOnly: true })).status, 200);
+    await fetch(`${API}/api/directory/listing`, { method: 'DELETE', headers: auth(D) });
+    await fetch(`${API}/api/directory/listing`, { method: 'DELETE', headers: auth(C) });
   });
   await check('sign-up control: open, invite-only and closed are enforced by the server', async () => {
     const reg = (who, inviteCode) => fetch(`${API}/api/account/register`, { method: 'POST', headers: auth(who), body: JSON.stringify(inviteCode ? { inviteCode } : {}) });

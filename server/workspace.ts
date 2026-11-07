@@ -129,6 +129,15 @@ export interface WorkspaceSummary {
   updatedAt: string;
 }
 
+/** Each owner's plan ('free' when unknown), read from the workspace heads only. */
+export async function readPlans(uids: string[]): Promise<Map<string, string>> {
+  const unique = [...new Set(uids.filter(Boolean))];
+  if (!unique.length) return new Map();
+  const db = getAdminDb();
+  const snaps = await db.getAll(...unique.map(u => db.collection("consultants").doc(u)), { fieldMask: ["platformSettings.activePlan"] });
+  return new Map(snaps.map(s => [s.id, String(s.get("platformSettings.activePlan") || "free")]));
+}
+
 /** One line per workspace for the admin panel: owner, plan, business names and how much is in it. */
 export async function listWorkspaceSummaries(limit = 500): Promise<WorkspaceSummary[]> {
   const db = getAdminDb();

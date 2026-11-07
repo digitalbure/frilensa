@@ -1,6 +1,6 @@
 // Unit tests for the platform-wide plans, taxes and fees. Run: npm run test:unit
 import assert from "node:assert/strict";
-import { DEFAULT_PLATFORM_CONFIG, annualPrice, applyPlatformConfig, cleanPlatformConfig, planHighlights } from "../src/lib/platformConfigShared";
+import { DEFAULT_PLATFORM_CONFIG, annualPrice, canListInDirectory, applyPlatformConfig, cleanPlatformConfig, planHighlights } from "../src/lib/platformConfigShared";
 
 // Anything missing or wrong falls back to the defaults; values are tidied.
 const clean = cleanPlatformConfig({
@@ -48,5 +48,13 @@ assert.equal(annualPrice(25), 240);
 const free = planHighlights(DEFAULT_PLATFORM_CONFIG.plans.free);
 assert.ok(free.includes("Up to 5 invoices a month") && free.includes("1 business profile"));
 assert.ok(planHighlights(DEFAULT_PLATFORM_CONFIG.plans.premium).includes("Unlimited clients"));
+
+// Directory switches.
+assert.deepEqual(clean.directory, { enabled: true, paidOnly: true }, "defaults when not sent");
+assert.deepEqual(cleanPlatformConfig({ directory: { enabled: false, paidOnly: "no" } }).directory, { enabled: false, paidOnly: true });
+assert.equal(canListInDirectory({ enabled: true, paidOnly: true }, "free"), false);
+assert.equal(canListInDirectory({ enabled: true, paidOnly: true }, "pro"), true);
+assert.equal(canListInDirectory({ enabled: true, paidOnly: false }, undefined), true);
+assert.equal(canListInDirectory({ enabled: false, paidOnly: false }, "premium"), false);
 
 console.log("platformConfig tests passed");

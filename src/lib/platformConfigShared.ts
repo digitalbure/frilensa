@@ -5,11 +5,19 @@ import { DEFAULT_PLATFORM_SETTINGS, INITIAL_CRM_DATA } from '../data/mockData';
 // features), the taxes and fees every business can apply, and the VAT rate new accounts start with.
 // Stored on the server (platform/config); shared by the app and the server.
 
+export interface DirectorySettings {
+  /** The business directory is open: people can browse, list and book. */
+  enabled: boolean;
+  /** Only businesses on a paid plan (Pro or Premium) can be listed and found. */
+  paidOnly: boolean;
+}
+
 export interface PlatformConfig {
   plans: Record<PlanTier, PlanFeatureConfig>;
   platformTaxes: TaxConfig[];
   platformFees: FeeConfig[];
   defaultVatRate: number;
+  directory: DirectorySettings;
 }
 
 export const PLAN_TIERS: PlanTier[] = ['free', 'pro', 'premium'];
@@ -23,8 +31,13 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   plans: DEFAULT_PLATFORM_SETTINGS.plans,
   platformTaxes: INITIAL_CRM_DATA.platformTaxes || [],
   platformFees: INITIAL_CRM_DATA.platformFees || [],
-  defaultVatRate: DEFAULT_PLATFORM_SETTINGS.defaultVatRate
+  defaultVatRate: DEFAULT_PLATFORM_SETTINGS.defaultVatRate,
+  directory: { enabled: true, paidOnly: true }
 };
+
+/** Whether a business on this plan can be listed in the directory. */
+export const canListInDirectory = (d: DirectorySettings, plan: string | undefined) =>
+  d.enabled && (!d.paidOnly || plan === 'pro' || plan === 'premium');
 
 const text = (v: unknown, max: number) => String(v ?? '').replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max);
 const money = (v: unknown, max: number) => {
@@ -92,7 +105,11 @@ export function cleanPlatformConfig(raw: any): PlatformConfig {
     plans,
     platformTaxes: Array.isArray(r.platformTaxes) ? cleanCharges<TaxConfig>(r.platformTaxes, TAX_CATEGORIES, 'ptax') : DEFAULT_PLATFORM_CONFIG.platformTaxes,
     platformFees: Array.isArray(r.platformFees) ? cleanCharges<FeeConfig>(r.platformFees, FEE_CATEGORIES, 'pfee') : DEFAULT_PLATFORM_CONFIG.platformFees,
-    defaultVatRate: r.defaultVatRate === undefined ? DEFAULT_PLATFORM_CONFIG.defaultVatRate : money(r.defaultVatRate, 100)
+    defaultVatRate: r.defaultVatRate === undefined ? DEFAULT_PLATFORM_CONFIG.defaultVatRate : money(r.defaultVatRate, 100),
+    directory: {
+      enabled: typeof r.directory?.enabled === 'boolean' ? r.directory.enabled : DEFAULT_PLATFORM_CONFIG.directory.enabled,
+      paidOnly: typeof r.directory?.paidOnly === 'boolean' ? r.directory.paidOnly : DEFAULT_PLATFORM_CONFIG.directory.paidOnly
+    }
   };
 }
 

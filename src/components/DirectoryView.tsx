@@ -16,6 +16,7 @@ import {
 } from '../lib/api';
 import DateInput from './DateInput';
 import SubscriptionPaywallModal from './SubscriptionPaywallModal';
+import { canListInDirectory, usePlatformConfig } from '../lib/platformConfig';
 
 interface DirectoryViewProps {
   data: CRMData;
@@ -88,11 +89,14 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
     }
   }, []);
 
-  useEffect(() => { refreshDirectory(); }, [refreshDirectory]);
 
   // Active user plan
   const activePlan: PlanTier = data.platformSettings?.activePlan || 'free';
-  const isPayingUser = activePlan === 'pro' || activePlan === 'premium';
+  // Admins decide (for everyone) whether the directory is open and whether listing needs a paid plan.
+  const directorySettings = usePlatformConfig().config.directory;
+  const isPayingUser = canListInDirectory(directorySettings, activePlan);
+  // Load (and reload when an admin changes the directory switches).
+  useEffect(() => { refreshDirectory(); }, [directorySettings.enabled, directorySettings.paidOnly, refreshDirectory]);
 
   // Active user's primary business and its published listing (if any)
   const userPrimaryBiz = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
@@ -200,8 +204,8 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
   });
 
   const handleToggleUserPublicStatus = async () => {
-    if (!isPayingUser) {
-      showToast('A directory listing needs a Pro or Premium plan (free during early access).', 'error');
+    if (!isPayingUser && !isUserBizPublic) {
+      showToast(directorySettings.enabled ? 'A directory listing needs a Pro or Premium plan (free during early access).' : 'The business directory is closed right now.', 'error');
       return;
     }
     if (!userPrimaryBiz) return;
@@ -447,7 +451,15 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
         </div>
       </div>
 
+      {!directorySettings.enabled && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-2xl p-4 text-xs">
+          <strong className="block">The business directory is closed right now.</strong>
+          Businesses can't be found or booked here for the moment. Your existing bookings are still under My bookings.
+        </div>
+      )}
+
       {/* User's Business Directory Visibility Status Card */}
+      {directorySettings.enabled && (
       <div className="bg-white rounded-2xl p-5 border border-zinc-200 shadow-xs">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-3.5">
@@ -526,6 +538,7 @@ export default function DirectoryView({ data, onUpdateData, onOpenAdminPanel, on
           </div>
         </div>
       </div>
+      )}
 
       {/* TAB 1: EXPLORE PROVIDERS & DIRECTORY */}
       {activeTab === 'directory' && (

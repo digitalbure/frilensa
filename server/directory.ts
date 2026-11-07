@@ -2,7 +2,9 @@ import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { notifyConsultant, notifyEmail, later } from "./notify";
-import { readWorkspace } from "./workspace";
+import { readPlans, readWorkspace } from "./workspace";
+import { getPlatformConfig } from "./platformConfig";
+import { canListInDirectory } from "../src/lib/platformConfigShared";
 import { saveBookingRequest } from "./bookings";
 
 // Shared marketplace data. Both collections are server-only (Firestore rules deny browser access);
@@ -64,22 +66,40 @@ function listingFromBody(uid: string, body: any) {
   };
 }
 
+const CLOSED = "The business directory is closed right now.";
+const PAID_ONLY = "Listing your business in the directory needs a Pro or Premium plan.";
+
+/** The directory switches admins set (Admin → Directory). */
+async function directorySettings() {
+  return (await getPlatformConfig()).config.directory;
+}
+
 export function createDirectoryRouter() {
   const router = asyncRouter();
   router.use(requireUser);
 
   // All published listings (newest first).
+  // When the directory is closed nobody sees listings; when it's for paid plans only, free accounts' listings are hidden.
   router.get("/", rateLimit({ name: "dir-read", max: 120, windowMs: 60_000 }), async (_req: AuthedRequest, res) => {
+    const settings = await directorySettings();
+    if (!settings.enabled) return res.json({ listings: [], settings });
     const snap = await getAdminDb().collection(LISTINGS).where("listed", "==", true).limit(500).get();
-    const listings = snap.docs.map(d => d.data())
-      .sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-    res.json({ listings });
+    let listings = snap.docs.map(d => d.data());
+    if (settings.paidOnly) {
+      const plans = await readPlans(listings.map(l => String(l.uid || "")));
+      listings = listings.filter(l => canListInDirectory(settings, plans.get(String(l.uid))));
+    }
+    listings.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
+    res.json({ listings, settings });
   });
 
   // Publish or update the caller's own listing.
   router.put("/listing", rateLimit({ name: "dir-write", max: 30, windowMs: 60_000 }), async (req: AuthedRequest, res) => {
     const listing = listingFromBody(req.user!.uid, req.body);
     if (!listing.name || !listing.businessId) return res.status(400).json({ error: "Your business needs a name before it can be listed." });
+    const settings = await directorySettings();
+    if (!settings.enabled) return res.status(403).json({ error: CLOSED });
+    if (!canListInDirectory(settings, (await readPlans([req.user!.uid])).get(req.user!.uid))) return res.status(403).json({ error: PAID_ONLY });
     // Merge, so the admin's verified badge survives the owner's edits.
     await getAdminDb().collection(LISTINGS).doc(req.user!.uid).set(listing, { merge: true });
     res.json({ listing });
@@ -118,9 +138,11 @@ export function createDirectoryRouter() {
     if (!providerUid) return res.status(400).json({ error: "Choose a business to book." });
     if (providerUid === uid) return res.status(400).json({ error: "You can't book your own business." });
 
+    const settings = await directorySettings();
+    if (!settings.enabled) return res.status(403).json({ error: CLOSED });
     const listingSnap = await db.collection(LISTINGS).doc(providerUid).get();
     const listing = listingSnap.data();
-    if (!listing?.listed) return res.status(404).json({ error: "This business is no longer listed." });
+    if (!listing?.listed || !canListInDirectory(settings, (await readPlans([providerUid])).get(providerUid))) return res.status(404).json({ error: "This business is no longer listed." });
 
     const clientName = str(req.body?.clientName, 120);
     const clientEmail = isEmail(req.body?.clientEmail) ? req.body.clientEmail.trim() : (req.user!.email || "");

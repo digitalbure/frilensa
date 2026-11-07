@@ -56,7 +56,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     plans: currentSettings.plans,
     platformTaxes: crmData.platformTaxes || [],
     platformFees: crmData.platformFees || [],
-    defaultVatRate: currentSettings.defaultVatRate
+    defaultVatRate: currentSettings.defaultVatRate,
+    directory: { enabled: currentSettings.directoryEnabled !== false, paidOnly: currentSettings.enforcePaidForDirectory !== false }
   });
   const [config, setConfig] = useState<PlatformConfig>(() => platformState.saved ? platformState.config : fromWorkspace());
   const [configSaving, setConfigSaving] = useState(false);
@@ -286,8 +287,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     <div className={`p-3 rounded-2xl border text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${platformState.saved ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-amber-950/40 border-amber-800 text-amber-200'}`}>
       <span>
         {platformState.saved
-          ? <>These apply to every account. Changes save automatically{configSaving ? ' (saving…)' : ''}. Invoices and quotes already issued keep the rates they were issued with.</>
-          : <>Not published yet: every account still uses the standard plans and taxes. Publish these to apply them to everyone.</>}
+          ? <>These apply to every account. Changes save automatically{configSaving ? ' (saving…)' : ''}.{activeTab === 'taxes_fees' ? ' Invoices and quotes already issued keep the rates they were issued with.' : ''}</>
+          : <>Not published yet: every account still uses the standard plans, taxes and directory settings. Publish these to apply them to everyone.</>}
       </span>
       {!platformState.saved && (
         <button type="button" disabled={configSaving} onClick={() => commitConfig(config, { message: 'Published for every account.' })} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold shrink-0 cursor-pointer disabled:opacity-50">
@@ -472,6 +473,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           {/* ================= TAB: FIJI DIRECTORY & BOOKINGS CONTROL ================= */}
           {activeTab === 'directory' && (
             <div className="space-y-5">
+              {publishNotice}
+
               {/* Directory Status Header Banner */}
               <div className="bg-gradient-to-r from-sky-950/70 via-slate-900 to-indigo-950/70 border border-sky-500/30 p-5 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-lg">
                 <div className="flex items-center gap-3.5">
@@ -482,11 +485,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     <div className="flex items-center gap-2">
                       <h3 className="text-base font-bold text-slate-100">Business directory</h3>
                       <span className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border ${
-                        (platformSettings.directoryEnabled !== false)
+                        config.directory.enabled
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                           : 'bg-rose-500/20 text-rose-300 border-rose-500/30'
                       }`}>
-                        {(platformSettings.directoryEnabled !== false) ? 'ON' : 'OFF'}
+                        {config.directory.enabled ? 'ON' : 'OFF'}
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-0.5">
@@ -500,18 +503,12 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                   <button
                     type="button"
                     onClick={() => {
-                      const newStatus = platformSettings.directoryEnabled === false ? true : false;
-                      const newSettings = { ...platformSettings, directoryEnabled: newStatus };
-                      setPlatformSettings(newSettings);
-                      onUpdateCrmData({
-                        ...crmData,
-                        platformSettings: newSettings
-                      });
-                      showToast(newStatus ? 'Directory turned on.' : 'Directory turned off.');
+                      const newStatus = !config.directory.enabled;
+                      commitConfig({ ...config, directory: { ...config.directory, enabled: newStatus } }, { message: newStatus ? 'Directory turned on for everyone.' : 'Directory turned off for everyone.' });
                     }}
-                    className={`transition-colors p-1 ${(platformSettings.directoryEnabled !== false) ? 'text-emerald-400' : 'text-slate-600'}`}
+                    className={`transition-colors p-1 ${config.directory.enabled ? 'text-emerald-400' : 'text-slate-600'}`}
                   >
-                    {(platformSettings.directoryEnabled !== false) ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                    {config.directory.enabled ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
                   </button>
                 </div>
               </div>
@@ -531,23 +528,17 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono font-bold text-slate-300">
-                      {platformSettings.enforcePaidForDirectory !== false ? 'Pro and Premium only' : 'All plans'}
+                      {config.directory.paidOnly ? 'Pro and Premium only' : 'All plans'}
                     </span>
                     <button
                       type="button"
                       onClick={() => {
-                        const newEnforce = platformSettings.enforcePaidForDirectory === false ? true : false;
-                        const newSettings = { ...platformSettings, enforcePaidForDirectory: newEnforce };
-                        setPlatformSettings(newSettings);
-                        onUpdateCrmData({
-                          ...crmData,
-                          platformSettings: newSettings
-                        });
-                        showToast(newEnforce ? 'Free accounts are now hidden from the directory.' : 'Directory is now open to all plans.');
+                        const newEnforce = !config.directory.paidOnly;
+                        commitConfig({ ...config, directory: { ...config.directory, paidOnly: newEnforce } }, { message: newEnforce ? 'Free accounts are now hidden from the directory.' : 'Directory is now open to all plans.' });
                       }}
-                      className={`transition-colors p-1 ${(platformSettings.enforcePaidForDirectory !== false) ? 'text-sky-400' : 'text-slate-600'}`}
+                      className={`transition-colors p-1 ${config.directory.paidOnly ? 'text-sky-400' : 'text-slate-600'}`}
                     >
-                      {(platformSettings.enforcePaidForDirectory !== false) ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
+                      {config.directory.paidOnly ? <ToggleRight className="w-8 h-8" /> : <ToggleLeft className="w-8 h-8" />}
                     </button>
                   </div>
                 </div>
@@ -555,10 +546,10 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 <div className="p-3.5 bg-slate-950/80 rounded-xl border border-slate-800 text-xs text-slate-400 space-y-1">
                   <p className="font-semibold text-slate-200">What this means</p>
                   <p className="text-[11px] leading-relaxed">
-                    {platformSettings.enforcePaidForDirectory !== false ? (
+                    {config.directory.paidOnly ? (
                       <><strong>Free accounts are hidden</strong> from directory search. Pro and Premium users who set their profile to Public can be found and booked by clients.</>
                     ) : (
-                      <><strong>Free accounts can be listed too</strong> if their profile is public and you've verified them.</>
+                      <><strong>Every account can list its business</strong>, whatever its plan.</>
                     )}
                   </p>
                 </div>

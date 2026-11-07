@@ -18,6 +18,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.10.0] - 2026-11-07
+
+### Changed
+- The directory switches in Admin → Directory ("Public directory" and "Paid plan required to be listed") now apply to every account and are enforced. Before, they only changed the admin's own account and had no effect.
+  - When the directory is off, nobody can browse, list or book through it; people see that it's closed, and their existing bookings stay under My bookings.
+  - When a paid plan is required, free accounts can't list, and listings from accounts that have since moved to the free plan are hidden and can't be booked. Turn it off to let every plan list.
+- Businesses that are no longer allowed to list can still remove their listing.
+
 ## [4.9.0] - 2026-11-07
 
 ### Changed
