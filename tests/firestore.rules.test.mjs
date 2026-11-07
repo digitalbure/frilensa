@@ -11,6 +11,7 @@ await env.withSecurityRulesDisabled(async ctx => {
   await setDoc(doc(db, 'consultants/u1'), { userProfile: { email: 'one@x.co' } });
   await setDoc(doc(db, 'consultants/one@x.co'), { legacy: true });
   await setDoc(doc(db, 'consultants/u1/documents/inv1'), { id: 'inv1', total: 10 });
+  await setDoc(doc(db, 'account_access/u5'), { via: 'invite' });
   await setDoc(doc(db, 'documents/d1'), { consultantId: 'u1', clientId: 'c1' });
   await setDoc(doc(db, 'documents/legacy1'), { consultantId: 'one@x.co', clientId: 'c1' });
   await setDoc(doc(db, 'clients_auth/client@x.co'), { passcode: '1234' });
@@ -38,6 +39,14 @@ await check('unverified cannot read legacy email workspace', assertFails(getDoc(
 await check('nobody writes legacy email workspace', assertFails(setDoc(doc(u1, 'consultants/one@x.co'), { a: 1 })));
 await check('other user cannot read legacy email workspace', assertFails(getDoc(doc(u2, 'consultants/one@x.co'))));
 await check('cannot list all workspaces', assertFails(getDocs(collection(u1, 'consultants'))));
+const u3 = env.authenticatedContext('u3', { email: 'three@x.co', email_verified: true }).firestore();
+const u5 = env.authenticatedContext('u5', { email: 'five@x.co', email_verified: true }).firestore();
+await check('unapproved new account cannot create a workspace', assertFails(setDoc(doc(u3, 'consultants/u3'), { a: 1 })));
+await check('unapproved new account cannot write records', assertFails(setDoc(doc(u3, 'consultants/u3/clients/c1'), { id: 'c1' })));
+await check('approved new account creates its workspace', assertSucceeds(setDoc(doc(u5, 'consultants/u5'), { a: 1 })));
+await check('approved new account writes records', assertSucceeds(setDoc(doc(u5, 'consultants/u5/clients/c1'), { id: 'c1' })));
+await check('nobody approves themselves', assertFails(setDoc(doc(u3, 'account_access/u3'), { via: 'self' })));
+await check('existing workspace keeps saving without approval', assertSucceeds(setDoc(doc(u1, 'consultants/u1'), { userProfile: { email: 'one@x.co' }, b: 2 })));
 await check('owner reads own records', assertSucceeds(getDocs(collection(u1, 'consultants/u1/documents'))));
 await check('owner writes own record', assertSucceeds(setDoc(doc(u1, 'consultants/u1/clients/c9'), { id: 'c9' })));
 await check('other user cannot read records', assertFails(getDocs(collection(u2, 'consultants/u1/documents'))));

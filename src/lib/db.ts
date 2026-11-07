@@ -50,6 +50,11 @@ export function setLocalCacheOwner(uid: string | null, email?: string | null) {
   } catch (_) {}
 }
 
+/** Removes a user's on-device copy (after their account is deleted). */
+export function clearLocalBackup(uid: string) {
+  try { localStorage.removeItem(`${BACKUP_STORAGE_PREFIX}:${uid}`); } catch (_) {}
+}
+
 function backupKey(): string | null {
   return cacheOwnerUid ? `${BACKUP_STORAGE_PREFIX}:${cacheOwnerUid}` : null;
 }

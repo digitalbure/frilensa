@@ -45,6 +45,11 @@ import { normalizeWorkspace } from './lib/normalizeWorkspace';
 import ScreenErrorBoundary from './components/ScreenErrorBoundary';
 import OAuthConsent from './components/OAuthConsent';
 import { inboxDocumentCount } from './lib/inbox';
+import AccessGate from './components/AccessGate';
+import { DEFAULT_PLATFORM_SETTINGS } from './data/mockData';
+import type { PlanTier } from './types';
+import { registerAccount, AccessDenied } from './lib/api';
+import LegalPage from './components/LegalPage';
 
 type Tab = 'dashboard' | 'directory' | 'billing' | 'clients' | 'services' | 'catalogue' | 'settings' | 'projects' | 'assistant';
 const TABS: Tab[] = ['dashboard', 'directory', 'billing', 'clients', 'catalogue', 'services', 'settings', 'projects', 'assistant'];
@@ -71,6 +76,8 @@ export default function App() {
   const isSignedIn = Boolean(authUser && authUser.emailVerified);
   // Connecting an app such as Claude: /oauth/authorize?client_id=… (see server/oauth.ts).
   const isOAuthAuthorize = window.location.pathname === '/oauth/authorize';
+  const legalPage = window.location.pathname.replace(/\/$/, '') === '/privacy' ? 'privacy' as const
+    : window.location.pathname.replace(/\/$/, '') === '/terms' ? 'terms' as const : null;
 
   // Client portal session (issued and verified by the server)
   const [portalSession, setPortalSession] = useState<PortalSession | null>(() => loadPortalSession());
@@ -130,6 +137,9 @@ export default function App() {
     crmData.userProfile?.inactivityTimeoutMinutes ??
     crmData.platformSettings?.defaultInactivityTimeoutMinutes ??
     15;
+
+  // Set when the server hasn't approved this new account (invite-only or closed sign-ups).
+  const [accessGate, setAccessGate] = useState<{ message: string; needsInvite: boolean } | null>(null);
 
   const applyData = useCallback((incoming: CRMData) => {
     // Repair documents and list items with missing amounts or fields (they crashed screens), then give every
@@ -198,6 +208,24 @@ export default function App() {
           working.userProfile = { ...working.userProfile, email, emailVerified: true };
           applyData(working);
           saveLocalBackup(working);
+        }
+        // A new account (or one moving over from an older build) needs the server's approval, under
+        // the sign-up mode and invites, before its workspace can be saved (firestore.rules).
+        if (!remote || remote.migratedFromLegacy) {
+          try {
+            const { plan } = await registerAccount();
+            if (plan && plan !== 'free') {
+              working = { ...working, platformSettings: { ...DEFAULT_PLATFORM_SETTINGS, ...(working.platformSettings || {}), activePlan: plan as PlanTier } };
+              applyData(working);
+            }
+          } catch (err: any) {
+            if (activeUidRef.current !== firebaseUser.uid) return;
+            if (err instanceof AccessDenied) {
+              setAccessGate({ message: err.message, needsInvite: err.needsInvite });
+              return;
+            }
+            throw err;
+          }
         }
         cloudReadyRef.current = true;
         setCloudReady(true);
@@ -429,6 +457,10 @@ export default function App() {
     setPortalSession(session);
   };
 
+  if (legalPage) {
+    return <LegalPage kind={legalPage} />;
+  }
+
   if (bookingPage) {
     return <BookingPageView slug={bookingPage.slug} embed={bookingPage.embed} service={bookingPage.service} host={bookingPage.host} />;
   }
@@ -479,6 +511,11 @@ export default function App() {
             Sign in to Frilensa to finish connecting.
           </div>
         )}
+        {new URLSearchParams(window.location.search).get('accountDeleted') && (
+          <div className="fixed top-3 inset-x-3 z-[999] mx-auto max-w-md rounded-xl bg-emerald-600 text-white text-xs font-semibold px-4 py-3 shadow-lg">
+            Your account and everything in it have been deleted.
+          </div>
+        )}
         {portalLinkError && (
           <div className="fixed top-3 inset-x-3 z-[999] mx-auto max-w-md rounded-xl bg-rose-600 text-white text-xs font-semibold px-4 py-3 shadow-lg">
             {portalLinkError}
@@ -495,6 +532,10 @@ export default function App() {
         <PwaInstallPrompt />
       </>
     );
+  }
+
+  if (accessGate) {
+    return <AccessGate message={accessGate.message} needsInvite={accessGate.needsInvite} onApproved={() => window.location.reload()} onSignOut={() => { setAccessGate(null); handleSignOut(); }} />;
   }
 
   if (isOAuthAuthorize) {

@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.7.0] - 2026-11-07
+
+### Added
+- **Delete my account** in **Settings → Your account**. It permanently removes your workspace, documents, online invoice links, client portal access, booking pages, rate cards, listings, uploaded files, API keys, connected apps, webhooks, PayPal connection and sign-in. You type DELETE and confirm with your password (or Google) first, and you're reminded to download a backup.
+- **Privacy policy** (frilensa.com/privacy) and **Terms of use** (frilensa.com/terms). They're linked from sign-up, the sign-in page, Settings and online invoices.
+- **Admin → Sign-ups**: choose who can create an account (open, invite only or closed) and make invite codes. An invite can be for one email or anyone, give a plan, have a number of uses and an expiry date, and comes with a sign-up link to copy.
+
+### Security
+- **Sign-up settings are now enforced.** The old invite-only and closed settings were only checked in the visitor's browser, against settings nobody else could see, so they did nothing. Now the server and the database rules decide: a new account can't create a workspace until it's approved. People who already have an account are unaffected.
+- Made-up invite codes no longer work. Before, any code starting with "BULA-", "SUVA-" or "VIP-" was accepted as a Pro invite.
+- **For the operator:** this release changes `firestore.rules`. Answer **y** when the deploy asks to publish the rules.
+
+### Removed
+- The email and phone verification-code switches and the idle sign-out setting from the admin panel. They were stored in the admin's own account, so they had no effect on anyone else; phone codes were never connected. Each person still sets **Sign out when idle** in their own Settings.
+
 ## [4.6.1] - 2026-11-07
 
 ### Fixed

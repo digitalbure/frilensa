@@ -536,7 +536,7 @@ Nothing reached through a key or connector can send anything to your clients, ma
     id: 'settings-account',
     title: 'Settings, notifications and your account',
     summary: 'Your profile, email notifications, numbering, fees, backups, plan, release notes and signing out.',
-    keywords: ['settings', 'profile', 'account', 'email notifications', 'notifications', 'numbering', 'prefix', 'fees', 'backup', 'restore', 'sync', 'plan', 'release notes', 'version', 'sign out', 'logout', 'idle', 'install', 'app'],
+    keywords: ['settings', 'profile', 'account', 'email notifications', 'notifications', 'numbering', 'prefix', 'fees', 'backup', 'restore', 'sync', 'plan', 'release notes', 'version', 'sign out', 'logout', 'idle', 'install', 'app', 'delete account', 'close account', 'privacy', 'terms', 'invite', 'invite code'],
     body: `Open **Settings**.
 
 ### Your profile and tax
@@ -554,6 +554,7 @@ Under **Email notifications**, choose whether you're emailed when a client repor
 - **Fees and surcharges**: fees you add to invoices. The Fiji taxes and levies themselves are set by Frilensa.
 - **Cloud sync**: your data syncs automatically between devices. **Sync now** forces a sync.
 - **Backups**: **Download backup**, **Import backup**, **Copy backup**, **Restore auto-backup** or **Paste a backup**.
+- **Your account**: links to the privacy policy and terms of use, and **Delete my account**. Deleting removes your account and everything in it for good: businesses, clients, documents, online invoice links, client portal access, booking pages, listings, files, API keys and your sign-in. Download a backup first; issued tax invoices are records you may need to keep. You type DELETE and enter your password (or sign in with Google again) to confirm.
 - **Plan**: your current plan. Plan changes are free during early access (**Change plan**).
 - **Install the app**: add Frilensa to your phone's home screen.
 - **App Version & Release Notes**: the version you're using. Press **View Changelog** to see what changed in each release.

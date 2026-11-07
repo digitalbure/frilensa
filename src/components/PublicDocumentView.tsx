@@ -8,6 +8,7 @@ import PayNowPanel from './PayNowPanel';
 import { tradingAsLine } from '../lib/businessName';
 import { adjustmentRows } from '../lib/documentAdjustments';
 import { chargeLabel } from '../lib/invoiceTotals';
+import { LegalLinks } from './LegalPage';
 
 interface PublicDocumentViewProps {
   /** Share token from /?doc=…, or null for a link from an older version that can't be opened. */
@@ -279,7 +280,7 @@ export default function PublicDocumentView({ token, onOpenClientSignIn }: Public
         )}
 
         <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-400">
-          <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Sent with Frilensa</span>
+          <span className="flex items-center gap-1"><FileText className="w-3.5 h-3.5" /> Sent with Frilensa · <LegalLinks /></span>
           <button type="button" onClick={onOpenClientSignIn} className="underline font-semibold cursor-pointer">
             See all your documents in the client portal
           </button>

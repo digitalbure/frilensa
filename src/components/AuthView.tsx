@@ -5,7 +5,8 @@ import {
   ArrowRight, RefreshCw, AlertCircle, Check, Sparkles, ArrowLeft, Send,
   UserPlus, UserCheck, Ban, Key, Eye, EyeOff, Clock, ShieldAlert, X, Copy
 } from 'lucide-react';
-import { UserProfile, PlatformSettings, UserInvite } from '../types';
+import { UserProfile, PlatformSettings } from '../types';
+import { fetchRegistrationMode, checkInviteCode, rememberInviteCode } from '../lib/api';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 import { 
   auth,
@@ -21,6 +22,7 @@ import {
 import { startPortalSessionWithPin, type PortalSession } from '../lib/api';
 import BrandMark from './BrandMark';
 import { useBranding } from '../lib/branding';
+import { LegalLinks } from './LegalPage';
 
 interface AuthViewProps {
   onSignIn: (profile: UserProfile, isNewRegistration?: boolean) => void;
@@ -46,7 +48,9 @@ export default function AuthView({
 }: AuthViewProps) {
   const brand = useBranding();
   const currentSettings = platformSettings || DEFAULT_PLATFORM_SETTINGS;
-  const registrationMode = currentSettings.registrationMode || 'open';
+  // Sign-up mode and invites are checked by the server (server/access.ts).
+  const [registrationMode, setRegistrationMode] = useState<'open' | 'invite_only' | 'disabled'>('open');
+  useEffect(() => { fetchRegistrationMode().then(setRegistrationMode).catch(() => {}); }, []);
   const enableEmailOtp = currentSettings.enableEmailOtp !== false;
 
   // Navigation & Mode - strictly signin or signup for workspace users
@@ -61,7 +65,7 @@ export default function AuthView({
 
   // Invite Code State for Invite-Only Registration
   const [inviteCodeInput, setInviteCodeInput] = useState('');
-  const [validatedInvite, setValidatedInvite] = useState<UserInvite | null>(null);
+  const [validatedInvite, setValidatedInvite] = useState<{ code: string; plan: string } | null>(null);
   const [inviteError, setInviteError] = useState('');
 
   // Pending user session during verification
@@ -86,66 +90,34 @@ export default function AuthView({
   const [copiedDomain, setCopiedDomain] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
 
-  // 0. Detect Invite Token from URL (e.g. ?invite=BULA-VIP-8821)
+  // 0. Invite link (?invite=CODE): open sign-up with the code filled in and checked.
   useEffect(() => {
-    const searchParams = new URLSearchParams(window.location.search);
-    const inviteParam = searchParams.get('invite');
+    const inviteParam = new URLSearchParams(window.location.search).get('invite');
     if (inviteParam) {
-      const codeUpper = inviteParam.trim().toUpperCase();
-      setInviteCodeInput(codeUpper);
+      const code = inviteParam.trim().toUpperCase();
+      setInviteCodeInput(code);
       setAuthMode('signup');
-      
-      const allInvites = currentSettings.invites || DEFAULT_PLATFORM_SETTINGS.invites || [];
-      const found = allInvites.find(i => i.code.toUpperCase() === codeUpper && !i.used);
-      if (found) {
-        setValidatedInvite(found);
-        setSuccessInfo(`Invite code accepted: ${found.plan.toUpperCase()} plan.`);
-      } else {
-        setInviteError('This invite code isn’t valid or has already been used.');
-      }
+      validateInviteCode(code).then(ok => { if (ok) setSuccessInfo('Invite code accepted.'); });
     }
-  }, [currentSettings.invites]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Validate Invite Code
-  const validateInviteCode = (code: string) => {
+  // Checks an invite code with the server (it's used up only when the account is approved).
+  const validateInviteCode = async (code: string) => {
     const codeClean = code.trim().toUpperCase();
     if (!codeClean) {
       setValidatedInvite(null);
       setInviteError('');
       return false;
     }
-
-    const allInvites = currentSettings.invites || DEFAULT_PLATFORM_SETTINGS.invites || [];
-    const found = allInvites.find(i => i.code.toUpperCase() === codeClean);
-
-    if (found) {
-      if (found.used) {
-        setValidatedInvite(null);
-        setInviteError('This invite code has already been used.');
-        return false;
-      }
-      setValidatedInvite(found);
+    try {
+      const r = await checkInviteCode(codeClean, email);
+      setValidatedInvite({ code: codeClean, plan: r.plan });
       setInviteError('');
       return true;
-    } else {
-      if (codeClean.startsWith('BULA-') || codeClean.startsWith('SUVA-') || codeClean.startsWith('VIP-')) {
-        const dummyInvite: UserInvite = {
-          id: `inv-${Date.now()}`,
-          code: codeClean,
-          role: 'freelancer',
-          plan: 'pro',
-          invitedBy: 'Super Admin',
-          createdAt: new Date().toISOString().split('T')[0],
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-          used: false,
-          notes: 'Auto-validated test code'
-        };
-        setValidatedInvite(dummyInvite);
-        setInviteError('');
-        return true;
-      }
+    } catch (err: any) {
       setValidatedInvite(null);
-      setInviteError('Invite code not recognised. Check the code or ask whoever invited you.');
+      setInviteError(err?.message || 'Invite code not recognised. Check the code or ask whoever invited you.');
       return false;
     }
   };
@@ -303,7 +275,7 @@ export default function AuthView({
     }
 
     if (registrationMode === 'invite_only') {
-      const isValid = validatedInvite || validateInviteCode(inviteCodeInput);
+      const isValid = (validatedInvite && validatedInvite.code === inviteCodeInput.trim().toUpperCase()) || await validateInviteCode(inviteCodeInput);
       if (!isValid) {
         setError('You need a valid invite code to create an account.');
         return;
@@ -325,11 +297,8 @@ export default function AuthView({
         await sendUserVerificationEmail(userCredential.user);
       }
 
-      if (validatedInvite && onUpdatePlatformSettings) {
-        const currentInv = currentSettings.invites || [];
-        const updated = currentInv.map(inv => inv.id === validatedInvite.id ? { ...inv, used: true } : inv);
-        onUpdatePlatformSettings({ ...currentSettings, invites: updated });
-      }
+      // Used when the account is approved after email verification (App → registerAccount).
+      if (inviteCodeInput.trim()) rememberInviteCode(inviteCodeInput);
 
       setVerificationEmailSentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
       setStage('awaiting_email_verification');
@@ -766,7 +735,8 @@ export default function AuthView({
                                 value={inviteCodeInput}
                                 onChange={(e) => {
                                   setInviteCodeInput(e.target.value.toUpperCase());
-                                  validateInviteCode(e.target.value);
+                                  setValidatedInvite(null);
+                                  setInviteError('');
                                 }}
                                 placeholder="Invite code"
                                 className="w-full bg-white border border-amber-200 rounded-xl py-1.5 pl-8 pr-2 text-xs font-mono font-bold text-slate-800 uppercase focus:outline-none focus:border-amber-500"
@@ -783,7 +753,7 @@ export default function AuthView({
                           {validatedInvite && (
                             <div className="bg-emerald-100 text-emerald-900 text-[11px] font-bold p-2 rounded-xl flex items-center gap-1.5">
                               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Invite code accepted: {validatedInvite.plan.toUpperCase()} plan</span>
+                              <span>Invite code accepted{validatedInvite.plan !== 'free' ? `: ${validatedInvite.plan.toUpperCase()} plan` : ''}</span>
                             </div>
                           )}
                           {inviteError && (
@@ -876,6 +846,9 @@ export default function AuthView({
                           </>
                         )}
                       </button>
+                      <p className="text-[10.5px] text-slate-500 text-center leading-snug">
+                        By creating an account you agree to the <a href="/terms" target="_blank" rel="noopener" className="underline font-semibold">Terms of use</a> and <a href="/privacy" target="_blank" rel="noopener" className="underline font-semibold">Privacy policy</a>.
+                      </p>
                     </form>
                   )}
 
@@ -1069,6 +1042,7 @@ export default function AuthView({
             </p>
           )}
           {brand.footerNote && <p>{brand.footerNote}</p>}
+          <p><LegalLinks className="text-[11px] text-slate-400" /></p>
         </div>
       </div>
     </div>

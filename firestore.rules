@@ -2,7 +2,8 @@ rules_version = '2';
 
 // Access model
 // - A consultant's workspace lives at /consultants/{uid} (head) plus one record per item in
-//   /consultants/{uid}/{list}/{id} for the lists that grow. Only that signed-in user can touch them.
+//   /consultants/{uid}/{list}/{id} for the lists that grow. Only that signed-in user can touch them,
+//   and only once the server has approved the account (sign-up mode and invites).
 // - Older builds also wrote copies keyed by email (/consultants/{email}, /consultants_by_email/{email}).
 //   Those are readable (never writable) by the owner of that verified email so the app can import them once.
 // - Flat /documents and /support_messages rows carry consultantId and are scoped to it.
@@ -29,13 +30,22 @@ service cloud.firestore {
       return isUid(id) || isVerifiedEmail(id);
     }
 
+    // A workspace can be created only by an account the server approved (account_access/{uid},
+    // written by POST /api/account/register under the sign-up mode), or one that already has a
+    // workspace (everyone who signed up before this check).
+    function approved(uid) {
+      return exists(/databases/$(database)/documents/account_access/$(uid))
+        || exists(/databases/$(database)/documents/consultants/$(uid));
+    }
+
     match /consultants/{docId} {
       allow read: if ownsId(docId);
-      allow write: if isUid(docId);
+      allow update, delete: if isUid(docId);
+      allow create: if isUid(docId) && exists(/databases/$(database)/documents/account_access/$(docId));
 
       // Keep in step with SPLIT_LISTS in src/lib/workspaceRecords.ts.
       match /{list}/{recordId} {
-        allow read, write: if isUid(docId) && list in [
+        allow read, write: if isUid(docId) && approved(docId) && list in [
           'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
           'transactions', 'activityLogs', 'aiConversations', 'aiMemories'
         ];

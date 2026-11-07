@@ -329,3 +329,42 @@ export async function listOAuthConnections(): Promise<OAuthConnection[]> {
 export async function removeOAuthConnection(id: string): Promise<void> {
   await readJson(await fetch(`/api/oauth/connections/${encodeURIComponent(id)}`, { method: 'DELETE' }));
 }
+
+// ---------- Sign-up mode, invites and account approval (server/access.ts) ----------
+
+const INVITE_KEY = 'frilensa_invite_code';
+
+export async function fetchRegistrationMode(): Promise<'open' | 'invite_only' | 'disabled'> {
+  const r = await fetch('/api/public/registration');
+  const b = await r.json().catch(() => ({}));
+  return b?.mode === 'invite_only' || b?.mode === 'disabled' ? b.mode : 'open';
+}
+
+export async function checkInviteCode(code: string, email = ''): Promise<{ plan: string }> {
+  const r = await fetch('/api/public/registration/check-invite', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code, email }) });
+  const b = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(b?.error || 'That invite code isn\u2019t valid.');
+  return { plan: b.plan || 'free' };
+}
+
+/** Keeps the invite code typed at sign-up until the account is approved (after email verification). */
+export function rememberInviteCode(code: string) {
+  try { localStorage.setItem(INVITE_KEY, code.trim().toUpperCase()); } catch (_) {}
+}
+export function rememberedInviteCode(): string {
+  try { return localStorage.getItem(INVITE_KEY) || ''; } catch (_) { return ''; }
+}
+
+export class AccessDenied extends Error {
+  constructor(message: string, public needsInvite: boolean, public mode: string) { super(message); }
+}
+
+/** Asks the server to approve this account (once); returns the plan an invite gives, if any. */
+export async function registerAccount(inviteCode?: string): Promise<{ plan: string | null }> {
+  const r = await fetch('/api/account/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ inviteCode: inviteCode || rememberedInviteCode() }) });
+  const b = await r.json().catch(() => ({}));
+  if (r.status === 403) throw new AccessDenied(b?.error || 'Sign-ups are closed.', !!b?.needsInvite, b?.mode || '');
+  if (!r.ok) throw new Error(b?.error || `Could not set up your account (${r.status}).`);
+  try { localStorage.removeItem(INVITE_KEY); } catch (_) {}
+  return { plan: b.plan || null };
+}

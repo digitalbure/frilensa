@@ -1165,6 +1165,60 @@ try {
     const fallback = await fetch(`${API}/api/public/branding/app-icon`, { redirect: 'manual' });
     assert.equal(fallback.status, 302); assert.equal(fallback.headers.get('location'), '/pwa-icon.svg');
   });
+  await check('sign-up control: open, invite-only and closed are enforced by the server', async () => {
+    const reg = (who, inviteCode) => fetch(`${API}/api/account/register`, { method: 'POST', headers: auth(who), body: JSON.stringify(inviteCode ? { inviteCode } : {}) });
+    const setMode = (who, mode) => fetch(`${API}/api/admin/access/mode`, { method: 'PUT', headers: auth(who), body: JSON.stringify({ mode }) });
+    assert.equal((await j(await fetch(`${API}/api/public/registration`))).body.mode, 'open');
+    assert.equal((await setMode(B, 'disabled')).status, 403, 'non-admin changed the mode');
+    // Open: a new account is approved.
+    const n1 = await user('new.one@studio.fj');
+    assert.equal((await reg(n1)).status, 200);
+    assert.ok(await get(`account_access/${n1.uid}`), 'approval not recorded');
+    // Invite only: no code, a wrong code, a good code, then the code is used up.
+    assert.equal((await setMode(A, 'invite_only')).status, 200);
+    assert.equal((await j(await fetch(`${API}/api/public/registration`))).body.mode, 'invite_only');
+    const inv = await j(await fetch(`${API}/api/admin/access/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ code: 'suva-test-1', plan: 'pro', maxUses: 1 }) }));
+    assert.equal(inv.status, 200); assert.equal(inv.body.invite.code, 'SUVA-TEST-1');
+    assert.equal((await fetch(`${API}/api/admin/access/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ code: 'SUVA-TEST-1' }) })).status, 409);
+    assert.equal((await j(await fetch(`${API}/api/public/registration/check-invite`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: 'suva-test-1' }) }))).body.plan, 'pro');
+    assert.equal((await fetch(`${API}/api/public/registration/check-invite`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code: 'BULA-MADE-UP' }) })).status, 400, 'made-up code accepted');
+    const n2 = await user('new.two@studio.fj'), n3 = await user('new.three@studio.fj');
+    const noCode = await j(await reg(n2));
+    assert.equal(noCode.status, 403); assert.equal(noCode.body.needsInvite, true);
+    assert.equal((await reg(n2, 'BULA-MADE-UP')).status, 403);
+    const ok = await j(await reg(n2, 'SUVA-TEST-1'));
+    assert.equal(ok.status, 200); assert.equal(ok.body.plan, 'pro');
+    assert.equal((await reg(n3, 'SUVA-TEST-1')).status, 403, 'a used-up invite worked again');
+    assert.equal((await reg(n2)).status, 200, 'an approved account stays approved');
+    assert.equal((await reg(A)).status, 200, 'an existing user was blocked');
+    const listed = (await j(await fetch(`${API}/api/admin/access`, { headers: auth(A) }))).body.invites.find(i => i.code === 'SUVA-TEST-1');
+    assert.equal(listed.uses, 1); assert.equal(listed.usedBy[0].email, 'new.two@studio.fj');
+    // Closed: nobody new.
+    assert.equal((await setMode(A, 'disabled')).status, 200);
+    assert.equal((await reg(n3)).status, 403);
+    assert.equal((await fetch(`${API}/api/admin/access/invites/SUVA-TEST-1`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal((await setMode(A, 'open')).status, 200);
+  });
+  await check('delete my account removes everything for that account and nothing else', async () => {
+    const z = await user('leaving@studio.fj');
+    await put(`consultants/${z.uid}`, { consultantEmail: z.email, userProfile: { email: z.email }, recordOrder: { clients: ['zc1'] } });
+    await put(`consultants/${z.uid}/clients/zc1`, { id: 'zc1', name: 'Their client' });
+    await put(`documents/${z.uid}_zd1`, { id: 'zd1', consultantId: z.uid, status: 'sent', total: 10 });
+    await put(`api_keys/zkey`, { uid: z.uid, name: 'Old app' });
+    await put(`account_access/${z.uid}`, { via: 'open' });
+    const del = body => fetch(`${API}/api/account`, { method: 'DELETE', headers: auth(z), body: JSON.stringify(body) });
+    assert.equal((await fetch(`${API}/api/account`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
+    assert.equal((await del({})).status, 400, 'deleted without typing DELETE');
+    assert.equal((await del({ confirm: 'delete' })).status, 200);
+    assert.equal(await getHead(`consultants/${z.uid}`), null, 'workspace left behind');
+    assert.equal((await listRecords(`consultants/${z.uid}`, 'clients')).length, 0, 'records left behind');
+    assert.equal(await get(`documents/${z.uid}_zd1`), null, 'online copy left behind');
+    assert.equal(await get(`api_keys/zkey`), null, 'API key left behind');
+    assert.equal(await get(`account_access/${z.uid}`), null);
+    const signIn = await (await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=x`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: z.email, password: 'secret123', returnSecureToken: true }) })).json();
+    assert.ok(signIn.error, 'the sign-in still works');
+    assert.ok((await get(`consultants/${A.uid}`)), "another user's workspace was touched");
+  });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);
     assert.equal((await fetch(`${API}/api/admin/directory`, { headers: auth(B) })).status, 403);

@@ -25,6 +25,7 @@ import { getEmailServiceConfig, sendTestEmail, EmailServiceConfig } from '../lib
 import firebaseConfig from '../../firebase-applet-config.json';
 import { auth } from '../lib/firebase';
 import { useOnlineStatus } from '../lib/useOnlineStatus';
+import DeleteAccountCard from './DeleteAccountCard';
 
 const CATEGORY_PRESETS: Record<string, { label: string; value: string; isPreset: boolean }[]> = {
   boutique: [
@@ -2332,6 +2333,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <RefreshCw className="w-3.5 h-3.5" /> Sync now
         </button>
       </div>
+
+      <DeleteAccountCard onDownloadBackup={handleDownloadBackupFile} />
 
       {/* Database & App Management backups */}
       <div className="bg-white rounded-xl p-5 border border-zinc-100 shadow-xs space-y-4 text-xs text-zinc-600">
