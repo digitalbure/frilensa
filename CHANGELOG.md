@@ -18,6 +18,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.5.2] - 2026-11-07
+
+### Changed
+- **Totals update while you edit a line.** As you type a new quantity or rate, the subtotal, VAT, other taxes, fees and total update straight away. The line editor also shows the running total (for example "Quote total incl. taxes"), so you can tune a quote to a client's budget, say exactly FJD 5,000.00 including VAT. The same works for retainers.
+- Saving a quote, invoice or retainer while a line is still open keeps your changes to that line.
+
+### Fixed
+- VAT, other taxes, fees and totals are rounded to the cent, with halves rounded up. For example, 12.5% VAT on 4,444.44 is 555.56, and the total is exactly 5,000.00. Before, a total could be saved with a fraction of a cent (such as 3,151.125) and show a cent different from the sum of its parts.
+
 ## [4.5.1] - 2026-11-07
 
 ### Fixed

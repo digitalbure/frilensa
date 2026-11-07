@@ -31,6 +31,10 @@ import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 import { depositFor } from '../lib/bookings';
 import { tradingAsLine } from '../lib/businessName';
 
+/** Rounds money to the cent so taxes and totals match what's shown and paid. */
+// Scaling first and trimming float noise makes halves round up (12.5% of 4,444.44 = 555.555 → 555.56).
+const cents = (n: number) => Math.round(Number((n * 100).toFixed(6))) / 100;
+
 interface BillingViewProps {
   data: CRMData;
   onUpdateData: (newData: CRMData) => void;
@@ -105,8 +109,17 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   const [issueDate, setIssueDate] = useState(new Date().toISOString().split('T')[0]);
   const [dueDate, setDueDate] = useState(new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
   const [items, setItems] = useState<DocumentItem[]>([]);
-  // Line being edited in place (quote/invoice editor and retainer editor)
+  // Line being edited in place (quote/invoice editor and retainer editor), and the line as typed so far.
+  // Totals use the draft so they update while typing; saving the document keeps it.
   const [editingLineId, setEditingLineId] = useState<string | null>(null);
+  const [draftLine, setDraftLine] = useState<DocumentItem | null>(null);
+  const stopEditingLine = () => { setEditingLineId(null); setDraftLine(null); };
+  const withDraft = (list: DocumentItem[]) => draftLine && editingLineId === draftLine.id
+    ? list.map(it => it.id === draftLine.id ? draftLine : it)
+    : list;
+  const liveItems = useMemo(() => withDraft(items), [items, draftLine, editingLineId]);
+  // Opening, closing or switching a document or retainer ends any line edit.
+  useEffect(() => { stopEditingLine(); }, [showEditor, showRetainerEditor, editingDoc, editingRetainer]);
   const [showExpensePicker, setShowExpensePicker] = useState(false);
   const [pickedExpenseIds, setPickedExpenseIds] = useState<string[]>([]);
   const [expenseMarkup, setExpenseMarkup] = useState(0);
@@ -763,12 +776,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   const handleRemoveItemLine = (lineId: string) => {
     setItems(items.filter(it => it.id !== lineId));
-    if (editingLineId === lineId) setEditingLineId(null);
+    if (editingLineId === lineId) stopEditingLine();
   };
 
   // Compute subtotal, itemized taxes, itemized fees, and grand total
   const totals = useMemo(() => {
-    const subtotal = items.reduce((acc, curr) => acc + curr.total, 0);
+    const items = liveItems;
+    const subtotal = cents(items.reduce((acc, curr) => acc + curr.total, 0));
     // Reimbursable expenses are passed on without VAT or fees unless the line is marked taxable.
     const { taxableBase, reimbursementsNoVat } = lineTotals(items);
 
@@ -786,7 +800,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     selectedFeeIds.forEach(feeId => {
       const fee = availableFees.find(f => f.id === feeId);
       if (fee) {
-        const amount = fee.rateType === 'flat' ? fee.rate : taxableBase * (fee.rate / 100);
+        const amount = cents(fee.rateType === 'flat' ? fee.rate : taxableBase * (fee.rate / 100));
         appliedFees.push({
           id: fee.id,
           name: fee.name,
@@ -798,7 +812,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       }
     });
 
-    const feeTotal = appliedFees.reduce((acc, f) => acc + f.amount, 0);
+    const feeTotal = cents(appliedFees.reduce((acc, f) => acc + f.amount, 0));
 
     // If tax component is disabled globally OR this document is tax-exempt
     if (isTaxExempt || data.userProfile.enableTax === false) {
@@ -810,7 +824,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         feeTotal,
         vatRate: 0,
         vatAmount: 0,
-        total: subtotal + feeTotal,
+        total: cents(subtotal + feeTotal),
         reimbursementsNoVat
       };
     }
@@ -822,7 +836,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
         // If this is standard VAT, ensure rate matches userProfile's default VAT rate
         const isVat = tax.id === 'ptax-1' || tax.category === 'vat' || tax.name.toLowerCase().includes('vat');
         const effectiveRate = isVat ? (data.userProfile.defaultVatRate ?? tax.rate ?? 12.5) : tax.rate;
-        const amount = tax.rateType === 'flat' ? effectiveRate : taxableBase * (effectiveRate / 100);
+        const amount = cents(tax.rateType === 'flat' ? effectiveRate : taxableBase * (effectiveRate / 100));
         appliedTaxes.push({
           id: tax.id,
           name: isVat ? `Fiji VAT (${effectiveRate}%)` : tax.name,
@@ -839,19 +853,19 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
           type: 'tax',
           rate,
           rateType: 'percentage',
-          amount: taxableBase * (rate / 100)
+          amount: cents(taxableBase * (rate / 100))
         });
       }
     });
 
-    const taxTotal = appliedTaxes.reduce((acc, t) => acc + t.amount, 0);
+    const taxTotal = cents(appliedTaxes.reduce((acc, t) => acc + t.amount, 0));
 
     // Primary Fiji VAT rate & amount
     const vatTax = appliedTaxes.find(t => t.id === 'ptax-1' || t.name.toLowerCase().includes('vat'));
     const vatRate = vatTax ? vatTax.rate : (data.userProfile.defaultVatRate ?? 12.5);
-    const vatAmount = vatTax ? vatTax.amount : taxableBase * (vatRate / 100);
+    const vatAmount = vatTax ? vatTax.amount : cents(taxableBase * (vatRate / 100));
 
-    const total = subtotal + taxTotal + feeTotal;
+    const total = cents(subtotal + taxTotal + feeTotal);
 
     return { 
       subtotal, 
@@ -864,11 +878,13 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       total,
       reimbursementsNoVat
     };
-  }, [items, selectedTaxIds, selectedFeeIds, isTaxExempt, data.userProfile.enableTax, data.platformTaxes, data.platformFees, data.businessTaxes, data.businessFees, data.userProfile.defaultVatRate, data.activeBusinessId, editingDoc]);
+  }, [liveItems, selectedTaxIds, selectedFeeIds, isTaxExempt, data.userProfile.enableTax, data.platformTaxes, data.platformFees, data.businessTaxes, data.businessFees, data.userProfile.defaultVatRate, data.activeBusinessId, editingDoc]);
 
   // Form Submission for standard document
   const handleSubmitDocument = (e: React.FormEvent) => {
     e.preventDefault();
+    const items = liveItems;
+    if (draftLine) { setItems(items); stopEditingLine(); }
     if (!clientId || items.length === 0) {
       alert('Choose a client and add at least one line item.');
       return;
@@ -927,13 +943,14 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // =========================================================================
 
   // Helper to calculate total from retainer line items
+  const liveRetItems = useMemo(() => withDraft(retItems), [retItems, draftLine, editingLineId]);
   const retCalculatedTotals = useMemo(() => {
-    const subtotal = retItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0);
+    const subtotal = cents(liveRetItems.reduce((acc, it) => acc + (it.total || it.quantity * it.rate), 0));
     const vatRate = data.userProfile.defaultVatRate ?? 12.5;
-    const vatAmount = subtotal * (vatRate / 100);
-    const total = subtotal + vatAmount;
+    const vatAmount = cents(subtotal * (vatRate / 100));
+    const total = cents(subtotal + vatAmount);
     return { subtotal, vatRate, vatAmount, total };
-  }, [retItems, data.userProfile.defaultVatRate]);
+  }, [liveRetItems, data.userProfile.defaultVatRate]);
 
   // Retainer item builder handlers
   const handleRetCatalogSelect = (id: string) => {
@@ -1217,6 +1234,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Submit Retainer Schedule
   const handleSubmitRetainer = (e: React.FormEvent) => {
     e.preventDefault();
+    const retItems = liveRetItems;
+    if (draftLine) { setRetItems(retItems); stopEditingLine(); }
     if (!retClientId || !retProjectName || retItems.length === 0) {
       alert('Choose a client, enter a retainer name and add at least one line item.');
       return;
@@ -2652,8 +2671,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                         item={it}
                         currency={docCurrency}
                         amountLocked={isReimbursement(it)}
-                        onCancel={() => setEditingLineId(null)}
-                        onSave={updated => { setItems(items.map(x => x.id === it.id ? updated : x)); setEditingLineId(null); }}
+                        onDraftChange={setDraftLine}
+                        documentTotal={totals.total}
+                        documentTotalLabel={`${docType === 'quote' ? 'Quote' : docType === 'credit_note' ? 'Credit note' : docType === 'receipt' ? 'Receipt' : 'Invoice'} total incl. taxes`}
+                        onCancel={stopEditingLine}
+                        onSave={updated => { setItems(items.map(x => x.id === it.id ? updated : x)); stopEditingLine(); }}
                       />
                     ) : (
                       <div key={it.id || idx} className="bg-white p-2.5 rounded-xl border border-slate-100 flex justify-between items-center text-[11px]">
@@ -3754,8 +3776,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       key={it.id}
                       item={it}
                       currency={data.userProfile.defaultCurrency}
-                      onCancel={() => setEditingLineId(null)}
-                      onSave={updated => { setRetItems(retItems.map(x => x.id === it.id ? updated : x)); setEditingLineId(null); }}
+                      onDraftChange={setDraftLine}
+                      documentTotal={retCalculatedTotals.total}
+                      documentTotalLabel="Amount per invoice incl. VAT"
+                      onCancel={stopEditingLine}
+                      onSave={updated => { setRetItems(retItems.map(x => x.id === it.id ? updated : x)); stopEditingLine(); }}
                     />
                   ) : (
                     <div key={it.id || idx} className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex justify-between items-center text-[10.5px]">
