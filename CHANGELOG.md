@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.9.0] - 2026-11-07
+
+### Changed
+- Plans (names, descriptions, prices, limits and features), the Fiji taxes and fees every business can apply, and the standard VAT rate are now set once by Frilensa admins and reach every account. Before, changes in Admin → Plans and Admin → Taxes and fees only changed the admin's own account. Invoices and quotes already issued keep the rates they were issued with, and each business's own VAT rate in Settings still applies to its invoices.
+- The plan picker shows the plans as admins set them, with an annual price of twelve months less 20%.
+- New accounts start with the standard VAT rate admins set.
+- Admins can now rename plans and edit their descriptions. Removing a tax or fee asks first.
+
+### Fixed
+- Taxes and fees an admin turns off no longer appear when creating invoices and quotes (documents that already use one keep it).
+
+### Removed
+- The unused "Default currency" and "Require TIN" switches in Admin → Taxes and fees. They had no effect.
+
 ## [4.8.0] - 2026-11-07
 
 ### Added

@@ -10,6 +10,7 @@ import { CRMData, Business, ProductService, Client, UserProfile } from '../types
 import { INDUSTRY_PRESETS, getIndustryPreset } from '../lib/industryPresets';
 import BrandMark from './BrandMark';
 import { useBranding } from '../lib/branding';
+import { usePlatformConfig } from '../lib/platformConfig';
 
 interface OnboardingWizardProps {
   initialData: CRMData;
@@ -91,7 +92,8 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
   // Business Specific Fields
   const [businessName, setBusinessName] = useState('Seniloli Creative Studio');
   const [businessTin, setBusinessTin] = useState(initialData.userProfile.tin || '99-12345-0-0');
-  const [vatRate, setVatRate] = useState<number>(12.5);
+  const standardVat = usePlatformConfig().config.defaultVatRate;
+  const [vatRate, setVatRate] = useState<number>(standardVat);
   const [isVatRegistered, setIsVatRegistered] = useState(true);
   const [invoicePrefix, setInvoicePrefix] = useState('INV');
   const [quotePrefix, setQuotePrefix] = useState('QT');
@@ -877,7 +879,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">VAT rate (%)</label>
                   <div className="flex gap-2">
-                    {[12.5, 9, 15].map(rate => (
+                    {Array.from(new Set([standardVat, 9, 15])).map(rate => (
                       <button
                         key={rate}
                         type="button"
@@ -888,7 +890,7 @@ export default function OnboardingWizard({ initialData, onCompleteOnboarding, on
                             : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                         }`}
                       >
-                        {rate}% {rate === 12.5 ? '(standard)' : ''}
+                        {rate}% {rate === standardVat ? '(standard)' : ''}
                       </button>
                     ))}
                   </div>

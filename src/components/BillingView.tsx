@@ -2824,7 +2824,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       </div>
                       <div className={`grid grid-cols-1 sm:grid-cols-2 gap-1.5 ${isTaxExempt ? 'opacity-50 pointer-events-none' : ''}`}>
                         {[
-                          ...(data.platformTaxes || []),
+                          ...(data.platformTaxes || []).filter(t => t.isActive !== false || selectedTaxIds.includes(t.id)),
                           ...(data.businessTaxes || []).filter(t => !t.businessId || t.businessId === (editingDoc?.businessId || data.activeBusinessId))
                         ].map((tax) => {
                           const isChecked = selectedTaxIds.includes(tax.id);
@@ -2869,7 +2869,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       </span>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                         {[
-                          ...(data.platformFees || []),
+                          ...(data.platformFees || []).filter(f => f.isActive !== false || selectedFeeIds.includes(f.id)),
                           ...(data.businessFees || []).filter(f => !f.businessId || f.businessId === (editingDoc?.businessId || data.activeBusinessId))
                         ].map((fee) => {
                           const isChecked = selectedFeeIds.includes(fee.id);

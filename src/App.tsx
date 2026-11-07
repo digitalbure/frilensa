@@ -47,6 +47,7 @@ import OAuthConsent from './components/OAuthConsent';
 import { inboxDocumentCount } from './lib/inbox';
 import AccessGate from './components/AccessGate';
 import { DEFAULT_PLATFORM_SETTINGS } from './data/mockData';
+import { applyPlatformConfig, publishedPlatformConfig, usePlatformConfig } from './lib/platformConfig';
 import type { PlanTier } from './types';
 import { registerAccount, AccessDenied } from './lib/api';
 import LegalPage from './components/LegalPage';
@@ -149,11 +150,18 @@ export default function App() {
   const applyData = useCallback((incoming: CRMData) => {
     // Repair documents and list items with missing amounts or fields (they crashed screens), then give every
     // document a share token so its "view online" link and QR code work.
-    const data = ensureShareTokens(normalizeWorkspace(incoming));
+    // Plans, taxes and fees come from the platform (set by admins for everyone), not the workspace's own copy.
+    const data = ensureShareTokens(normalizeWorkspace(applyPlatformConfig(incoming, publishedPlatformConfig())));
     crmDataRef.current = data;
     setCrmData(data);
     return data;
   }, []);
+
+  // When admins publish new plans, taxes or fees (or they first load), show them straight away.
+  const platformConfig = usePlatformConfig();
+  useEffect(() => {
+    if (platformConfig.saved && crmDataRef.current) applyData(crmDataRef.current);
+  }, [platformConfig, applyData]);
 
   const flushCloudSave = useCallback(async () => {
     if (saveTimerRef.current) {

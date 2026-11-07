@@ -27,6 +27,7 @@ import { createAdminMarketplaceRouter, createMarketplaceRouter, createPublicMark
 import { createAccountRouter } from "./server/account";
 import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistrationRouter } from "./server/access";
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
+import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter } from "./server/platformConfig";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
 
@@ -228,6 +229,8 @@ async function startServer() {
   app.use("/api/admin/branding", express.json({ limit: "700kb" }), createAdminBrandingRouter());
   app.use("/api/public/branding", createPublicBrandingRouter());
   app.get("/manifest.webmanifest", manifestHandler);
+  app.use("/api/admin/platform-config", express.json({ limit: "100kb" }), createAdminPlatformConfigRouter());
+  app.use("/api/public/platform-config", createPublicPlatformConfigRouter());
   app.use("/api/admin/access", express.json({ limit: "10kb" }), createAdminAccessRouter());
   // Marketplace: photo uploads need more room than other requests.
   app.use("/api/admin/marketplace", express.json({ limit: "3mb" }), createAdminMarketplaceRouter());

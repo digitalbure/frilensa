@@ -1165,6 +1165,26 @@ try {
     const fallback = await fetch(`${API}/api/public/branding/app-icon`, { redirect: 'manual' });
     assert.equal(fallback.status, 302); assert.equal(fallback.headers.get('location'), '/pwa-icon.svg');
   });
+  await check('platform plans, taxes and fees: anyone reads them, only admins change them', async () => {
+    const pub = await j(await fetch(`${API}/api/public/platform-config`));
+    assert.equal(pub.status, 200); assert.equal(pub.body.saved, false); assert.equal(pub.body.config.defaultVatRate, 12.5);
+    assert.equal(pub.body.config.plans.pro.price, 25); assert.ok(pub.body.config.platformTaxes.some(t => t.category === 'vat'));
+    const put = (who, body) => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: who ? auth(who) : { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const next = { ...pub.body.config, defaultVatRate: 15, plans: { ...pub.body.config.plans, pro: { ...pub.body.config.plans.pro, name: 'Pro Studio', price: 29.5 } }, platformFees: [{ name: 'Card fee', rate: 3, rateType: 'percentage', isActive: true, category: 'processing' }] };
+    assert.equal((await put(null, next)).status, 401);
+    assert.equal((await put(B, next)).status, 403, 'non-admin changed the plans');
+    assert.equal((await put(A, { ...next, defaultVatRate: 120 })).status, 400);
+    assert.equal((await put(A, { ...next, platformTaxes: [{ name: 'Bad', rate: 140, rateType: 'percentage' }] })).status, 400);
+    assert.equal((await put(A, { ...next, platformTaxes: [{ name: '', rate: 5 }] })).status, 400);
+    assert.equal((await put(A, { defaultVatRate: 15 })).status, 400);
+    const saved = await j(await put(A, next));
+    assert.equal(saved.status, 200, JSON.stringify(saved.body)); assert.equal(saved.body.saved, true);
+    const after = (await j(await fetch(`${API}/api/public/platform-config`))).body;
+    assert.equal(after.saved, true); assert.equal(after.config.defaultVatRate, 15);
+    assert.equal(after.config.plans.pro.name, 'Pro Studio'); assert.equal(after.config.plans.pro.price, 29.5);
+    assert.equal(after.config.platformFees.length, 1); assert.equal(after.config.platformFees[0].scope, 'platform'); assert.ok(after.config.platformFees[0].id);
+    assert.ok(!('updatedBy' in after), 'admin email not exposed');
+  });
   await check('sign-up control: open, invite-only and closed are enforced by the server', async () => {
     const reg = (who, inviteCode) => fetch(`${API}/api/account/register`, { method: 'POST', headers: auth(who), body: JSON.stringify(inviteCode ? { inviteCode } : {}) });
     const setMode = (who, mode) => fetch(`${API}/api/admin/access/mode`, { method: 'PUT', headers: auth(who), body: JSON.stringify({ mode }) });

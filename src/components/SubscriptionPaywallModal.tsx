@@ -6,7 +6,8 @@ import {
   Building2, ArrowRight, X, CheckCircle2, Lock, Star, HelpCircle,
   Clock, RefreshCw
 } from 'lucide-react';
-import { PlanTier, PlatformSettings, CRMData } from '../types';
+import { PlanTier } from '../types';
+import { PLAN_TIERS, annualPrice, planHighlights, usePlatformConfig } from '../lib/platformConfig';
 
 interface SubscriptionPaywallModalProps {
   currentPlan: PlanTier;
@@ -24,65 +25,24 @@ export default function SubscriptionPaywallModal({
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [selectedPlan, setSelectedPlan] = useState<PlanTier>(currentPlan === 'free' ? 'pro' : 'premium');
 
-  const plans = [
-    {
-      id: 'free' as PlanTier,
-      name: 'Free Starter',
-      tagline: 'For solo freelancers starting out in Fiji',
-      monthlyPrice: 0,
-      annualPrice: 0,
-      badge: 'Current Plan',
-      features: [
-        'Up to 5 invoices a month',
-        'Up to 3 active clients',
-        '1 business profile',
-        'PDF export',
-        'Community support',
-      ],
-      limits: 'Basic Features'
-    },
-    {
-      id: 'pro' as PlanTier,
-      name: 'Freelance Pro',
-      tagline: 'For working consultants, developers and creatives',
-      monthlyPrice: 25,
-      annualPrice: 240, // $20/mo
-      badge: 'Most Popular',
-      popular: true,
-      features: [
-        'Unlimited invoices and receipts',
-        'Up to 30 clients and projects',
-        '3 business profiles',
-        'AI receipt and invoice scanning',
-        'Recurring invoices and retainers',
-        'Your own logo and brand colour',
-        'M-PAiSA and MyCash payments',
-        'Standard support'
-      ],
-      limits: 'High Quota'
-    },
-    {
-      id: 'premium' as PlanTier,
-      name: 'Agency Premium',
-      tagline: 'For studios, agencies and teams',
-      monthlyPrice: 50,
-      annualPrice: 480, // $40/mo
-      badge: 'Best Value',
-      features: [
-        'Unlimited invoices, clients and projects',
-        'Up to 10 business profiles',
-        'Client portal',
-        'Invoices in FJD, AUD, USD and NZD',
-        'Bank statement import and reconciliation',
-        '200 AI scans a month'
-      ],
-      limits: 'Unlimited Scale'
-    }
-  ];
+  // Names, prices, limits and features are set by Frilensa admins for everyone (Admin → Plans).
+  const { config } = usePlatformConfig();
+  const plans = PLAN_TIERS.map(id => {
+    const p = config.plans[id];
+    return {
+      id,
+      name: p.name,
+      tagline: p.description,
+      monthlyPrice: p.price,
+      annualPrice: annualPrice(p.price),
+      popular: id === 'pro',
+      features: planHighlights(p)
+    };
+  });
 
   const currentPlanObj = plans.find(p => p.id === selectedPlan) || plans[1];
   const price = billingCycle === 'annual' ? currentPlanObj.annualPrice : currentPlanObj.monthlyPrice;
-  const monthlyEquivalent = billingCycle === 'annual' ? Math.round(currentPlanObj.annualPrice / 12) : currentPlanObj.monthlyPrice;
+  const monthlyEquivalent = billingCycle === 'annual' ? Math.round(currentPlanObj.annualPrice / 12 * 100) / 100 : currentPlanObj.monthlyPrice;
 
   return (
     <div 
@@ -173,7 +133,7 @@ export default function SubscriptionPaywallModal({
                   const isSelected = selectedPlan === plan.id;
                   const isCurrent = currentPlan === plan.id;
                   const planPrice = billingCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
-                  const perMonth = billingCycle === 'annual' ? Math.round(plan.annualPrice / 12) : plan.monthlyPrice;
+                  const perMonth = billingCycle === 'annual' ? Math.round(plan.annualPrice / 12 * 100) / 100 : plan.monthlyPrice;
 
                   return (
                     <div
@@ -217,7 +177,7 @@ export default function SubscriptionPaywallModal({
                           </div>
                           {billingCycle === 'annual' && planPrice > 0 && (
                             <p className="text-[10px] text-sky-700 font-semibold mt-0.5">
-                              FJD ${planPrice} a year (2 months free)
+                              FJD ${planPrice} a year (20% off)
                             </p>
                           )}
                         </div>

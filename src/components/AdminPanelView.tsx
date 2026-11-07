@@ -3,7 +3,7 @@ import AdminErrorsView from './AdminErrorsView';
 import AdminBrandingView from './AdminBrandingView';
 import AdminAccessView from './AdminAccessView';
 import AdminWorkspacesView, { type AdminWorkspace } from './AdminWorkspacesView';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldAlert, Users, TrendingUp, Cpu, ToggleLeft, ToggleRight, 
@@ -18,6 +18,7 @@ import {
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 import AdminMarketplaceView from './marketplace/AdminMarketplaceView';
+import { cleanPlatformConfig, savePlatformConfig, usePlatformConfig, type PlatformConfig } from '../lib/platformConfig';
 
 
 interface PendingSubscriptionPayment {
@@ -48,9 +49,24 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   // Selected Plan for Editing in Plans Tab
   const [selectedPlanTab, setSelectedPlanTab] = useState<PlanTier>('free');
 
-  // Platform Statutory Taxes
-  const platformTaxes = crmData.platformTaxes || [];
-  const platformFees = crmData.platformFees || [];
+  // Plans, taxes, fees and the default VAT rate are platform-wide: saved on the server for every account.
+  // Until they're first published, this admin's own workspace copy is shown so earlier edits aren't lost.
+  const platformState = usePlatformConfig();
+  const fromWorkspace = (): PlatformConfig => cleanPlatformConfig({
+    plans: currentSettings.plans,
+    platformTaxes: crmData.platformTaxes || [],
+    platformFees: crmData.platformFees || [],
+    defaultVatRate: currentSettings.defaultVatRate
+  });
+  const [config, setConfig] = useState<PlatformConfig>(() => platformState.saved ? platformState.config : fromWorkspace());
+  const [configSaving, setConfigSaving] = useState(false);
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (platformState.saved && !saveTimer.current) setConfig(platformState.config);
+  }, [platformState]);
+  useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
+  const platformTaxes = config.platformTaxes;
+  const platformFees = config.platformFees;
 
   // Platform Taxes Form State
   const [newTaxName, setNewTaxName] = useState('');
@@ -106,7 +122,28 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
     setTimeout(() => setSaveSuccessMsg(null), 3000);
   };
 
-  // Helper to commit platform settings
+  // Saves the platform-wide config. Typed values wait a moment so each keystroke isn't a save.
+  const commitConfig = (next: PlatformConfig, opts: { wait?: boolean; message?: string } = {}) => {
+    setConfig(next);
+    if (saveTimer.current) clearTimeout(saveTimer.current);
+    const run = async () => {
+      saveTimer.current = null;
+      setConfigSaving(true);
+      try {
+        await savePlatformConfig(next);
+        showToast(opts.message || 'Saved for every account.');
+      } catch (err: any) {
+        showToast(err?.message || "Couldn't save. Try again.");
+        if (platformState.saved) setConfig(platformState.config);
+      } finally {
+        setConfigSaving(false);
+      }
+    };
+    if (opts.wait) saveTimer.current = setTimeout(run, 700);
+    else run();
+  };
+
+  // Helper to commit this admin's own workspace settings (their own plan)
   const commitPlatformSettings = (newSettings: PlatformSettings) => {
     setPlatformSettings(newSettings);
     const updatedData: CRMData = {
@@ -118,55 +155,24 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   };
 
   // Update Plan Limits
-  const handleUpdatePlanLimit = (planId: PlanTier, limitKey: keyof typeof platformSettings.plans.free.limits, value: number) => {
-    const updatedPlans = {
-      ...platformSettings.plans,
-      [planId]: {
-        ...platformSettings.plans[planId],
-        limits: {
-          ...platformSettings.plans[planId].limits,
-          [limitKey]: value
-        }
-      }
-    };
-    commitPlatformSettings({
-      ...platformSettings,
-      plans: updatedPlans
-    });
+  const handleUpdatePlanLimit = (planId: PlanTier, limitKey: keyof PlanFeatureConfig['limits'], value: number) => {
+    const plan = config.plans[planId];
+    commitConfig({ ...config, plans: { ...config.plans, [planId]: { ...plan, limits: { ...plan.limits, [limitKey]: Number.isFinite(value) ? value : 0 } } } }, { wait: true });
   };
 
   // Update Plan Price
   const handleUpdatePlanPrice = (planId: PlanTier, price: number) => {
-    const updatedPlans = {
-      ...platformSettings.plans,
-      [planId]: {
-        ...platformSettings.plans[planId],
-        price: Number(price) || 0
-      }
-    };
-    commitPlatformSettings({
-      ...platformSettings,
-      plans: updatedPlans
-    });
+    commitConfig({ ...config, plans: { ...config.plans, [planId]: { ...config.plans[planId], price: Math.max(0, Number(price) || 0) } } }, { wait: true });
+  };
+
+  const handleUpdatePlanText = (planId: PlanTier, field: 'name' | 'description', value: string) => {
+    commitConfig({ ...config, plans: { ...config.plans, [planId]: { ...config.plans[planId], [field]: value } } });
   };
 
   // Toggle Plan Feature Flag
-  const handleTogglePlanFeature = (planId: PlanTier, featureKey: keyof typeof platformSettings.plans.free.features) => {
-    const currentVal = platformSettings.plans[planId].features[featureKey];
-    const updatedPlans = {
-      ...platformSettings.plans,
-      [planId]: {
-        ...platformSettings.plans[planId],
-        features: {
-          ...platformSettings.plans[planId].features,
-          [featureKey]: !currentVal
-        }
-      }
-    };
-    commitPlatformSettings({
-      ...platformSettings,
-      plans: updatedPlans
-    });
+  const handleTogglePlanFeature = (planId: PlanTier, featureKey: keyof PlanFeatureConfig['features']) => {
+    const plan = config.plans[planId];
+    commitConfig({ ...config, plans: { ...config.plans, [planId]: { ...plan, features: { ...plan.features, [featureKey]: !plan.features[featureKey] } } } });
   };
 
   // Switch Active Workspace Subscription Tier
@@ -195,36 +201,24 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
       description: newTaxDesc.trim() || undefined
     };
 
-    const updatedTaxes = [...platformTaxes, newTax];
-    const updatedData: CRMData = {
-      ...crmData,
-      platformTaxes: updatedTaxes
-    };
-    onUpdateCrmData(updatedData);
+    commitConfig({ ...config, platformTaxes: [...platformTaxes, newTax] }, { message: 'Tax added for every account.' });
 
     setNewTaxName('');
     setNewTaxRate(12.5);
     setNewTaxDesc('');
     setNewTaxIsDefault(false);
-    showToast('Tax added.');
   };
 
   // Toggle Tax Status
   const handleToggleTax = (taxId: string) => {
-    const updatedTaxes = platformTaxes.map(t => t.id === taxId ? { ...t, isActive: !t.isActive } : t);
-    onUpdateCrmData({
-      ...crmData,
-      platformTaxes: updatedTaxes
-    });
+    commitConfig({ ...config, platformTaxes: platformTaxes.map(t => t.id === taxId ? { ...t, isActive: !t.isActive } : t) });
   };
 
   // Delete Platform Tax
   const handleDeleteTax = (taxId: string) => {
-    const updatedTaxes = platformTaxes.filter(t => t.id !== taxId);
-    onUpdateCrmData({
-      ...crmData,
-      platformTaxes: updatedTaxes
-    });
+    const tax = platformTaxes.find(t => t.id === taxId);
+    if (tax && !confirm(`Remove "${tax.name}" for every account? Invoices already issued keep it.`)) return;
+    commitConfig({ ...config, platformTaxes: platformTaxes.filter(t => t.id !== taxId) }, { message: 'Tax removed.' });
   };
 
   // Add Platform Fee
@@ -244,36 +238,24 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
       description: newFeeDesc.trim() || undefined
     };
 
-    const updatedFees = [...platformFees, newFee];
-    const updatedData: CRMData = {
-      ...crmData,
-      platformFees: updatedFees
-    };
-    onUpdateCrmData(updatedData);
+    commitConfig({ ...config, platformFees: [...platformFees, newFee] }, { message: 'Fee added for every account.' });
 
     setNewFeeName('');
     setNewFeeRate(2.5);
     setNewFeeDesc('');
     setNewFeeIsDefault(false);
-    showToast('Fee added.');
   };
 
   // Toggle Fee Status
   const handleToggleFee = (feeId: string) => {
-    const updatedFees = platformFees.map(f => f.id === feeId ? { ...f, isActive: !f.isActive } : f);
-    onUpdateCrmData({
-      ...crmData,
-      platformFees: updatedFees
-    });
+    commitConfig({ ...config, platformFees: platformFees.map(f => f.id === feeId ? { ...f, isActive: !f.isActive } : f) });
   };
 
   // Delete Platform Fee
   const handleDeleteFee = (feeId: string) => {
-    const updatedFees = platformFees.filter(f => f.id !== feeId);
-    onUpdateCrmData({
-      ...crmData,
-      platformFees: updatedFees
-    });
+    const fee = platformFees.find(f => f.id === feeId);
+    if (fee && !confirm(`Remove "${fee.name}" for every account? Invoices already issued keep it.`)) return;
+    commitConfig({ ...config, platformFees: platformFees.filter(f => f.id !== feeId) }, { message: 'Fee removed.' });
   };
 
   // Approve Subscription Payment
@@ -297,7 +279,23 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const activeWorkspacesCount = (workspaces || []).filter(w => new Date(w.lastSignInAt || w.updatedAt || 0).getTime() >= monthAgo).length;
   const paidWorkspacesCount = (workspaces || []).filter(w => w.plan === 'pro' || w.plan === 'premium').length;
 
-  const currentPlanConfig = platformSettings.plans[selectedPlanTab];
+  const currentPlanConfig = config.plans[selectedPlanTab];
+
+  // Shown on the Plans and Taxes tabs: whether these settings reach everyone yet.
+  const publishNotice = (
+    <div className={`p-3 rounded-2xl border text-[11px] flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${platformState.saved ? 'bg-slate-900 border-slate-800 text-slate-400' : 'bg-amber-950/40 border-amber-800 text-amber-200'}`}>
+      <span>
+        {platformState.saved
+          ? <>These apply to every account. Changes save automatically{configSaving ? ' (saving…)' : ''}. Invoices and quotes already issued keep the rates they were issued with.</>
+          : <>Not published yet: every account still uses the standard plans and taxes. Publish these to apply them to everyone.</>}
+      </span>
+      {!platformState.saved && (
+        <button type="button" disabled={configSaving} onClick={() => commitConfig(config, { message: 'Published for every account.' })} className="px-3 py-1.5 rounded-xl bg-amber-400 text-slate-950 font-bold shrink-0 cursor-pointer disabled:opacity-50">
+          {configSaving ? 'Publishing…' : 'Publish to every account'}
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div 
@@ -580,6 +578,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           {/* ================= TAB 1: PLANS & FEATURE TOGGLES ================= */}
           {activeTab === 'plans' && (
             <div className="space-y-5">
+              {publishNotice}
               
               {/* Active Workspace Plan Switcher Box */}
               <div className="bg-slate-900 border border-slate-800 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-inner">
@@ -591,7 +590,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     </h3>
                   </div>
                   <p className="text-[11px] text-slate-400 mt-0.5">
-                    Current plan: <span className="text-sky-400 font-bold uppercase">{platformSettings.plans[activePlanTier].name}</span> (FJD ${platformSettings.plans[activePlanTier].price}/mo)
+                    Current plan: <span className="text-sky-400 font-bold uppercase">{config.plans[activePlanTier].name}</span> (FJD ${config.plans[activePlanTier].price}/mo)
                   </p>
                 </div>
 
@@ -616,7 +615,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
               {/* Plan Selection Tabs */}
               <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
                 {(['free', 'pro', 'premium'] as PlanTier[]).map((tier) => {
-                  const p = platformSettings.plans[tier];
+                  const p = config.plans[tier];
                   return (
                     <button
                       key={tier}
@@ -650,6 +649,30 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       </h4>
                       <p className="text-[10px] text-slate-400 mt-0.5">{currentPlanConfig.description}</p>
                     </div>
+                  </div>
+
+                  {/* Name and description, as shown in the plan picker */}
+                  <div className="grid grid-cols-1 gap-2" key={`plan-text-${selectedPlanTab}-${platformState.updatedAt}`}>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Plan name
+                      <input
+                        type="text"
+                        maxLength={40}
+                        defaultValue={currentPlanConfig.name}
+                        onBlur={(e) => { const v = e.target.value.trim(); if (v && v !== currentPlanConfig.name) handleUpdatePlanText(selectedPlanTab, 'name', v); }}
+                        className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl py-1.5 px-3 text-xs font-bold text-slate-100 normal-case tracking-normal focus:outline-none focus:border-sky-500"
+                      />
+                    </label>
+                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                      Short description
+                      <input
+                        type="text"
+                        maxLength={200}
+                        defaultValue={currentPlanConfig.description}
+                        onBlur={(e) => { const v = e.target.value.trim(); if (v !== currentPlanConfig.description) handleUpdatePlanText(selectedPlanTab, 'description', v); }}
+                        className="mt-1 w-full bg-slate-950 border border-slate-800 rounded-xl py-1.5 px-3 text-xs text-slate-100 normal-case tracking-normal font-normal focus:outline-none focus:border-sky-500"
+                      />
+                    </label>
                   </div>
 
                   {/* Monthly Pricing */}
@@ -914,6 +937,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           {/* ================= TAB 2: STATUTORY TAXES & FEES ================= */}
           {activeTab === 'taxes_fees' && (
             <div className="space-y-5">
+              {publishNotice}
               
               {/* Global System Tax Variables */}
               <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
@@ -924,42 +948,23 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                   <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default VAT rate</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Standard VAT rate</label>
                     <div className="flex items-center gap-1.5 mt-1">
                       <input
                         type="number"
                         step="0.5"
-                        value={platformSettings.defaultVatRate}
-                        onChange={(e) => commitPlatformSettings({ ...platformSettings, defaultVatRate: Number(e.target.value) })}
+                        min="0"
+                        max="100"
+                        value={config.defaultVatRate}
+                        onChange={(e) => commitConfig({ ...config, defaultVatRate: Math.min(100, Math.max(0, Number(e.target.value) || 0)) }, { wait: true })}
                         className="w-20 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400"
                       />
                       <span className="text-xs font-bold text-slate-400">%</span>
                     </div>
                   </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase">Default currency</label>
-                    <input
-                      type="text"
-                      value={platformSettings.defaultCurrency}
-                      onChange={(e) => commitPlatformSettings({ ...platformSettings, defaultCurrency: e.target.value.toUpperCase() })}
-                      className="w-20 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-slate-200 mt-1"
-                    />
-                  </div>
-
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-slate-300 uppercase block">Require TIN</span>
-                      <span className="text-[8.5px] text-slate-500">Require TIN on docs {'>'} $100</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => commitPlatformSettings({ ...platformSettings, enforceFRCSTIN: !platformSettings.enforceFRCSTIN })}
-                      className={`p-1 ${platformSettings.enforceFRCSTIN ? 'text-emerald-400' : 'text-slate-600'}`}
-                    >
-                      {platformSettings.enforceFRCSTIN ? <ToggleRight className="w-5 h-5" /> : <ToggleLeft className="w-5 h-5" />}
-                    </button>
-                  </div>
+                  <p className="sm:col-span-2 text-[10px] text-slate-400 leading-relaxed self-center">
+                    New accounts start with this rate when they set up. Each business can change its own rate in Settings, and that rate is what goes on its invoices.
+                  </p>
                 </div>
               </div>
 

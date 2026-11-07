@@ -2261,7 +2261,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
             Fiji taxes and levies (set by Frilensa)
           </span>
           <div className="space-y-1.5">
-            {(data.platformTaxes || []).map((tax) => (
+            {(data.platformTaxes || []).filter(t => t.isActive !== false).map((tax) => (
               <div key={tax.id} className="p-2.5 bg-zinc-50/70 rounded-lg border border-zinc-100 flex items-center justify-between text-[11px]">
                 <div>
                   <span className="font-semibold text-zinc-800 block">{tax.name}</span>
