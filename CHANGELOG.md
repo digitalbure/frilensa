@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.11.1] - 2026-11-08
+
+### Fixed
+- Project scope: you can now change a deliverable after adding it (tap it in Edit section), move deliverables up and down, and see the whole list instead of only the first few.
+- Project scope: editing a section that was created without an internal id (older projects and some templates) added a copy instead of changing it. It now edits the section, and deleting such a section works too.
+- A deliverable typed into the box but not yet added with "+ Add" is no longer lost when you save the section.
+
+### Changed
+- Scope sections have a clear Edit button, an "Edit deliverables" link, and arrows to reorder sections.
+
 ## [4.11.0] - 2026-11-08
 
 ### Added

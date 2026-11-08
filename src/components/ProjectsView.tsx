@@ -4,7 +4,8 @@ import {
   Trash2, Edit3, Clock, CheckCircle2, Circle, Play, AlertCircle, 
   User, ChevronRight, Search, Percent, ListTodo, LayoutGrid, Kanban, Columns,
   ArrowUpDown, Link2, FileText, Info, RefreshCw, Coins, Globe, Clapperboard,
-  Code, Scale, Wrench, Hammer, Sparkles, Layers, Wand2, Copy
+  Code, Scale, Wrench, Hammer, Sparkles, Layers, Wand2, Copy,
+  ChevronUp as ScopeUp, ChevronDown as ScopeDown, X as ScopeX
 } from 'lucide-react';
 import { CRMData, Project, Task, Client, Business } from '../types';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, formatCurrencyAmount, convertCurrency, resolveProjectCurrency } from '../lib/currencies';
@@ -77,6 +78,8 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
   const [projectDetailTab, setProjectDetailTab] = useState<'scope' | 'tasks' | 'documents'>('scope');
   const [showAddScopeModal, setShowAddScopeModal] = useState(false);
   const [editingScopeId, setEditingScopeId] = useState<string | null>(null);
+  // Position of the section being edited: older sections (and some templates) have no id.
+  const [editingScopeIndex, setEditingScopeIndex] = useState<number | null>(null);
   const [scopeTitle, setScopeTitle] = useState('');
   const [scopeDesc, setScopeDesc] = useState('');
   const [scopeCost, setScopeCost] = useState<number>(0);
@@ -305,6 +308,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
   const handleOpenAddScope = () => {
     setEditingScopeId(null);
+    setEditingScopeIndex(null);
     setScopeTitle('');
     setScopeDesc('');
     setScopeCost(0);
@@ -313,12 +317,13 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     setShowAddScopeModal(true);
   };
 
-  const handleOpenEditScope = (scope: any) => {
-    setEditingScopeId(scope.id);
-    setScopeTitle(scope.title);
-    setScopeDesc(scope.description);
-    setScopeCost(scope.cost);
-    setScopeDeliverables(scope.deliverables || []);
+  const handleOpenEditScope = (scope: any, index: number) => {
+    setEditingScopeId(scope.id || null);
+    setEditingScopeIndex(index);
+    setScopeTitle(scope.title || '');
+    setScopeDesc(scope.description || '');
+    setScopeCost(Number(scope.cost) || 0);
+    setScopeDeliverables([...(scope.deliverables || [])]);
     setNewDeliverable('');
     setShowAddScopeModal(true);
   };
@@ -333,6 +338,28 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     setScopeDeliverables(scopeDeliverables.filter((_, i) => i !== index));
   };
 
+  const handleEditDeliverable = (index: number, value: string) => {
+    setScopeDeliverables(scopeDeliverables.map((d, i) => i === index ? value : d));
+  };
+
+  const handleMoveDeliverable = (index: number, by: number) => {
+    const to = index + by;
+    if (to < 0 || to >= scopeDeliverables.length) return;
+    const next = [...scopeDeliverables];
+    [next[index], next[to]] = [next[to], next[index]];
+    setScopeDeliverables(next);
+  };
+
+  // Move a whole scope section up or down the list.
+  const handleMoveScopeSection = (index: number, by: number) => {
+    const proj = projects.find(p => p.id === selectedProjectId);
+    const sections = [...(proj?.scopeSections || [])];
+    const to = index + by;
+    if (!proj || to < 0 || to >= sections.length) return;
+    [sections[index], sections[to]] = [sections[to], sections[index]];
+    onUpdateData({ ...data, projects: projects.map(p => p.id === proj.id ? { ...p, scopeSections: sections } : p) });
+  };
+
   const handleSaveScopeSection = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedProjectId || !scopeTitle.trim()) return;
@@ -341,18 +368,25 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     if (!targetProj) return;
 
     const currentSections = targetProj.scopeSections || [];
+    // Keep edited deliverables tidy, and include one typed but not yet added.
+    const deliverables = [...scopeDeliverables, newDeliverable].map(d => d.trim()).filter(Boolean);
 
     let updatedSections = [];
-    if (editingScopeId) {
+    // The section being edited: by id, or by position for sections saved without one.
+    const editIndex = editingScopeId
+      ? currentSections.findIndex(s => s.id === editingScopeId)
+      : editingScopeIndex ?? -1;
+    if (editIndex >= 0 && editIndex < currentSections.length) {
       // Update existing
-      updatedSections = currentSections.map(s => 
-        s.id === editingScopeId 
+      updatedSections = currentSections.map((s, i) => 
+        i === editIndex
           ? { 
               ...s, 
+              id: s.id || `scope-${Date.now()}`,
               title: scopeTitle, 
               description: scopeDesc, 
-              cost: Number(scopeCost), 
-              deliverables: scopeDeliverables 
+              cost: Number(scopeCost) || 0, 
+              deliverables
             }
           : s
       );
@@ -362,14 +396,14 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         id: `scope-${Date.now()}`,
         title: scopeTitle,
         description: scopeDesc,
-        cost: Number(scopeCost),
-        deliverables: scopeDeliverables
+        cost: Number(scopeCost) || 0,
+        deliverables
       };
       updatedSections = [...currentSections, newSection];
     }
 
     // Auto-align cost
-    const sumCost = updatedSections.reduce((sum, s) => sum + s.cost, 0);
+    const sumCost = updatedSections.reduce((sum, s) => sum + (Number(s.cost) || 0), 0);
 
     const updatedProjects = projects.map(p => 
       p.id === selectedProjectId 
@@ -387,10 +421,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       projects: updatedProjects
     });
 
+    setNewDeliverable('');
     setShowAddScopeModal(false);
   };
 
-  const handleDeleteScopeSection = (sectionId: string) => {
+  const handleDeleteScopeSection = (index: number) => {
     if (!selectedProjectId) return;
     if (!window.confirm('Delete this scope section?')) return;
 
@@ -398,10 +433,11 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
     if (!targetProj) return;
 
     const currentSections = targetProj.scopeSections || [];
-    const updatedSections = currentSections.filter(s => s.id !== sectionId);
+    // By position, so sections saved without an id can be deleted too.
+    const updatedSections = currentSections.filter((_, i) => i !== index);
     
     // Auto-calculate new sum
-    const sumCost = updatedSections.reduce((sum, s) => sum + s.cost, 0);
+    const sumCost = updatedSections.reduce((sum, s) => sum + (Number(s.cost) || 0), 0);
 
     const updatedProjects = projects.map(p => 
       p.id === selectedProjectId 
@@ -1674,15 +1710,40 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                               </>
                             );
                           })()}
-                          <div className="flex gap-1.5 mt-2.5">
+                          <div className="flex items-center gap-1 mt-2.5">
                             <button
-                              onClick={() => handleOpenEditScope(section)}
-                              className="p-1 text-slate-400 hover:text-sky-600 hover:bg-sky-50 rounded-lg transition-colors cursor-pointer"
+                              type="button"
+                              onClick={() => handleMoveScopeSection(idx, -1)}
+                              disabled={idx === 0}
+                              aria-label={`Move ${section.title} up`}
+                              title="Move up"
+                              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
+                              <ScopeUp className="w-3.5 h-3.5" />
                             </button>
                             <button
-                              onClick={() => handleDeleteScopeSection(section.id)}
+                              type="button"
+                              onClick={() => handleMoveScopeSection(idx, 1)}
+                              disabled={idx === selectedProject.scopeSections!.length - 1}
+                              aria-label={`Move ${section.title} down`}
+                              title="Move down"
+                              className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-30 disabled:cursor-default"
+                            >
+                              <ScopeDown className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditScope(section, idx)}
+                              aria-label={`Edit ${section.title}`}
+                              className="px-2 py-1 text-[10px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors cursor-pointer flex items-center gap-1"
+                            >
+                              <Edit3 className="w-3 h-3" /> Edit
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteScopeSection(idx)}
+                              aria-label={`Delete ${section.title}`}
+                              title="Delete section"
                               className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -1694,7 +1755,10 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                       {/* Deliverables Checklist */}
                       {section.deliverables && section.deliverables.length > 0 && (
                         <div className="bg-slate-50 border border-slate-100 rounded-xl p-3 space-y-1.5">
-                          <span className="text-[8px] font-extrabold uppercase text-slate-400 tracking-wider block">Deliverables</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-[8px] font-extrabold uppercase text-slate-400 tracking-wider block">Deliverables</span>
+                            <button type="button" onClick={() => handleOpenEditScope(section, idx)} className="text-[9px] font-bold text-sky-700 hover:underline cursor-pointer">Edit deliverables</button>
+                          </div>
                           <div className="space-y-1">
                             {section.deliverables.map((item, bidx) => (
                               <div key={bidx} className="flex items-start gap-2 text-[9.5px] text-slate-600 leading-tight">
@@ -2367,7 +2431,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
             <div className="bg-white w-full max-w-md rounded-2xl border border-slate-100 shadow-2xl overflow-hidden">
               <div className="bg-zinc-950 text-white p-4 flex justify-between items-center">
                 <h3 className="text-xs font-black uppercase tracking-wider">
-                  {editingScopeId ? 'Edit section' : 'Add section'}
+                  {editingScopeIndex !== null ? 'Edit section' : 'Add section'}
                 </h3>
                 <button 
                   onClick={() => setShowAddScopeModal(false)}
@@ -2452,19 +2516,44 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
 
                   {/* List of deliverables added */}
                   {scopeDeliverables.length > 0 && (
-                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-2.5 max-h-32 overflow-y-auto space-y-1">
+                    <div className="bg-slate-50 border border-slate-100 rounded-xl p-2 max-h-[40vh] overflow-y-auto space-y-1">
+                      <p className="text-[9px] text-slate-400 px-1">Tap a deliverable to change it. Use the arrows to reorder.</p>
                       {scopeDeliverables.map((bullet, idx) => (
-                        <div key={idx} className="flex justify-between items-center gap-2 text-[10px] text-slate-600">
-                          <span className="flex items-center gap-1.5 truncate">
-                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                            <span className="truncate">{bullet}</span>
-                          </span>
+                        <div key={idx} className="flex items-center gap-1 text-[10px] text-slate-600">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <input
+                            type="text"
+                            value={bullet}
+                            onChange={(e) => handleEditDeliverable(idx, e.target.value)}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.preventDefault(); }}
+                            aria-label={`Deliverable ${idx + 1}`}
+                            className="flex-1 min-w-0 bg-transparent hover:bg-white focus:bg-white border border-transparent hover:border-slate-200 focus:border-slate-300 rounded-lg px-1.5 py-1 text-xs text-slate-700 focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleMoveDeliverable(idx, -1)}
+                            disabled={idx === 0}
+                            aria-label={`Move deliverable ${idx + 1} up`}
+                            className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                          >
+                            <ScopeUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleMoveDeliverable(idx, 1)}
+                            disabled={idx === scopeDeliverables.length - 1}
+                            aria-label={`Move deliverable ${idx + 1} down`}
+                            className="text-slate-400 hover:text-slate-700 p-0.5 cursor-pointer disabled:opacity-25 disabled:cursor-default"
+                          >
+                            <ScopeDown className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => handleRemoveDeliverable(idx)}
-                            className="text-rose-500 hover:text-rose-700 p-1 cursor-pointer font-bold text-xs"
+                            aria-label={`Remove deliverable ${idx + 1}`}
+                            className="text-rose-500 hover:text-rose-700 p-0.5 cursor-pointer"
                           >
-                            ✕
+                            <ScopeX className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ))}
@@ -2485,7 +2574,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
                     type="submit"
                     className="flex-1 bg-sky-500 hover:bg-sky-400 text-white font-bold py-2 rounded-xl text-xs text-center transition-all cursor-pointer active:scale-95"
                   >
-                    {editingScopeId ? 'Save changes' : 'Save section'}
+                    {editingScopeIndex !== null ? 'Save changes' : 'Save section'}
                   </button>
                 </div>
               </form>
