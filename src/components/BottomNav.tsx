@@ -1,4 +1,5 @@
 import React from 'react';
+import { useModules } from './ModuleGuard';
 import { motion } from 'motion/react';
 import { LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles, Tag, Store } from 'lucide-react';
 
@@ -10,7 +11,10 @@ interface BottomNavProps {
 }
 
 export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }: BottomNavProps) {
-  const navItems = [
+  // Modules super admins switched off for everyone are hidden.
+  const modules = useModules();
+  const tabOn = (id: string) => id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
+  const navItems = ([
     { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard },
     { id: 'marketplace' as const, label: 'Market', icon: Store },
     { id: 'projects' as const, label: 'Projects', icon: FolderKanban },
@@ -20,7 +24,7 @@ export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }
     { id: 'services' as const, label: 'Finance', icon: Briefcase },
     { id: 'assistant' as const, label: 'Assistant', icon: Sparkles },
     { id: 'settings' as const, label: 'Settings', icon: Settings },
-  ];
+  ]).filter(item => tabOn(item.id));
 
   const handleTabClick = (tabId: typeof activeTab) => {
     // Native haptic feedback

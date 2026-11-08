@@ -27,7 +27,7 @@ import { createAdminMarketplaceRouter, createMarketplaceRouter, createPublicMark
 import { createAccountRouter } from "./server/account";
 import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistrationRouter } from "./server/access";
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
-import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter } from "./server/platformConfig";
+import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter, moduleGate } from "./server/platformConfig";
 import { createAdminBillingRouter, createBillingRouter, serverFeatureProblem, useAiScan } from "./server/billing";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
@@ -216,6 +216,19 @@ async function startServer() {
   });
 
   // Client portal: its own small JSON limit and session scheme.
+  // Modules super admins can switch off for everyone (Admin → Modules) are refused here first.
+  app.use("/api/portal", moduleGate("clientPortal"));
+  app.use(["/api/public/rate-cards", "/api/rate-cards"], moduleGate("rateCards"));
+  app.use(["/api/public/book", "/api/booking-page"], moduleGate("bookingPage"));
+  app.use("/api/webhooks", moduleGate("webhooks"));
+  app.use(["/api/public/marketplace", "/api/marketplace"], moduleGate("marketplace"));
+  app.use("/api/v1", moduleGate("api"));
+  app.use("/mcp", moduleGate("api"), moduleGate("api", "mcp"));
+  app.use("/api/ai/assistant", moduleGate("assistant"));
+  app.use(["/api/bookkeeping", "/api/projects/generate-scope", "/api/ai/email-transcript"], moduleGate("aiTools"));
+  app.use("/api/bookkeeping", moduleGate("bookkeeping"));
+  app.use("/api/projects/generate-scope", moduleGate("projects"));
+  app.use("/api/email/send-document", moduleGate("documentEmails"));
   app.use("/api/portal", express.json({ limit: "100kb" }), createPortalRouter());
   app.use("/api/directory", express.json({ limit: "100kb" }), createDirectoryRouter());
   app.use("/api/public/documents", express.json({ limit: "20kb" }), createPublicDocumentsRouter());

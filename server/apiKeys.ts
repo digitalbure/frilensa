@@ -1,3 +1,4 @@
+import { moduleSettings } from "./platformConfig";
 import crypto from "crypto";
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, sha256, type AuthedRequest } from "./security";
@@ -108,8 +109,11 @@ export function createApiKeysRouter() {
       const scopes: ApiScope[] = req.body?.access === "read" ? ["read"] : ["read", "draft"];
       const db = getAdminDb();
       const existing = await db.collection(KEYS).where("uid", "==", req.user!.uid).get();
-      if (existing.docs.filter(d => !d.data().revokedAt).length >= MAX_KEYS_PER_USER) {
-        return res.status(409).json({ error: `You can have up to ${MAX_KEYS_PER_USER} keys. Revoke one you no longer use.` });
+      const apiModule = (await moduleSettings()).api;
+      if (!apiModule.enabled) return res.status(503).json({ error: "The public API is switched off by Frilensa right now.", moduleOff: "api" });
+      const maxKeys = apiModule.maxKeysPerUser || MAX_KEYS_PER_USER;
+      if (existing.docs.filter(d => !d.data().revokedAt).length >= maxKeys) {
+        return res.status(409).json({ error: `You can have up to ${maxKeys} keys. Revoke one you no longer use.` });
       }
       const key = newKey();
       const id = sha256(key);

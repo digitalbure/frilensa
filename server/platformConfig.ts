@@ -2,6 +2,7 @@ import express, { type Response, type NextFunction } from "express";
 import { getAdminDb, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { requireAdmin } from "./admin";
 import { cleanPlatformConfig, DEFAULT_PLATFORM_CONFIG, type PlatformConfig } from "../src/lib/platformConfigShared";
+import { MODULE_INFO, type ModuleId } from "../src/lib/modules";
 
 // Platform-wide plans, taxes and fees, and the VAT rate new accounts start with. Admins set them in
 // Admin → Plans and Admin → Taxes and fees; every account reads them. Stored in the server-only
@@ -61,4 +62,25 @@ export function createAdminPlatformConfigRouter() {
     res.json(await getPlatformConfig());
   }));
   return router;
+}
+
+// ---------- Modules ----------
+
+/** The module switches and settings (cached with the config for a minute). */
+export async function moduleSettings() {
+  return (await getPlatformConfig()).config.modules;
+}
+
+/**
+ * Refuses requests to a module that super admins have switched off (503, with `moduleOff` so the app can
+ * say so). `sub` names a setting of the module that must also be on (e.g. the API's MCP server).
+ */
+export function moduleGate(id: ModuleId, sub?: string) {
+  return (req: express.Request, res: Response, next: NextFunction) => {
+    moduleSettings().then(modules => {
+      const m: any = modules[id];
+      if (m?.enabled && (!sub || m[sub])) return next();
+      res.status(503).json({ error: `${sub ? MODULE_INFO[id].fields.find(f => f.key === sub)?.label || MODULE_INFO[id].name : MODULE_INFO[id].name} is switched off by Frilensa right now.`, moduleOff: id });
+    }).catch(next);
+  };
 }

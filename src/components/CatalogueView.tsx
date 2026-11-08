@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ModuleGuard, { useModules } from './ModuleGuard';
 import { CRMData } from '../types';
 import ServicesView from './ServicesView';
 import RateCardSettings from './RateCardSettings';
@@ -35,7 +36,7 @@ export default function CatalogueView({ data, onUpdateData }: { data: CRMData; o
         ))}
       </div>
       {section === 'catalogue' && <ServicesView data={data} onUpdateData={onUpdateData} />}
-      {section === 'ratecard' && <RateCardSettings data={data} onUpdateData={onUpdateData} />}
+      {section === 'ratecard' && <ModuleGuard id="rateCards"><RateCardSettings data={data} onUpdateData={onUpdateData} /></ModuleGuard>}
       {section === 'bookings' && <BookingSettingsCard data={data} onUpdateData={onUpdateData} />}
       {section === 'rules' && <RateRulesCard data={data} onUpdateData={onUpdateData} />}
     </div>

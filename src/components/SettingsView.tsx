@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ModuleGuard, { useModules } from './ModuleGuard';
 import { allowFeature } from '../lib/billingClient';
 import PlanCard from './PlanCard';
 import { motion } from 'motion/react';
@@ -888,11 +889,11 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
 
         <AutomationSettingsCard data={data} onUpdateData={onUpdateData} onManualCloudSync={onManualCloudSync} />
 
-        <PayNowSettingsCard data={data} onUpdateData={onUpdateData} />
+        <ModuleGuard id="payNow"><PayNowSettingsCard data={data} onUpdateData={onUpdateData} /></ModuleGuard>
 
-        <ApiKeysCard />
+        <ModuleGuard id="api"><ApiKeysCard /></ModuleGuard>
 
-        <WebhooksCard />
+        <ModuleGuard id="webhooks"><WebhooksCard /></ModuleGuard>
 
         {/* Inactivity Auto-Logout Security Configuration */}
         <div className="p-3.5 rounded-xl border border-zinc-200/90 bg-zinc-50/70 space-y-2.5">

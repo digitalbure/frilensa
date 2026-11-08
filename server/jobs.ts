@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { dailyWebhookSweep } from "./webhooks";
 import { dailyBillingSweep, serverFeatureProblem } from "./billing";
+import { moduleSettings } from "./platformConfig";
 import express, { type Response } from "express";
 import { getAdminDb, isEmail, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { sendDocumentEmail, sendgridConfigured } from "./documentEmail";
@@ -128,8 +129,9 @@ export async function runAutomationFor(uid: string, trigger: AutomationResult["t
   const result: AutomationResult = { ranAt: new Date().toISOString(), trigger, today, invoicesCreated: [], remindersSent: [], problems: [] };
   const db = getAdminDb();
   try {
-    // Recurring invoices are a plan feature (once paid plans are on): none are created without it.
-    const retainerProblem = await serverFeatureProblem(uid, "allowRecurringInvoices");
+    // Recurring invoices are a plan feature (once paid plans are on), and super admins can switch them off.
+    const auto = (await moduleSettings()).automation;
+    const retainerProblem = !auto.enabled || !auto.retainers ? "Retainer invoices are switched off by Frilensa right now." : await serverFeatureProblem(uid, "allowRecurringInvoices");
     const { raw, created } = retainerProblem ? { raw: (await readWorkspace(uid))?.raw, created: [] as CRMDocument[] } : await generateRetainerInvoices(uid, today);
     if (retainerProblem && raw && needsRun(raw)) result.problems.push(retainerProblem);
     if (!raw) {
@@ -167,7 +169,7 @@ export async function runAutomationFor(uid: string, trigger: AutomationResult["t
       }));
     }
 
-    if (settings.overdueReminders && canEmail) {
+    if (settings.overdueReminders && canEmail && auto.enabled && auto.reminders) {
       const plans = planReminders(data, today).slice(0, MAX_REMINDERS_PER_RUN);
       for (const plan of plans) {
         const sent = await sendReminder(plan, consultantEmail, Boolean(settings.ccMeOnReminders));
@@ -201,6 +203,7 @@ export async function runDailyAutomation(today = todayIn()) {
   const db = getAdminDb();
   const snap = await db.collection("consultants").select("userProfile", "recurringInvoices").get();
   const summary = { workspaces: 0, invoicesCreated: 0, remindersSent: 0, problems: 0 };
+  if (!(await moduleSettings()).automation.enabled) return summary;
   for (const docSnap of snap.docs) {
     // Workspaces keyed by email are copies left by older versions; the live one is keyed by uid.
     if (docSnap.id.includes("@") || !needsRun(docSnap.data())) continue;

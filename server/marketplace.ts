@@ -3,6 +3,7 @@ import crypto from "crypto";
 import { getStorage } from "firebase-admin/storage";
 import { getAdminApp, getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { requireAdmin } from "./admin";
+import { moduleSettings } from "./platformConfig";
 import { readWorkspace } from "./workspace";
 import { saveBookingRequest } from "./bookings";
 import { notifyEmail, later } from "./notify";
@@ -170,7 +171,8 @@ async function isTrusted(uid: string) {
 
 async function savePhoto(listing: Listing, dataUrl: unknown) {
   if (!process.env.FILES_BUCKET) return { error: "Photo uploads aren't set up on this server yet.", status: 503 };
-  if (listing.photos.length >= MAX_PHOTOS) return { error: `A listing can have up to ${MAX_PHOTOS} photos.`, status: 400 };
+  const maxPhotos = (await moduleSettings()).marketplace.maxPhotos || MAX_PHOTOS;
+  if (listing.photos.length >= maxPhotos) return { error: `A listing can have up to ${maxPhotos} photos.`, status: 400 };
   const m = String(dataUrl || "").match(/^data:(image\/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)$/);
   if (!m) return { error: "Upload a JPG, PNG or WebP photo.", status: 400 };
   const buf = Buffer.from(m[2], "base64");
@@ -427,11 +429,14 @@ export function createMarketplaceRouter() {
     if (!business) return res.status(400).json({ error: "Add a business first." });
     const db = getAdminDb();
     const count = (await db.collection(LISTINGS).where("ownerUid", "==", uid).count().get()).data().count;
-    if (count >= MAX_LISTINGS_PER_USER) return res.status(400).json({ error: `You can have up to ${MAX_LISTINGS_PER_USER} listings.` });
+    const mkt = (await moduleSettings()).marketplace;
+    const maxListings = mkt.maxListingsPerUser || MAX_LISTINGS_PER_USER;
+    if (count >= maxListings) return res.status(400).json({ error: `You can have up to ${maxListings} listings.` });
     const ref = db.collection(LISTINGS).doc();
     const now = new Date().toISOString();
     const listing: Listing = {
-      id: ref.id, kind, status: (await isTrusted(uid)) ? "live" : "pending",
+      // A first listing waits for review, unless admins have switched review off.
+      id: ref.id, kind, status: !mkt.firstListingReview || (await isTrusted(uid)) ? "live" : "pending",
       ownerUid: uid, businessId: business.id, providerName: business.name || "Frilensa user", managed: false,
       photos: [], createdAt: now, updatedAt: now, ...(fields as any)
     };

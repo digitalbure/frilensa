@@ -13,12 +13,13 @@ import {
   Sliders, Lock, Unlock, Layers, FileText, Database, ShieldCheck,
   CheckCircle, Zap, Wallet, HandCoins, Scale, Palette, Globe, Mail, Phone, Image as ImageIcon,
   KeyRound, UserPlus, UserCheck, Copy, Send, Ban, Key, EyeOff, Calendar, Clock
-, Store
+, Store, Power
 } from 'lucide-react';
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 import AdminMarketplaceView from './marketplace/AdminMarketplaceView';
 import AdminBillingView from './AdminBillingView';
+import AdminModulesView from './AdminModulesView';
 import { auth } from '../lib/firebase';
 import { refreshBilling, useBilling } from '../lib/billingClient';
 import { cleanPlatformConfig, savePlatformConfig, usePlatformConfig, type PlatformConfig } from '../lib/platformConfig';
@@ -90,7 +91,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [newFeeDesc, setNewFeeDesc] = useState('');
   
   // Navigation Tabs within Admin Panel
-  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory' | 'errors' | 'marketplace'>('directory');
+  const [activeTab, setActiveTab] = useState<'overview' | 'plans' | 'branding' | 'auth_access' | 'taxes_fees' | 'tenants' | 'billing' | 'directory' | 'errors' | 'marketplace' | 'modules' | 'analytics'>('directory');
   const [searchQuery, setSearchQuery] = useState('');
   const [saveSuccessMsg, setSaveSuccessMsg] = useState<string | null>(null);
 
@@ -389,6 +390,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           </button>
 
           <button
+            onClick={() => setActiveTab('modules')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'modules'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <Power className="w-3.5 h-3.5" />
+            <span>Modules</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('marketplace')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'marketplace'
@@ -478,6 +491,13 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
           {activeTab === 'errors' && <AdminErrorsView showToast={showToast} />}
           {activeTab === 'marketplace' && <AdminMarketplaceView showToast={showToast} />}
+          {activeTab === 'modules' && (
+            <AdminModulesView
+              modules={config.modules}
+              onOpenTab={setActiveTab}
+              onSave={next => commitConfig({ ...config, modules: next }, { message: 'Module settings saved for everyone.' })}
+            />
+          )}
 
           {/* ================= TAB: FIJI DIRECTORY & BOOKINGS CONTROL ================= */}
           {activeTab === 'directory' && (

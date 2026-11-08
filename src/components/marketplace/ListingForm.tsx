@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useModules } from '../ModuleGuard';
 import { ImagePlus, X } from 'lucide-react';
 import { CONDITIONS, INDUSTRIES, RENT_UNITS, SERVICE_UNITS, categoriesFor, type ListingKind } from '../../lib/marketplaceTaxonomy';
 import { addPhoto, fetchBrands, preparePhoto, removePhoto, type Brand, type MarketListing } from '../../lib/marketplace';
@@ -59,6 +60,7 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
   dark?: boolean;
 }) {
   const [photoBusy, setPhotoBusy] = useState(false);
+  const maxPhotos = useModules().marketplace.maxPhotos;
   const [photoProblem, setPhotoProblem] = useState<string | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   useEffect(() => { fetchBrands().then(setBrands).catch(() => {}); }, []);
@@ -77,7 +79,7 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
     setPhotoBusy(true); setPhotoProblem(null);
     try {
       let current = listing;
-      for (const f of Array.from(files).slice(0, 6 - listing.photos.length)) {
+      for (const f of Array.from(files).slice(0, maxPhotos - listing.photos.length)) {
         current = (await addPhoto(current.id, await preparePhoto(f), admin)).listing;
         onListingChange?.(current);
       }
@@ -192,7 +194,7 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
 
       {listing ? (
         <div className="space-y-2">
-          <span className={label}>Photos ({listing.photos.length}/6)</span>
+          <span className={label}>Photos ({listing.photos.length}/{maxPhotos})</span>
           <div className="flex flex-wrap gap-2">
             {listing.photos.map(p => (
               <div key={p.id} className="relative w-20 h-20 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
@@ -203,7 +205,7 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
                 )}
               </div>
             ))}
-            {listing.photos.length < 6 && (
+            {listing.photos.length < maxPhotos && (
               <label className={`w-20 h-20 rounded-lg border-2 border-dashed flex flex-col items-center justify-center text-[10px] font-bold cursor-pointer ${dark ? 'border-slate-700 text-slate-400' : 'border-slate-300 text-slate-500'}`}>
                 <ImagePlus className="w-5 h-5" />{photoBusy ? 'Uploading…' : 'Add'}
                 <input type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" disabled={photoBusy} onChange={e => { upload(e.target.files); e.target.value = ''; }} />
@@ -213,7 +215,7 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
           {photoProblem && <p className="text-[11px] text-rose-600">{photoProblem}</p>}
         </div>
       ) : (
-        <p className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-500'}`}>You can add up to 6 photos after saving.</p>
+        <p className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-500'}`}>You can add up to {maxPhotos} photos after saving.</p>
       )}
     </div>
   );

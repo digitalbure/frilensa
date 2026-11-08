@@ -1,3 +1,4 @@
+import { moduleSettings } from "./platformConfig";
 import express, { type NextFunction, type Response } from "express";
 import { getAdminDb, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { readWorkspace, updateWorkspace, WorkspaceMissing } from "./workspace";
@@ -67,9 +68,11 @@ async function currentInvoice(consultantId: string, documentId: string) {
 /** What the client can choose on this invoice. `flat` is the document's flat copy, already authorised. */
 export async function payOptions(flat: any) {
   const { doc, business, home } = await currentInvoice(flat.consultantId, flat.id);
-  const manual = manualPayMethods(business);
+  // Super admins can switch Pay now (or just card and PayPal) off for everyone.
+  const pay = (await moduleSettings()).payNow;
+  const manual = pay.enabled ? manualPayMethods(business) : { bank: false, mpaisa: false, mycash: false } as ReturnType<typeof manualPayMethods>;
   const quote = doc.status === "paid" || doc.status === "cancelled" ? null : paypalQuote(doc, business, home);
-  const account = business?.payNow?.paypal && quote ? await loadAccount(flat.consultantId, business.id) : null;
+  const account = pay.enabled && pay.paypal && business?.payNow?.paypal && quote ? await loadAccount(flat.consultantId, business.id) : null;
   return {
     status: doc.status,
     documentNumber: doc.documentNumber,
@@ -84,6 +87,8 @@ export async function payOptions(flat: any) {
 }
 
 export async function createPaypalOrder(flat: any) {
+  const pay = (await moduleSettings()).payNow;
+  if (!pay.enabled || !pay.paypal) throw new PayError(503, "Card and PayPal payments are switched off right now. Choose another way to pay.");
   const { doc, business, home } = await currentInvoice(flat.consultantId, flat.id);
   if (doc.status === "paid" || doc.status === "cancelled") throw new PayError(409, `This invoice is ${doc.status === "paid" ? "already paid" : "cancelled"}.`);
   const quote = paypalQuote(doc, business, home);

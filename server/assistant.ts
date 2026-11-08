@@ -1,3 +1,5 @@
+import { moduleSettings } from "./platformConfig";
+import { getAdminDb } from "./security";
 import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import Anthropic from "@anthropic-ai/sdk";
@@ -267,6 +269,15 @@ export function createAssistantRouter() {
     try {
       if (!assistantConfigured()) {
         return res.status(503).json({ error: "The assistant isn't set up on this server yet.", unavailable: true });
+      }
+      // A monthly message allowance per user, when super admins set one (Admin → Modules).
+      const cap = (await moduleSettings()).assistant.messagesPerMonth;
+      if (cap > 0) {
+        const month = new Date().toISOString().slice(0, 7);
+        const ref = getAdminDb().collection("ai_usage").doc(`${req.user!.uid}_${month}`);
+        const used = Number((await ref.get()).data()?.assistantMessages) || 0;
+        if (used >= cap) return res.status(429).json({ error: `You've used this month's ${cap} assistant messages. They reset at the start of next month.` });
+        await ref.set({ uid: req.user!.uid, month, assistantMessages: used + 1 }, { merge: true });
       }
       const result = await runAssistant(req.user!.uid, req.body);
       const newMemories = req.body?.skipMemory ? [] : await extractMemories(String(req.body?.message || ""), result.reply);

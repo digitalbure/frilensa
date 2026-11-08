@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useModules } from './ModuleGuard';
 import { allowAnother } from '../lib/billingClient';
 import { inboxDocumentCount } from '../lib/inbox';
 import { motion, AnimatePresence } from 'motion/react';
@@ -35,6 +36,9 @@ export default function DesktopSidebar({
   onOpenQuickPulse,
   onOpenFxCalc
 }: DesktopSidebarProps) {
+  // Modules super admins switched off for everyone are hidden.
+  const modules = useModules();
+  const tabOn = (id: string) => id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
   const brand = useBranding();
   const online = useOnlineStatus();
   const plan = crmData.platformSettings?.activePlan || 'free';
@@ -85,7 +89,7 @@ export default function DesktopSidebar({
     p => p.status === 'in_progress' && p.businessId === crmData.activeBusinessId
   ).length || 0;
 
-  const navItems = [
+  const navItems = ([
     { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard, badge: attentionCount > 0 ? `${attentionCount} new` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'billing' as const, label: 'Billing', icon: Layers, badge: pendingInvoicesCount > 0 ? `${pendingInvoicesCount} due` : undefined, badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
     { id: 'clients' as const, label: 'Clients', icon: Users, badge: crmData.clients?.length ? `${crmData.clients.length}` : undefined, badgeColor: 'bg-slate-800 text-slate-300 border-slate-700' },
@@ -96,7 +100,7 @@ export default function DesktopSidebar({
     { id: 'directory' as const, label: 'Directory', icon: Globe, badge: undefined, badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
     { id: 'assistant' as const, label: 'Assistant', icon: Sparkles, badge: 'AI', badgeColor: 'bg-gradient-to-r from-amber-500/20 to-sky-500/20 text-amber-300 border-amber-500/30' },
     { id: 'settings' as const, label: 'Settings', icon: Settings, badge: undefined },
-  ];
+  ]).filter(item => tabOn(item.id));
 
   const handleSelectBusiness = (bizId: string) => {
     onUpdateData({

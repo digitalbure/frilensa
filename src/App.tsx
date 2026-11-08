@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import ModuleGuard from './components/ModuleGuard';
 import { motion, AnimatePresence } from 'motion/react';
 import { Clock, LogOut, CheckCircle2, CloudOff } from 'lucide-react';
 import AuthView from './components/AuthView';
@@ -678,7 +679,9 @@ export default function App() {
           )}
 
           {activeTab === 'marketplace' && (
+            <ModuleGuard id="marketplace">
             <MarketplaceView signedIn businesses={crmData.businesses.map(b => ({ id: b.id, name: b.name }))} onOpenDirectory={() => setActiveTab('directory')} />
+            </ModuleGuard>
           )}
 
           {activeTab === 'directory' && (
@@ -712,26 +715,32 @@ export default function App() {
           )}
 
           {activeTab === 'services' && (
+            <ModuleGuard id="bookkeeping">
             <BookkeepingView 
               data={crmData} 
               onUpdateData={handleUpdateData}
               onNavigateToTab={handleNavigateWithAction}
             />
+            </ModuleGuard>
           )}
 
           {activeTab === 'projects' && (
+            <ModuleGuard id="projects">
             <ProjectsView 
               data={crmData} 
               onUpdateData={handleUpdateData}
               onNavigateToTab={handleNavigateWithAction}
             />
+            </ModuleGuard>
           )}
 
           {activeTab === 'assistant' && (
+            <ModuleGuard id="assistant">
             <AiAssistantView 
               data={crmData}
               onUpdateData={handleUpdateData}
             />
+            </ModuleGuard>
           )}
 
           {activeTab === 'settings' && (

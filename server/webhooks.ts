@@ -1,3 +1,4 @@
+import { moduleSettings } from "./platformConfig";
 import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import dns from "dns/promises";
@@ -57,6 +58,8 @@ export function signPayload(secret: string, timestamp: string, body: string) {
 /** Queues an event for every active endpoint of the user that wants it, and tries to send it now. */
 export async function emitEvent(uid: string, event: WebhookEvent, data: Record<string, unknown>) {
   try {
+    // Nothing is sent while super admins have webhooks switched off.
+    if (!(await moduleSettings()).webhooks.enabled) return;
     const hooks = (await getAdminDb().collection(HOOKS).where("uid", "==", uid).limit(MAX_HOOKS).get()).docs
       .map(d => d.data() as Hook).filter(h => h.active !== false && h.events.includes(event));
     await Promise.all(hooks.map(h => queue(h, event, data)));
@@ -225,8 +228,9 @@ export function createWebhooksRouter() {
     const events = (Array.isArray(req.body?.events) ? req.body.events : []).filter((e: string) => (WEBHOOK_EVENTS as readonly string[]).includes(e));
     if (!events.length) throw new HookError(400, "Choose at least one event.");
     const db = getAdminDb();
+    const maxHooks = Math.min(MAX_HOOKS, (await moduleSettings()).webhooks.maxPerUser || MAX_HOOKS);
     const existing = await db.collection(HOOKS).where("uid", "==", uid).limit(MAX_HOOKS).get();
-    if (existing.size >= MAX_HOOKS) throw new HookError(409, `You can have up to ${MAX_HOOKS} webhooks.`);
+    if (existing.size >= maxHooks) throw new HookError(409, `You can have up to ${maxHooks} webhooks.`);
     const ref = db.collection(HOOKS).doc();
     const secret = `whsec_${crypto.randomBytes(24).toString("base64url")}`;
     const hook: Hook = { id: ref.id, uid, url, events, secret: encryptSecret(secret), createdAt: new Date().toISOString(), active: true };

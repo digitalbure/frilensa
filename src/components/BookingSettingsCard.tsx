@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ModuleGuard, { useModules } from './ModuleGuard';
 import { ArrowDown, ArrowUp, CalendarCheck, Copy, Plus, Trash2 } from 'lucide-react';
 import type { Business, CRMData } from '../types';
 import { QUESTION_TYPES, rateCardServices, type BookingQuestion, type BookingQuestionType, type BookingSettings, type DepositRule } from '../lib/bookings';
@@ -71,7 +72,7 @@ export default function BookingSettingsCard({ data, onUpdateData }: BookingSetti
         </div>
       </div>
 
-      <BookingPagePanel business={business} booking={booking} save={save} />
+      <ModuleGuard id="bookingPage"><BookingPagePanel business={business} booking={booking} save={save} /></ModuleGuard>
 
       {/* Bookable services */}
       <div className="space-y-2">

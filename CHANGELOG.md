@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.16.0] - 2026-11-08
+
+### Added
+- **Admin → Modules:** super admins can switch each part of Frilensa on or off for everyone, and set its limits. Switched-off modules are refused by the server, hidden in the app (with a short note where their settings were), and nothing is deleted.
+  - **Marketplace:** on/off, whether a user's first listing is reviewed, listings per user, photos per listing.
+  - **Booking page and widget:** on/off, booking requests a day per business, whether acknowledgement emails may be sent.
+  - **Rate cards, client portal, emailing documents, projects, finance and bookkeeping, AI tools:** on/off.
+  - **Pay now:** on/off, and card and PayPal on/off.
+  - **AI assistant:** on/off, and messages a month per user.
+  - **Public API and MCP:** on/off, the MCP server on/off, and API keys per user.
+  - **Webhooks:** on/off (nothing is sent while off) and webhooks per user.
+  - **Daily automation:** on/off, retainer invoices on/off, overdue reminders on/off.
+  - Areas with their own tab (sign-ups, plans, paid plans, taxes and fees, directory, marketplace content, branding) are linked from the same page.
+
 ## [4.15.0] - 2026-11-08
 
 ### Added

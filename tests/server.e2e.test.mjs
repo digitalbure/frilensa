@@ -1534,6 +1534,39 @@ try {
     assert.equal(await get(`directory_bookings/${bk.id}`), null);
     assert.equal(await get(`quote_requests/dirtest1`), null);
   });
+  // ---------- Modules super admins switch on or off ----------
+  await check('modules: switched-off modules are refused by the server, and module settings apply', async () => {
+    const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;
+    assert.equal(cfg.modules.marketplace.enabled, true); assert.equal(cfg.modules.marketplace.maxPhotos, 6);
+    const setModules = patch => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify({ ...cfg, modules: { ...cfg.modules, ...patch } }) });
+    assert.equal((await fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(B), body: JSON.stringify({ ...cfg, modules: { ...cfg.modules, marketplace: { enabled: false } } }) })).status, 403);
+    // Off: the marketplace, rate cards, the API and MCP are refused with a clear reason.
+    assert.equal((await setModules({ marketplace: { ...cfg.modules.marketplace, enabled: false }, rateCards: { enabled: false }, api: { ...cfg.modules.api, enabled: false } })).status, 200);
+    const mk = await j(await fetch(`${API}/api/public/marketplace/listings?kind=gear`));
+    assert.equal(mk.status, 503); assert.equal(mk.body.moduleOff, 'marketplace'); assert.match(mk.body.error, /Marketplace is switched off/);
+    assert.equal((await fetch(`${API}/api/marketplace/mine`, { headers: auth(C) })).status, 503);
+    assert.equal((await fetch(`${API}/api/public/rate-cards/${'x'.repeat(20)}`)).status, 503);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: { Authorization: 'Bearer frk_nope' } })).status, 503);
+    assert.equal((await fetch(`${API}/api/keys`, { method: 'POST', headers: auth(C), body: JSON.stringify({ name: 'New app' }) })).status, 503);
+    // Only MCP off: the API works, MCP doesn't.
+    assert.equal((await setModules({ api: { ...cfg.modules.api, mcp: false } })).status, 200);
+    assert.equal((await fetch(`${API}/api/v1/me`, { headers: { Authorization: 'Bearer frk_nope' } })).status, 401);
+    assert.equal((await fetch(`${API}/mcp`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 503);
+    // Marketplace settings: no first-listing review, one listing each.
+    assert.equal((await setModules({ marketplace: { enabled: true, firstListingReview: false, maxListingsPerUser: 1, maxPhotos: 3 } })).status, 200);
+    const G = await user('gina.lists@studio.fj');
+    await put(`consultants/${G.uid}`, { consultantEmail: G.email, userProfile: { email: G.email }, businesses: [{ id: 'gb1', name: 'Gina Gear' }] });
+    const item = { kind: 'gear', title: 'Rode NTG5 boom mic', industry: 'film_photo', category: 'camera_accessories', city: 'Lautoka', forRent: true, rent: { amount: 40, unit: 'day' }, forSale: false, condition: 'good' };
+    const first = await j(await fetch(`${API}/api/marketplace/listings`, { method: 'POST', headers: auth(G), body: JSON.stringify(item) }));
+    assert.equal(first.status, 200, JSON.stringify(first.body)); assert.equal(first.body.listing.status, 'live', 'review switched off');
+    const second = await j(await fetch(`${API}/api/marketplace/listings`, { method: 'POST', headers: auth(G), body: JSON.stringify({ ...item, title: 'Second mic' }) }));
+    assert.equal(second.status, 400); assert.match(second.body.error, /up to 1 listings/);
+    await fetch(`${API}/api/marketplace/listings/${first.body.listing.id}`, { method: 'DELETE', headers: auth(G) });
+    // Back to the defaults.
+    assert.equal((await fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify(cfg) })).status, 200);
+    assert.equal((await j(await fetch(`${API}/api/public/marketplace/listings?kind=gear`))).status, 200);
+  });
+
   // ---------- Paid plans (last: switching billing on changes limits for everyone) ----------
   await check('paid plans: early access, then paying by transfer or PayPal, limits, renewals and expiry', async () => {
     const E = await user('erin.pays@studio.fj'), F = await user('finn.free@studio.fj');

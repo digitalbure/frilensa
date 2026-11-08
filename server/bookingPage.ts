@@ -1,3 +1,4 @@
+import { moduleSettings } from "./platformConfig";
 import { cleanConditions } from "../src/lib/rateConditions";
 import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
@@ -79,11 +80,11 @@ export function bookingPageUrl(business: any) {
 }
 
 const dailyCounts = new Map<string, { day: string; n: number }>();
-function underDailyCap(key: string) {
+function underDailyCap(key: string, cap = DAILY_CAP()) {
   const day = new Date().toISOString().slice(0, 10);
   const c = dailyCounts.get(key);
   if (!c || c.day !== day) { dailyCounts.set(key, { day, n: 1 }); return true; }
-  if (c.n >= DAILY_CAP()) return false;
+  if (c.n >= cap) return false;
   c.n++;
   return true;
 }
@@ -133,7 +134,9 @@ export function createPublicBookingRouter() {
     if (checked.items.length === 0 && !message && checked.details.length === 0) throw new PageError(400, "Choose at least one service or tell them what you need.");
     const problem = await checkDate(uid, data, business, checked.eventDate);
     if (problem) throw new PageError(409, problem);
-    if (!underDailyCap(`${uid}:${business.id}`)) throw new PageError(429, "This business has had a lot of booking requests today. Please contact them directly.");
+    const pageSettings = (await moduleSettings()).bookingPage;
+    // The env setting (tests, emergencies) wins when it is lower.
+    if (!underDailyCap(`${uid}:${business.id}`, Math.min(DAILY_CAP(), pageSettings.dailyCapPerBusiness))) throw new PageError(429, "This business has had a lot of booking requests today. Please contact them directly.");
 
     const embed = body.embed === true;
     const hostUrl = typeof body.hostUrl === "string" && /^https:\/\/[^\s]{3,2000}$/.test(body.hostUrl) ? body.hostUrl.slice(0, 2000) : "";
@@ -145,7 +148,7 @@ export function createPublicBookingRouter() {
     });
 
     // Optional acknowledgement to the person who just sent the form. Nothing about documents or payments.
-    if (business.booking?.page?.ackEmail) {
+    if (business.booking?.page?.ackEmail && pageSettings.ackEmails) {
       const r = request;
       later(notifyEmail(email, {
         subject: `We've got your booking request ${r.ref}`,
