@@ -242,6 +242,7 @@ export type VentureType =
 export interface Business {
   id: string;
   name: string;
+  rateConditions?: import('./lib/rateConditions').RateCondition[]; // e.g. Local production, International production, Overseas work
   tin: string;
   registrationNumber?: string; // Company / Business Registration Number (e.g. ROC / BN / Reg No)
   legalName?: string; // When this is a registered business name: the company or person that owns it (shown as "<legalName> trading as <name>")
@@ -417,6 +418,7 @@ export interface ProductService {
   notes?: string;
   tags?: string[];
   showOnRateCard?: boolean; // Listed on the business's shareable rate card (default: yes, when active)
+  conditionRates?: import('./lib/rateConditions').ConditionRate[]; // Rates per rate condition (e.g. local vs international), see lib/rateConditions.ts
 }
 
 export interface ActivityLog {

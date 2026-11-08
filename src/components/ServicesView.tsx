@@ -10,6 +10,8 @@ import { INDUSTRY_PRESETS, IndustryPreset } from '../lib/industryPresets';
 import { getCurrencyConfig } from '../lib/currencies';
 import RateSheetModal from './RateSheetModal';
 import BulkRateAdjustModal from './BulkRateAdjustModal';
+import { RateConditionsManager, ConditionRatesEditor } from './RateConditionsEditor';
+import { cleanConditionRates, partsLabel, type ConditionRate, type RateCondition } from '../lib/rateConditions';
 
 interface ServicesViewProps {
   data: CRMData;
@@ -83,11 +85,30 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
   const [isTaxable, setIsTaxable] = useState<boolean>(true);
   const [showOnRateCard, setShowOnRateCard] = useState<boolean>(true);
   const [tagsInput, setTagsInput] = useState<string>('');
+  // Rates by condition (local, international, overseas…) and the conditions manager
+  const [conditionRates, setConditionRates] = useState<ConditionRate[]>([]);
+  const [conditionsFor, setConditionsFor] = useState<string | null>(null);
 
   const activeBusiness = data.businesses.find(b => b.id === data.activeBusinessId) || data.businesses[0];
   const currencyConfig = getCurrencyConfig(data.userProfile.defaultCurrency || 'FJD');
   const sym = currencyConfig.symbol;
   const money = (n: number) => `${sym} ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const baseCurrency = data.userProfile.defaultCurrency || 'FJD';
+  const conditionsOf = (bizId?: string) => (data.businesses.find(b => b.id === bizId) || activeBusiness)?.rateConditions || [];
+  const activeConditions = conditionsOf(activeBusiness?.id);
+
+  // Saves a business's conditions; rates set for a removed condition are removed from its services.
+  const saveConditions = (bizId: string, next: RateCondition[]) => {
+    const keep = new Set(next.map(c => c.id));
+    const removed = new Set(conditionsOf(bizId).map(c => c.id).filter(id => !keep.has(id)));
+    onUpdateData({
+      ...data,
+      businesses: data.businesses.map(b => b.id === bizId ? { ...b, rateConditions: next } : b),
+      services: removed.size ? data.services.map(sv => sv.conditionRates?.some(r => removed.has(r.conditionId)) ? { ...sv, conditionRates: sv.conditionRates.filter(r => !removed.has(r.conditionId)) } : sv) : data.services
+    });
+    setConditionRates(rates => rates.filter(r => !removed.has(r.conditionId)));
+    setConditionsFor(null);
+  };
 
   // Only the active business's items (plus items not linked to any business)
   const businessServices = useMemo(
@@ -157,6 +178,7 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
     setIsTaxable(true);
     setShowOnRateCard(true);
     setTagsInput('');
+    setConditionRates([]);
     setShowAddModal(true);
   };
 
@@ -189,6 +211,7 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
     setRetainerRate(srv.retainerRate);
     setMinQuantity(srv.minQuantity || 1);
     setStockQuantity(srv.stockQuantity);
+    setConditionRates(srv.conditionRates || []);
     setIsTaxable(srv.isTaxable !== false);
     setShowOnRateCard(srv.showOnRateCard !== false);
     setTagsInput(srv.tags ? srv.tags.join(', ') : '');
@@ -248,7 +271,8 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
       stockQuantity: stockQuantity !== undefined && stockQuantity >= 0 ? Number(stockQuantity) : undefined,
       isTaxable,
       showOnRateCard,
-      tags: parsedTags.length > 0 ? parsedTags : undefined
+      tags: parsedTags.length > 0 ? parsedTags : undefined,
+      conditionRates: cleanConditionRates(conditionRates)
     };
 
     if (editingService) {
@@ -388,6 +412,16 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={() => activeBusiness && setConditionsFor(activeBusiness.id)}
+            disabled={!activeBusiness}
+            className="bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2 px-3 rounded-xl text-xs flex items-center gap-1.5 border border-slate-200 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            <Layers className="w-3.5 h-3.5 text-sky-600" />
+            <span>Rate conditions{activeConditions.length ? ` (${activeConditions.length})` : ''}</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setShowRateSheetModal(true)}
@@ -660,6 +694,23 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
                         <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2">
                           {srv.description}
                         </p>
+                      )}
+
+                      {(srv.conditionRates || []).length > 0 && (
+                        <div className="mt-2.5 pt-2 border-t border-slate-100 space-y-0.5 text-[10px]">
+                          {activeConditions.map(c => {
+                            const r = srv.conditionRates!.find(x => x.conditionId === c.id);
+                            if (!r) return null;
+                            return (
+                              <div key={c.id} className="flex justify-between gap-2">
+                                <span className="text-slate-500 truncate">{c.name}</span>
+                                <span className="font-mono text-slate-800 shrink-0" title={r.parts?.length ? partsLabel(r.parts, c.currency) : undefined}>
+                                  {c.currency} {r.rate.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{r.parts?.length ? ` (${r.parts.map(p => p.label).join(' + ')})` : ''}
+                                </span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       )}
 
                       {(srv.rushRate || srv.weekendRate || srv.retainerRate) && (
@@ -1152,6 +1203,16 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
                   )}
                 </div>
 
+                {/* Rates by condition */}
+                <ConditionRatesEditor
+                  conditions={conditionsOf(businessId)}
+                  value={conditionRates}
+                  onChange={setConditionRates}
+                  unit={isCustomUnit ? customUnit : unit}
+                  baseCurrency={baseCurrency}
+                  onManage={() => setConditionsFor((data.businesses.find(b => b.id === businessId) || activeBusiness)?.id || null)}
+                />
+
                 {/* Rate tiers */}
                 <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-3">
                   <div>
@@ -1419,6 +1480,16 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
           </div>
         )}
       </AnimatePresence>
+
+      {conditionsFor && (
+        <RateConditionsManager
+          conditions={conditionsOf(conditionsFor)}
+          baseCurrency={baseCurrency}
+          businessName={data.businesses.find(b => b.id === conditionsFor)?.name || ''}
+          onClose={() => setConditionsFor(null)}
+          onSave={next => saveConditions(conditionsFor, next)}
+        />
+      )}
 
       {showRateSheetModal && (
         <RateSheetModal

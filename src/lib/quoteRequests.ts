@@ -38,7 +38,8 @@ export function draftQuoteFromRequest(data: CRMData, req: QuoteRequest, now = ne
     total: round2(it.quantity * it.rate)
   }));
   const { subtotal, taxableBase } = lineTotals(items);
-  const vatRate = data.userProfile.enableTax === false ? 0 : (data.userProfile.defaultVatRate ?? 12.5);
+  // No VAT when the client chose a VAT-free condition (e.g. work done overseas).
+  const vatRate = data.userProfile.enableTax === false || req.condition?.noVat ? 0 : (data.userProfile.defaultVatRate ?? 12.5);
   const vatAmount = round2(taxableBase * vatRate / 100);
   const request = [`Booking request ${req.ref} from ${req.name}${req.company ? `, ${req.company}` : ''}.`, req.message ? `Their note: ${req.message}` : ''].filter(Boolean).join('\n');
   const doc: CRMDocument = {

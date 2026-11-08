@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CalendarDays, Check, Eye, EyeOff, Handshake, ImagePlus, Plus, Tag, Trash2, X } from 'lucide-react';
 import ListingCalendar from './ListingCalendar';
 import ListingForm, { bodyFrom, draftFrom, type ListingDraft } from './ListingForm';
-import { brandAdmin, fetchBrands, fjd, prepareLogo, priceLabel, type Brand, type MarketListing } from '../../lib/marketplace';
+import { brandAdmin, fetchBrands, fjd, money, prepareLogo, priceLabel, type Brand, type MarketListing } from '../../lib/marketplace';
 import { categoryName } from '../../lib/marketplaceTaxonomy';
 import { quoteDetails, type RentalQuote } from '../../lib/marketplaceRental';
 
@@ -134,7 +134,7 @@ export default function AdminMarketplaceView({ showToast }: { showToast: (msg: s
                 <p className="text-slate-400">{r.name} · <a className="underline" href={`mailto:${r.email}`}>{r.email}</a>{r.phone ? ` · ${r.phone}` : ''} · {new Date(r.createdAt).toLocaleDateString()}</p>
                 {r.rental
                   ? <div className="text-slate-400">{quoteDetails(r.rental, listings.find(l => l.id === r.listingId)?.category || '').map(d => <p key={d.label}>{d.label}: {d.value}</p>)}<p>Estimate {fjd(r.estimate)}{r.marketplaceBookingId ? ' · dates confirmed' : ' · open the listing calendar to confirm dates'}</p></div>
-                  : <p className="text-slate-400">{r.from ? `${r.from}${r.to ? ` to ${r.to}` : ''} · ` : ''}{r.quantity} × · estimate {fjd(r.estimate)}</p>}
+                  : <p className="text-slate-400">{r.from ? `${r.from}${r.to ? ` to ${r.to}` : ''} · ` : ''}{r.quantity} × · estimate {money((r as any).currency || 'FJD', r.estimate)}{(r as any).option ? ` · ${(r as any).option.label}` : ''}</p>}
                 {r.message && <p className="text-slate-300 mt-1">"{r.message}"</p>}
               </div>
               <select aria-label="Status" value={r.status} onChange={e => updateRequest(r, { status: e.target.value as AgentRequest['status'] })} className="bg-slate-900 border border-slate-700 rounded-lg py-1 px-2 text-[11px] text-slate-200 h-fit">

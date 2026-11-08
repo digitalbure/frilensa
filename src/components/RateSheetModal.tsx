@@ -1,3 +1,4 @@
+import { partsLabel } from '../lib/rateConditions';
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { FileText, X, Copy, Check, Printer } from 'lucide-react';
@@ -19,6 +20,12 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
   const currencyConfig = getCurrencyConfig(data.userProfile.defaultCurrency || 'FJD');
 
   const vatRate = data.userProfile.defaultVatRate ?? 12.5;
+  const conditions = activeBusiness?.rateConditions || [];
+  // A service's rates under each of the business's conditions (e.g. local, international, overseas).
+  const conditionLines = (srv: typeof data.services[number]) => conditions.flatMap(c => {
+    const r = srv.conditionRates?.find(x => x.conditionId === c.id);
+    return r ? [{ c, r }] : [];
+  });
 
   // Active business only, and only items meant for clients
   const rateCardServices = (data.services || []).filter(s =>
@@ -46,6 +53,7 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
       text += `${idx + 1}. ${srv.name}\n`;
       text += `   Rate: ${currencyConfig.symbol} ${srv.rate.toFixed(2)} / ${srv.unit}\n`;
       if (includeTiers) {
+        conditionLines(srv).forEach(({ c, r }) => { text += `   - ${c.name}: ${c.currency} ${r.rate.toFixed(2)}${r.parts?.length ? ` (${partsLabel(r.parts, c.currency)})` : ''}${c.noVat ? ', no VAT' : ''}\n`; });
         if (srv.rushRate) text += `   - Rush: ${currencyConfig.symbol} ${srv.rushRate.toFixed(2)}\n`;
         if (srv.weekendRate) text += `   - Weekend / after hours: ${currencyConfig.symbol} ${srv.weekendRate.toFixed(2)}\n`;
         if (srv.retainerRate) text += `   - Retainer: ${currencyConfig.symbol} ${srv.retainerRate.toFixed(2)}\n`;
@@ -232,6 +240,20 @@ export default function RateSheetModal({ data, onClose }: RateSheetModalProps) {
                   <p className="text-xs text-slate-600 leading-relaxed pt-1">
                     {srv.description}
                   </p>
+                )}
+
+                {includeTiers && conditionLines(srv).length > 0 && (
+                  <div className="pt-2 border-t border-slate-200/60 space-y-1 text-[11px]">
+                    {conditionLines(srv).map(({ c, r }) => (
+                      <div key={c.id} className="flex justify-between gap-3">
+                        <span className="text-slate-600"><span className="font-semibold text-slate-800">{c.name}</span>{c.description ? ` · ${c.description}` : ''}{c.noVat ? ' · no VAT' : ''}</span>
+                        <span className="font-mono font-bold text-slate-900 shrink-0 text-right">
+                          {c.currency} {r.rate.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                          {r.parts?.length ? <span className="block font-normal text-slate-500">{partsLabel(r.parts, c.currency)}</span> : null}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 )}
 
                 {includeTiers && (srv.rushRate || srv.weekendRate || srv.retainerRate) && (

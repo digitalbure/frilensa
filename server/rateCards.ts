@@ -5,6 +5,7 @@ import { notifyConsultant, later } from "./notify";
 import { syncBookingStages } from "./webhooks";
 import { readWorkspace } from "./workspace";
 import { rateCardServices as libRateCardServices } from "../src/lib/bookings";
+import { cleanConditionRates, cleanConditions, priceFor } from "../src/lib/rateConditions";
 
 // Shareable rate cards: /?rates=<token> shows one business's services and rates, read live from the
 // workspace, and lets a prospective client ask for a quote. The token-to-workspace mapping lives in
@@ -73,6 +74,8 @@ export function publicCard(data: any, business: any) {
     },
     intro: business.rateCardIntro || "",
     currency: profile.defaultCurrency || "FJD",
+    // The situations the business charges differently for, each with its currency (and whether VAT applies).
+    conditions: cleanConditions(business.rateConditions, profile.defaultCurrency || "FJD"),
     vatRate: vatOn ? Number(profile.defaultVatRate) : 0,
     terms: {
       text: business.quoteTerms || "",
@@ -83,7 +86,8 @@ export function publicCard(data: any, business: any) {
       id: s.id, name: s.name || "", description: s.description || "", rate: Number(s.rate) || 0, unit: s.unit || "",
       category: s.category || "", billingInterval: s.billingInterval || "one-time",
       minQuantity: Number(s.minQuantity) > 1 ? Number(s.minQuantity) : 1,
-      vat: vatOn && s.isTaxable !== false
+      vat: vatOn && s.isTaxable !== false,
+      conditionRates: cleanConditionRates(s.conditionRates)
     }))
   };
 }
@@ -112,12 +116,20 @@ export function createPublicRateCardsRouter() {
       const email = isEmail(body.email) ? String(body.email).trim() : "";
       if (!name || !email) return res.status(400).json({ error: "Please add your name and email." });
 
+      const baseCurrency = found.data.userProfile.defaultCurrency || "FJD";
+      // The condition the client chose (e.g. international production): its rates and currency apply.
+      const conditions = cleanConditions((found.business as any).rateConditions, baseCurrency);
+      const condition = body.conditionId ? conditions.find(c => c.id === String(body.conditionId)) : null;
+      if (body.conditionId && !condition) return res.status(400).json({ error: "That option is no longer offered. Reload the rate card and choose again." });
       const services = new Map(rateCardServices(found.data, found.business.id).map((s: any) => [s.id, s]));
       const items = (Array.isArray(body.items) ? body.items : []).slice(0, 30).flatMap((it: any) => {
         const s: any = services.get(String(it?.serviceId || ""));
         const quantity = Math.round(Number(it?.quantity) * 100) / 100;
         if (!s || !Number.isFinite(quantity) || quantity <= 0 || quantity > 100_000) return [];
-        return [{ serviceId: s.id, name: s.name || "", unit: s.unit || "", rate: Number(s.rate) || 0, quantity }];
+        const priced = priceFor({ rate: Number(s.rate) || 0, conditionRates: cleanConditionRates(s.conditionRates) }, condition, baseCurrency);
+        // A service with no rate for this condition is still asked about, priced at 0 for the business to quote.
+        const parts = priced?.parts?.length ? ` (${priced.parts.map(p => `${p.label} ${priced.currency} ${p.rate}`).join(" + ")})` : "";
+        return [{ serviceId: s.id, name: `${s.name || ""}${parts}`, unit: s.unit || "", rate: priced ? priced.rate : 0, quantity, ...(priced ? {} : { priceOnRequest: true }) }];
       });
       const message = str(body.message, 3000);
       if (items.length === 0 && !message) return res.status(400).json({ error: "Choose at least one service or describe what you need." });
@@ -135,7 +147,8 @@ export function createPublicRateCardsRouter() {
         company: str(body.company, 120),
         message,
         items,
-        currency: found.data.userProfile.defaultCurrency || "FJD",
+        currency: condition ? condition.currency : baseCurrency,
+        ...(condition ? { condition: { id: condition.id, name: condition.name, noVat: !!condition.noVat }, details: [{ label: "Rate", value: `${condition.name}${condition.description ? ` (${condition.description})` : ""}` }] } : {}),
         estimate,
         status: "new",
         channel: "rate_card",

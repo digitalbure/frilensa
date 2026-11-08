@@ -4,6 +4,8 @@ import { CONDITIONS, INDUSTRIES, RENT_UNITS, SERVICE_UNITS, categoriesFor, type 
 import { addPhoto, fetchBrands, preparePhoto, removePhoto, type Brand, type MarketListing } from '../../lib/marketplace';
 import { DEFAULT_RENTAL, type RentalOptions } from '../../lib/marketplaceRental';
 import RentalOptionsEditor from './RentalOptionsEditor';
+import PriceOptionsEditor from './PriceOptionsEditor';
+import type { PriceOption } from '../../lib/rateConditions';
 
 export interface ListingDraft {
   kind: ListingKind; title: string; description: string; industry: string; category: string; city: string;
@@ -11,6 +13,7 @@ export interface ListingDraft {
   condition: string; brand: string; brandId: string; model: string;
   rental: RentalOptions;
   priceAmount: string; priceUnit: string; priceFrom: boolean;
+  priceOptions: PriceOption[];
   businessId: string;
   providerName: string; agentName: string; agentEmail: string; agentPhone: string; commission: string; agentNotes: string;
 }
@@ -23,6 +26,7 @@ export function draftFrom(l?: MarketListing | null, kind: ListingKind = 'gear'):
     condition: l?.condition || 'good', brand: l?.brand || '', brandId: l?.brandId || '', model: l?.model || '',
     rental: JSON.parse(JSON.stringify(l?.rental || DEFAULT_RENTAL)),
     priceAmount: l?.price ? String(l.price.amount) : '', priceUnit: l?.price?.unit || 'job', priceFrom: !!l?.price?.from,
+    priceOptions: JSON.parse(JSON.stringify(l?.priceOptions || [])),
     businessId: '',
     providerName: l?.providerName && l.managed ? l.providerName : '', agentName: l?.agent?.contactName || '', agentEmail: l?.agent?.email || '',
     agentPhone: l?.agent?.phone || '', commission: String(l?.agent?.commissionPercent ?? 10), agentNotes: l?.agent?.notes || ''
@@ -35,7 +39,7 @@ export function bodyFrom(d: ListingDraft, managed: boolean) {
     kind: d.kind, title: d.title, description: d.description, industry: d.industry, category: d.category, city: d.city,
     ...(d.kind === 'gear'
       ? { forRent: d.forRent, rent: { amount: Number(d.rentAmount), unit: d.rentUnit }, forSale: d.forSale, salePrice: Number(d.salePrice), condition: d.condition, brandId: d.brandId, brand: d.brandId ? '' : d.brand, model: d.model, rental: d.rental }
-      : { price: d.priceAmount ? { amount: Number(d.priceAmount), unit: d.priceUnit, from: d.priceFrom } : null }),
+      : { price: d.priceAmount || d.priceOptions.length ? { amount: Number(d.priceAmount) || 0, unit: d.priceUnit, from: d.priceFrom } : null, priceOptions: d.priceOptions }),
     ...(d.businessId ? { businessId: d.businessId } : {}),
     ...(managed ? { providerName: d.providerName, agent: { contactName: d.agentName, email: d.agentEmail, phone: d.agentPhone, commissionPercent: Number(d.commission), notes: d.agentNotes } } : {})
   };
@@ -175,6 +179,9 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
             <select className={input} value={draft.priceUnit} onChange={e => set({ priceUnit: e.target.value })}>{SERVICE_UNITS.map(u => <option key={u} value={u}>{unitLabel(u)}</option>)}</select>
           </label>
           <label className={`${check} pb-2`}><input type="checkbox" checked={draft.priceFrom} onChange={e => set({ priceFrom: e.target.checked })} /> Starting price ("from")</label>
+          <div className="sm:col-span-3">
+            <PriceOptionsEditor value={draft.priceOptions} onChange={priceOptions => set({ priceOptions })} unit={draft.priceUnit} dark={dark} />
+          </div>
         </div>
       )}
 

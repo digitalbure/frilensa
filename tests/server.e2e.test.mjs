@@ -639,6 +639,30 @@ try {
     assert.equal((await fetch(`${API}/api/rate-cards/requests/${requestId}`, { method: 'PATCH', headers: auth(C), body: JSON.stringify({ status: 'quoted', documentId: 'doc-1' }) })).status, 200);
     assert.equal((await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests.length, 0);
   });
+  await check('rate conditions: the client picks one and the server prices it, in its currency', async () => {
+    const ws = carolWs(card1);
+    ws.businesses[0].rateConditions = [
+      { id: 'local', name: 'Local production', description: 'Fiji crew', currency: 'FJD' },
+      { id: 'intl', name: 'International production in Fiji', currency: 'FJD' },
+      { id: 'os', name: 'Overseas work', currency: 'AUD', noVat: true }
+    ];
+    ws.services[0].conditionRates = [{ conditionId: 'local', rate: 600 }, { conditionId: 'intl', rate: 900 }, { conditionId: 'os', rate: 1, parts: [{ label: 'Gear', rate: 400 }, { label: 'Labour', rate: 600 }] }];
+    await put(`consultants/${C.uid}`, ws);
+    const card = (await j(await fetch(`${RC}/${card1}`))).body;
+    assert.deepEqual(card.conditions.map(c => [c.id, c.currency, !!c.noVat]), [['local', 'FJD', false], ['intl', 'FJD', false], ['os', 'AUD', true]]);
+    assert.equal(card.services[0].conditionRates.find(r => r.conditionId === 'os').rate, 1000, 'parts not summed');
+    const ask = body => fetch(`${RC}/${card1}/request`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Crew NZ', email: 'crew@nz.example', ...body }) });
+    assert.equal((await ask({ conditionId: 'nope', items: [{ serviceId: 's1', quantity: 1 }] })).status, 400);
+    const r = await j(await ask({ conditionId: 'os', items: [{ serviceId: 's1', quantity: 3, rate: 1 }, { serviceId: 's5', quantity: 2 }] }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const q = (await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests.find(x => x.ref === r.body.ref);
+    assert.equal(q.currency, 'AUD'); assert.equal(q.condition.name, 'Overseas work'); assert.equal(q.condition.noVat, true);
+    assert.deepEqual(q.items.map(i => [i.serviceId, i.rate, i.quantity, !!i.priceOnRequest]), [['s1', 1000, 3, false], ['s5', 0, 2, true]]);
+    assert.match(q.items[0].name, /Gear AUD 400 \+ Labour AUD 600/);
+    assert.equal(q.estimate, 3000);
+    assert.ok(q.details.some(d => d.label === 'Rate' && /Overseas work/.test(d.value)));
+    await put(`consultants/${C.uid}`, carolWs(card1));
+  });
   await check('quote requests are not readable from the browser', async () => {
     const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/quote_requests/${requestId}`, { headers: { Authorization: `Bearer ${C.token}` } });
     assert.equal(r.status, 403);
@@ -1427,6 +1451,24 @@ try {
     // Deleting the listing removes its calendar.
     assert.equal((await mkt(C, `/listings/${carId}`, 'DELETE')).status, 200);
     assert.equal(await get(`marketplace_bookings/${conf.body.hold.id}`), null);
+  });
+  await check('marketplace services: rate options for different jobs, chosen by the requester', async () => {
+    const svc = { kind: 'service', title: 'Location sound recordist', industry: 'film_photo', category: 'crew', city: 'Suva', price: { amount: 0, unit: 'day' },
+      priceOptions: [{ label: 'Local production', amount: 600, currency: 'FJD' }, { label: 'International production in Fiji', amount: 900, currency: 'FJD' }, { label: 'Overseas (travel)', currency: 'AUD', parts: [{ label: 'Gear', rate: 400 }, { label: 'Labour', rate: 600 }] }] };
+    const made = await j(await mkt(C, '/listings', 'POST', svc));
+    assert.equal(made.status, 200, JSON.stringify(made.body));
+    const l = made.body.listing;
+    assert.deepEqual(l.priceOptions.map(o => [o.amount, o.currency]), [[600, 'FJD'], [900, 'FJD'], [1000, 'AUD']]);
+    assert.equal(l.price.amount, 600); assert.equal(l.price.from, true);
+    assert.equal((await mkt(B, `/listings/${l.id}/requests`, 'POST', { quantity: 2 })).status, 400, 'no rate chosen');
+    const r = await j(await mkt(B, `/listings/${l.id}/requests`, 'POST', { optionId: l.priceOptions[2].id, quantity: 5, message: 'Shoot in Vanuatu' }));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const q = await get(`quote_requests/${r.body.requestId}`);
+    assert.equal(q.currency, 'AUD'); assert.equal(q.estimate, 5000);
+    assert.deepEqual(q.items.map(i => [i.rate, i.quantity]), [[400, 5], [600, 5]]);
+    assert.ok(q.details.some(d => d.label === 'Rate' && /Overseas/.test(d.value)));
+    assert.equal((await j(await mkt(B, '/mine'))).body.sent.find(x => x.id === r.body.requestId).currency, 'AUD');
+    assert.equal((await mkt(C, `/listings/${l.id}`, 'DELETE')).status, 200);
   });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);

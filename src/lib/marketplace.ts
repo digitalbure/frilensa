@@ -1,5 +1,6 @@
 import type { ListingKind } from './marketplaceTaxonomy';
 import type { RentalOptions, RentalQuote } from './marketplaceRental';
+import type { PriceOption } from './rateConditions';
 
 // App-side helpers for the marketplace (server/marketplace.ts).
 
@@ -12,11 +13,12 @@ export interface MarketListing {
   condition?: string; brand?: string; brandId?: string; model?: string;
   rental?: RentalOptions | null;
   price?: { amount: number; unit: string; from: boolean } | null;
+  priceOptions?: PriceOption[];
   currency: string; photos: { id: string; url: string }[];
   createdAt: string; updatedAt: string;
 }
 
-export interface SentRequest { id: string; listingId: string; title: string; mode: string; providerName: string; estimate: number; status: string; createdAt: string }
+export interface SentRequest { id: string; listingId: string; title: string; mode: string; providerName: string; estimate: number; currency?: string; status: string; createdAt: string }
 
 async function json<T>(res: Response): Promise<T> {
   const body = await res.json().catch(() => ({}));
@@ -93,12 +95,16 @@ export function prepareLogo(file: File): Promise<string> {
 export const sendRequest = (id: string, body: Record<string, unknown>) => send(`/api/marketplace/listings/${id}/requests`, 'POST', body).then(r => json<{ ok: true }>(r));
 
 const per = (unit: string) => unit === 'job' ? 'per job' : unit === 'session' ? 'per session' : `/${unit}`;
+/** "AUD 1,000" */
+export const money = (currency: string, n: number) => `${currency} ${n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 export const fjd = (n: number) => `FJD ${n.toLocaleString(undefined, { minimumFractionDigits: n % 1 ? 2 : 0, maximumFractionDigits: 2 })}`;
 
 /** "FJD 150/day", "FJD 3,200", "From FJD 800 per job" or "Ask for a quote". */
 export function priceLabel(l: MarketListing, mode: 'rent' | 'buy' | 'service') {
   if (mode === 'buy') return l.salePrice ? fjd(l.salePrice) : '';
   if (l.kind === 'gear') return l.rent ? `${fjd(l.rent.amount)}${per(l.rent.unit)}` : '';
+  const first = l.priceOptions?.[0];
+  if (first && l.price) return `${l.priceOptions!.length > 1 ? 'From ' : ''}${money(first.currency, first.amount)} ${per(l.price.unit)}`.replace(' /', '/');
   return l.price ? `${l.price.from ? 'From ' : ''}${fjd(l.price.amount)} ${per(l.price.unit)}`.replace(' /', '/') : 'Ask for a quote';
 }
 

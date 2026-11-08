@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { BadgeCheck, Camera, Check, ChevronLeft, ChevronRight, MapPin, Plus, Search, Send, ShieldCheck, Store, Truck, Wrench, X } from 'lucide-react';
 import { INDUSTRIES, categoriesFor, categoryName, industryName, CONDITIONS } from '../../lib/marketplaceTaxonomy';
-import { browseListings, fetchBrands, fjd, priceLabel, sendRequest, type Brand, type MarketListing } from '../../lib/marketplace';
+import { browseListings, fetchBrands, fjd, money, priceLabel, sendRequest, type Brand, type MarketListing } from '../../lib/marketplace';
 import { hireLabels } from '../../lib/marketplaceRental';
+import { partsLabel } from '../../lib/rateConditions';
 import RentalBookingForm from './RentalBookingForm';
 import MyListings from './MyListings';
 
@@ -166,6 +167,8 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }:
   const [offer, setOffer] = useState(l.salePrice ? String(l.salePrice) : '');
   const [message, setMessage] = useState('');
   const [phone, setPhone] = useState('');
+  const [optionId, setOptionId] = useState(l.priceOptions?.[0]?.id || '');
+  const option = l.priceOptions?.find(o => o.id === optionId);
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
@@ -184,7 +187,7 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }:
     e.preventDefault();
     setBusy(true); setProblem(null);
     try {
-      await sendRequest(l.id, { mode, from, to, quantity: Number(quantity), offer: Number(offer), message, phone });
+      await sendRequest(l.id, { mode, from, to, quantity: Number(quantity), offer: Number(offer), message, phone, ...(option ? { optionId: option.id } : {}) });
       setSent(true);
     } catch (err: any) { setProblem(err.message); } finally { setBusy(false); }
   };
@@ -220,6 +223,21 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }:
             {brand?.logoUrl && <img src={brand.logoUrl} alt={brand.name} className="h-7 max-w-[8rem] object-contain" />}
             {l.description && <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{l.description}</p>}
             {mode === 'rent' && l.rental && <RentalFacts listing={l} />}
+            {mode === 'service' && (l.priceOptions?.length || 0) > 0 && (
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Rates</p>
+                {l.priceOptions!.map(o => (
+                  <div key={o.id} className="flex justify-between gap-3 text-xs border-b border-slate-100 pb-1.5">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-800">{o.label}</p>
+                      {o.description && <p className="text-[11px] text-slate-500">{o.description}</p>}
+                      {o.parts?.length ? <p className="text-[11px] text-slate-500">{partsLabel(o.parts, o.currency)}</p> : null}
+                    </div>
+                    <p className="font-bold text-slate-900 shrink-0">{money(o.currency, o.amount)}<span className="font-normal text-slate-500"> {l.price?.unit === 'job' ? 'per job' : l.price?.unit === 'session' ? 'per session' : `/${l.price?.unit}`}</span></p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="md:col-span-2">
@@ -247,6 +265,18 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }:
                     <label className="block"><span className={label}>Until</span><input type="date" min={from || today} className={input} value={to} onChange={e => setTo(e.target.value)} /></label>
                   </div>
                 )}
+                {mode === 'service' && (l.priceOptions?.length || 0) > 0 && (
+                  <div className="space-y-1" role="radiogroup" aria-label="Which rate fits your project?">
+                    <span className={label}>Which fits your project?</span>
+                    {l.priceOptions!.map(o => (
+                      <label key={o.id} className={`flex items-start gap-2 p-2 rounded-xl border cursor-pointer text-xs ${optionId === o.id ? 'border-sky-400 bg-sky-50' : 'border-slate-200 bg-white'}`}>
+                        <input type="radio" name="rate-option" checked={optionId === o.id} onChange={() => setOptionId(o.id)} className="mt-0.5" />
+                        <span className="min-w-0 flex-1"><span className="font-semibold text-slate-800">{o.label}</span>{o.description && <span className="block text-[10px] text-slate-500">{o.description}</span>}</span>
+                        <span className="font-mono font-bold text-slate-800 shrink-0">{money(o.currency, o.amount)}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
                 {mode === 'buy' ? (
                   <label className="block"><span className={label}>Your offer (FJD)</span><input type="number" min={0} step="0.01" inputMode="decimal" className={input} value={offer} onChange={e => setOffer(e.target.value)} /></label>
                 ) : (
@@ -254,6 +284,7 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }:
                 )}
                 <label className="block"><span className={label}>Message</span><textarea rows={3} className={`${input} resize-y`} value={message} onChange={e => setMessage(e.target.value)} placeholder={mode === 'buy' ? 'Questions, collection' : 'What you need, where, your budget'} /></label>
                 <label className="block"><span className={label}>Phone (optional)</span><input className={input} value={phone} onChange={e => setPhone(e.target.value)} /></label>
+                {option && Number(quantity) > 0 && <p className="text-xs text-slate-700">Estimate: <strong>{money(option.currency, option.amount * Number(quantity))}</strong></p>}
                 {problem && <p className="text-xs font-semibold text-rose-600">{problem}</p>}
                 <button type="submit" disabled={busy} className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"><Send className="w-3.5 h-3.5" /> {busy ? 'Sending…' : 'Send request'}</button>
                 <p className="text-[10px] text-slate-500">{l.managed ? 'Frilensa arranges this listing for the provider and will contact you.' : 'The owner replies with a quote. Payment is agreed between you.'}</p>

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertCircle, CheckCircle2, Minus, Plus, Printer } from 'lucide-react';
 import { fetchPublicRateCard, sendQuoteRequest, type PublicRateCard } from '../lib/rateCards';
+import { partsLabel, priceFor } from '../lib/rateConditions';
 
 interface RateCardPublicViewProps {
   token: string;
@@ -21,10 +22,11 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [conditionId, setConditionId] = useState('');
 
   useEffect(() => {
     fetchPublicRateCard(token)
-      .then(c => { setCard(c); document.title = `${c.business.name || 'Rate card'} · Rates`; })
+      .then(c => { setCard(c); setConditionId((c.conditions || [])[0]?.id || ''); document.title = `${c.business.name || 'Rate card'} · Rates`; })
       .catch(err => setError(err?.message || 'This rate card could not be loaded.'));
   }, [token]);
 
@@ -50,11 +52,19 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
   }
   if (!card) return <Shell><p className="text-sm text-slate-500 text-center py-16">Loading rates…</p></Shell>;
 
-  const { business, currency } = card;
+  const { business } = card;
   const brand = business.colorTheme || '#0284c7';
+  const conditions = card.conditions || [];
+  const condition = conditions.find(c => c.id === conditionId) || null;
+  // Rates (and currency) for the chosen condition; null means "price on request" for that service.
+  const price = (s: PublicRateCard['services'][number]) => priceFor(s, condition, card.currency);
+  const currency = condition ? condition.currency : card.currency;
+  const vatRate = condition?.noVat ? 0 : card.vatRate;
   const chosen = card.services.filter(s => (quantities[s.id] || 0) > 0);
-  const subtotal = chosen.reduce((sum, s) => sum + s.rate * quantities[s.id], 0);
-  const vat = card.vatRate ? chosen.filter(s => s.vat).reduce((sum, s) => sum + s.rate * quantities[s.id], 0) * card.vatRate / 100 : 0;
+  const lineTotal = (s: PublicRateCard['services'][number]) => (price(s)?.rate || 0) * quantities[s.id];
+  const subtotal = chosen.reduce((sum, s) => sum + lineTotal(s), 0);
+  const vat = vatRate ? chosen.filter(s => s.vat).reduce((sum, s) => sum + lineTotal(s), 0) * vatRate / 100 : 0;
+  const onRequest = chosen.some(s => !price(s));
 
   const setQty = (id: string, qty: number) => setQuantities(q => ({ ...q, [id]: Math.max(0, Math.round(qty * 100) / 100) }));
 
@@ -67,7 +77,7 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
     }
     setBusy(true);
     try {
-      const res = await sendQuoteRequest(token, { ...form, items: chosen.map(s => ({ serviceId: s.id, quantity: quantities[s.id] })) });
+      const res = await sendQuoteRequest(token, { ...form, items: chosen.map(s => ({ serviceId: s.id, quantity: quantities[s.id] })), ...(condition ? { conditionId: condition.id } : {}) });
       setSent(res.ref);
     } catch (err: any) {
       setFormError(err?.message || 'Your request could not be sent. Try again.');
@@ -107,6 +117,26 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
 
         {card.intro && <p className="text-sm text-slate-700 whitespace-pre-line">{card.intro}</p>}
 
+        {conditions.length > 0 && (
+          <section className="space-y-2" aria-label="Which fits your project?">
+            <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Which fits your project?</h2>
+            <div className="grid gap-2 sm:grid-cols-2" role="radiogroup">
+              {conditions.map(c => {
+                const on = c.id === conditionId;
+                return (
+                  <button key={c.id} type="button" role="radio" aria-checked={on} onClick={() => setConditionId(c.id)}
+                    className={`text-left rounded-xl border p-3 cursor-pointer transition-colors ${on ? 'text-white' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                    style={on ? { backgroundColor: brand, borderColor: brand } : undefined}>
+                    <span className="block text-sm font-bold">{c.name}</span>
+                    {c.description && <span className={`block text-xs ${on ? 'text-white/85' : 'text-slate-500'}`}>{c.description}</span>}
+                    <span className={`block text-[10px] font-mono mt-1 ${on ? 'text-white/80' : 'text-slate-400'}`}>Rates in {c.currency}{c.noVat ? ' · no VAT' : ''}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {card.services.length === 0 ? (
           <p className="text-sm text-slate-500">No services are listed yet. Contact {business.name || 'the business'} for a quote.</p>
         ) : (
@@ -117,16 +147,22 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
                 <ul className="divide-y divide-slate-100 border border-slate-100 rounded-xl">
                   {services.map(s => {
                     const qty = quantities[s.id] || 0;
+                    const p = price(s);
+                    const others = conditions.filter(c => c.id !== conditionId).map(c => ({ c, p: priceFor(s, c, card.currency) })).filter(x => x.p?.specific);
                     return (
                       <li key={s.id} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 break-inside-avoid">
                         <div className="min-w-0">
                           <p className="text-sm font-semibold text-slate-900">{s.name}</p>
                           {s.description && <p className="text-xs text-slate-500 whitespace-pre-line">{s.description}</p>}
                           <p className="text-xs font-mono text-slate-800 mt-1">
-                            {money(currency, s.rate)}{s.unit ? ` per ${s.unit.toLowerCase()}` : ''}{INTERVAL[s.billingInterval] || ''}
+                            {p ? <>{money(p.currency, p.rate)}{s.unit ? ` per ${s.unit.toLowerCase()}` : ''}{INTERVAL[s.billingInterval] || ''}</> : <span className="font-sans text-slate-500">Price on request</span>}
                             {s.minQuantity > 1 && <span className="font-sans text-slate-500"> · minimum {s.minQuantity}</span>}
-                            {card.vatRate > 0 && !s.vat && <span className="font-sans text-slate-500"> · no VAT</span>}
+                            {vatRate > 0 && !s.vat && <span className="font-sans text-slate-500"> · no VAT</span>}
                           </p>
+                          {p && p.parts.length > 0 && <p className="text-[11px] text-slate-500">{partsLabel(p.parts, p.currency)}</p>}
+                          {others.length > 0 && (
+                            <p className="text-[10px] text-slate-400 mt-0.5">{others.map(({ c, p: o }) => `${c.name}: ${money(o!.currency, o!.rate)}`).join(' · ')}</p>
+                          )}
                         </div>
                         <div className="print:hidden flex items-center gap-1.5 shrink-0">
                           <button type="button" aria-label={`Fewer ${s.name}`} onClick={() => setQty(s.id, qty - 1 < s.minQuantity ? 0 : qty - 1)} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 cursor-pointer disabled:opacity-40" disabled={qty === 0}>
@@ -153,7 +189,7 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
 
         <section className="text-xs text-slate-600 space-y-1 border-t border-slate-100 pt-4">
           <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Terms</h2>
-          <p>{card.vatRate > 0 ? `Rates exclude VAT (${card.vatRate}%) unless marked "no VAT".` : 'No VAT is charged.'} Quotes are valid for {card.terms.quoteValidDays} days. Invoices are due {card.terms.paymentTermsDays} days after issue.</p>
+          <p>{vatRate > 0 ? `Rates exclude VAT (${vatRate}%) unless marked "no VAT".` : 'No VAT is charged.'} Quotes are valid for {card.terms.quoteValidDays} days. Invoices are due {card.terms.paymentTermsDays} days after issue.</p>
           {card.terms.text && <p className="whitespace-pre-line">{card.terms.text}</p>}
         </section>
 
@@ -171,14 +207,14 @@ export default function RateCardPublicView({ token }: RateCardPublicViewProps) {
                   {chosen.map(s => (
                     <div key={s.id} className="flex justify-between gap-3">
                       <span>{quantities[s.id]} × {s.name}</span>
-                      <span className="font-mono">{money(currency, s.rate * quantities[s.id])}</span>
+                      <span className="font-mono">{price(s) ? money(currency, lineTotal(s)) : 'On request'}</span>
                     </div>
                   ))}
-                  {vat > 0 && <div className="flex justify-between gap-3 text-slate-500"><span>VAT ({card.vatRate}%)</span><span className="font-mono">{money(currency, vat)}</span></div>}
+                  {vat > 0 && <div className="flex justify-between gap-3 text-slate-500"><span>VAT ({vatRate}%)</span><span className="font-mono">{money(currency, vat)}</span></div>}
                   <div className="flex justify-between gap-3 font-bold text-slate-900 border-t border-slate-200 pt-1">
                     <span>Estimate</span><span className="font-mono">{money(currency, subtotal + vat)}</span>
                   </div>
-                  <p className="text-slate-500">This is an estimate. The quote you receive may differ.</p>
+                  <p className="text-slate-500">{condition ? `${condition.name}. ` : ''}This is an estimate{onRequest ? ', and some items will be priced in the quote' : ''}. The quote you receive may differ.</p>
                 </div>
               ) : (
                 <p className="text-xs text-slate-500">Pick quantities above, or describe what you need below.</p>

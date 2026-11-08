@@ -28,7 +28,8 @@ import PartialPaymentModal from './PartialPaymentModal';
 import EmailDocumentModal from './EmailDocumentModal';
 import PaymentAttachmentWidget from './PaymentAttachmentWidget';
 import { downloadDocumentPdf, numberLabel } from '../lib/pdfGenerator';
-import { SUPPORTED_CURRENCIES, getCurrencyConfig } from '../lib/currencies';
+import { SUPPORTED_CURRENCIES, getCurrencyConfig, convertCurrency } from '../lib/currencies';
+import { priceFor, partsLabel } from '../lib/rateConditions';
 import { documentDefaults, paymentTermsDays } from '../lib/documentTerms';
 import { depositFor } from '../lib/bookings';
 import { tradingAsLine } from '../lib/businessName';
@@ -137,6 +138,11 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   // New Item Temporary Input in Document Builder
   const [selectedCatalogItemId, setSelectedCatalogItemId] = useState('');
+  // Rate condition for the catalogue item being added (e.g. international production), and whether
+  // to add its parts (gear, labour) as separate lines.
+  const [itemConditionId, setItemConditionId] = useState('');
+  const [itemSplit, setItemSplit] = useState(false);
+  const [itemConditionNote, setItemConditionNote] = useState<string | null>(null);
   const [itemQty, setItemQty] = useState(1);
   const [itemRate, setItemRate] = useState(0);
   const [customItemName, setCustomItemName] = useState('');
@@ -748,9 +754,50 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setTimeout(() => setShareToast(null), 4000);
   };
 
+  const docBusinessConditions = (data.businesses.find(b => b.id === (editingDoc?.businessId || data.activeBusinessId))?.rateConditions) || [];
+
+  // Fills in the line for a catalogue item under a rate condition: its rate (in this document's currency,
+  // switching an empty document to the condition's currency), its name, and VAT for VAT-free conditions.
+  const applyCatalogCondition = (serviceId: string, conditionId: string) => {
+    const srv = data.services.find(s => s.id === serviceId);
+    setItemConditionId(conditionId);
+    setItemConditionNote(null);
+    if (!srv) return;
+    const base = data.userProfile.defaultCurrency || 'FJD';
+    const condition = docBusinessConditions.find(c => c.id === conditionId) || null;
+    const priced = priceFor(srv, condition, base);
+    setCustomItemName(condition ? `${srv.name} (${condition.name})` : srv.name);
+    if (!priced) {
+      setItemRate(0);
+      setItemConditionNote(`${srv.name} has no ${condition!.currency} rate for ${condition!.name}. Enter the rate.`);
+      return;
+    }
+    const notes: string[] = [];
+    let rate = priced.rate;
+    if (priced.currency.toUpperCase() !== docCurrency.toUpperCase()) {
+      if (items.length === 0) {
+        setDocCurrency(priced.currency);
+        notes.push(`This ${docType} is now in ${priced.currency}.`);
+      } else {
+        rate = Math.round(convertCurrency(priced.rate, priced.currency, docCurrency).convertedAmount * 100) / 100;
+        notes.push(`${priced.currency} ${priced.rate.toFixed(2)} converted to about ${docCurrency} ${rate.toFixed(2)}. Check the rate.`);
+      }
+    }
+    if (condition?.noVat && !isTaxExempt) {
+      setIsTaxExempt(true);
+      notes.push(`${condition.name} is VAT-free, so tax is off for this ${docType}.`);
+    }
+    if (priced.parts.length) notes.push(partsLabel(priced.parts, priced.currency));
+    setItemRate(rate);
+    setItemConditionNote(notes.join(' ') || null);
+  };
+
   // Handle Catalog Item Selection change in builder
   const handleCatalogSelect = (id: string) => {
     setSelectedCatalogItemId(id);
+    setItemConditionId('');
+    setItemSplit(false);
+    setItemConditionNote(null);
     if (id === 'custom') {
       setCustomItemName('');
       setItemRate(0);
@@ -759,6 +806,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       if (catalogItem) {
         setCustomItemName(catalogItem.name);
         setItemRate(catalogItem.rate);
+        // Items with rates by condition start on the first condition they have a rate for.
+        const first = docBusinessConditions.find(c => catalogItem.conditionRates?.some(r => r.conditionId === c.id));
+        if (first) applyCatalogCondition(catalogItem.id, first.id);
       }
     }
   };
@@ -766,6 +816,23 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
   // Add Item Line to current list
   const handleAddItemLine = () => {
     if (!customItemName || itemQty <= 0 || itemRate < 0) return;
+
+    // Parts (e.g. gear and labour) as separate lines, scaled to the rate shown (it may have been converted or edited).
+    const srv = data.services.find(s => s.id === selectedCatalogItemId);
+    const condition = docBusinessConditions.find(c => c.id === itemConditionId);
+    const priced = srv && condition ? priceFor(srv, condition, data.userProfile.defaultCurrency || 'FJD') : null;
+    if (itemSplit && srv && priced && priced.parts.length && priced.rate > 0) {
+      const scale = itemRate / priced.rate;
+      const stamp = Date.now();
+      const lines: DocumentItem[] = priced.parts.map((p, i) => {
+        const rate = Math.round(p.rate * scale * 100) / 100;
+        return { id: `item-${stamp}-${i}`, itemId: srv.id, name: `${customItemName} – ${p.label}`, quantity: itemQty, rate, total: Math.round(itemQty * rate * 100) / 100 };
+      });
+      setItems([...items, ...lines]);
+      setSelectedCatalogItemId(''); setCustomItemName(''); setItemQty(1); setItemRate(0);
+      setItemConditionId(''); setItemSplit(false); setItemConditionNote(null);
+      return;
+    }
 
     const newItem: DocumentItem = {
       id: `item-${Date.now()}`,
@@ -783,6 +850,9 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     setCustomItemName('');
     setItemQty(1);
     setItemRate(0);
+    setItemConditionId('');
+    setItemSplit(false);
+    setItemConditionNote(null);
   };
 
   const handleRemoveItemLine = (lineId: string) => {
@@ -2582,6 +2652,36 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
                       />
                     </div>
                   </div>
+
+                  {(() => {
+                    const srv = data.services.find(sv => sv.id === selectedCatalogItemId);
+                    if (!srv || !srv.conditionRates?.length || docBusinessConditions.length === 0) return null;
+                    const condition = docBusinessConditions.find(c => c.id === itemConditionId);
+                    const priced = condition ? priceFor(srv, condition, data.userProfile.defaultCurrency || 'FJD') : null;
+                    return (
+                      <div className="space-y-1.5">
+                        <label className="block text-[9px] font-bold text-slate-400 uppercase">Rate for</label>
+                        <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Rate condition">
+                          {[{ id: '', name: 'Standard rate', currency: data.userProfile.defaultCurrency || 'FJD' }, ...docBusinessConditions].map(c => {
+                            const p = priceFor(srv, c.id ? (c as any) : null, data.userProfile.defaultCurrency || 'FJD');
+                            return (
+                              <button key={c.id || 'std'} type="button" role="radio" aria-checked={itemConditionId === c.id} onClick={() => applyCatalogCondition(srv.id, c.id)}
+                                className={`px-2 py-1 rounded-lg text-[10px] font-bold border cursor-pointer ${itemConditionId === c.id ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}>
+                                {c.name}{p ? ` · ${p.currency} ${p.rate.toLocaleString()}` : ''}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {priced && priced.parts.length > 0 && (
+                          <label className="flex items-center gap-1.5 text-[10px] font-semibold text-slate-600">
+                            <input type="checkbox" checked={itemSplit} onChange={e => setItemSplit(e.target.checked)} />
+                            Add {priced.parts.map(p => p.label.toLowerCase()).join(' and ')} as separate lines
+                          </label>
+                        )}
+                        {itemConditionNote && <p className="text-[10px] text-sky-800 bg-sky-50 border border-sky-100 rounded-lg px-2 py-1">{itemConditionNote}</p>}
+                      </div>
+                    );
+                  })()}
 
                   <div className="grid grid-cols-3 gap-2">
                     <div>

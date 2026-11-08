@@ -7,6 +7,7 @@ import { readWorkspace } from "./workspace";
 import { saveBookingRequest } from "./bookings";
 import { notifyEmail, later } from "./notify";
 import { CONDITIONS, RENT_UNITS, SERVICE_UNITS, isValidCategory, type ListingKind } from "../src/lib/marketplaceTaxonomy";
+import { cleanPriceOptions, type PriceOption } from "../src/lib/rateConditions";
 import { addDays, availableFor, cleanRental, isDate, quoteDetails, quoteRental, usedByDay, type RentalOptions, type RentalQuote } from "../src/lib/marketplaceRental";
 
 // The marketplace: gear to rent or buy, and services, listed by Frilensa users or by Frilensa itself on a
@@ -40,6 +41,7 @@ export interface Listing {
   condition?: string; brand?: string; brandId?: string; model?: string;
   rental?: RentalOptions | null;
   price?: { amount: number; unit: string; from: boolean } | null;
+  priceOptions?: PriceOption[];
   currency: string; photos: { id: string; ext: string; type: string }[];
   createdAt: string; updatedAt: string; reviewedAt?: string; rejectReason?: string;
 }
@@ -82,9 +84,11 @@ function cleanListing(b: any, kind: ListingKind): Partial<Listing> | string {
       brand: text(b.brand, 60), brandId: text(b.brandId, 40), model: text(b.model, 60)
     });
   } else {
-    const amount = money(b.price?.amount);
     const unit = (SERVICE_UNITS as readonly string[]).includes(b.price?.unit) ? b.price.unit : "job";
-    Object.assign(out, { price: amount ? { amount, unit, from: b.price?.from === true } : null });
+    // Rate options (e.g. local, international, overseas); the first one is the headline price.
+    const priceOptions = cleanPriceOptions(b.priceOptions, "FJD");
+    const amount = priceOptions.length ? priceOptions[0].amount : money(b.price?.amount);
+    Object.assign(out, { priceOptions, price: amount ? { amount, unit, from: priceOptions.length > 1 || b.price?.from === true } : null });
   }
   return out;
 }
@@ -401,8 +405,8 @@ export function createMarketplaceRouter() {
       db.collection(REQUESTS).where("requesterUid", "==", uid).limit(100).get()
     ]);
     const sent = [
-      ...sentInbox.docs.map(d => d.data()).map(r => ({ id: r.id, listingId: r.listingId, title: r.items?.[0]?.name || "", mode: r.marketplaceMode, providerName: r.businessName, estimate: r.estimate, status: r.lastStage || r.status, createdAt: r.createdAt })),
-      ...sentAgent.docs.map(d => d.data()).map(r => ({ id: r.id, listingId: r.listingId, title: r.listingTitle, mode: r.mode, providerName: r.providerName, estimate: r.estimate, status: r.status, createdAt: r.createdAt }))
+      ...sentInbox.docs.map(d => d.data()).map(r => ({ id: r.id, listingId: r.listingId, title: r.items?.[0]?.name || "", mode: r.marketplaceMode, providerName: r.businessName, estimate: r.estimate, currency: r.currency || "FJD", status: r.lastStage || r.status, createdAt: r.createdAt })),
+      ...sentAgent.docs.map(d => d.data()).map(r => ({ id: r.id, listingId: r.listingId, title: r.listingTitle, mode: r.mode, providerName: r.providerName, estimate: r.estimate, currency: r.currency || "FJD", status: r.status, createdAt: r.createdAt }))
     ].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
     res.json({
       listings: mine.docs.map(d => ownListing(d.data() as Listing)).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
@@ -525,7 +529,12 @@ export function createMarketplaceRouter() {
     }
     const quantity = rental ? rental.quantity : Math.min(1000, Math.max(1, Math.round(Number(b.quantity) || 1)));
     const offer = mode === "buy" ? money(b.offer) || l.salePrice || 0 : null;
-    const rate = mode === "buy" ? offer! : l.kind === "gear" ? l.rent!.amount : l.price?.amount || 0;
+    // A service's rate option (e.g. international production): its rate and currency apply.
+    const options = l.kind === "service" ? l.priceOptions || [] : [];
+    const option = options.length ? options.find(o => o.id === b.optionId) || null : null;
+    if (options.length && !option) return res.status(400).json({ error: "Choose which rate fits your project." });
+    const currency = option ? option.currency : "FJD";
+    const rate = mode === "buy" ? offer! : l.kind === "gear" ? l.rent!.amount : option ? option.amount : l.price?.amount || 0;
     const unit = mode === "buy" ? "item" : l.kind === "gear" ? l.rent!.unit : l.price?.unit || "job";
     const estimate = rental ? rental.total : Math.round(rate * quantity * 100) / 100;
     const name = text(b.name, 80) || String(req.user!.name || email.split("@")[0]);
@@ -537,7 +546,8 @@ export function createMarketplaceRouter() {
         ...(from ? [{ label: "Date", value: from }] : []),
         ...(to ? [{ label: "Until", value: to }] : [])
       ]),
-      ...(mode === "buy" && offer !== l.salePrice ? [{ label: "Offer", value: `FJD ${offer!.toFixed(2)} (asking ${l.salePrice?.toFixed(2)})` }] : [])
+      ...(mode === "buy" && offer !== l.salePrice ? [{ label: "Offer", value: `FJD ${offer!.toFixed(2)} (asking ${l.salePrice?.toFixed(2)})` }] : []),
+      ...(option ? [{ label: "Rate", value: `${option.label}: ${option.currency} ${option.amount.toFixed(2)}${option.parts?.length ? ` (${option.parts.map(p => `${p.label} ${p.rate.toFixed(2)}`).join(" + ")})` : ""}` }] : [])
     ];
 
     if (l.managed || !l.ownerUid) {
@@ -546,7 +556,7 @@ export function createMarketplaceRouter() {
       const request = {
         id: ref.id, listingId: l.id, listingTitle: l.title, providerName: l.providerName, mode,
         requesterUid: uid, name, email, phone, message, from, to, quantity, rate, unit, estimate,
-        offer, rental, status: "new", commissionPercent: l.agent?.commissionPercent ?? null, commissionAmount: null, notes: "",
+        offer, rental, currency, ...(option ? { option } : {}), status: "new", commissionPercent: l.agent?.commissionPercent ?? null, commissionAmount: null, notes: "",
         createdAt: now, updatedAt: now
       };
       await ref.set(request);
@@ -567,7 +577,9 @@ export function createMarketplaceRouter() {
       checked: {
         items: rental
           ? rental.lines.map((x, i) => ({ serviceId: `mkt_${l.id}_${i}`, name: x.label, unit: x.unit, rate: x.rate, quantity: x.quantity }))
-          : [{ serviceId: `mkt_${l.id}`, name: l.title, unit, rate, quantity }],
+          : option?.parts?.length
+            ? option.parts.map((p, i) => ({ serviceId: `mkt_${l.id}_${i}`, name: `${l.title} – ${p.label} (${option.label})`, unit, rate: p.rate, quantity }))
+            : [{ serviceId: `mkt_${l.id}`, name: option ? `${l.title} (${option.label})` : l.title, unit, rate, quantity }],
         estimate, details,
         ...(from ? { eventDate: from } : {}),
         ...(rental?.pickupTime ? { startTime: rental.pickupTime } : {}),
@@ -575,7 +587,7 @@ export function createMarketplaceRouter() {
       } as any,
       contact: { name, email, phone, message },
       channel: "marketplace",
-      extra: { requesterUid: uid, listingId: l.id, marketplaceMode: mode, ...(rental ? { rental } : {}) }
+      extra: { requesterUid: uid, listingId: l.id, marketplaceMode: mode, ...(rental ? { rental } : {}), ...(option ? { currency: option.currency, marketplaceOption: option } : {}) }
     });
     res.json({ ok: true, requestId: request.id });
   }));
@@ -630,7 +642,7 @@ export function createAdminMarketplaceRouter() {
     const l = (await ref.get()).data() as Listing | undefined;
     if (!l) return res.status(404).json({ error: "Listing not found." });
     const b = req.body || {};
-    const editing = ["title", "description", "industry", "category", "city", "forRent", "forSale", "rent", "salePrice", "condition", "brand", "brandId", "model", "price", "rental"].some(k => k in b);
+    const editing = ["title", "description", "industry", "category", "city", "forRent", "forSale", "rent", "salePrice", "condition", "brand", "brandId", "model", "price", "priceOptions", "rental"].some(k => k in b);
     const cleaned = editing ? cleanListing({ ...l, ...b }, l.kind) : {};
     const fields = typeof cleaned === "string" ? cleaned : editing ? await resolveBrand(cleaned) : {};
     if (typeof fields === "string") return res.status(400).json({ error: fields });

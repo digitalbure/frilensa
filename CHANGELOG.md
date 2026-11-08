@@ -18,6 +18,17 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.12.0] - 2026-11-08
+
+### Added
+- **Rate conditions:** charge different rates for the same service depending on the job. For example, location audio recording at FJD 600/day for a local production, FJD 900/day for an international production hiring you in Fiji, and AUD 1,000/day for overseas work (AUD 400 gear + AUD 600 labour).
+  - Set up your conditions under Services → Rate conditions, or start from a ready-made set: film, video and audio production (local, international in Fiji, overseas), type of client, or where the work is. Each condition has its own currency, a short note for clients on when it applies, and can be marked **No VAT** (e.g. work done overseas).
+  - When you edit a service, set its rate for each condition, and optionally **split it into parts** such as gear and labour. Leave one blank to use your standard rate.
+  - **Rate cards:** clients choose the condition that fits their project; prices, currency and VAT follow it, the other conditions' rates are shown for comparison, and the request (and the quote you create from it) comes in that currency, without VAT for VAT-free conditions. A service with no rate in that currency shows "Price on request".
+  - **Quotes and invoices:** when you add a catalogue item, pick the condition. An empty quote switches to that condition's currency; otherwise the rate is converted for you to check. VAT-free conditions turn tax off, and gear and labour can go on separate lines.
+  - The rate sheet lists each service's rates by condition.
+- **Marketplace service listings** can have rates for different jobs too (each with its own currency, optionally split into gear and labour). Requesters choose the one that fits, and the request arrives in that currency with each part as its own line.
+
 ## [4.11.1] - 2026-11-08
 
 ### Fixed

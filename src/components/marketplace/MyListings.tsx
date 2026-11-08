@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { CalendarDays, Camera, Eye, EyeOff, Pencil, Plus, Trash2, Wrench } from 'lucide-react';
 import ListingCalendar from './ListingCalendar';
 import ListingForm, { bodyFrom, draftFrom, type ListingDraft } from './ListingForm';
-import { createListing, deleteListing, myMarketplace, priceLabel, updateListing, fjd, type MarketListing, type SentRequest } from '../../lib/marketplace';
+import { createListing, deleteListing, myMarketplace, priceLabel, updateListing, fjd, money, type MarketListing, type SentRequest } from '../../lib/marketplace';
 import { categoryName } from '../../lib/marketplaceTaxonomy';
 
 const STATUS: Record<string, { label: string; cls: string }> = {
@@ -119,7 +119,7 @@ export default function MyListings({ businesses }: { businesses: { id: string; n
               <p className="text-[11px] text-slate-500">{r.mode === 'buy' ? 'Offer' : r.mode === 'rent' ? 'Rental' : 'Booking'} · {r.providerName} · {new Date(r.createdAt).toLocaleDateString()}</p>
             </div>
             <div className="text-right shrink-0">
-              <p className="font-mono font-bold text-slate-800">{fjd(r.estimate || 0)}</p>
+              <p className="font-mono font-bold text-slate-800">{money(r.currency || 'FJD', r.estimate || 0)}</p>
               <p className="text-[10px] text-slate-500 capitalize">{String(r.status || 'new').replace(/_/g, ' ')}</p>
             </div>
           </div>

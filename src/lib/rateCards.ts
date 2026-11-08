@@ -10,10 +10,12 @@ export interface PublicRateCard {
   bookingUrl?: string | null;
   currency: string;
   vatRate: number;
+  conditions: import('./rateConditions').RateCondition[];
   terms: { text: string; paymentTermsDays: number; quoteValidDays: number };
   services: {
     id: string; name: string; description: string; rate: number; unit: string; category: string;
     billingInterval: 'one-time' | 'monthly' | 'annual'; minQuantity: number; vat: boolean;
+    conditionRates: import('./rateConditions').ConditionRate[];
   }[];
 }
 
@@ -27,8 +29,9 @@ export interface QuoteRequest {
   phone: string;
   company: string;
   message: string;
-  items: { serviceId: string; name: string; unit: string; rate: number; quantity: number }[];
+  items: { serviceId: string; name: string; unit: string; rate: number; quantity: number; priceOnRequest?: boolean }[];
   currency: string;
+  condition?: { id: string; name: string; noVat: boolean };
   estimate: number;
   createdAt: string;
   channel?: 'rate_card' | 'directory' | 'api' | 'booking_page' | 'widget' | 'marketplace';
@@ -56,6 +59,7 @@ export async function fetchPublicRateCard(token: string) {
 export async function sendQuoteRequest(token: string, request: {
   name: string; email: string; phone?: string; company?: string; message?: string;
   items: { serviceId: string; quantity: number }[];
+  conditionId?: string;
 }) {
   return json<{ ok: true; ref: string }>(await fetch(`/api/public/rate-cards/${encodeURIComponent(token)}/request`, {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(request)
