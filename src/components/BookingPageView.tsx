@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { AlertCircle, CheckCircle2, Minus, Plus } from 'lucide-react';
 import type { BookingQuestion } from '../lib/bookings';
+import { partsLabel, priceFor, type ConditionRate, type RateCondition } from '../lib/rateConditions';
 
 // Public booking page at /book/<slug>, and the same page inside the website widget's overlay
 // (?embed=1). Prices and answers are checked again on the server.
@@ -10,10 +11,11 @@ interface BookingForm {
   business: { name: string; brandSlogan: string; colorTheme: string; logoType?: string; logoUrl?: string; email: string; phone: string; address: string };
   currency: string;
   vatRate: number;
+  conditions?: RateCondition[];
   terms: { text: string; paymentTermsDays: number; quoteValidDays: number };
   intro: string;
   afterMessage: string;
-  services: { id: string; name: string; description: string; rate: number; unit: string; category: string; billingInterval: string; minQuantity: number; maxQuantity: number | null; vat: boolean }[];
+  services: { id: string; name: string; description: string; rate: number; unit: string; category: string; billingInterval: string; minQuantity: number; maxQuantity: number | null; vat: boolean; conditionRates?: ConditionRate[] }[];
   questions: (BookingQuestion & { help: string; required: boolean; options: string[]; appliesToServiceIds: string[] })[];
   availability?: { enabled: false } | { enabled: true; earliestDate: string; latestDate: string; unavailableDates: string[]; fullDates: string[]; leadDays: number };
   deposit?: { type: 'percent' | 'fixed'; value: number } | null;
@@ -42,6 +44,7 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
   const [busy, setBusy] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [sent, setSent] = useState<{ ref: string; afterMessage: string } | null>(null);
+  const [conditionId, setConditionId] = useState('');
   const turnstileRef = useRef<HTMLDivElement>(null);
   const [turnstileToken, setTurnstileToken] = useState('');
 
@@ -50,6 +53,7 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
       .then(async r => { const b = await r.json().catch(() => ({})); if (!r.ok) throw new Error(b?.error || 'This booking page could not be loaded.'); return b; })
       .then(b => {
         setForm(b.form); setToken(b.formToken); setSiteKey(b.turnstileSiteKey);
+        setConditionId(b.form.conditions?.[0]?.id || '');
         document.title = `Book ${b.form.business.name || ''}`.trim();
         const pre = b.form.services.find((s: any) => s.id === service);
         if (pre) setQty({ [pre.id]: pre.minQuantity });
@@ -93,10 +97,18 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
   );
   if (!form) return shell(<p className="text-sm text-slate-500 text-center py-16">Loading…</p>);
 
-  const { business, currency } = form;
+  const { business } = form;
   const brand = /^#[0-9a-fA-F]{3,8}$/.test(business.colorTheme) ? business.colorTheme : '#0f766e';
-  const subtotal = chosen.reduce((s, x) => s + x.rate * qty[x.id], 0);
-  const vat = form.vatRate ? chosen.filter(s => s.vat).reduce((s, x) => s + x.rate * qty[x.id], 0) * form.vatRate / 100 : 0;
+  // The rate condition the customer chose (e.g. international production): its rates, currency and VAT apply.
+  const conditions = form.conditions || [];
+  const condition = conditions.find(c => c.id === conditionId) || null;
+  const price = (s: BookingForm['services'][number]) => priceFor({ rate: s.rate, conditionRates: s.conditionRates }, condition, form.currency);
+  const currency = condition ? condition.currency : form.currency;
+  const vatRate = condition?.noVat ? 0 : form.vatRate;
+  const lineTotal = (s: BookingForm['services'][number]) => (price(s)?.rate || 0) * qty[s.id];
+  const subtotal = chosen.reduce((sum, x) => sum + lineTotal(x), 0);
+  const vat = vatRate ? chosen.filter(s => s.vat).reduce((sum, x) => sum + lineTotal(x), 0) * vatRate / 100 : 0;
+  const onRequest = chosen.some(s => !price(s));
 
   const avail = form.availability;
   const unavailable = new Set(avail?.enabled ? avail.unavailableDates : []);
@@ -126,6 +138,7 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
           ...contact,
           items: chosen.map(s => ({ serviceId: s.id, quantity: qty[s.id] })),
           answers: visibleQuestions.filter(q => answers[q.id] !== undefined && answers[q.id] !== '').map(q => ({ questionId: q.id, value: answers[q.id] })),
+          ...(condition ? { conditionId: condition.id } : {}),
           formToken: token, turnstileToken, embed, hostUrl: host || undefined
         })
       });
@@ -205,6 +218,26 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
       </div>
       {form.intro && <p className="text-sm text-slate-700 whitespace-pre-line">{form.intro}</p>}
 
+      {conditions.length > 0 && (
+        <section className="space-y-2" aria-label="Which fits your project?">
+          <h2 className="text-sm font-bold text-slate-900">Which fits your project?</h2>
+          <div className="grid gap-2 sm:grid-cols-2" role="radiogroup">
+            {conditions.map(c => {
+              const on = c.id === conditionId;
+              return (
+                <button key={c.id} type="button" role="radio" aria-checked={on} onClick={() => setConditionId(c.id)}
+                  className={`text-left rounded-xl border p-3 cursor-pointer transition-colors ${on ? 'text-white' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
+                  style={on ? { backgroundColor: brand, borderColor: brand } : undefined}>
+                  <span className="block text-sm font-bold">{c.name}</span>
+                  {c.description && <span className={`block text-xs ${on ? 'text-white/85' : 'text-slate-500'}`}>{c.description}</span>}
+                  <span className={`block text-[10px] font-mono mt-1 ${on ? 'text-white/80' : 'text-slate-400'}`}>Prices in {c.currency}{c.noVat ? ' · no VAT' : ''}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       {form.services.length > 0 && (
         <div className="space-y-4">
           <h2 className="text-sm font-bold text-slate-900">What would you like?</h2>
@@ -214,16 +247,18 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
               <ul className="divide-y divide-slate-100 border border-slate-100 rounded-xl">
                 {list.map(s => {
                   const n = qty[s.id] || 0;
+                  const p = price(s);
                   return (
                     <li key={s.id} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div className="min-w-0">
                         <p className="text-sm font-semibold text-slate-900">{s.name}</p>
                         {s.description && <p className="text-xs text-slate-500 whitespace-pre-line">{s.description}</p>}
                         <p className="text-xs font-mono text-slate-800 mt-1">
-                          {money(currency, s.rate)}{s.unit ? ` per ${s.unit.toLowerCase()}` : ''}{INTERVAL[s.billingInterval] || ''}
+                          {p ? <>{money(p.currency, p.rate)}{s.unit ? ` per ${s.unit.toLowerCase()}` : ''}{INTERVAL[s.billingInterval] || ''}</> : <span className="font-sans text-slate-500">Price on request</span>}
                           {s.minQuantity > 1 && <span className="font-sans text-slate-500"> · minimum {s.minQuantity}</span>}
                           {s.maxQuantity && <span className="font-sans text-slate-500"> · up to {s.maxQuantity}</span>}
                         </p>
+                        {p && p.parts.length > 0 && <p className="text-[11px] text-slate-500">{partsLabel(p.parts, p.currency)}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         <button type="button" aria-label={`Fewer ${s.name}`} disabled={n === 0} onClick={() => setQ(s, n - 1 < s.minQuantity ? 0 : n - 1)} className="w-8 h-8 rounded-lg border border-slate-200 flex items-center justify-center text-slate-600 disabled:opacity-40 cursor-pointer"><Minus className="w-3.5 h-3.5" /></button>
@@ -238,10 +273,10 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
           ))}
           {chosen.length > 0 && (
             <div className="rounded-xl bg-slate-50 border border-slate-100 p-3 text-xs space-y-1">
-              {chosen.map(s => <div key={s.id} className="flex justify-between gap-3"><span>{qty[s.id]} × {s.name}</span><span className="font-mono">{money(currency, s.rate * qty[s.id])}</span></div>)}
-              {vat > 0 && <div className="flex justify-between gap-3 text-slate-500"><span>VAT ({form.vatRate}%)</span><span className="font-mono">{money(currency, vat)}</span></div>}
+              {chosen.map(s => <div key={s.id} className="flex justify-between gap-3"><span>{qty[s.id]} × {s.name}</span><span className="font-mono">{price(s) ? money(currency, lineTotal(s)) : 'On request'}</span></div>)}
+              {vat > 0 && <div className="flex justify-between gap-3 text-slate-500"><span>VAT ({vatRate}%)</span><span className="font-mono">{money(currency, vat)}</span></div>}
               <div className="flex justify-between gap-3 font-bold text-slate-900 border-t border-slate-200 pt-1"><span>Estimate</span><span className="font-mono">{money(currency, subtotal + vat)}</span></div>
-              <p className="text-slate-500">This is an estimate. The quote you receive may differ.</p>
+              <p className="text-slate-500">{condition ? `${condition.name}. ` : ''}This is an estimate{onRequest ? ', and some items will be priced in the quote' : ''}. The quote you receive may differ.</p>
             </div>
           )}
         </div>
@@ -271,8 +306,8 @@ export default function BookingPageView({ slug, embed, service, host }: BookingP
 
       <section className="text-xs text-slate-600 space-y-1 border-t border-slate-100 pt-4">
         <h2 className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Terms</h2>
-        <p>{form.vatRate > 0 ? `Prices exclude VAT (${form.vatRate}%).` : 'No VAT is charged.'} Quotes are valid for {form.terms.quoteValidDays} days. Invoices are due {form.terms.paymentTermsDays} days after issue.</p>
-        {form.deposit && <p>A {form.deposit.type === 'percent' ? `${form.deposit.value}%` : money(currency, form.deposit.value)} deposit is asked for to confirm a booking.</p>}
+        <p>{vatRate > 0 ? `Prices exclude VAT (${vatRate}%).` : 'No VAT is charged.'} Quotes are valid for {form.terms.quoteValidDays} days. Invoices are due {form.terms.paymentTermsDays} days after issue.</p>
+        {form.deposit && <p>A {form.deposit.type === 'percent' ? `${form.deposit.value}%` : money(form.currency, form.deposit.value)} deposit is asked for to confirm a booking.</p>}
         {form.terms.text && <p className="whitespace-pre-line">{form.terms.text}</p>}
       </section>
 

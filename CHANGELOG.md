@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.13.0] - 2026-11-08
+
+### Added
+- **Rate conditions on the booking page and website widget.** Customers choose the condition that fits their project (for example local production, international production in Fiji, or overseas work), and the prices, currency and VAT follow it, as on the rate card. The booking arrives in that currency, priced by the server, with the condition shown in the booking details, and the quote you create from it has no VAT for VAT-free conditions. A service with no rate in that currency shows "Price on request".
+- **Booking API:** the booking form now includes the business's `conditions` and each service's `conditionRates`, and a booking request can send `conditionId` to be priced by it (see the API guide).
+
 ## [4.12.0] - 2026-11-08
 
 ### Added

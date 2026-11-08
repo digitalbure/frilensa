@@ -1,6 +1,7 @@
 // Unit tests for rate conditions and listing rate options. Run: npm run test:unit
 import assert from "node:assert/strict";
 import { draftQuoteFromRequest } from "../src/lib/quoteRequests";
+import { checkBooking, BookingError } from "../src/lib/bookings";
 import { CONDITION_TEMPLATES, cleanConditionRates, cleanConditions, cleanPriceOptions, partsLabel, priceFor } from "../src/lib/rateConditions";
 
 const conds = cleanConditions([
@@ -54,5 +55,13 @@ const req: any = { id: "r1", ref: "QR-1", businessId: "b1", businessName: "Studi
 const { doc } = draftQuoteFromRequest(ws, req);
 assert.equal(doc.currency, "AUD"); assert.equal(doc.vatRate, 0); assert.equal(doc.total, 3000);
 assert.equal(draftQuoteFromRequest(ws, { ...req, condition: undefined, currency: "FJD" }).doc.vatRate, 12.5);
+
+// Booking checks price by the chosen condition, in its currency.
+const svc: any = [{ id: "s1", name: "Recording", description: "", rate: 650, unit: "Day", category: "", billingInterval: "one-time", minQuantity: 1, maxQuantity: null, taxable: true, conditionRates: rates }];
+const b1 = checkBooking(svc, [], { items: [{ serviceId: "s1", quantity: 2 }], conditionId: "os" }, conds, "FJD");
+assert.equal(b1.currency, "AUD"); assert.equal(b1.estimate, 2000); assert.equal(b1.condition!.noVat, true);
+assert.equal(b1.details[0].label, "Rate"); assert.match(b1.items[0].name, /Gear AUD 400 \+ Labour AUD 600/);
+assert.equal(checkBooking(svc, [], { items: [{ serviceId: "s1", quantity: 1 }] }, conds, "FJD").estimate, 650, "no condition: standard rate");
+assert.throws(() => checkBooking(svc, [], { conditionId: "nope" }, conds, "FJD"), BookingError);
 
 console.log("rate condition checks passed");

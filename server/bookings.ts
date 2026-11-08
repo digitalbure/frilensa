@@ -1,3 +1,4 @@
+import { cleanConditions } from "../src/lib/rateConditions";
 import crypto from "crypto";
 import { z } from "zod";
 import { getAdminDb, isEmail, sha256 } from "./security";
@@ -43,12 +44,14 @@ export function bookingFormFor(data: CRMData, business: Business) {
     business: card.business,
     currency: card.currency,
     vatRate: card.vatRate,
+    conditions: card.conditions,
     terms: card.terms,
     intro: business.booking?.intro || business.rateCardIntro || "",
     afterMessage: business.booking?.afterMessage || "",
     services: bookableServices(data.services, business).map(s => ({
       id: s.id, name: s.name, description: s.description, rate: s.rate, unit: s.unit, category: s.category,
-      billingInterval: s.billingInterval, minQuantity: s.minQuantity, maxQuantity: s.maxQuantity, vat: card.vatRate > 0 && s.taxable
+      billingInterval: s.billingInterval, minQuantity: s.minQuantity, maxQuantity: s.maxQuantity, vat: card.vatRate > 0 && s.taxable,
+      conditionRates: s.conditionRates
     })),
     questions: bookingQuestions(business).map(q => ({
       id: q.id, type: q.type, label: q.label, help: q.help || "", required: Boolean(q.required),
@@ -110,6 +113,7 @@ export const createBookingInput = {
   eventDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").optional(),
   startTime: z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM").optional(),
   location: text(300).optional(),
+  conditionId: id.optional().describe("The rate condition that fits the job (see conditions in get_booking_form); prices then come from it, in its currency"),
   source: z.object({
     app: text(60).min(1),
     reference: text(120).min(1).optional(),
@@ -161,7 +165,8 @@ export async function saveBookingRequest(b: NewBooking): Promise<{ created: bool
     company: b.contact.company || "",
     message: b.contact.message || "",
     items: b.checked.items,
-    currency: b.data.userProfile.defaultCurrency || "FJD",
+    currency: b.checked.currency || b.data.userProfile.defaultCurrency || "FJD",
+    ...(b.checked.condition ? { condition: b.checked.condition } : {}),
     estimate: b.checked.estimate,
     details: b.checked.details,
     ...(b.checked.eventDate ? { eventDate: b.checked.eventDate } : {}),
@@ -215,7 +220,7 @@ export async function createBookingRequest(uid: string, apiKey: { id: string; na
   const business = pickBusiness(data, q.businessId);
   let checked: CheckedBooking;
   try {
-    checked = checkBooking(bookableServices(data.services, business), bookingQuestions(business), q as BookingInput);
+    checked = checkBooking(bookableServices(data.services, business), bookingQuestions(business), q as BookingInput, cleanConditions(business.rateConditions, data.userProfile.defaultCurrency || "FJD"), data.userProfile.defaultCurrency || "FJD");
   } catch (err) {
     if (err instanceof BookingError) throw new ApiError(err.status, err.message);
     throw err;

@@ -1,4 +1,5 @@
 import type { Business, CRMDocument, ProductService } from '../types';
+import { cleanConditionRates, priceFor, type ConditionRate, type RateCondition } from './rateConditions';
 
 // Bookings: what a business lets customers book, the questions it asks, checking a booking
 // against them, and how far a booking has got (quote → invoice → paid). Shared by the server
@@ -58,6 +59,7 @@ export function rateCardServices(services: ProductService[] | undefined, busines
 export interface BookableService {
   id: string; name: string; description: string; rate: number; unit: string; category: string;
   billingInterval: string; minQuantity: number; maxQuantity: number | null; taxable: boolean;
+  conditionRates: ConditionRate[];
 }
 
 /** Services customers can book, with their quantity limits. */
@@ -72,7 +74,8 @@ export function bookableServices(services: ProductService[] | undefined, busines
       return {
         id: s.id, name: s.name || '', description: s.description || '', rate: Number(s.rate) || 0, unit: s.unit || '',
         category: s.category || '', billingInterval: s.billingInterval || 'one-time', minQuantity: min, maxQuantity: max,
-        taxable: s.isTaxable !== false
+        taxable: s.isTaxable !== false,
+        conditionRates: cleanConditionRates(s.conditionRates)
       };
     });
 }
@@ -104,15 +107,20 @@ export interface BookingInput {
   eventDate?: string;
   startTime?: string;
   location?: string;
+  /** The rate condition the customer chose (e.g. international production). */
+  conditionId?: string;
 }
 
 export interface CheckedBooking {
-  items: { serviceId: string; name: string; unit: string; rate: number; quantity: number }[];
+  items: { serviceId: string; name: string; unit: string; rate: number; quantity: number; priceOnRequest?: boolean }[];
   details: { label: string; value: string }[];
   eventDate?: string;
   startTime?: string;
   location?: string;
   estimate: number;
+  /** Set when a rate condition was chosen: prices are in its currency. */
+  condition?: { id: string; name: string; noVat: boolean };
+  currency?: string;
 }
 
 /**
@@ -120,15 +128,21 @@ export interface CheckedBooking {
  * services; unknown or non-bookable services are dropped; quantities are kept within limits.
  * Answers are stored as label/value pairs using the business's labels. Throws BookingError (400).
  */
-export function checkBooking(services: BookableService[], questions: BookingQuestion[], input: BookingInput): CheckedBooking {
+export function checkBooking(services: BookableService[], questions: BookingQuestion[], input: BookingInput, conditions: RateCondition[] = [], baseCurrency = 'FJD'): CheckedBooking {
   const byId = new Map(services.map(s => [s.id, s]));
+  // A rate condition (e.g. international production): its rates and currency apply.
+  const condition = input.conditionId ? conditions.find(c => c.id === String(input.conditionId)) : null;
+  if (input.conditionId && !condition) throw new BookingError(400, 'That option is no longer offered. Reload the page and choose again.');
   const items = (input.items || []).slice(0, 30).flatMap(it => {
     const s = byId.get(String(it?.serviceId || ''));
     let quantity = Math.round(Number(it?.quantity) * 100) / 100;
     if (!s || !Number.isFinite(quantity) || quantity <= 0) return [];
     quantity = Math.max(s.minQuantity, quantity);
     if (s.maxQuantity) quantity = Math.min(s.maxQuantity, quantity);
-    return [{ serviceId: s.id, name: s.name, unit: s.unit, rate: s.rate, quantity }];
+    const priced = priceFor(s, condition, baseCurrency);
+    const parts = priced?.parts.length ? ` (${priced.parts.map(p => `${p.label} ${priced.currency} ${p.rate}`).join(' + ')})` : '';
+    // No rate in this condition's currency: still asked about, priced at 0 for the business to quote.
+    return [{ serviceId: s.id, name: `${s.name}${parts}`, unit: s.unit, rate: priced ? priced.rate : 0, quantity, ...(priced ? {} : { priceOnRequest: true }) }];
   });
   // Merge repeated services.
   const merged = [...items.reduce((m, it) => m.set(it.serviceId, m.has(it.serviceId) ? { ...it, quantity: Math.min(byId.get(it.serviceId)!.maxQuantity || Infinity, m.get(it.serviceId)!.quantity + it.quantity) } : it), new Map<string, typeof items[number]>()).values()];
@@ -145,8 +159,8 @@ export function checkBooking(services: BookableService[], questions: BookingQues
   if (input.startTime !== undefined && !answers.has(BUILT_IN_IDS.time)) answers.set(BUILT_IN_IDS.time, input.startTime);
   if (input.location !== undefined && !answers.has(BUILT_IN_IDS.location)) answers.set(BUILT_IN_IDS.location, input.location);
 
-  const details: { label: string; value: string }[] = [];
-  const out: Partial<CheckedBooking> = {};
+  const details: { label: string; value: string }[] = condition ? [{ label: 'Rate', value: `${condition.name}${condition.description ? ` (${condition.description})` : ''}` }] : [];
+  const out: Partial<CheckedBooking> = condition ? { condition: { id: condition.id, name: condition.name, noVat: !!condition.noVat }, currency: condition.currency } : {};
   for (const q of questions) {
     const applies = !q.appliesToServiceIds?.length || q.appliesToServiceIds.some(id => chosen.has(id));
     if (!applies) continue;

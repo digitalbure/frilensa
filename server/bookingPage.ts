@@ -1,3 +1,4 @@
+import { cleanConditions } from "../src/lib/rateConditions";
 import express, { type NextFunction, type Response } from "express";
 import crypto from "crypto";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
@@ -118,10 +119,12 @@ export function createPublicBookingRouter() {
     const { uid, data, business } = found;
     let checked;
     try {
+      const base = data.userProfile.defaultCurrency || "FJD";
       checked = checkBooking(bookableServices(data.services, business), bookingQuestions(business), {
         items: Array.isArray(body.items) ? body.items : [],
-        answers: Array.isArray(body.answers) ? body.answers : []
-      });
+        answers: Array.isArray(body.answers) ? body.answers : [],
+        ...(body.conditionId ? { conditionId: String(body.conditionId).slice(0, 60) } : {})
+      }, cleanConditions(business.rateConditions, base), base);
     } catch (err) {
       if (err instanceof BookingError) throw new PageError(400, err.message);
       throw err;
@@ -151,7 +154,7 @@ export function createPublicBookingRouter() {
           `${business.name || "The business"} has your booking request (${r.ref}). They'll be in touch.`,
           ...r.items.map((i: any) => `${i.quantity} × ${i.name}`),
           ...r.details.map((d: any) => `${d.label}: ${d.value}`),
-          r.estimate > 0 ? `Estimate: ${formatMoney(r.currency, r.estimate)} before VAT. The quote you receive may differ.` : "",
+          r.estimate > 0 ? `Estimate: ${formatMoney(r.currency, r.estimate)}${r.condition?.noVat ? "" : " before VAT"}. The quote you receive may differ.` : "",
           business.booking?.afterMessage || ""
         ].filter(Boolean),
         actionLabel: "",

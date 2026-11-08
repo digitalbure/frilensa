@@ -110,14 +110,20 @@ const carolDocs = [
   { id: 'ci1', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5001', currency: 'FJD', issueDate: '2026-10-01', total: 300, subtotal: 300, vatRate: 0, vatAmount: 0, shareToken: TOK_C1, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'x', name: 'Shoot', quantity: 1, rate: 300, total: 300 }] },
   { id: 'ci2', type: 'invoice', status: 'sent', documentNumber: 'INV-2026-5002', currency: 'USD', issueDate: '2026-10-02', total: 100, subtotal: 100, vatRate: 0, vatAmount: 0, shareToken: TOK_C2, clientId: 'cc1', businessId: 'cb1', items: [{ id: 'y', name: 'Prints', quantity: 1, rate: 100, total: 100 }] }
 ];
+// Rate conditions on Carol's business (local, international, overseas in AUD without VAT).
+const carolConditions = [
+  { id: 'local', name: 'Local production', description: 'Fiji crew', currency: 'FJD' },
+  { id: 'intl', name: 'International production in Fiji', currency: 'FJD' },
+  { id: 'os', name: 'Overseas work', currency: 'AUD', noVat: true }
+];
 const carolWs = rateCardToken => ({
   consultantEmail: C.email,
   platformSettings: { activePlan: 'pro' },
   userProfile: { email: C.email, defaultCurrency: 'FJD', defaultVatRate: 12.5 },
   clients: [],
-  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, booking: carolBooking, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
+  businesses: [{ id: 'cb1', name: 'Carol Photo', email: 'hi@carol.fj', isPrimary: true, quoteTerms: '50% deposit to book.', quoteValidDays: 21, paymentTermsDays: 7, bankDetails: 'BSP 999', mPaisaId: '9991234', customExchangeRates: { AUD: 1.5 }, payNow: { paypal: true, paypalCurrency: 'AUD', surchargePercent: 2 }, booking: carolBooking, rateConditions: carolConditions, ...(rateCardToken ? { rateCardToken } : {}) }, { id: 'cb2', name: 'Carol Other' }],
   services: [
-    { id: 's1', name: 'Portrait session', description: 'One hour', rate: 150, unit: 'Hour', businessId: 'cb1', costPrice: 40, sku: 'SECRET-SKU' },
+    { id: 's1', name: 'Portrait session', description: 'One hour', rate: 150, unit: 'Hour', businessId: 'cb1', costPrice: 40, sku: 'SECRET-SKU', conditionRates: [{ conditionId: 'local', rate: 600 }, { conditionId: 'intl', rate: 900 }, { conditionId: 'os', rate: 1, parts: [{ label: 'Gear', rate: 400 }, { label: 'Labour', rate: 600 }] }] },
     { id: 's2', name: 'Hidden item', rate: 999, unit: 'Item', businessId: 'cb1', showOnRateCard: false },
     { id: 's3', name: 'Retired item', rate: 5, unit: 'Item', businessId: 'cb1', isActive: false },
     { id: 's4', name: 'Other business item', rate: 7, unit: 'Item', businessId: 'cb2' },
@@ -187,7 +193,7 @@ const waitHook = async (match, ms = 5000) => {
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '3', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1', ADMIN_EMAILS: 'alice@studio.fj' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '4', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1', ADMIN_EMAILS: 'alice@studio.fj' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -640,14 +646,6 @@ try {
     assert.equal((await j(await fetch(`${API}/api/rate-cards/requests`, { headers: auth(C) }))).body.requests.length, 0);
   });
   await check('rate conditions: the client picks one and the server prices it, in its currency', async () => {
-    const ws = carolWs(card1);
-    ws.businesses[0].rateConditions = [
-      { id: 'local', name: 'Local production', description: 'Fiji crew', currency: 'FJD' },
-      { id: 'intl', name: 'International production in Fiji', currency: 'FJD' },
-      { id: 'os', name: 'Overseas work', currency: 'AUD', noVat: true }
-    ];
-    ws.services[0].conditionRates = [{ conditionId: 'local', rate: 600 }, { conditionId: 'intl', rate: 900 }, { conditionId: 'os', rate: 1, parts: [{ label: 'Gear', rate: 400 }, { label: 'Labour', rate: 600 }] }];
-    await put(`consultants/${C.uid}`, ws);
     const card = (await j(await fetch(`${RC}/${card1}`))).body;
     assert.deepEqual(card.conditions.map(c => [c.id, c.currency, !!c.noVat]), [['local', 'FJD', false], ['intl', 'FJD', false], ['os', 'AUD', true]]);
     assert.equal(card.services[0].conditionRates.find(r => r.conditionId === 'os').rate, 1000, 'parts not summed');
@@ -661,7 +659,6 @@ try {
     assert.match(q.items[0].name, /Gear AUD 400 \+ Labour AUD 600/);
     assert.equal(q.estimate, 3000);
     assert.ok(q.details.some(d => d.label === 'Rate' && /Overseas work/.test(d.value)));
-    await put(`consultants/${C.uid}`, carolWs(card1));
   });
   await check('quote requests are not readable from the browser', async () => {
     const r = await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/quote_requests/${requestId}`, { headers: { Authorization: `Bearer ${C.token}` } });
@@ -866,6 +863,21 @@ try {
     assert.equal((await post(carolKey, booking({ details: [{ label: 'x'.repeat(61), value: 'v' }] }))).status, 400);
     assert.equal((await post(carolKey, booking({ source: { app: 'Soqo Stream', reference: 'R2', url: 'http://soqo.stream/x' } }))).status, 400, 'https only');
   });
+  await check('booking by key with a rate condition: its prices and currency', async () => {
+    const form = (await j(await fetch(`${V1}/booking-form?businessId=cb1`, { headers: keyHdr(carolReadKey) }))).body;
+    assert.deepEqual(form.conditions.map(c => c.id), ['local', 'intl', 'os']);
+    assert.equal(form.services.find(s => s.id === 's1').conditionRates.length, 3);
+    assert.equal((await post(carolKey, booking({ conditionId: 'nope', source: { app: 'Soqo Stream', reference: 'COND-0' } }))).status, 400);
+    const r = await j(await post(carolKey, booking({ conditionId: 'os', source: { app: 'Soqo Stream', reference: 'COND-1' } })));
+    assert.equal(r.status, 201, JSON.stringify(r.body)); assert.equal(r.body.currency, 'AUD');
+    const req = await get(`quote_requests/${r.body.id}`);
+    assert.deepEqual(req.items.map(i => [i.serviceId, i.rate, !!i.priceOnRequest]), [['s1', 1000, false], ['s5', 0, true]]);
+    assert.equal(req.estimate, 2000); assert.equal(req.condition.noVat, true);
+    const intl = await j(await post(carolKey, booking({ conditionId: 'intl', source: { app: 'Soqo Stream', reference: 'COND-2' } })));
+    assert.equal(intl.body.currency, 'FJD');
+    const ireq = await get(`quote_requests/${intl.body.id}`);
+    assert.deepEqual(ireq.items.map(i => i.rate), [900, 20], 'a service without a rate for an FJD condition uses its standard rate');
+  });
   await check('a booking request uses server prices and limits, and drops what can\'t be booked', async () => {
     const r = await j(await post(carolKey, booking()));
     assert.equal(r.status, 201, JSON.stringify(r.body)); bookReqId = r.body.id;
@@ -1002,6 +1014,17 @@ try {
     await emailTo('tui@client.fj', /We've got your booking request QR-/);
     const ack = emails.find(e => e.to === 'tui@client.fj');
     assert.ok(ack.html.includes('Expected audience: 40')); assert.ok(!/invoice|paid|payment/i.test(ack.html), 'nothing about documents or payments');
+  });
+  await check('the booking page offers the rate conditions and prices the booking by the one chosen', async () => {
+    const form = (await j(await fetch(`${BOOK}/carol-photo`))).body.form;
+    assert.deepEqual(form.conditions.map(c => [c.id, c.currency]), [['local', 'FJD'], ['intl', 'FJD'], ['os', 'AUD']]);
+    assert.equal((await sendPage(pageBody({ formToken: pageToken, email: 'cond@client.fj', conditionId: 'zzz' }))).status, 400);
+    const r = await j(await sendPage(pageBody({ formToken: pageToken, email: 'crew@client.fj', conditionId: 'intl', items: [{ serviceId: 's1', quantity: 2, rate: 1 }] })));
+    assert.equal(r.status, 200, JSON.stringify(r.body));
+    const req = (await myRequests()).find(x => x.ref === r.body.ref);
+    assert.equal(req.currency, 'FJD'); assert.deepEqual(req.items.map(i => i.rate), [900]); assert.equal(req.estimate, 1800);
+    assert.equal(req.condition.name, 'International production in Fiji');
+    assert.ok(req.details.some(d => d.label === 'Rate'));
   });
   await check('the booking page has a daily cap per business', async () => {
     assert.equal((await sendPage(pageBody({ formToken: pageToken, email: 'third@client.fj' }))).status, 200);

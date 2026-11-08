@@ -148,15 +148,26 @@ drafts** key named after the app (for example "Soqo Stream") and give the develo
   "businessId": "biz-…",
   "business": { "name": "Vibrant Fiji", "brandSlogan": "", "colorTheme": "#0f766e", "logoType": "image", "logoUrl": "https://…", "email": "…", "phone": "…", "address": "…" },
   "currency": "FJD", "vatRate": 12.5,
+  "conditions": [
+    { "id": "cond-local", "name": "Local production", "description": "A Fiji-based crew", "currency": "FJD" },
+    { "id": "cond-os", "name": "Overseas work (travel)", "description": "Work outside Fiji", "currency": "AUD", "noVat": true }
+  ],
   "terms": { "text": "50% deposit to book.", "paymentTermsDays": 14, "quoteValidDays": 30 },
   "intro": "…", "afterMessage": "We'll reply within one working day.",
-  "services": [{ "id": "srv-…", "name": "Production day", "description": "…", "rate": 1200, "unit": "Day", "category": "Live streaming", "billingInterval": "one-time", "minQuantity": 1, "maxQuantity": null, "vat": true }],
+  "services": [{ "id": "srv-…", "name": "Production day", "description": "…", "rate": 1200, "unit": "Day", "category": "Live streaming", "billingInterval": "one-time", "minQuantity": 1, "maxQuantity": null, "vat": true,
+    "conditionRates": [{ "conditionId": "cond-local", "rate": 600 }, { "conditionId": "cond-os", "rate": 1000, "parts": [{ "label": "Gear", "rate": 400 }, { "label": "Labour", "rate": 600 }] }] }],
   "questions": [
     { "id": "q_date", "type": "date", "label": "Event or job date", "help": "", "required": true, "options": [], "appliesToServiceIds": [] },
     { "id": "q_…", "type": "single_choice", "label": "How will people watch?", "help": "", "required": false, "options": ["Free", "Ticketed"], "appliesToServiceIds": [] }
   ]
 }
 ```
+
+`conditions` are the business's **rate conditions** (empty when it has none): the kinds of job it
+charges differently for, each in its own currency, and `noVat` when no VAT is charged. Ask the customer
+which fits and send its `conditionId`. A service's rate for a condition is in its `conditionRates`
+(the sum of its `parts`, when it has them); with none, the service's `rate` applies if the condition is
+in the business's `currency`, otherwise it's priced at 0 for the business to quote.
 
 When the business limits bookings, the form also has `availability`
 (`{ "enabled": true, "earliestDate", "latestDate", "workingDays": [1,2,3,4,5], "leadDays", "maxPerDay", "unavailableDates": [...], "fullDates": [...], "blockedDates": [...] }`
@@ -184,11 +195,14 @@ built-in questions have fixed ids: `q_date`, `q_time`, `q_location`.
   "eventDate": "2027-03-28",
   "startTime": "10:00",
   "location": "Centenary Church, Suva",
+  "conditionId": "cond-local",
   "source": { "app": "Soqo Stream", "reference": "SQB-7Q2K4M", "url": "https://soqo.stream/admin/collections/bookings/12" }
 }
 ```
 
-- **Prices always come from Frilensa.** Any `rate` sent on an item is ignored. Unknown or non-bookable
+- **Prices always come from Frilensa.** Any `rate` sent on an item is ignored. With `conditionId`,
+  prices come from that condition and the request (and its `estimate` and `currency`) is in its
+  currency; an unknown `conditionId` is `400`. Unknown or non-bookable
   services are dropped, and quantities are kept within each service's minimum and maximum.
 - **Answers are checked** against the business's questions (required, type, choices, service
   conditions). A failure is `400` naming the question. Answers are stored with the business's labels.
