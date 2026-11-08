@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Camera, Eye, EyeOff, Pencil, Plus, Trash2, Wrench } from 'lucide-react';
+import { CalendarDays, Camera, Eye, EyeOff, Pencil, Plus, Trash2, Wrench } from 'lucide-react';
+import ListingCalendar from './ListingCalendar';
 import ListingForm, { bodyFrom, draftFrom, type ListingDraft } from './ListingForm';
 import { createListing, deleteListing, myMarketplace, priceLabel, updateListing, fjd, type MarketListing, type SentRequest } from '../../lib/marketplace';
 import { categoryName } from '../../lib/marketplaceTaxonomy';
@@ -19,6 +20,7 @@ export default function MyListings({ businesses }: { businesses: { id: string; n
   const [problem, setProblem] = useState<string | null>(null);
   const [editing, setEditing] = useState<{ draft: ListingDraft; listing: MarketListing | null } | null>(null);
   const [busy, setBusy] = useState(false);
+  const [calendarFor, setCalendarFor] = useState<MarketListing | null>(null);
 
   const load = () => myMarketplace().then(r => { setListings(r.listings); setSent(r.sent); setTrusted(r.trusted); }).catch(err => setProblem(err.message));
   useEffect(() => { load(); }, []);
@@ -48,6 +50,8 @@ export default function MyListings({ businesses }: { businesses: { id: string; n
     if (!confirm(`Delete "${l.title}"? Requests you already received stay in your inbox.`)) return;
     try { await deleteListing(l.id); setListings(list => (list || []).filter(x => x.id !== l.id)); if (editing?.listing?.id === l.id) setEditing(null); } catch (err: any) { setProblem(err.message); }
   };
+
+  if (calendarFor) return <ListingCalendar listing={calendarFor} onClose={() => setCalendarFor(null)} />;
 
   if (editing) {
     return (
@@ -95,6 +99,9 @@ export default function MyListings({ businesses }: { businesses: { id: string; n
                 <button type="button" onClick={() => setVisible(l, l.status === 'hidden')} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer" aria-label={l.status === 'hidden' ? 'Show listing' : 'Hide listing'} title={l.status === 'hidden' ? 'Show' : 'Hide'}>
                   {l.status === 'hidden' ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
                 </button>
+              )}
+              {l.kind === 'gear' && l.forRent && (
+                <button type="button" onClick={() => setCalendarFor(l)} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer" aria-label={`Calendar for ${l.title}`} title="Calendar and bookings"><CalendarDays className="w-4 h-4" /></button>
               )}
               <button type="button" onClick={() => setEditing({ draft: draftFrom(l), listing: l })} className="p-2 rounded-lg text-slate-500 hover:bg-slate-100 cursor-pointer" aria-label={`Edit ${l.title}`}><Pencil className="w-4 h-4" /></button>
               <button type="button" onClick={() => remove(l)} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 cursor-pointer" aria-label={`Delete ${l.title}`}><Trash2 className="w-4 h-4" /></button>

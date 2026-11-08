@@ -18,6 +18,28 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.11.0] - 2026-11-08
+
+### Added
+- Rental bookings in the marketplace, for equipment, vehicles, event and AV hire:
+  - **Availability calendar.** Renters pick their pick-up and return days on a calendar that shows which days are booked out (or, for items you have several of, how many are free). Dates are held when the owner confirms a request or blocks them, and the server refuses requests for dates that are taken.
+  - **Owner calendar** in Market → My listings (the calendar button on a rental): confirm requests (which holds the dates and emails the renter), block dates for servicing or other bookings, and free them again.
+  - **Deposits:** ask for a refundable bond or a deposit up front, as a fixed amount or a percentage of the booking. Renters see it before they request.
+  - **Included items and add-ons:** list what comes free with the hire (e.g. a kit lens), and optional add-ons renters can choose, free or charged once or per day (e.g. SD cards, a second lens, a child seat).
+  - **Dry or wet hire:** offer equipment only, with an operator, or both, with the extra rate for the operator. For vehicles this reads as self-drive or with a driver.
+  - **Pick-up and return:** your locations with addresses, return to a different location, delivery with a fee, and pick-up and return times within your hours. Hourly rentals are charged by the hour; daily rentals by 24-hour periods when times are given.
+  - **How many you have,** so several renters can book the same item on the same days, and a **minimum hire**.
+  - The renter sees the price build up as they choose, and the server works out the same price. The request arrives in your inbox with each charge as its own line, ready to quote.
+- **Brands:** admins add brands with their logos in Admin → Marketplace. Listers pick the brand from a list (or type one under Other), the logo shows on the listing, and renters can filter by brand. Renaming a brand updates its listings; removing one keeps the name on them.
+- New categories: rental cars, vans and minibuses, trucks and utes, motorbikes and scooters, drivers and chauffeurs, AV equipment, LED screens and projectors, event power and generators, and decor and tableware.
+
+### Changed
+- "Audio, music and events" is now "Audio, AV and event hire", and "Transport and marine" is now "Vehicles, transport and marine".
+- For agent listings, admins confirm rental dates from the listing's calendar in Admin → Marketplace.
+
+### Fixed
+- Requests to rent no longer ask for the number of days separately from the dates; the price comes from the dates and times.
+
 ## [4.10.0] - 2026-11-07
 
 ### Changed

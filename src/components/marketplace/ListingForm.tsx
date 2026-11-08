@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import { CONDITIONS, INDUSTRIES, RENT_UNITS, SERVICE_UNITS, categoriesFor, type ListingKind } from '../../lib/marketplaceTaxonomy';
-import { addPhoto, preparePhoto, removePhoto, type MarketListing } from '../../lib/marketplace';
+import { addPhoto, fetchBrands, preparePhoto, removePhoto, type Brand, type MarketListing } from '../../lib/marketplace';
+import { DEFAULT_RENTAL, type RentalOptions } from '../../lib/marketplaceRental';
+import RentalOptionsEditor from './RentalOptionsEditor';
 
 export interface ListingDraft {
   kind: ListingKind; title: string; description: string; industry: string; category: string; city: string;
   forRent: boolean; rentAmount: string; rentUnit: string; forSale: boolean; salePrice: string;
-  condition: string; brand: string; model: string;
+  condition: string; brand: string; brandId: string; model: string;
+  rental: RentalOptions;
   priceAmount: string; priceUnit: string; priceFrom: boolean;
   businessId: string;
   providerName: string; agentName: string; agentEmail: string; agentPhone: string; commission: string; agentNotes: string;
@@ -17,7 +20,8 @@ export function draftFrom(l?: MarketListing | null, kind: ListingKind = 'gear'):
     kind: l?.kind || kind, title: l?.title || '', description: l?.description || '', industry: l?.industry || '', category: l?.category || '', city: l?.city || '',
     forRent: l ? !!l.forRent : true, rentAmount: l?.rent ? String(l.rent.amount) : '', rentUnit: l?.rent?.unit || 'day',
     forSale: !!l?.forSale, salePrice: l?.salePrice ? String(l.salePrice) : '',
-    condition: l?.condition || 'good', brand: l?.brand || '', model: l?.model || '',
+    condition: l?.condition || 'good', brand: l?.brand || '', brandId: l?.brandId || '', model: l?.model || '',
+    rental: JSON.parse(JSON.stringify(l?.rental || DEFAULT_RENTAL)),
     priceAmount: l?.price ? String(l.price.amount) : '', priceUnit: l?.price?.unit || 'job', priceFrom: !!l?.price?.from,
     businessId: '',
     providerName: l?.providerName && l.managed ? l.providerName : '', agentName: l?.agent?.contactName || '', agentEmail: l?.agent?.email || '',
@@ -30,7 +34,7 @@ export function bodyFrom(d: ListingDraft, managed: boolean) {
   return {
     kind: d.kind, title: d.title, description: d.description, industry: d.industry, category: d.category, city: d.city,
     ...(d.kind === 'gear'
-      ? { forRent: d.forRent, rent: { amount: Number(d.rentAmount), unit: d.rentUnit }, forSale: d.forSale, salePrice: Number(d.salePrice), condition: d.condition, brand: d.brand, model: d.model }
+      ? { forRent: d.forRent, rent: { amount: Number(d.rentAmount), unit: d.rentUnit }, forSale: d.forSale, salePrice: Number(d.salePrice), condition: d.condition, brandId: d.brandId, brand: d.brandId ? '' : d.brand, model: d.model, rental: d.rental }
       : { price: d.priceAmount ? { amount: Number(d.priceAmount), unit: d.priceUnit, from: d.priceFrom } : null }),
     ...(d.businessId ? { businessId: d.businessId } : {}),
     ...(managed ? { providerName: d.providerName, agent: { contactName: d.agentName, email: d.agentEmail, phone: d.agentPhone, commissionPercent: Number(d.commission), notes: d.agentNotes } } : {})
@@ -52,6 +56,10 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
 }) {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoProblem, setPhotoProblem] = useState<string | null>(null);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  useEffect(() => { fetchBrands().then(setBrands).catch(() => {}); }, []);
+  // A listing whose brand isn't in the list (or was typed in before brands existed) shows as "Other".
+  const otherBrand = !draft.brandId;
   const set = (patch: Partial<ListingDraft>) => onChange({ ...draft, ...patch });
   const cats = categoriesFor(draft.kind, draft.industry || undefined);
   const input = dark
@@ -149,9 +157,16 @@ export default function ListingForm({ draft, onChange, listing, onListingChange,
             <label className="block"><span className={label}>Condition</span>
               <select className={input} value={draft.condition} onChange={e => set({ condition: e.target.value })}>{CONDITIONS.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}</select>
             </label>
-            <label className="block"><span className={label}>Brand</span><input className={input} maxLength={60} value={draft.brand} onChange={e => set({ brand: e.target.value })} /></label>
+            <div className="block space-y-1.5"><span className={label}>Brand</span>
+              <select aria-label="Brand" className={input} value={draft.brandId || ''} onChange={e => { const b = brands.find(x => x.id === e.target.value); set({ brandId: e.target.value, brand: b ? b.name : '' }); }}>
+                <option value="">{brands.length ? 'Other or no brand' : 'No brands listed yet'}</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+              {otherBrand && <input aria-label="Brand name" className={input} maxLength={60} value={draft.brand} onChange={e => set({ brand: e.target.value })} placeholder="Type the brand (optional)" />}
+            </div>
             <label className="block"><span className={label}>Model</span><input className={input} maxLength={60} value={draft.model} onChange={e => set({ model: e.target.value })} /></label>
           </div>
+          {draft.forRent && <RentalOptionsEditor value={draft.rental} onChange={rental => set({ rental })} category={draft.category} unit={draft.rentUnit} dark={dark} />}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 items-end">

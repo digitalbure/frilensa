@@ -19,8 +19,8 @@ export const INDUSTRIES: Industry[] = [
     services: c(['videography|Videography', 'photography|Photography', 'editing|Video editing', 'colour|Colour grading', 'drone_ops|Drone operation', 'livestream|Live streaming', 'crew|Crew hire'])
   },
   {
-    id: 'audio_events', name: 'Audio, music and events',
-    gear: c(['pa|PA and speakers', 'mixers|Mixers', 'microphones|Microphones', 'instruments|Instruments', 'dj|DJ equipment', 'stage|Staging and trussing', 'event_lighting|Event lighting', 'tents|Tents and marquees', 'furniture|Event furniture']),
+    id: 'audio_events', name: 'Audio, AV and event hire',
+    gear: c(['pa|PA and speakers', 'mixers|Mixers', 'microphones|Microphones', 'instruments|Instruments', 'dj|DJ equipment', 'stage|Staging and trussing', 'event_lighting|Event lighting', 'tents|Tents and marquees', 'furniture|Event furniture', 'av_hire|AV equipment', 'led_screens|LED screens and projectors', 'event_power|Event power and generators', 'decor_hire|Decor and tableware']),
     services: c(['sound|Sound engineering', 'mc|MC and hosting', 'dj_services|DJ', 'live_music|Live music', 'event_planning|Event planning', 'decor|Decor and styling', 'catering|Catering'])
   },
   {
@@ -44,9 +44,9 @@ export const INDUSTRIES: Industry[] = [
     services: c(['tours|Tours and guiding', 'accommodation|Accommodation', 'transfers|Transfers', 'hospitality_staff|Hospitality staff'])
   },
   {
-    id: 'transport_marine', name: 'Transport and marine',
-    gear: c(['vehicles|Vehicles', 'trailers|Trailers', 'boats|Boats', 'outboards|Outboard motors', 'marine_gear|Marine equipment']),
-    services: c(['delivery|Delivery and courier', 'moving|Moving', 'charter|Boat charter', 'mechanics|Mechanics'])
+    id: 'transport_marine', name: 'Vehicles, transport and marine',
+    gear: c(['vehicles|Vehicles', 'cars|Rental cars', 'vans|Vans and minibuses', 'trucks|Trucks and utes', 'motorbikes|Motorbikes and scooters', 'trailers|Trailers', 'boats|Boats', 'outboards|Outboard motors', 'marine_gear|Marine equipment']),
+    services: c(['delivery|Delivery and courier', 'moving|Moving', 'charter|Boat charter', 'drivers|Drivers and chauffeurs', 'mechanics|Mechanics'])
   },
   {
     id: 'agriculture', name: 'Agriculture and fishing',

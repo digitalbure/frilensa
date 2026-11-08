@@ -1256,6 +1256,7 @@ try {
     await put(`documents/${z.uid}_zd1`, { id: 'zd1', consultantId: z.uid, status: 'sent', total: 10 });
     await put(`api_keys/zkey`, { uid: z.uid, name: 'Old app' });
     await put(`account_access/${z.uid}`, { via: 'open' });
+    await put(`marketplace_bookings/zhold`, { id: 'zhold', listingId: 'zl', ownerUid: z.uid, kind: 'block', from: '2026-12-01', to: '2026-12-01', quantity: 1, status: 'confirmed' });
     const del = body => fetch(`${API}/api/account`, { method: 'DELETE', headers: auth(z), body: JSON.stringify(body) });
     assert.equal((await fetch(`${API}/api/account`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
     assert.equal((await del({})).status, 400, 'deleted without typing DELETE');
@@ -1265,6 +1266,7 @@ try {
     assert.equal(await get(`documents/${z.uid}_zd1`), null, 'online copy left behind');
     assert.equal(await get(`api_keys/zkey`), null, 'API key left behind');
     assert.equal(await get(`account_access/${z.uid}`), null);
+    assert.equal(await get(`marketplace_bookings/zhold`), null, 'rental calendar left behind');
     const signIn = await (await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=x`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: z.email, password: 'secret123', returnSecureToken: true }) })).json();
     assert.ok(signIn.error, 'the sign-in still works');
     assert.ok((await get(`consultants/${A.uid}`)), "another user's workspace was touched");
@@ -1314,11 +1316,12 @@ try {
     assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', quantity: 2 })).status, 400, 'rent without dates');
     assert.equal((await mkt(C, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2 })).status, 400, 'own listing');
     assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'buy', offer: 100 })).status, 400, 'bought an item not for sale');
-    const r = await j(await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2, message: 'For a wedding shoot', phone: '+679 999 1234' }));
+    assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2 })).status, 400, 'more units than the owner has');
+    const r = await j(await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', message: 'For a wedding shoot', phone: '+679 999 1234' }));
     assert.equal(r.status, 200, JSON.stringify(r.body));
     const req = await get(`quote_requests/${r.body.requestId}`);
     assert.equal(req.uid, C.uid); assert.equal(req.channel, 'marketplace'); assert.equal(req.requesterUid, B.uid);
-    assert.equal(req.estimate, 300); assert.equal(req.items[0].name, 'Sony FX3 cinema camera');
+    assert.equal(req.estimate, 300); assert.match(req.items[0].name, /^Sony FX3 cinema camera \(2 days\)$/);
     await emailTo(C.email, /marketplace/i);
     const mine = (await j(await mkt(B, '/mine'))).body;
     assert.ok(mine.sent.some(x => x.listingId === cameraId), 'request not in "sent"');
@@ -1347,6 +1350,83 @@ try {
     assert.equal((await mkt(C, `/listings/${drone.id}`, 'DELETE')).status, 200);
     assert.equal(await get(`marketplace_listings/${drone.id}`), null);
     assert.equal((await fetch(`${API}/api/public/marketplace/listings/${drone.id}`)).status, 404);
+  });
+  await check('marketplace rentals: brands, options, live price, availability and confirming', async () => {
+    const fijiToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Fiji', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    const day = n => { const d = new Date(`${fijiToday}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+    const adm = (who, path, method, body) => fetch(`${API}/api/admin/marketplace${path}`, { method, headers: auth(who), ...(body ? { body: JSON.stringify(body) } : {}) });
+    // Brands: admins only, no duplicates, logo checked and served.
+    const PNG = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    assert.equal((await adm(B, '/brands', 'POST', { name: 'Toyota' })).status, 403);
+    assert.equal((await adm(A, '/brands', 'POST', { name: 'Toyota', logoDataUrl: 'data:image/png;base64,' + Buffer.from('<svg/>').toString('base64') })).status, 400);
+    const toyota = (await j(await adm(A, '/brands', 'POST', { name: 'Toyota', logoDataUrl: `data:image/png;base64,${PNG}` }))).body.brand;
+    assert.ok(toyota.id); assert.match(toyota.logoUrl, /\/brands\/.+\/logo\?v=/);
+    assert.equal((await adm(A, '/brands', 'POST', { name: 'toyota' })).status, 409);
+    const logo = await fetch(`${API}${toyota.logoUrl}`); assert.equal(logo.status, 200); assert.equal(logo.headers.get('content-type'), 'image/png');
+    assert.ok((await j(await fetch(`${API}/api/public/marketplace/brands`))).body.brands.some(b => b.name === 'Toyota'));
+    // A car to rent: 2 of them, self-drive or with driver, bond, add-ons, two depots, delivery.
+    const car = { kind: 'gear', title: 'Toyota Hilux 4x4', industry: 'transport_marine', category: 'cars', city: 'Nadi', forRent: true, rent: { amount: 120, unit: 'day' }, forSale: false, condition: 'good', brandId: toyota.id, model: 'Hilux',
+      rental: { quantity: 2, minHire: 2, deposit: { kind: 'bond', type: 'fixed', amount: 500 }, included: ['Unlimited km'], addOns: [{ id: 'seat', name: 'Child seat', price: 10, per: 'period', max: 2 }, { id: 'map', name: 'Road map', price: 0, per: 'booking', max: 1 }],
+        hire: { dry: true, wet: true, wetRate: 80, wetNote: 'Driver and fuel' }, places: [{ id: 'nan', name: 'Nadi Airport' }, { id: 'suv', name: 'Suva depot' }], returnElsewhere: true, delivery: { offered: true, fee: 40 }, hours: { open: '07:00', close: '19:00' } } };
+    assert.equal((await mkt(C, '/listings', 'POST', { ...car, brandId: 'nope' })).status, 400, 'unknown brand accepted');
+    assert.equal((await mkt(C, '/listings', 'POST', { ...car, rental: { ...car.rental, hire: { dry: false, wet: false } } })).status, 400);
+    const made = await j(await mkt(C, '/listings', 'POST', car));
+    assert.equal(made.status, 200, JSON.stringify(made.body)); assert.equal(made.body.listing.brand, 'Toyota'); assert.equal(made.body.listing.rental.quantity, 2);
+    const carId = made.body.listing.id;
+    assert.deepEqual((await browse({ kind: 'gear', brand: toyota.id })).listings.map(l => l.id), [carId]);
+    // Availability starts open.
+    const avail = async () => (await j(await fetch(`${API}/api/public/marketplace/listings/${carId}/availability`))).body;
+    let a = await avail(); assert.equal(a.quantity, 2); assert.deepEqual(a.available, {}); assert.equal(a.today, fijiToday);
+    // A request is priced on the server: 2 cars × 3 days with driver, 1 child seat × 3 days, free map, delivery; min hire applies.
+    const ask = body => mkt(B, `/listings/${carId}/requests`, 'POST', { mode: 'rent', ...body });
+    assert.equal((await ask({ from: day(5), to: day(7), quantity: 3, pickup: 'nan' })).status, 400, 'more cars than listed');
+    assert.equal((await ask({ from: day(5), to: day(7), pickup: 'nan', addOns: { seat: 3 } })).status, 400, 'too many add-ons');
+    assert.equal((await ask({ from: day(-2), to: day(1), pickup: 'nan' })).status, 400, 'dates in the past');
+    const r1 = await j(await ask({ from: day(5), to: day(7), pickupTime: '09:00', returnTime: '09:00', quantity: 2, hire: 'wet', addOns: { seat: 1, map: 1 }, pickup: 'delivery', deliveryAddress: 'Denarau Marina' }));
+    assert.equal(r1.status, 200, JSON.stringify(r1.body));
+    const q1 = await get(`quote_requests/${r1.body.requestId}`);
+    // 2 days (48 h): 2 × 2 × 120 + 2 × 2 × 80 + 10 × 2 + 0 + 40 = 860
+    assert.equal(q1.estimate, 860); assert.equal(q1.rental.deposit.amount, 500); assert.equal(q1.rental.periods, 2);
+    assert.deepEqual(q1.items.map(i => i.name.split(' (')[0]), ['Toyota Hilux 4x4 × 2', 'With driver', 'Child seat', 'Road map', 'Delivery and collection']);
+    assert.ok(q1.details.some(d => d.label === 'Refundable bond'), 'bond missing from the inbox details');
+    assert.equal(q1.location, 'Delivery, Denarau Marina'); assert.equal(q1.startTime, '09:00');
+    // Requests don't hold dates; a second request for the same dates is allowed until one is confirmed.
+    const r2 = await j(await ask({ from: day(6), to: day(8), quantity: 1, pickup: 'suv', returnTo: 'nan' }));
+    assert.equal(r2.status, 200);
+    // The owner's calendar: only the owner (or admins for agent listings).
+    assert.equal((await mkt(B, `/listings/${carId}/calendar`)).status, 404);
+    assert.equal((await adm(A, `/listings/${carId}/calendar`, 'GET')).status, 403, "admins can't run a user's calendar");
+    const cal = (await j(await mkt(C, `/listings/${carId}/calendar`))).body;
+    assert.equal(cal.requests.length, 2); assert.equal(cal.holds.length, 0);
+    assert.equal((await mkt(C, `/listings/${carId}/confirm`, 'POST', { requestId: 'nope' })).status, 404);
+    assert.equal((await mkt(B, `/listings/${carId}/confirm`, 'POST', { requestId: r1.body.requestId })).status, 404, 'renter confirmed their own booking');
+    const conf = await j(await mkt(C, `/listings/${carId}/confirm`, 'POST', { requestId: r1.body.requestId }));
+    assert.equal(conf.status, 200, JSON.stringify(conf.body)); assert.equal(conf.body.hold.quantity, 2);
+    await emailTo(B.email, /Booking confirmed/);
+    assert.equal((await mkt(C, `/listings/${carId}/confirm`, 'POST', { requestId: r1.body.requestId })).status, 409, 'confirmed twice');
+    a = await avail(); assert.equal(a.available[day(5)], 0); assert.equal(a.available[day(7)], 0); assert.equal(a.available[day(8)], undefined);
+    // Both cars are out on day 6-7, so the second request can't be confirmed, and new requests are refused.
+    assert.equal((await mkt(C, `/listings/${carId}/confirm`, 'POST', { requestId: r2.body.requestId })).status, 409);
+    assert.equal((await ask({ from: day(6), to: day(9), pickup: 'nan' })).status, 409);
+    assert.equal((await ask({ from: day(8), to: day(9), pickup: 'nan' })).status, 200, 'free dates refused');
+    // Blocking and unblocking.
+    const blk = await j(await mkt(C, `/listings/${carId}/blocks`, 'POST', { from: day(20), to: day(22), quantity: 1, note: 'Service' }));
+    assert.equal(blk.status, 200); a = await avail(); assert.equal(a.available[day(21)], 1);
+    assert.equal((await mkt(B, `/listings/${carId}/holds/${blk.body.hold.id}`, 'DELETE')).status, 404);
+    assert.equal((await mkt(C, `/listings/${carId}/holds/${blk.body.hold.id}`, 'DELETE')).status, 200);
+    // Cancelling the booking frees the dates and lets the other request be confirmed.
+    assert.equal((await mkt(C, `/listings/${carId}/holds/${conf.body.hold.id}`, 'DELETE')).status, 200);
+    assert.equal((await get(`quote_requests/${r1.body.requestId}`)).marketplaceBookingId, '');
+    assert.equal((await mkt(C, `/listings/${carId}/confirm`, 'POST', { requestId: r2.body.requestId })).status, 200);
+    a = await avail(); assert.equal(a.available[day(5)], undefined); assert.equal(a.available[day(6)], 1);
+    // Renaming a brand renames it on listings; removing it keeps the name as text.
+    assert.equal((await adm(A, `/brands/${toyota.id}`, 'PATCH', { name: 'Toyota Motor' })).status, 200);
+    assert.equal((await get(`marketplace_listings/${carId}`)).brand, 'Toyota Motor');
+    assert.equal((await adm(A, `/brands/${toyota.id}`, 'DELETE')).status, 200);
+    const after = await get(`marketplace_listings/${carId}`); assert.equal(after.brandId, ''); assert.equal(after.brand, 'Toyota Motor');
+    // Deleting the listing removes its calendar.
+    assert.equal((await mkt(C, `/listings/${carId}`, 'DELETE')).status, 200);
+    assert.equal(await get(`marketplace_bookings/${conf.body.hold.id}`), null);
   });
   await check('admin tools are for platform admins only', async () => {
     assert.equal((await fetch(`${API}/api/admin/directory`)).status, 401);

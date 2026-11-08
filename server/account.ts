@@ -33,7 +33,9 @@ const OWNED: [collection: string, field: string][] = [
   ["directory_bookings", "requesterUid"],
   ["marketplace_listings", "ownerUid"],
   ["marketplace_requests", "ownerUid"],
-  ["marketplace_requests", "requesterUid"]
+  ["marketplace_requests", "requesterUid"],
+  ["marketplace_bookings", "ownerUid"],
+  ["marketplace_bookings", "requesterUid"]
 ];
 /** Documents keyed by the user's id. */
 const KEYED_BY_UID = ["directory_listings", "automation_runs", "account_access"];

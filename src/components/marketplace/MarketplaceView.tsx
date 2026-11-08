@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { BadgeCheck, Camera, ChevronLeft, ChevronRight, MapPin, Plus, Search, Send, Store, Wrench, X } from 'lucide-react';
+import { BadgeCheck, Camera, Check, ChevronLeft, ChevronRight, MapPin, Plus, Search, Send, ShieldCheck, Store, Truck, Wrench, X } from 'lucide-react';
 import { INDUSTRIES, categoriesFor, categoryName, industryName, CONDITIONS } from '../../lib/marketplaceTaxonomy';
-import { browseListings, priceLabel, sendRequest, type MarketListing } from '../../lib/marketplace';
+import { browseListings, fetchBrands, fjd, priceLabel, sendRequest, type Brand, type MarketListing } from '../../lib/marketplace';
+import { hireLabels } from '../../lib/marketplaceRental';
+import RentalBookingForm from './RentalBookingForm';
 import MyListings from './MyListings';
 
 type Tab = 'gear' | 'service' | 'mine';
@@ -22,6 +24,10 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
   const [industry, setIndustry] = useState('');
   const [category, setCategory] = useState('');
   const [city, setCity] = useState('');
+  const [brand, setBrand] = useState('');
+  const [brands, setBrands] = useState<Brand[]>([]);
+  useEffect(() => { fetchBrands().then(setBrands).catch(() => {}); }, []);
+  const brandById = useMemo(() => new Map(brands.map(b => [b.id, b])), [brands]);
   const [sort, setSort] = useState('newest');
   const [result, setResult] = useState<{ listings: MarketListing[]; total: number; cities: string[] } | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
@@ -33,11 +39,11 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
   useEffect(() => {
     if (tab === 'mine') return;
     const t = setTimeout(() => {
-      browseListings({ kind, mode: kind === 'gear' ? mode : '', q, industry, category, city, sort })
+      browseListings({ kind, mode: kind === 'gear' ? mode : '', q, industry, category, city, sort, brand: kind === 'gear' ? brand : '' })
         .then(r => { setResult(r); setProblem(null); }).catch(err => setProblem(err.message));
     }, 250);
     return () => clearTimeout(t);
-  }, [tab, kind, mode, q, industry, category, city, sort]);
+  }, [tab, kind, mode, q, industry, category, city, sort, brand]);
 
   const cats = useMemo(() => categoriesFor(kind, industry || undefined), [kind, industry]);
   const select = 'bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-200';
@@ -71,7 +77,7 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
       {tab === 'mine' ? <MyListings businesses={businesses} /> : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
-            <div className="relative sm:col-span-4">
+            <div className={`relative ${kind === 'gear' && brands.length > 0 ? 'sm:col-span-2' : 'sm:col-span-4'}`}>
               <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input value={q} onChange={e => setQ(e.target.value)} placeholder={kind === 'gear' ? 'Search cameras, PA, drones…' : 'Search videographers, MCs, plumbers…'} aria-label="Search"
                 className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-3 text-xs focus:outline-none focus:ring-2 focus:ring-sky-200" />
@@ -84,6 +90,12 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
               <option value="">All categories</option>
               {cats.map(c => <option key={`${c.industryId}-${c.id}`} value={c.id}>{c.name}</option>)}
             </select>
+            {kind === 'gear' && brands.length > 0 && (
+              <select aria-label="Brand" className={`${select} sm:col-span-2`} value={brand} onChange={e => setBrand(e.target.value)}>
+                <option value="">All brands</option>
+                {brands.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+              </select>
+            )}
             <select aria-label="Location" className={`${select} sm:col-span-2`} value={city} onChange={e => setCity(e.target.value)}>
               <option value="">Anywhere</option>
               {(result?.cities || []).map(c => <option key={c} value={c}>{c}</option>)}
@@ -120,7 +132,10 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
                     {l.photos[0] ? <img src={l.photos[0].url} alt="" loading="lazy" className="w-full h-full object-cover" /> : (l.kind === 'gear' ? <Camera className="w-8 h-8 text-slate-300" /> : <Wrench className="w-8 h-8 text-slate-300" />)}
                   </div>
                   <div className="p-3 space-y-1 flex-1 flex flex-col">
-                    <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide truncate">{categoryName(l.kind, l.category)}</p>
+                    <div className="flex items-center justify-between gap-1">
+                      <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide truncate">{categoryName(l.kind, l.category)}</p>
+                      {l.brandId && brandById.get(l.brandId)?.logoUrl && <img src={brandById.get(l.brandId)!.logoUrl} alt={l.brand || ''} className="h-4 max-w-[3.5rem] object-contain shrink-0" />}
+                    </div>
                     <p className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">{l.title}</p>
                     <p className="text-sm font-black text-slate-900 mt-auto pt-1">{priceLabel(l, viewMode)}</p>
                     <p className="text-[11px] text-slate-500 flex items-center gap-1 truncate">
@@ -136,13 +151,13 @@ export default function MarketplaceView({ signedIn, businesses = [], onSignIn, o
         </>
       )}
 
-      {open && <ListingDetail listing={open} mode={viewMode} signedIn={signedIn} onSignIn={onSignIn} onClose={() => setOpen(null)} />}
+      {open && <ListingDetail listing={open} mode={viewMode} signedIn={signedIn} onSignIn={onSignIn} onClose={() => setOpen(null)} brand={open.brandId ? brandById.get(open.brandId) : undefined} />}
     </div>
   );
 }
 
-function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose }: {
-  listing: MarketListing; mode: 'rent' | 'buy' | 'service'; signedIn: boolean; onSignIn?: () => void; onClose: () => void;
+function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose, brand }: {
+  listing: MarketListing; mode: 'rent' | 'buy' | 'service'; signedIn: boolean; onSignIn?: () => void; onClose: () => void; brand?: Brand;
 }) {
   const [photo, setPhoto] = useState(0);
   const [from, setFrom] = useState('');
@@ -202,7 +217,9 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose }: {
               {l.city && <><MapPin className="w-3.5 h-3.5" /> {l.city} · </>}{l.providerName}
               {l.managed && <span className="inline-flex items-center gap-0.5 text-sky-700 font-bold"><BadgeCheck className="w-3.5 h-3.5" /> Listed by Frilensa</span>}
             </p>
+            {brand?.logoUrl && <img src={brand.logoUrl} alt={brand.name} className="h-7 max-w-[8rem] object-contain" />}
             {l.description && <p className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{l.description}</p>}
+            {mode === 'rent' && l.rental && <RentalFacts listing={l} />}
           </div>
 
           <div className="md:col-span-2">
@@ -219,13 +236,15 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose }: {
                   ? <button type="button" onClick={onSignIn} className="w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">Sign in or sign up</button>
                   : <a href="/?signup=1" className="block w-full py-2 rounded-xl bg-slate-900 text-white text-xs font-bold">Sign in or sign up</a>}
               </div>
+            ) : mode === 'rent' ? (
+              <RentalBookingForm listing={l} onSent={() => setSent(true)} />
             ) : (
               <form onSubmit={submit} className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2.5">
-                <p className="text-sm font-bold text-slate-800">{mode === 'rent' ? 'Request to rent' : mode === 'buy' ? 'Make an offer' : 'Request a quote'}</p>
+                <p className="text-sm font-bold text-slate-800">{mode === 'buy' ? 'Make an offer' : 'Request a quote'}</p>
                 {mode !== 'buy' && (
                   <div className="grid grid-cols-2 gap-2">
-                    <label className="block"><span className={label}>{mode === 'rent' ? 'From' : 'Date'}</span><input type="date" min={today} required={mode === 'rent'} className={input} value={from} onChange={e => setFrom(e.target.value)} /></label>
-                    <label className="block"><span className={label}>Until</span><input type="date" min={from || today} required={mode === 'rent'} className={input} value={to} onChange={e => setTo(e.target.value)} /></label>
+                    <label className="block"><span className={label}>Date</span><input type="date" min={today} className={input} value={from} onChange={e => setFrom(e.target.value)} /></label>
+                    <label className="block"><span className={label}>Until</span><input type="date" min={from || today} className={input} value={to} onChange={e => setTo(e.target.value)} /></label>
                   </div>
                 )}
                 {mode === 'buy' ? (
@@ -233,7 +252,7 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose }: {
                 ) : (
                   <label className="block"><span className={label}>How many {unit === 'job' ? 'jobs' : unit ? `${unit}s` : 'units'}</span><input type="number" min={1} step={1} className={input} value={quantity} onChange={e => setQuantity(e.target.value)} /></label>
                 )}
-                <label className="block"><span className={label}>Message</span><textarea rows={3} className={`${input} resize-y`} value={message} onChange={e => setMessage(e.target.value)} placeholder={mode === 'rent' ? 'What it’s for, pick-up or delivery' : mode === 'buy' ? 'Questions, collection' : 'What you need, where, your budget'} /></label>
+                <label className="block"><span className={label}>Message</span><textarea rows={3} className={`${input} resize-y`} value={message} onChange={e => setMessage(e.target.value)} placeholder={mode === 'buy' ? 'Questions, collection' : 'What you need, where, your budget'} /></label>
                 <label className="block"><span className={label}>Phone (optional)</span><input className={input} value={phone} onChange={e => setPhone(e.target.value)} /></label>
                 {problem && <p className="text-xs font-semibold text-rose-600">{problem}</p>}
                 <button type="submit" disabled={busy} className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"><Send className="w-3.5 h-3.5" /> {busy ? 'Sending…' : 'Send request'}</button>
@@ -243,6 +262,47 @@ function ListingDetail({ listing: l, mode, signedIn, onSignIn, onClose }: {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+/** What a renter should know before booking: what's included, the deposit, hire type, pick-up and delivery. */
+function RentalFacts({ listing: l }: { listing: MarketListing }) {
+  const r = l.rental!;
+  const labels = hireLabels(l.category);
+  const unit = l.rent?.unit || 'day';
+  return (
+    <div className="space-y-2.5 text-xs text-slate-700">
+      {r.included.length > 0 && (
+        <div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Included</p>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1">{r.included.map((x, i) => <li key={i} className="flex items-start gap-1.5"><Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />{x}</li>)}</ul>
+        </div>
+      )}
+      {r.addOns.length > 0 && (
+        <div>
+          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Add-ons</p>
+          <ul className="space-y-0.5">{r.addOns.map(a => <li key={a.id} className="flex justify-between gap-2"><span>{a.name}</span><span className="font-semibold">{a.price > 0 ? `${fjd(a.price)}${a.per === 'period' ? `/${unit}` : ''}` : 'Free'}</span></li>)}</ul>
+        </div>
+      )}
+      <div className="flex flex-wrap gap-1.5">
+        <span className="px-2 py-1 rounded-lg bg-slate-100 font-semibold">{[r.hire.dry && labels.dry, r.hire.wet && labels.wet].filter(Boolean).join(' or ')}</span>
+        {r.minHire > 1 && <span className="px-2 py-1 rounded-lg bg-slate-100 font-semibold">Minimum {r.minHire} {unit}s</span>}
+        {r.quantity > 1 && <span className="px-2 py-1 rounded-lg bg-slate-100 font-semibold">{r.quantity} available</span>}
+        <span className="px-2 py-1 rounded-lg bg-slate-100 font-semibold">Pick-up {r.hours.open}–{r.hours.close}</span>
+      </div>
+      {r.deposit.kind !== 'none' && (
+        <p className="flex items-start gap-1.5"><ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+          {r.deposit.kind === 'bond' ? 'Refundable bond' : 'Deposit to confirm'}: <strong>{r.deposit.type === 'percent' ? `${r.deposit.amount}% of the booking` : fjd(r.deposit.amount)}</strong>
+        </p>
+      )}
+      {(r.places.length > 0 || r.delivery.offered) && (
+        <div className="space-y-0.5">
+          {r.places.map(p => <p key={p.id} className="flex items-start gap-1.5"><MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" /><span><strong>{p.name}</strong>{p.address ? ` · ${p.address}` : ''}</span></p>)}
+          {r.delivery.offered && <p className="flex items-start gap-1.5"><Truck className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" /><span>Delivery available{r.delivery.fee > 0 ? ` (${fjd(r.delivery.fee)})` : ''}{r.delivery.note ? ` · ${r.delivery.note}` : ''}</span></p>}
+        </div>
+      )}
     </div>
   );
 }
