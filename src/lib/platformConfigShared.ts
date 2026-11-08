@@ -1,5 +1,6 @@
 import type { CRMData, FeeConfig, PlanFeatureConfig, PlanFeatures, PlanLimits, PlanTier, TaxConfig } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS, INITIAL_CRM_DATA } from '../data/mockData';
+import { DEFAULT_BILLING, cleanBilling, type BillingSettings } from './billing';
 
 // Platform-wide settings that admins set once for every account: the plans (names, prices, limits,
 // features), the taxes and fees every business can apply, and the VAT rate new accounts start with.
@@ -18,6 +19,8 @@ export interface PlatformConfig {
   platformFees: FeeConfig[];
   defaultVatRate: number;
   directory: DirectorySettings;
+  /** Paid plans: off until admins switch it on (early access). */
+  billing: BillingSettings;
 }
 
 export const PLAN_TIERS: PlanTier[] = ['free', 'pro', 'premium'];
@@ -32,7 +35,8 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   platformTaxes: INITIAL_CRM_DATA.platformTaxes || [],
   platformFees: INITIAL_CRM_DATA.platformFees || [],
   defaultVatRate: DEFAULT_PLATFORM_SETTINGS.defaultVatRate,
-  directory: { enabled: true, paidOnly: true }
+  directory: { enabled: true, paidOnly: true },
+  billing: DEFAULT_BILLING
 };
 
 /** Whether a business on this plan can be listed in the directory. */
@@ -109,7 +113,8 @@ export function cleanPlatformConfig(raw: any): PlatformConfig {
     directory: {
       enabled: typeof r.directory?.enabled === 'boolean' ? r.directory.enabled : DEFAULT_PLATFORM_CONFIG.directory.enabled,
       paidOnly: typeof r.directory?.paidOnly === 'boolean' ? r.directory.paidOnly : DEFAULT_PLATFORM_CONFIG.directory.paidOnly
-    }
+    },
+    billing: cleanBilling(r.billing)
   };
 }
 

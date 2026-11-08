@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { openUpgrade } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Camera, Upload, Sparkles, X, Plus, Check, DollarSign, Calendar, 
@@ -361,6 +362,8 @@ export default function ExpenseLoggingModal({
       });
 
       const dataRes = await res.json();
+      // Out of AI scans for this month: offer the plans.
+      if (res.status === 402 && dataRes.upgrade) openUpgrade(dataRes.error);
       if (!res.ok && !dataRes.extracted) {
         throw new Error(dataRes.error || `OCR failed with status ${res.status}`);
       }

@@ -101,6 +101,10 @@ export function createAccountAccessRouter() {
       return { plan: inv!.plan };
     });
     if ("problem" in result) return res.status(403).json({ error: result.problem, mode, needsInvite: true });
+    // An invite with a plan gives that plan (kept on the server; see server/billing.ts).
+    if (result.plan && result.plan !== "free") {
+      await getAdminDb().collection("subscriptions").doc(uid).set({ uid, plan: result.plan, status: "active", method: "admin", paidUntil: "", updatedAt: now, note: `Invite ${code}`, remindedFor: "" });
+    }
     res.json({ ok: true, plan: result.plan });
   }));
   return router;

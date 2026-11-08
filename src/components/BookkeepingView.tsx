@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { openUpgrade } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Landmark, RefreshCw, Upload, Plus, Search, DollarSign, Tag, Trash2, X, 
@@ -284,6 +285,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       });
       const parsed = await res.json();
 
+      // Out of AI scans for this month: offer the plans.
+      if (res.status === 402 && parsed.upgrade) openUpgrade(parsed.error);
       if (!res.ok && !parsed.extracted) {
         throw new Error(parsed.error || `Couldn't read the receipt (${res.status})`);
       }

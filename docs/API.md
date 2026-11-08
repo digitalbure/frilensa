@@ -85,7 +85,9 @@ stored only as hashes. OAuth access tokens work on `/mcp` and `/api/v1` with the
 ## REST API
 
 All responses are JSON. Errors are `{ "error": "message" }` with status 400 (bad input), 401 (missing or
-revoked key), 403 (read-only key), 404 (not found), 409 (conflict) or 429 (rate limit).
+revoked key), 402 (the account's plan limit is reached: creating a client or an invoice beyond the plan's
+clients or invoices a month, once paid plans are on; the message says which), 403 (read-only key), 404 (not found),
+409 (conflict) or 429 (rate limit).
 
 | Method and path | Access | Notes |
 | --- | --- | --- |

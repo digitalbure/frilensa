@@ -28,6 +28,7 @@ import { createAccountRouter } from "./server/account";
 import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistrationRouter } from "./server/access";
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
 import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter } from "./server/platformConfig";
+import { createAdminBillingRouter, createBillingRouter, useAiScan } from "./server/billing";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
 
@@ -230,6 +231,8 @@ async function startServer() {
   app.use("/api/public/branding", createPublicBrandingRouter());
   app.get("/manifest.webmanifest", manifestHandler);
   app.use("/api/admin/platform-config", express.json({ limit: "100kb" }), createAdminPlatformConfigRouter());
+  app.use("/api/admin/billing", express.json({ limit: "10kb" }), createAdminBillingRouter());
+  app.use("/api/billing", express.json({ limit: "10kb" }), createBillingRouter());
   app.use("/api/public/platform-config", createPublicPlatformConfigRouter());
   app.use("/api/admin/access", express.json({ limit: "10kb" }), createAdminAccessRouter());
   // Marketplace: photo uploads need more room than other requests.
@@ -412,6 +415,9 @@ ${JSON.stringify(transactions)}`;
     if (!fileData) {
       return res.status(400).json({ error: "Choose a receipt or invoice file to upload." });
     }
+    // AI scans count towards the plan's monthly allowance (once paid plans are switched on).
+    const scanProblem = await useAiScan((req as any).user.uid);
+    if (scanProblem) return res.status(402).json({ error: scanProblem, upgrade: true });
 
     // Parse data URL to extract base64 data and mimeType
     let base64Data = fileData;

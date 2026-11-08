@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, User, UserPlus, Search, Phone, Mail, MapPin, ShieldCheck, 
@@ -269,7 +270,8 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
         setSelectedClient({ id, ...clientData });
       }
     } else {
-      // Create new
+      // Create new (if the plan has room for another client)
+      if (!allowAnother(data, 'clients')) return;
       const newClient: Client = {
         id: `cli-${Date.now()}`,
         ...clientData

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import PlanCard from './PlanCard';
 import { motion } from 'motion/react';
 import { 
   Settings, User, ShieldCheck, Percent, HelpCircle, LogOut, RefreshCw, 
@@ -2430,48 +2431,8 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
         </div>
       </div>
 
-      {/* Active Subscription Plan & Quotas Banner */}
-      <div className="bg-white border border-zinc-200 rounded-xl p-4 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-sky-600" />
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-zinc-400 block">Plan</span>
-              <span className="text-xs font-bold text-zinc-900 uppercase">
-                {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.name || 'Free Starter'} Plan
-              </span>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setShowPaywall(true)}
-            className="text-[10px] bg-sky-50 hover:bg-sky-100 text-sky-700 font-bold px-2.5 py-1 rounded-lg border border-sky-200 transition-all"
-          >
-            Change plan
-          </button>
-        </div>
-
-        <div className="grid grid-cols-3 gap-2 pt-1 border-t border-zinc-100 text-center">
-          <div className="bg-zinc-50 p-2 rounded-lg">
-            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Businesses</span>
-            <span className="text-xs font-mono font-bold text-zinc-800">
-              {data.businesses.length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxBusinesses || 1}
-            </span>
-          </div>
-          <div className="bg-zinc-50 p-2 rounded-lg">
-            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Clients</span>
-            <span className="text-xs font-mono font-bold text-zinc-800">
-              {data.clients.length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxClients === -1 ? '∞' : (data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxClients || 3)}
-            </span>
-          </div>
-          <div className="bg-zinc-50 p-2 rounded-lg">
-            <span className="text-[8.5px] text-zinc-500 uppercase block font-semibold">Invoices / month</span>
-            <span className="text-xs font-mono font-bold text-zinc-800">
-              {data.documents.filter(d => d.type === 'invoice' && (d.issueDate || '').slice(0, 7) === new Date().toISOString().slice(0, 7)).length} / {data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth === -1 ? '∞' : (data.platformSettings?.plans[data.platformSettings?.activePlan || 'free']?.limits.maxInvoicesPerMonth || 5)}
-            </span>
-          </div>
-        </div>
-      </div>
+      {/* Plan, renewal and what you've used */}
+      <PlanCard data={data} />
 
       {/* SaaS Platform Admin Portal (platform admins only) */}
       {onOpenAdminPanel && (

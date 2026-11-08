@@ -18,6 +18,25 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.14.0] - 2026-11-08
+
+### Added
+- **Paid plans, ready to switch on.** Nothing changes until an admin turns on paid plans in Admin → Billing; until then everyone keeps switching plans for free (early access).
+  - Plans are **prepaid** for a month or a year: nothing renews or charges by itself. Paying again before the end adds to the paid time.
+  - **Ways to pay:** bank transfer, M-PAiSA or MyCash (the customer enters their reference and an admin approves it once the money arrives), or card and PayPal with Frilensa's own PayPal account (confirmed straight away, charged in AUD, USD or NZD at the rate you set, since PayPal can't charge FJD).
+  - **Limits apply** once paid plans are on: invoices a month, clients, services, businesses, projects and AI receipt scans. Reaching one opens the plan picker with the reason. The API also refuses new clients or invoices beyond the plan.
+  - **Reminders:** emails 7 days and 1 day before a plan runs out; after the grace days you set, the account moves back to Free (nothing is deleted) and is emailed.
+  - **Early access:** set the date early-access Pro and Premium plans keep working until, so people have time to pay.
+  - **Settings → Plan** shows your plan, how long it's paid for, payments waiting to be confirmed, past payments, and what you've used against each limit.
+  - **Admin → Billing** (replacing the empty Payments tab): switch paid plans on, set payment details, approve or reject transfers, and see who's on a paid plan and what's been received. Changing someone's plan in Admin → Workspaces gives them that plan.
+
+### Changed
+- Your plan is now kept on Frilensa's servers, so it can't be changed by editing data on a device. The directory's "paid plans only" check uses it.
+- Invites that come with a plan give that plan on the server.
+
+### Fixed
+- Rental checks in the test suite no longer depend on fixed dates.
+
 ## [4.13.0] - 2026-11-08
 
 ### Added

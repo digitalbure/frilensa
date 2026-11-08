@@ -18,6 +18,9 @@ import {
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 import AdminMarketplaceView from './marketplace/AdminMarketplaceView';
+import AdminBillingView from './AdminBillingView';
+import { auth } from '../lib/firebase';
+import { refreshBilling, useBilling } from '../lib/billingClient';
 import { cleanPlatformConfig, savePlatformConfig, usePlatformConfig, type PlatformConfig } from '../lib/platformConfig';
 
 
@@ -44,7 +47,8 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   const [platformSettings, setPlatformSettings] = useState<PlatformSettings>(currentSettings);
 
   // Active Plan
-  const activePlanTier = platformSettings.activePlan || 'free';
+  const myBilling = useBilling();
+  const activePlanTier = myBilling?.plan || platformSettings.activePlan || 'free';
 
   // Selected Plan for Editing in Plans Tab
   const [selectedPlanTab, setSelectedPlanTab] = useState<PlanTier>('free');
@@ -177,12 +181,17 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
   };
 
   // Switch Active Workspace Subscription Tier
-  const handleSwitchActivePlan = (planId: PlanTier) => {
-    const updatedSettings = {
-      ...platformSettings,
-      activePlan: planId
-    };
-    commitPlatformSettings(updatedSettings);
+  // Your own plan, set on the server like any other account's (open-ended, as an admin grant).
+  const handleSwitchActivePlan = async (planId: PlanTier) => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
+    try {
+      const res = await fetch(`/api/admin/billing/subscriptions/${encodeURIComponent(uid)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ plan: planId, note: 'Admin’s own plan' }) });
+      if (!res.ok) throw new Error((await res.json().catch(() => ({})))?.error || 'Could not change your plan.');
+      setPlatformSettings({ ...platformSettings, activePlan: planId });
+      await refreshBilling();
+      showToast('Your plan is updated.');
+    } catch (err: any) { showToast(err.message); }
   };
 
   // Add Platform Tax
@@ -448,7 +457,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>Payments ({pendingPayments.length})</span>
+            <span>Billing</span>
           </button>
 
           <button
@@ -1141,66 +1150,11 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
           {/* ================= TAB 4: BILLING & APPROVALS ================= */}
           {activeTab === 'billing' && (
-            <div className="space-y-4">
-              
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-200">
-                    Payments to check ({pendingPayments.length})
-                  </h4>
-                  <p className="text-[10px] text-slate-400">Check M-PAiSA references and BSP bank transfers before approving</p>
-                </div>
-              </div>
-
-              {pendingPayments.length === 0 ? (
-                <div className="p-8 text-center bg-slate-900 border border-slate-800 rounded-2xl">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-60" />
-                  <p className="text-xs font-bold text-slate-300">No payments to check</p>
-                  <p className="text-[10px] text-slate-500 mt-0.5">Manual subscription payments will appear here.</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {pendingPayments.map((pay) => (
-                    <div key={pay.id} className="p-3.5 bg-slate-900 border border-slate-800 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-slate-100">{pay.tenantName}</span>
-                          <span className="text-[9px] bg-emerald-950 text-emerald-400 font-mono font-bold px-2 py-0.5 rounded border border-emerald-800">
-                            {pay.method}
-                          </span>
-                          <span className="text-[9px] bg-sky-950 text-sky-300 font-bold uppercase px-1.5 py-0.5 rounded">
-                            {pay.plan} plan
-                          </span>
-                        </div>
-                        <div className="text-[9.5px] text-slate-400 space-y-0.5 mt-1 font-mono">
-                          <p>Reference: <span className="text-slate-200 font-bold">{pay.refCode}</span></p>
-                          <p>Date: {pay.date}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 self-end sm:self-center">
-                        <span className="text-sm font-black text-slate-100 font-mono mr-2">FJD ${pay.amount.toFixed(2)}</span>
-                        <button
-                          onClick={() => handleRejectPayment(pay.id)}
-                          className="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 p-2 rounded-xl border border-rose-500/30 transition-all"
-                          title="Reject"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => handleApprovePayment(pay.id)}
-                          className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-3 py-2 rounded-xl text-xs flex items-center gap-1.5 transition-all active:scale-95"
-                        >
-                          <Check className="w-3.5 h-3.5 stroke-[3]" />
-                          <span>Approve</span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-            </div>
+            <AdminBillingView
+              billing={config.billing}
+              showToast={showToast}
+              onSave={async next => { commitConfig({ ...config, billing: next }, { message: next.enabled ? 'Billing settings saved. Paid plans are on.' : 'Billing settings saved.' }); }}
+            />
           )}
 
           {/* ================= TAB 5: OVERVIEW ================= */}

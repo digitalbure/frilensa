@@ -1,4 +1,5 @@
 import express, { type NextFunction, type Response } from "express";
+import { readWorkspace } from "./workspace";
 import { getAdminDb, requireUser, rateLimit, isEmail, type AuthedRequest } from "./security";
 import { CLIENT_ERRORS } from "./clientErrors";
 import { getAuth } from "firebase-admin/auth";
@@ -30,6 +31,9 @@ export function createAdminRouter() {
   // Every workspace with its owner's sign-in details, newest activity first.
   router.get("/workspaces", wrap(async (_req, res) => {
     const summaries = await listWorkspaceSummaries();
+    // Plans as they apply today (paid, early access or lapsed), not the copy kept in each workspace.
+    const effective = await (await import("./billing")).plansFor(summaries.map(s => s.uid));
+    summaries.forEach(s => { s.plan = effective.get(s.uid) || s.plan; });
     const users = new Map<string, any>();
     for (let i = 0; i < summaries.length; i += 100) {
       const r = await getAuth().getUsers(summaries.slice(i, i + 100).map(s => ({ uid: s.uid }))).catch(() => ({ users: [] as any[] }));
@@ -53,14 +57,11 @@ export function createAdminRouter() {
   router.patch("/workspaces/:uid", wrap(async (req, res) => {
     const plan = String(req.body?.plan || "");
     if (!["free", "pro", "premium"].includes(plan)) return res.status(400).json({ error: "Choose Free, Pro or Premium." });
-    try {
-      await updateWorkspace(String(req.params.uid).slice(0, 128), raw => ({
-        set: { platformSettings: { ...(raw.platformSettings || {}), activePlan: plan } }, result: null
-      }));
-    } catch (err) {
-      if (err instanceof WorkspaceMissing) return res.status(404).json({ error: "Workspace not found." });
-      throw err;
-    }
+    const uid = String(req.params.uid).slice(0, 128);
+    if (!(await readWorkspace(uid))) return res.status(404).json({ error: "Workspace not found." });
+    // The plan lives on the server (server/billing.ts); an admin change is open-ended until changed again.
+    const { grantPlan } = await import("./billing");
+    await grantPlan(uid, plan as any, "", `Set by ${req.user?.email || "an admin"}`);
     res.json({ ok: true, plan });
   }));
 

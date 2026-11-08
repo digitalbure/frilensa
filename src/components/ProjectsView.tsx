@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import { 
   Briefcase, CheckSquare, Calendar, DollarSign, Plus, ArrowLeft, 
   Trash2, Edit3, Clock, CheckCircle2, Circle, Play, AlertCircle, 
@@ -198,6 +199,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
         projects: updatedProjects
       });
     } else {
+      if (!allowAnother(data, 'projects')) return;
       // Create - If an industry preset was chosen, pre-load its sample tasks and scope sections
       let initialTasks: Task[] = [];
       let initialScope: any[] = [];
@@ -254,6 +256,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
   // Duplicate a project to set up a similar one quickly: same client, scope, tasks and settings,
   // with tasks reset to to-do, no tracked time, and dates moved to start today.
   const handleDuplicateProject = (proj: Project, e: React.MouseEvent) => {
+    if (!allowAnother(data, 'projects')) { e.stopPropagation(); return; }
     e.stopPropagation();
     const today = new Date().toISOString().split('T')[0];
     const dayMs = 24 * 60 * 60 * 1000;

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import InboxPanel from './InboxPanel';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -321,6 +322,7 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
   const handleAddBusiness = (e: React.FormEvent) => {
     e.preventDefault();
     if (!bizName || !bizTin) return;
+    if (!allowAnother(data, 'businesses')) return;
 
     const presets: Record<string, { label: string; value: string; isPreset: boolean }[]> = {
       boutique: [

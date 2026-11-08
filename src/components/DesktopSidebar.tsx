@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import { inboxDocumentCount } from '../lib/inbox';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -108,6 +109,7 @@ export default function DesktopSidebar({
   const handleCreateBusiness = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newBizName.trim()) return;
+    if (!allowAnother(crmData, 'businesses')) return;
 
     const vConfig = getVentureConfig(newBizType);
 

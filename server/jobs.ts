@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { dailyWebhookSweep } from "./webhooks";
+import { dailyBillingSweep } from "./billing";
 import express, { type Response } from "express";
 import { getAdminDb, isEmail, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { sendDocumentEmail, sendgridConfigured } from "./documentEmail";
@@ -224,7 +225,7 @@ export function createJobsRouter() {
     if (!process.env.JOBS_SECRET) return res.status(503).json({ error: "Scheduled jobs aren't configured (JOBS_SECRET is not set)." });
     if (!secretMatches(req.headers["x-job-secret"])) return res.status(401).json({ error: "Not allowed." });
     try {
-      const summary = { ...(await runDailyAutomation()), ...(await dailyWebhookSweep()) };
+      const summary = { ...(await runDailyAutomation()), ...(await dailyWebhookSweep()), ...(await dailyBillingSweep()) };
       console.log("[jobs] Daily automation finished:", JSON.stringify(summary));
       res.json({ ok: true, ...summary });
     } catch (err: any) {

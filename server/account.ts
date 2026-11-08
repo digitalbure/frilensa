@@ -35,10 +35,12 @@ const OWNED: [collection: string, field: string][] = [
   ["marketplace_requests", "ownerUid"],
   ["marketplace_requests", "requesterUid"],
   ["marketplace_bookings", "ownerUid"],
-  ["marketplace_bookings", "requesterUid"]
+  ["marketplace_bookings", "requesterUid"],
+  ["subscription_payments", "uid"],
+  ["ai_usage", "uid"]
 ];
 /** Documents keyed by the user's id. */
-const KEYED_BY_UID = ["directory_listings", "automation_runs", "account_access"];
+const KEYED_BY_UID = ["directory_listings", "automation_runs", "account_access", "subscriptions"];
 
 async function deleteQuery(q: Query) {
   let removed = 0;

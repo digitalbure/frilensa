@@ -48,6 +48,8 @@ import { inboxDocumentCount } from './lib/inbox';
 import AccessGate from './components/AccessGate';
 import { DEFAULT_PLATFORM_SETTINGS } from './data/mockData';
 import { applyPlatformConfig, publishedPlatformConfig, usePlatformConfig } from './lib/platformConfig';
+import { clearBilling, currentBilling, onUpgradeRequest, refreshBilling, useBilling } from './lib/billingClient';
+import SubscriptionPaywallModal from './components/SubscriptionPaywallModal';
 import type { PlanTier } from './types';
 import { registerAccount, AccessDenied } from './lib/api';
 import LegalPage from './components/LegalPage';
@@ -151,7 +153,12 @@ export default function App() {
     // Repair documents and list items with missing amounts or fields (they crashed screens), then give every
     // document a share token so its "view online" link and QR code work.
     // Plans, taxes and fees come from the platform (set by admins for everyone), not the workspace's own copy.
-    const data = ensureShareTokens(normalizeWorkspace(applyPlatformConfig(incoming, publishedPlatformConfig())));
+    let data = ensureShareTokens(normalizeWorkspace(applyPlatformConfig(incoming, publishedPlatformConfig())));
+    // The plan comes from the server (paid, early access or lapsed); the workspace's copy is only a fallback.
+    const billing = currentBilling();
+    if (billing?.loaded && data.platformSettings && data.platformSettings.activePlan !== billing.plan) {
+      data = { ...data, platformSettings: { ...data.platformSettings, activePlan: billing.plan } };
+    }
     crmDataRef.current = data;
     setCrmData(data);
     return data;
@@ -162,6 +169,14 @@ export default function App() {
   useEffect(() => {
     if (platformConfig.saved && crmDataRef.current) applyData(crmDataRef.current);
   }, [platformConfig, applyData]);
+  // Same when the plan loads or changes (after paying, or an admin changing it).
+  const billingState = useBilling();
+  useEffect(() => {
+    if (billingState?.loaded && crmDataRef.current) applyData(crmDataRef.current);
+  }, [billingState, applyData]);
+  // Any screen can ask for the plan picker, e.g. on reaching a limit.
+  const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
+  useEffect(() => onUpgradeRequest(reason => setUpgradeReason(reason)), []);
 
   const flushCloudSave = useCallback(async () => {
     if (saveTimerRef.current) {
@@ -196,6 +211,7 @@ export default function App() {
       setAuthUser(firebaseUser);
 
       if (!firebaseUser || !firebaseUser.emailVerified) {
+        clearBilling();
         activeUidRef.current = null;
         setLocalCacheOwner(null);
         applyData(INITIAL_CRM_DATA);
@@ -242,6 +258,7 @@ export default function App() {
         }
         cloudReadyRef.current = true;
         setCloudReady(true);
+        refreshBilling();
         // Documents that just received a share token must be saved so their links keep working.
         const tokensAdded = (remote?.data.documents || []).some(d => d && !d.shareToken);
         if (!remote || remote.migratedFromLegacy || local || tokensAdded) {
@@ -735,6 +752,15 @@ export default function App() {
 
       {/* Install PWA Prompt Banner & Offline Status */}
       <PwaInstallPrompt />
+
+      {upgradeReason !== null && (
+        <SubscriptionPaywallModal
+          currentPlan={crmData.platformSettings?.activePlan || 'free'}
+          reason={upgradeReason || undefined}
+          onClose={() => setUpgradeReason(null)}
+          onUpgradePlan={() => {}}
+        />
+      )}
 
       {showAdminPanel && canAdmin && (
         <AdminPanelView 

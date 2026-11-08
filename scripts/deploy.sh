@@ -171,6 +171,32 @@ if gcloud secrets describe anthropic-api-key --project "$RUN_PROJECT" >/dev/null
   ASSISTANT_ENV=("ANTHROPIC_API_KEY@=anthropic-api-key")
 fi
 
+# Card and PayPal payments for paid plans use Frilensa's own PayPal REST app keys, kept in Secret Manager
+# (secrets "frilensa-paypal-client-id" and "frilensa-paypal-secret"). Optional: without them, plans are paid by
+# bank, M-PAiSA or MyCash. Run with SETUP_PAYPAL=1 to add or replace them (FRILENSA_PAYPAL_ENV=sandbox to test).
+BILLING_ENV=()
+if [[ "${SETUP_PAYPAL:-}" == "1" ]]; then
+  echo "PayPal keys for paid plans: from developer.paypal.com > Apps & Credentials (Frilensa's own business account)."
+  for NAME in frilensa-paypal-client-id frilensa-paypal-secret; do
+    read -rsp "Paste the value for $NAME and press Enter (it won't be shown), or just press Enter to keep it as is: " V; echo
+    if [[ -n "$V" ]]; then
+      if gcloud secrets describe "$NAME" --project "$RUN_PROJECT" >/dev/null 2>&1; then
+        printf '%s' "$V" | gcloud secrets versions add "$NAME" --project "$RUN_PROJECT" --data-file=- >/dev/null
+      else
+        printf '%s' "$V" | gcloud secrets create "$NAME" --project "$RUN_PROJECT" --replication-policy=automatic --data-file=- >/dev/null
+      fi
+      echo "Saved $NAME."
+    fi
+    unset V
+  done
+fi
+if gcloud secrets describe frilensa-paypal-client-id --project "$RUN_PROJECT" >/dev/null 2>&1 && gcloud secrets describe frilensa-paypal-secret --project "$RUN_PROJECT" >/dev/null 2>&1; then
+  for NAME in frilensa-paypal-client-id frilensa-paypal-secret; do
+    gcloud secrets add-iam-policy-binding "$NAME" --project "$RUN_PROJECT" --member="serviceAccount:$SA" --role=roles/secretmanager.secretAccessor >/dev/null
+  done
+  BILLING_ENV=("FRILENSA_PAYPAL_CLIENT_ID@=frilensa-paypal-client-id" "FRILENSA_PAYPAL_SECRET@=frilensa-paypal-secret" "FRILENSA_PAYPAL_ENV${FRILENSA_PAYPAL_ENV:+:}=${FRILENSA_PAYPAL_ENV:-live}")
+fi
+
 confirm "Build v$VERSION and deploy it? (A new Cloud Run revision is created; the current one stays available for rollback.)"
 
 # Build the container with Cloud Build into Artifact Registry. (AI Studio's source-deploy
@@ -200,7 +226,7 @@ JOBS_SECRET="${JOBS_SECRET:-$(openssl rand -hex 32)}"
 # Update the service from its own current configuration with only the image (and missing env vars) changed.
 # PAYMENT_SECRETS_KEY encrypts saved PayPal keys. It is created once and never changed: a new key would disconnect every PayPal account.
 python3 scripts/prepare_service.py "$WORK/current.json" "$IMAGE" "$WORK/next.json" \
-  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET" "PAYMENT_SECRETS_KEY=$(openssl rand -hex 32)" ${ADMIN_EMAILS:+"ADMIN_EMAILS:=$ADMIN_EMAILS"} "${ASSISTANT_ENV[@]}"
+  "PORTAL_SESSION_SECRET=$(openssl rand -hex 32)" "APP_URL:=${APP_URL:-https://frilensa.com}" "JOBS_SECRET=$JOBS_SECRET" "FILES_BUCKET:=$FILES_BUCKET" "PAYMENT_SECRETS_KEY=$(openssl rand -hex 32)" ${ADMIN_EMAILS:+"ADMIN_EMAILS:=$ADMIN_EMAILS"} "${ASSISTANT_ENV[@]}" "${BILLING_ENV[@]}"
 gcloud run services replace "$WORK/next.json" --project "$RUN_PROJECT" --region "$REGION"
 
 # --- 3. Health check ---

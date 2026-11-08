@@ -158,6 +158,7 @@ const fakeClaude = http.createServer((req, res) => {
 // Fake PayPal REST API.
 const PP_ID = 'AcarolClientIdGoodGoodGood01', PP_SECRET = 'EcarolSecretGoodGoodGoodGood1';
 const ppOrders = new Map(); let ppN = 0;
+const day0 = n => { const d = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Fiji', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
 const fakePaypal = http.createServer((req, res) => {
   let body = ''; req.on('data', d => body += d); req.on('end', () => {
     const send = (code, obj) => { res.writeHead(code, { 'Content-Type': 'application/json' }); res.end(JSON.stringify(obj)); };
@@ -193,7 +194,7 @@ const waitHook = async (match, ms = 5000) => {
 
 // --- start the real server against the emulators ---
 try { await fetch(`${API}/api/health`); console.error('Port 3300 is already in use; stop that process and rerun.'); process.exit(1); } catch {}
-const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '4', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1', ADMIN_EMAILS: 'alice@studio.fj' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
+const server = spawn('npx', ['tsx', 'server.ts'], { cwd: process.argv[2], env: { ...process.env, PORT: '3300', FIRESTORE_EMULATOR_HOST: '127.0.0.1:8085', FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099', FIREBASE_PROJECT_ID: P, FIRESTORE_DATABASE_ID: '(default)', GCLOUD_PROJECT: P, PORTAL_SESSION_SECRET: 'e2e', SENDGRID_API_KEY: 'test-key', SENDGRID_API_URL: 'http://127.0.0.1:3399/v3/mail/send', APP_URL: 'https://frilensa.example', JOBS_SECRET: 'e2e-jobs-secret', FIREBASE_STORAGE_EMULATOR_HOST: '127.0.0.1:9199', FILES_BUCKET: 'frilensa-e2e-files', ANTHROPIC_API_KEY: 'test-key', ANTHROPIC_BASE_URL: 'http://127.0.0.1:3398', PAYPAL_API_BASE: 'http://127.0.0.1:3397', PAYMENT_SECRETS_KEY: 'e2e-payment-secrets', BOOKING_MIN_FILL_MS: '300', BOOKING_PAGE_DAILY_CAP: '4', BOOKING_PAGE_IP_LIMIT: '50', WEBHOOK_ALLOW_PRIVATE: '1', ADMIN_EMAILS: 'alice@studio.fj', FRILENSA_PAYPAL_CLIENT_ID: PP_ID, FRILENSA_PAYPAL_SECRET: PP_SECRET, FRILENSA_PAYPAL_ENV: 'sandbox' }, stdio: ['ignore', 'pipe', 'pipe'], detached: true });
 let log = ''; server.stdout.on('data', d => log += d); server.stderr.on('data', d => log += d);
 for (let i = 0; i < 60; i++) { try { if ((await fetch(`${API}/api/health`)).ok) break; } catch {} await new Promise(r => setTimeout(r, 1000)); }
 
@@ -1303,6 +1304,8 @@ try {
     await put(`documents/${z.uid}_zd1`, { id: 'zd1', consultantId: z.uid, status: 'sent', total: 10 });
     await put(`api_keys/zkey`, { uid: z.uid, name: 'Old app' });
     await put(`account_access/${z.uid}`, { via: 'open' });
+    await put(`subscriptions/${z.uid}`, { uid: z.uid, plan: 'pro', status: 'active', method: 'admin', paidUntil: '' });
+    await put(`ai_usage/${z.uid}_2026-11`, { uid: z.uid, month: '2026-11', scans: 2 });
     await put(`marketplace_bookings/zhold`, { id: 'zhold', listingId: 'zl', ownerUid: z.uid, kind: 'block', from: '2026-12-01', to: '2026-12-01', quantity: 1, status: 'confirmed' });
     const del = body => fetch(`${API}/api/account`, { method: 'DELETE', headers: auth(z), body: JSON.stringify(body) });
     assert.equal((await fetch(`${API}/api/account`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
@@ -1314,11 +1317,15 @@ try {
     assert.equal(await get(`api_keys/zkey`), null, 'API key left behind');
     assert.equal(await get(`account_access/${z.uid}`), null);
     assert.equal(await get(`marketplace_bookings/zhold`), null, 'rental calendar left behind');
+    assert.equal(await get(`subscriptions/${z.uid}`), null, 'plan left behind');
+    assert.equal(await get(`ai_usage/${z.uid}_2026-11`), null, 'AI usage left behind');
     const signIn = await (await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=x`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: z.email, password: 'secret123', returnSecureToken: true }) })).json();
     assert.ok(signIn.error, 'the sign-in still works');
     assert.ok((await get(`consultants/${A.uid}`)), "another user's workspace was touched");
   });
   // ---------- Marketplace ----------
+  // Dates relative to today in Fiji, so rental checks don't expire (rentals refuse past dates).
+  const fijiDay = n => { const d = new Date(`${new Intl.DateTimeFormat('en-CA', { timeZone: 'Pacific/Fiji', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date())}T00:00:00Z`); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
   const mkt = (who, path, method = 'GET', body) => fetch(`${API}/api/marketplace${path}`, { method, headers: auth(who), ...(body ? { body: JSON.stringify(body) } : {}) });
   const browse = async q => (await j(await fetch(`${API}/api/public/marketplace/listings?${new URLSearchParams(q)}`))).body;
   const camera = { kind: 'gear', title: 'Sony FX3 cinema camera', description: 'Full frame, two batteries', industry: 'film_photo', category: 'cameras', city: 'Suva', forRent: true, rent: { amount: 150, unit: 'day' }, forSale: false, condition: 'like_new', brand: 'Sony', model: 'FX3' };
@@ -1361,10 +1368,10 @@ try {
   });
   await check("marketplace: a request lands in the owner's booking inbox", async () => {
     assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', quantity: 2 })).status, 400, 'rent without dates');
-    assert.equal((await mkt(C, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2 })).status, 400, 'own listing');
+    assert.equal((await mkt(C, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: fijiDay(30), to: fijiDay(31), quantity: 2 })).status, 400, 'own listing');
     assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'buy', offer: 100 })).status, 400, 'bought an item not for sale');
-    assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', quantity: 2 })).status, 400, 'more units than the owner has');
-    const r = await j(await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: '2026-12-01', to: '2026-12-02', message: 'For a wedding shoot', phone: '+679 999 1234' }));
+    assert.equal((await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: fijiDay(30), to: fijiDay(31), quantity: 2 })).status, 400, 'more units than the owner has');
+    const r = await j(await mkt(B, `/listings/${cameraId}/requests`, 'POST', { mode: 'rent', from: fijiDay(30), to: fijiDay(31), message: 'For a wedding shoot', phone: '+679 999 1234' }));
     assert.equal(r.status, 200, JSON.stringify(r.body));
     const req = await get(`quote_requests/${r.body.requestId}`);
     assert.equal(req.uid, C.uid); assert.equal(req.channel, 'marketplace'); assert.equal(req.requesterUid, B.uid);
@@ -1381,7 +1388,7 @@ try {
     managedId = made.body.listing.id;
     const pub = (await browse({ kind: 'service' })).listings.find(l => l.id === managedId);
     assert.equal(pub.agent, undefined, 'commission terms exposed'); assert.equal(pub.managed, true);
-    const r = await j(await mkt(B, `/listings/${managedId}/requests`, 'POST', { from: '2026-12-24', message: 'Christmas Eve wedding' }));
+    const r = await j(await mkt(B, `/listings/${managedId}/requests`, 'POST', { from: fijiDay(45), message: 'Christmas Eve wedding' }));
     assert.equal(r.status, 200);
     const ar = await get(`marketplace_requests/${r.body.requestId}`);
     assert.equal(ar.commissionPercent, 15); assert.equal(ar.requesterUid, B.uid);
@@ -1526,6 +1533,86 @@ try {
     assert.equal((await fetch(`${API}/api/admin/directory/bookings/${bk.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
     assert.equal(await get(`directory_bookings/${bk.id}`), null);
     assert.equal(await get(`quote_requests/dirtest1`), null);
+  });
+  // ---------- Paid plans (last: switching billing on changes limits for everyone) ----------
+  await check('paid plans: early access, then paying by transfer or PayPal, limits, renewals and expiry', async () => {
+    const E = await user('erin.pays@studio.fj'), F = await user('finn.free@studio.fj');
+    await put(`consultants/${E.uid}`, { consultantEmail: E.email, userProfile: { email: E.email }, businesses: [{ id: 'eb1', name: 'Erin Media' }] });
+    await put(`consultants/${F.uid}`, { consultantEmail: F.email, userProfile: { email: F.email }, platformSettings: { activePlan: 'premium' }, businesses: [{ id: 'fb1', name: 'Finn Films' }] });
+    const bill = async who => (await j(await fetch(`${API}/api/billing`, { headers: auth(who) }))).body;
+    const bpost = (who, path, body) => fetch(`${API}/api/billing${path}`, { method: 'POST', headers: auth(who), body: JSON.stringify(body || {}) });
+    const adm = (who, path, method = 'GET', body) => fetch(`${API}/api/admin/billing${path}`, { method, headers: auth(who), ...(body ? { body: JSON.stringify(body) } : {}) });
+    const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;
+    const setBilling = billing => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify({ ...cfg, billing }) });
+
+    // Early access: switching is free and recorded on the server.
+    assert.equal((await fetch(`${API}/api/billing`)).status, 401);
+    let b = await bill(E); assert.equal(b.plan, 'free'); assert.equal(b.billing.enabled, false);
+    assert.equal((await bpost(E, '/early-access', { plan: 'premium' })).status, 200);
+    assert.equal((await bill(E)).plan, 'premium');
+    assert.equal((await bpost(E, '/manual', { plan: 'pro', cycle: 'monthly', method: 'bank', reference: 'X123' })).status, 400, 'paying during early access');
+    assert.equal((await bill(F)).plan, 'premium', 'the plan an older version saved counts during early access');
+
+    // Billing on: early-access plans end (no end date set) and the workspace copy can't fake a plan.
+    assert.equal((await adm(B, '')).status, 403);
+    assert.equal((await setBilling({ enabled: true, graceDays: 7, paypal: true, paypalCurrency: 'AUD', paypalRate: 0.66, bankDetails: 'BSP 123456', mpaisa: '7771234', mycash: '', instructions: '', earlyAccessUntil: '' })).status, 200);
+    b = await bill(E); assert.equal(b.plan, 'free'); assert.equal(b.billing.enabled, true); assert.equal(b.billing.paypalClientId, PP_ID);
+    assert.equal((await bill(F)).plan, 'free');
+    assert.equal((await bpost(E, '/early-access', { plan: 'pro' })).status, 400);
+    assert.equal((await fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(F), body: JSON.stringify({ businessId: 'fb1', name: 'Finn Films' }) })).status, 403, 'free plan listed in a paid-only directory');
+
+    // A transfer waits for an admin.
+    assert.equal((await bpost(E, '/manual', { plan: 'pro', cycle: 'monthly', method: 'bank', reference: '' })).status, 400);
+    assert.equal((await bpost(E, '/manual', { plan: 'pro', cycle: 'monthly', method: 'mycash', reference: 'MC1' })).status, 400, 'a method with no details');
+    const m = await j(await bpost(E, '/manual', { plan: 'pro', cycle: 'monthly', method: 'bank', reference: 'BSP-778' }));
+    assert.equal(m.status, 200, JSON.stringify(m.body)); assert.equal(m.body.payment.amount, cfg.plans.pro.price); assert.equal(m.body.payment.status, 'pending');
+    await emailTo(A.email, /Plan payment to check/);
+    assert.equal((await bill(E)).plan, 'free', 'plan started before approval');
+    const list = (await j(await adm(A, ''))).body;
+    assert.ok(list.payments.some(p => p.id === m.body.payment.id && p.status === 'pending')); assert.equal(list.paypalConfigured, true);
+    assert.equal((await adm(B, `/payments/${m.body.payment.id}/approve`, 'POST')).status, 403);
+    assert.equal((await adm(A, `/payments/${m.body.payment.id}/approve`, 'POST')).status, 200);
+    assert.equal((await adm(A, `/payments/${m.body.payment.id}/approve`, 'POST')).status, 409, 'approved twice');
+    b = await bill(E); assert.equal(b.plan, 'pro'); assert.equal(b.subscription.method, 'bank'); assert.ok(b.subscription.paidUntil > b.today);
+    await emailTo(E.email, /You're on/);
+    const proUntil = b.subscription.paidUntil;
+
+    // PayPal: priced and checked on the server, recorded once.
+    const o = await j(await bpost(E, '/paypal/order', { plan: 'pro', cycle: 'monthly' }));
+    assert.equal(o.status, 200, JSON.stringify(o.body));
+    assert.deepEqual(ppOrders.get(o.body.orderId).purchase_units[0].amount, { currency_code: 'AUD', value: (Math.round(cfg.plans.pro.price * 0.66 * 100) / 100).toFixed(2) });
+    assert.equal((await bpost(F, '/paypal/capture', { orderId: o.body.orderId })).status, 404, "someone else's order");
+    const c = await j(await bpost(E, '/paypal/capture', { orderId: o.body.orderId }));
+    assert.equal(c.status, 200, JSON.stringify(c.body));
+    b = await bill(E); assert.equal(b.plan, 'pro'); assert.ok(b.subscription.paidUntil > proUntil, 'renewing the same plan adds to the paid time');
+    assert.equal((await j(await bpost(E, '/paypal/capture', { orderId: o.body.orderId }))).body.already, true);
+    assert.equal(b.payments.filter(p => p.status === 'approved').length, 2);
+
+    // AI scans: the Free plan's monthly scans run out.
+    const month = b.today.slice(0, 7);
+    await put(`ai_usage/${F.uid}_${month}`, { uid: F.uid, month, scans: 5 });
+    const scan = await j(await fetch(`${API}/api/bookkeeping/receipt-ocr`, { method: 'POST', headers: auth(F), body: JSON.stringify({ fileData: 'data:image/png;base64,iVBORw0KGgo=' }) }));
+    assert.equal(scan.status, 402); assert.equal(scan.body.upgrade, true); assert.match(scan.body.error, /5 AI scans a month/);
+
+    // An admin can give a plan; the directory and the workspace copy follow.
+    assert.equal((await adm(A, `/subscriptions/${F.uid}`, 'PUT', { plan: 'pro', note: 'Partner' })).status, 200);
+    assert.equal((await bill(F)).plan, 'pro');
+    assert.equal((await fetch(`${API}/api/directory/listing`, { method: 'PUT', headers: auth(F), body: JSON.stringify({ businessId: 'fb1', name: 'Finn Films' }) })).status, 200);
+    await fetch(`${API}/api/directory/listing`, { method: 'DELETE', headers: auth(F) });
+
+    // The daily job reminds before the end, and moves lapsed plans back to Free after the grace days.
+    await put(`subscriptions/${E.uid}`, { ...(await get(`subscriptions/${E.uid}`)), paidUntil: day0(3), remindedFor: '' });
+    await put(`subscriptions/${F.uid}`, { ...(await get(`subscriptions/${F.uid}`)), paidUntil: day0(-8), method: 'paypal' });
+    const run = await j(await fetch(`${API}/api/jobs/daily`, { method: 'POST', headers: { 'X-Job-Secret': 'e2e-jobs-secret' } }));
+    assert.equal(run.status, 200, JSON.stringify(run.body)); assert.ok(run.body.billingReminders >= 1); assert.ok(run.body.plansExpired >= 1);
+    await emailTo(E.email, /plan ends in 3 days/);
+    await emailTo(F.email, /plan has ended/);
+    assert.equal((await bill(F)).plan, 'free');
+    assert.equal((await get(`consultants/${F.uid}`)).platformSettings.activePlan, 'free');
+    assert.equal((await bill(E)).plan, 'pro');
+
+    // Back to early access for anything after this.
+    assert.equal((await setBilling({ enabled: false })).status, 200);
   });
 } finally {
   // Kill the whole process group (npx -> tsx -> node), not just npx.

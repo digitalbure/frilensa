@@ -1,3 +1,5 @@
+import { serverLimitProblem } from "./billing";
+import { usageOf } from "../src/lib/billing";
 import crypto from "crypto";
 import { z } from "zod";
 import { readWorkspace, updateWorkspace, WorkspaceMissing } from "./workspace";
@@ -400,8 +402,18 @@ function activity(type: ActivityLog["type"], title: string, description: string,
   return { id: newId("log"), type, title, description: `${description} (${via})`, timestamp: new Date().toISOString(), ...extra };
 }
 
+/** Refuses a new client or invoice when the plan's limit is reached (once paid plans are on). */
+async function checkLimit(uid: string, kind: "clients" | "invoices") {
+  const ws = await readWorkspace(uid);
+  if (!ws) return;
+  const used = usageOf(ws.data, todayIn().slice(0, 7))[kind];
+  const problem = await serverLimitProblem(uid, kind, used);
+  if (problem) throw new ApiError(402, problem);
+}
+
 export async function createClient(uid: string, keyName: string, input: unknown) {
   const q = parse(createClientInput, input);
+  await checkLimit(uid, "clients");
   return updateWorkspace(uid, (raw, data) => {
     if (q.email && data.clients.some(c => (c.email || "").trim().toLowerCase() === q.email!.toLowerCase())) {
       throw new ApiError(409, "A client with this email already exists.");
@@ -423,6 +435,7 @@ export async function createClient(uid: string, keyName: string, input: unknown)
 
 export async function createDraftDocument(uid: string, keyName: string, input: unknown) {
   const q = parse(createDraftInput, input);
+  if (q.type === "invoice") await checkLimit(uid, "invoices");
   return updateWorkspace(uid, (raw, data) => {
     const client = data.clients.find(c => c.id === q.clientId);
     if (!client) throw new ApiError(404, "Client not found. Create the client first or check the id.");

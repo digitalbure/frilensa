@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { 
@@ -981,6 +982,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       alert('Choose a client and add at least one line item.');
       return;
     }
+    // A new invoice counts towards the plan's invoices this month.
+    if (!editingDoc && docType === 'invoice' && !allowAnother(data, 'invoices')) return;
 
     const docPayload: CRMDocument = {
       id: editingDoc ? editingDoc.id : `doc-${Date.now()}`,

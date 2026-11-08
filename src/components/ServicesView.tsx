@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import {
   Briefcase, Plus, Search, Edit3, Trash2, X,
@@ -299,6 +300,7 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
         activityLogs: [newLog, ...(data.activityLogs || [])]
       });
     } else {
+      if (!allowAnother(data, 'services')) return;
       const newService: ProductService = {
         id: `srv-${Date.now()}`,
         ...fields,

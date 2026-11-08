@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { PlanTier } from '../types';
 import { PLAN_TIERS, annualPrice, planHighlights, usePlatformConfig } from '../lib/platformConfig';
+import { useBilling, switchPlanEarlyAccess } from '../lib/billingClient';
+import PlanPayment from './PlanPayment';
 
 interface SubscriptionPaywallModalProps {
   currentPlan: PlanTier;
@@ -23,7 +25,30 @@ export default function SubscriptionPaywallModal({
   reason
 }: SubscriptionPaywallModalProps) {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [selectedPlan, setSelectedPlan] = useState<PlanTier>(currentPlan === 'free' ? 'pro' : 'premium');
+  const billing = useBilling();
+  // The plan the server has for you (falls back to the one passed in while it loads).
+  const myPlan: PlanTier = billing?.plan || currentPlan;
+  const paidPlans = !!billing?.billing.enabled;
+  const [selectedPlan, setSelectedPlan] = useState<PlanTier>(myPlan === 'free' ? 'pro' : 'premium');
+  const [paying, setPaying] = useState<PlanTier | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  const choose = async (plan: PlanTier) => {
+    setProblem(null);
+    if (paidPlans) {
+      if (plan === 'free') { onClose(); return; }
+      setPaying(plan);
+      return;
+    }
+    // Early access: switching is free, and the server records it.
+    setBusy(true);
+    try {
+      await switchPlanEarlyAccess(plan);
+      onUpgradePlan(plan, { method: 'early_access', billingCycle, amount: 0 });
+      onClose();
+    } catch (err: any) { setProblem(err.message); } finally { setBusy(false); }
+  };
 
   // Names, prices, limits and features are set by Frilensa admins for everyone (Admin → Plans).
   const { config } = usePlatformConfig();
@@ -66,7 +91,7 @@ export default function SubscriptionPaywallModal({
             </div>
             <div>
               <h3 className="font-black text-sm text-white">Plans</h3>
-              <p className="text-[10px] text-slate-400">All plans are free during early access</p>
+              <p className="text-[10px] text-slate-400">{paidPlans ? 'Prepaid monthly or yearly. No automatic charges.' : 'All plans are free during early access'}</p>
             </div>
           </div>
           <button
@@ -91,7 +116,9 @@ export default function SubscriptionPaywallModal({
             </div>
           )}
 
-          <>
+          {paying ? (
+            <PlanPayment plan={paying} cycle={billingCycle} onBack={() => setPaying(null)} onDone={() => { onUpgradePlan(paying, { method: 'paid', billingCycle }); }} onClose={onClose} />
+          ) : <>
               {/* Header Title & Billing Cycle Toggle */}
               <div className="text-center space-y-3 max-w-xl mx-auto">
                 <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
@@ -131,7 +158,7 @@ export default function SubscriptionPaywallModal({
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
                 {plans.map((plan) => {
                   const isSelected = selectedPlan === plan.id;
-                  const isCurrent = currentPlan === plan.id;
+                  const isCurrent = myPlan === plan.id;
                   const planPrice = billingCycle === 'annual' ? plan.annualPrice : plan.monthlyPrice;
                   const perMonth = billingCycle === 'annual' ? Math.round(plan.annualPrice / 12 * 100) / 100 : plan.monthlyPrice;
 
@@ -197,10 +224,10 @@ export default function SubscriptionPaywallModal({
                       <div className="pt-5 mt-4 border-t border-slate-100">
                         <button
                           type="button"
+                          disabled={busy}
                           onClick={(e) => {
                             e.stopPropagation();
-                            onUpgradePlan(plan.id, { method: 'early_access', billingCycle, amount: 0 });
-                            onClose();
+                            choose(plan.id);
                           }}
                           className={`w-full py-2.5 rounded-xl font-black text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                             isSelected 
@@ -208,7 +235,9 @@ export default function SubscriptionPaywallModal({
                               : 'bg-slate-100 hover:bg-slate-200 text-slate-800'
                           }`}
                         >
-                          {isCurrent ? 'Keep plan' : plan.id === 'free' ? 'Switch to Free' : 'Choose ' + plan.name}
+                          {paidPlans
+                            ? (plan.id === 'free' ? (isCurrent ? 'Stay on Free' : 'Free') : isCurrent ? `Renew ${plan.name}` : `Pay for ${plan.name}`)
+                            : (isCurrent ? 'Keep plan' : plan.id === 'free' ? 'Switch to Free' : 'Choose ' + plan.name)}
                           <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                       </div>
@@ -217,10 +246,13 @@ export default function SubscriptionPaywallModal({
                 })}
               </div>
 
+              {problem && <p className="text-center text-xs font-semibold text-rose-600">{problem}</p>}
               <div className="pt-4 border-t border-slate-100 text-center text-[11px] text-slate-500">
-                Online billing isn&apos;t connected yet. During early access you can switch plans at no charge.
+                {paidPlans
+                  ? 'Pay for a month or a year at a time. We remind you before it ends; nothing renews by itself.'
+                  : 'During early access you can switch plans at no charge.'}
               </div>
-          </>
+          </>}
 
         </div>
 
