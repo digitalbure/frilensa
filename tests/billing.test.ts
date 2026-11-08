@@ -1,6 +1,6 @@
 // Unit tests for paid plans. Run: npm run test:unit
 import assert from "node:assert/strict";
-import { DEFAULT_BILLING, cleanBilling, daysLeft, effectivePlan, limitProblem, paypalCharge, periodEnd, planPrice, usageOf, type Subscription } from "../src/lib/billing";
+import { featureProblem, vatIncluded, receiptNumber, DEFAULT_BILLING, cleanBilling, daysLeft, effectivePlan, limitProblem, paypalCharge, periodEnd, planPrice, usageOf, type Subscription } from "../src/lib/billing";
 import { DEFAULT_PLATFORM_CONFIG } from "../src/lib/platformConfigShared";
 
 // Periods: a month (or year) less a day, month ends handled.
@@ -41,5 +41,14 @@ assert.match(limitProblem(free, "invoices", 5)!, /5 invoices a month/);
 assert.equal(limitProblem(DEFAULT_PLATFORM_CONFIG.plans.premium, "clients", 10_000), null);
 const usage = usageOf({ documents: [{ type: "invoice", issueDate: "2026-11-02" }, { type: "invoice", issueDate: "2026-10-30" }, { type: "quote", issueDate: "2026-11-02" }] as any, clients: [{}, {}] as any, services: [], businesses: [{}] as any, projects: [] }, "2026-11");
 assert.deepEqual(usage, { invoices: 1, clients: 2, services: 0, businesses: 1, projects: 0 });
+
+// Features follow the plan.
+const plans = DEFAULT_PLATFORM_CONFIG.plans;
+assert.equal(featureProblem(plans, "pro", "allowRecurringInvoices"), null);
+assert.match(featureProblem(plans, "free", "allowRecurringInvoices")!, /Recurring invoices and retainers are not part of the Free Starter plan\. Upgrade to Pro Consultant/);
+assert.match(featureProblem(plans, "free", "allowMultiCurrency")!, /not part of the Free Starter plan/);
+// Receipts.
+assert.equal(vatIncluded(112.5, 12.5), 12.5);
+assert.equal(receiptNumber(2026, 7), "FRL-2026-0007");
 
 console.log("billing checks passed");

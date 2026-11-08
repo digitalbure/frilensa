@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { allowFeature } from '../lib/billingClient';
 import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -633,6 +634,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
 
   // PDF Generation & Download
   const handleOpenPdfModal = (doc: CRMDocument) => {
+    if (!allowFeature('allowExportPdf')) return;
     setPdfModalDoc(doc);
   };
 
@@ -984,6 +986,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     }
     // A new invoice counts towards the plan's invoices this month.
     if (!editingDoc && docType === 'invoice' && !allowAnother(data, 'invoices')) return;
+    // Documents in another currency are a plan feature.
+    if ((docCurrency || 'FJD').toUpperCase() !== (data.userProfile.defaultCurrency || 'FJD').toUpperCase() && !allowFeature('allowMultiCurrency')) return;
 
     const docPayload: CRMDocument = {
       id: editingDoc ? editingDoc.id : `doc-${Date.now()}`,
@@ -1363,6 +1367,8 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
       items: retItems
     };
 
+    // New retainers are a plan feature.
+    if (!editingRetainer && !allowFeature('allowRecurringInvoices')) return;
     let updated = [];
     const currentRecs = data.recurringInvoices || [];
     if (editingRetainer) {

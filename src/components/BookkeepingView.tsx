@@ -247,6 +247,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
         body: JSON.stringify({ textStatement: statementText, vatRate: currentVatRate })
       });
       const parsed = await res.json();
+      if (res.status === 402 && parsed.upgrade) { openUpgrade(parsed.error); throw new Error(parsed.error); }
 
       const itemsWithIds: Transaction[] = parsed.categorized.map((item: any, i: number) => ({
         id: `upload-${Date.now()}-${i}`,

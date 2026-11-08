@@ -24,12 +24,15 @@ export interface BillingSettings {
   mpaisa: string;
   mycash: string;
   instructions: string;
+  /** Frilensa's details for receipts and tax invoices. */
+  seller: { legalName: string; tin: string; address: string; email: string; vatRegistered: boolean; vatRate: number; footer: string };
 }
 
 export const DEFAULT_BILLING: BillingSettings = {
   enabled: false, earlyAccessUntil: '', graceDays: 7,
   paypal: false, paypalCurrency: 'AUD', paypalRate: 0.66,
-  bankDetails: '', mpaisa: '', mycash: '', instructions: ''
+  bankDetails: '', mpaisa: '', mycash: '', instructions: '',
+  seller: { legalName: 'Frilensa', tin: '', address: '', email: '', vatRegistered: false, vatRate: 12.5, footer: '' }
 };
 
 const str = (v: unknown, max: number) => typeof v === 'string' ? v.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, max) : '';
@@ -46,7 +49,14 @@ export function cleanBilling(raw: any): BillingSettings {
     paypal: r.paypal === true,
     paypalCurrency: PAYPAL_BILLING_CURRENCIES.includes(r.paypalCurrency) ? r.paypalCurrency : DEFAULT_BILLING.paypalCurrency,
     paypalRate: Number.isFinite(rate) && rate > 0 && rate < 100 ? Math.round(rate * 10000) / 10000 : DEFAULT_BILLING.paypalRate,
-    bankDetails: str(r.bankDetails, 500), mpaisa: str(r.mpaisa, 60), mycash: str(r.mycash, 60), instructions: str(r.instructions, 500)
+    bankDetails: str(r.bankDetails, 500), mpaisa: str(r.mpaisa, 60), mycash: str(r.mycash, 60), instructions: str(r.instructions, 500),
+    seller: {
+      legalName: str(r.seller?.legalName, 120) || DEFAULT_BILLING.seller.legalName,
+      tin: str(r.seller?.tin, 40), address: str(r.seller?.address, 300), email: str(r.seller?.email, 120),
+      vatRegistered: r.seller?.vatRegistered === true,
+      vatRate: Number.isFinite(Number(r.seller?.vatRate)) && Number(r.seller?.vatRate) >= 0 && Number(r.seller?.vatRate) <= 50 ? Math.round(Number(r.seller.vatRate) * 100) / 100 : DEFAULT_BILLING.seller.vatRate,
+      footer: str(r.seller?.footer, 300)
+    }
   };
 }
 
@@ -142,3 +152,52 @@ export function limitProblem(plan: PlanFeatureConfig, kind: LimitKind, used: num
   if (!Number.isFinite(max) || max < 0 || used < max) return null;
   return `The ${plan.name} plan includes ${max} ${max === 1 ? meta.one : meta.many}${meta.monthly ? ' a month' : ''}, and you've used ${used >= max ? 'them all' : used}. Upgrade to add more.`;
 }
+
+// ---------- Features ----------
+
+export type FeatureKey = keyof PlanFeatureConfig['features'];
+export const FEATURE_NAMES: Record<FeatureKey, string> = {
+  allowAiReceiptOcr: 'AI receipt scanning',
+  allowClientPortal: 'The client portal',
+  allowRecurringInvoices: 'Recurring invoices and retainers',
+  allowMultiCurrency: 'Quotes and invoices in other currencies',
+  allowCustomBranding: 'Your own logo and brand colours',
+  allowBankReconciliation: 'Bank statement import',
+  allowCustomTaxRules: 'Your own taxes and fees',
+  allowDirectSupportChat: 'Support chat',
+  allowExportPdf: 'PDF downloads'
+};
+
+/** Which plans include a feature, cheapest first. */
+export function plansWith(plans: Record<string, PlanFeatureConfig>, feature: FeatureKey) {
+  return Object.values(plans).filter(p => p.features[feature]).sort((a, b) => a.price - b.price);
+}
+
+/** Why a feature isn't available on this plan, or null when it is. */
+export function featureProblem(plans: Record<string, PlanFeatureConfig>, planId: string, feature: FeatureKey): string | null {
+  const plan = plans[planId];
+  if (!plan || plan.features[feature]) return null;
+  const up = plansWith(plans, feature)[0];
+  return `${FEATURE_NAMES[feature]} ${FEATURE_NAMES[feature].endsWith('s') && !FEATURE_NAMES[feature].startsWith('The') ? 'are' : 'is'} not part of the ${plan.name} plan${up ? `. Upgrade to ${up.name} to use ${FEATURE_NAMES[feature].startsWith('The') ? 'it' : 'them'}` : ''}.`;
+}
+
+// ---------- Receipts for plan payments ----------
+
+export interface PlanReceipt {
+  number: string;
+  issuedAt: string;
+  taxInvoice: boolean;
+  seller: BillingSettings['seller'];
+  customer: { email: string; name: string };
+  line: string;
+  amount: number;
+  currency: string;
+  vat: number;
+  method: string;
+  reference: string;
+  periodEnd: string;
+}
+
+/** The VAT inside a VAT-inclusive price (plan prices include VAT when Frilensa is VAT-registered). */
+export const vatIncluded = (amount: number, rate: number) => Math.round(amount * rate / (100 + rate) * 100) / 100;
+export const receiptNumber = (year: number, n: number) => `FRL-${year}-${String(n).padStart(4, '0')}`;

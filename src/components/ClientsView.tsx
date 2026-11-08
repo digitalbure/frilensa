@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { allowFeature } from '../lib/billingClient';
 import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -76,6 +77,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
       return;
     }
 
+    if (!allowFeature('allowClientPortal')) return;
     setGeneratingLinkId(client.id);
 
     // The server issues a strong random token and stores only its hash.

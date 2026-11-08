@@ -9,6 +9,7 @@ import { updateWorkspace, readWorkspace, readPlans, WorkspaceMissing } from "./w
 import { notifyEmail, later } from "./notify";
 import { formatMoney } from "../src/lib/payNow";
 import {
+  featureProblem, receiptNumber, vatIncluded, type FeatureKey, type PlanReceipt,
   addDays, daysLeft, effectivePlan, isPaidPlan, limitProblem, paypalCharge, periodEnd, planPrice,
   type BillingCycle, type BillingSettings, type LimitKind, type PayMethod, type Subscription
 } from "../src/lib/billing";
@@ -92,6 +93,38 @@ export async function activatePlan(uid: string, plan: PlanTier, cycle: BillingCy
   return sub;
 }
 
+/**
+ * Gives an approved plan payment its receipt: the next number, and Frilensa's details as they are today
+ * (so later changes don't alter receipts already issued). Safe to call twice.
+ */
+export async function issueReceipt(paymentId: string, paidUntil: string) {
+  const db = getAdminDb();
+  const { billing } = await settings();
+  const payRef = db.collection(PAYMENTS).doc(paymentId);
+  const counter = db.collection("platform").doc("plan_receipts");
+  return db.runTransaction(async tx => {
+    const [p, c] = await Promise.all([tx.get(payRef), tx.get(counter)]);
+    const pay = p.data();
+    if (!pay || pay.status !== "approved") return null;
+    if (pay.receipt) return pay.receipt as PlanReceipt;
+    const year = Number(today().slice(0, 4));
+    const n = (c.data()?.year === year ? Number(c.data()?.next) || 1 : 1);
+    const seller = billing.seller;
+    const name = await getAuth(getAdminApp()).getUser(pay.uid).then(u => u.displayName || "").catch(() => "");
+    const receipt: PlanReceipt = {
+      number: receiptNumber(year, n), issuedAt: new Date().toISOString(), taxInvoice: seller.vatRegistered, seller,
+      customer: { email: pay.email || "", name },
+      line: `Frilensa ${pay.planName} plan, ${pay.cycle === "annual" ? "1 year" : "1 month"} (paid until ${paidUntil})`,
+      amount: pay.amount, currency: pay.currency || "FJD", vat: seller.vatRegistered ? vatIncluded(pay.amount, seller.vatRate) : 0,
+      method: pay.method, reference: pay.method === "paypal" ? `${pay.reference}${pay.charged ? ` (${pay.chargedCurrency} ${Number(pay.charged).toFixed(2)})` : ""}` : pay.reference,
+      periodEnd: paidUntil
+    };
+    tx.set(counter, { year, next: n + 1 }, { merge: true });
+    tx.update(payRef, { receipt });
+    return receipt;
+  });
+}
+
 /** Admins set a plan directly (a gift, a deal, or a correction). Free ends any paid time. */
 export async function grantPlan(uid: string, plan: PlanTier, until: string, note: string) {
   const sub: Subscription = { uid, plan, status: "active", method: "admin", paidUntil: plan === "free" ? "" : until, updatedAt: new Date().toISOString(), ...(note ? { note } : {}) };
@@ -130,6 +163,13 @@ export async function serverLimitProblem(uid: string, kind: Exclude<LimitKind, "
   const { billing, plans } = await settings();
   if (!billing.enabled) return null;
   return limitProblem(plans[await planFor(uid)], kind, used);
+}
+
+/** Whether the user's plan includes a feature (once paid plans are on). */
+export async function serverFeatureProblem(uid: string, feature: FeatureKey) {
+  const { billing, plans } = await settings();
+  if (!billing.enabled) return null;
+  return featureProblem(plans, await planFor(uid), feature);
 }
 
 // ---------- PayPal (Frilensa's own account) ----------
@@ -177,6 +217,13 @@ export function createBillingRouter() {
       payments: list.map(({ uid: _u, ...p }) => p),
       billing: { ...billing, paypal: billing.paypal && paypalConfigured(), paypalClientId: billing.paypal && paypalConfigured() ? process.env.FRILENSA_PAYPAL_CLIENT_ID : "" }
     });
+  }));
+
+  // A receipt for one of your plan payments.
+  router.get("/receipts/:id", wrap(async (req, res) => {
+    const p = (await getAdminDb().collection(PAYMENTS).doc(String(req.params.id).slice(0, 64)).get()).data();
+    if (!p || p.uid !== req.user!.uid || !p.receipt) throw new BillingError(404, "Receipt not found.");
+    res.json({ receipt: p.receipt });
   }));
 
   // Early access: switch plans for free until billing is switched on.
@@ -267,10 +314,11 @@ export function createBillingRouter() {
       return true;
     });
     const sub = first ? await activatePlan(payment.uid, payment.plan, payment.cycle, "paypal", `PayPal ${capture.id}`) : await getSubscription(payment.uid);
+    const receipt = first ? await issueReceipt(`pp_${orderId}`, sub?.paidUntil || "") : null;
     if (first) later(notifyEmail(payment.email, {
       subject: `You're on ${payment.planName}`,
       heading: `Thanks, your ${payment.planName} plan is active`,
-      lines: [`We received ${formatMoney(payment.chargedCurrency, payment.charged)} by PayPal.`, `Your plan is paid until ${sub?.paidUntil}.`],
+      lines: [`We received ${formatMoney(payment.chargedCurrency, payment.charged)} by PayPal.`, `Your plan is paid until ${sub?.paidUntil}.`, receipt ? `Your ${receipt.taxInvoice ? "tax invoice" : "receipt"} ${receipt.number} is in Settings → Plan.` : ""].filter(Boolean),
       actionLabel: "Open Frilensa", actionPath: "/"
     }));
     res.json({ ok: true, plan: payment.plan, subscription: sub });
@@ -316,10 +364,11 @@ export function createAdminBillingRouter() {
     });
     if (!ok) throw new BillingError(409, "This payment isn't waiting for approval.");
     const sub = await activatePlan(ok.uid, ok.plan, ok.cycle, ok.method, `${ok.method} ${ok.reference}`);
+    const receipt = await issueReceipt(ok.id, sub.paidUntil);
     later(notifyEmail(ok.email, {
       subject: `You're on ${ok.planName}`,
       heading: `Your payment arrived and ${ok.planName} is active`,
-      lines: [`Thanks for your payment of ${formatMoney("FJD", ok.amount)} (reference ${ok.reference}).`, `Your plan is paid until ${sub.paidUntil}.`],
+      lines: [`Thanks for your payment of ${formatMoney("FJD", ok.amount)} (reference ${ok.reference}).`, `Your plan is paid until ${sub.paidUntil}.`, receipt ? `Your ${receipt.taxInvoice ? "tax invoice" : "receipt"} ${receipt.number} is in Settings → Plan.` : ""].filter(Boolean),
       actionLabel: "Open Frilensa", actionPath: "/"
     }));
     res.json({ ok: true, subscription: sub });
@@ -338,6 +387,12 @@ export function createAdminBillingRouter() {
       actionLabel: "Open Frilensa", actionPath: "/"
     }));
     res.json({ ok: true });
+  }));
+
+  router.get("/receipts/:id", wrap(async (req, res) => {
+    const p = (await getAdminDb().collection(PAYMENTS).doc(String(req.params.id).slice(0, 64)).get()).data();
+    if (!p?.receipt) throw new BillingError(404, "Receipt not found.");
+    res.json({ receipt: p.receipt });
   }));
 
   // Set someone's plan directly. `until` is the last paid day (empty: open-ended).

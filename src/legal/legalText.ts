@@ -2,7 +2,7 @@
 // Written to match what the app does. Have a lawyer review them; update LEGAL_UPDATED when they change,
 // and log the change in CHANGELOG.md.
 
-export const LEGAL_UPDATED = '7 November 2026';
+export const LEGAL_UPDATED = '8 November 2026';
 
 export function privacyPolicy(name: string, contact: string) {
   return `This policy explains what ${name} collects, why, who helps us run the service, and the choices you have. It applies to the ${name} app, its client portal and its public pages, such as online invoices, rate cards and booking pages.
@@ -16,6 +16,7 @@ ${name} is invoicing, bookkeeping and booking software for freelancers and small
 - **Your clients' information**: names, contact details, TINs and amounts you add to documents, and anything your clients send through the client portal, such as a reported payment or a message.
 - **Requests from your public pages**: when someone uses your booking page, rate card or the directory, we collect what they enter (such as their name, email, the date and their answers) and pass it to you.
 - **The marketplace**: listings you publish (with their photos, prices and town) are public. When you send a request for someone's listing, we pass your name, email, any phone number and your message to them, or to the ${name} team for listings ${name} manages on a provider's behalf.
+- **Paying for a plan**: what you paid, when, how (bank, M-PAiSA, MyCash or PayPal) and your payment reference, to confirm payments and issue receipts. PayPal handles card and PayPal payments; we never see card numbers.
 - **Payments**: if you turn on Pay now, PayPal handles card and PayPal payments. We never see or store card numbers. We store your PayPal API keys encrypted, and the details of payments needed to mark invoices paid.
 - **Technical information**: IP addresses (to stop abuse and limit repeated requests), details of errors when a screen fails to load (so we can fix it), and usage statistics through Google Firebase Analytics.
 
@@ -88,6 +89,15 @@ Don't use ${name} to break the law, mislead or defraud anyone, send spam, upload
 
 ## Connected apps and API keys
 If you create API keys or connect apps, you're responsible for what they do with your account. Keep keys secret and revoke ones you no longer use.
+
+## Plans and paying ${name}
+${name} has a Free plan and paid plans (shown in Settings → Plan). While ${name} is in early access, plans may be free; we'll tell you before paid plans start and give you time to choose.
+- **Prepaid, no automatic renewal.** A paid plan is bought for a month or a year at the price shown when you pay. It isn't renewed or charged automatically: we remind you before it ends, and paying again adds to your paid time. Prices can change, but not for time you've already paid for.
+- **How to pay.** By card or PayPal (charged in the currency shown, at the rate shown before you pay, because PayPal can't charge in FJD), or by bank transfer, M-PAiSA or MyCash. A transfer counts once we've received it and confirmed it; your plan starts then. You get a receipt, or a tax invoice if ${name} is VAT-registered, for each payment.
+- **Limits.** Each plan has limits (such as invoices a month, clients and AI scans) and features. When you reach a limit, you can upgrade or wait for the next month; we don't delete anything.
+- **When a plan ends.** After the grace period shown in Settings, your account moves to the Free plan. Everything you've made stays, and you can still view, download and send it; Free plan limits apply to new items, and features not on the Free plan stop until you renew.
+- **Refunds.** Payments for time already started aren't refunded, except where the law requires it or we've charged you in error. If ${name} stops offering paid plans, we'll refund the unused part of your paid time.
+- **Plans we give you.** Plans given through an invite or by our team last for the time we tell you and may be changed with notice.
 
 ## Availability and liability
 - We work to keep ${name} available and your information backed up, but we can't promise it will always be available or free of errors. Keep your own copies of important records (Settings → Download backup).

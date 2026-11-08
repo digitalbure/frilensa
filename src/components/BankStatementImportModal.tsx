@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
+import { openUpgrade } from '../lib/billingClient';
 import {
   X,
   Sparkles,
@@ -211,6 +212,7 @@ export const BankStatementImportModal: React.FC<BankStatementImportModalProps> =
       });
 
       const data = await res.json();
+      if (res.status === 402 && data.upgrade) { openUpgrade(data.error); throw new Error(data.error); }
       if (data.categorized && Array.isArray(data.categorized)) {
         let formatted: Transaction[] = data.categorized.map((item: any, i: number) => ({
           id: `upload-${Date.now()}-${i}`,

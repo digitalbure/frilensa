@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Check, CreditCard, X } from 'lucide-react';
-import { cleanBilling, PAYPAL_BILLING_CURRENCIES, type BillingSettings, type Subscription } from '../lib/billing';
+import { cleanBilling, PAYPAL_BILLING_CURRENCIES, type BillingSettings, type PlanReceipt, type Subscription } from '../lib/billing';
+import { openPlanReceipt } from '../lib/billingClient';
 
-interface AdminPayment { id: string; uid: string; email: string; planName: string; plan: string; cycle: string; amount: number; method: string; reference: string; status: string; reason?: string; createdAt: string; charged?: number; chargedCurrency?: string }
+interface AdminPayment { id: string; uid: string; email: string; planName: string; plan: string; cycle: string; amount: number; method: string; reference: string; status: string; reason?: string; createdAt: string; charged?: number; chargedCurrency?: string; receipt?: PlanReceipt }
 type AdminSub = Subscription & { daysLeft: number | null; email: string };
 
 async function json<T>(res: Response): Promise<T> {
@@ -94,6 +95,19 @@ export default function AdminBillingView({ billing, onSave, showToast }: { billi
           </div>
           <p className="text-[10px] text-slate-500">PayPal can't charge in FJD. A FJD 25 plan is charged as {draft.paypalCurrency} {(25 * (draft.paypalRate || 0)).toFixed(2)}.</p>
         </div>
+        <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-300 pt-2">Your details for receipts</h4>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <label className="block"><span className={label}>Legal name</span><input className={input} value={draft.seller.legalName} onChange={e => set({ seller: { ...draft.seller, legalName: e.target.value } })} placeholder="e.g. Frilensa Pte Limited" /></label>
+          <label className="block"><span className={label}>TIN</span><input className={input} value={draft.seller.tin} onChange={e => set({ seller: { ...draft.seller, tin: e.target.value } })} /></label>
+          <label className="block"><span className={label}>Email</span><input className={input} value={draft.seller.email} onChange={e => set({ seller: { ...draft.seller, email: e.target.value } })} placeholder="billing@frilensa.com" /></label>
+          <label className="block sm:col-span-2"><span className={label}>Address</span><textarea rows={2} className={input} value={draft.seller.address} onChange={e => set({ seller: { ...draft.seller, address: e.target.value } })} /></label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-200"><input type="checkbox" checked={draft.seller.vatRegistered} onChange={e => set({ seller: { ...draft.seller, vatRegistered: e.target.checked } })} /> VAT-registered</label>
+            {draft.seller.vatRegistered && <label className="block"><span className={label}>VAT rate % (included in prices)</span><input type="number" step="0.5" className={input} value={draft.seller.vatRate} onChange={e => set({ seller: { ...draft.seller, vatRate: Number(e.target.value) } })} /></label>}
+          </div>
+          <label className="block sm:col-span-3"><span className={label}>Note at the bottom of receipts</span><input className={input} value={draft.seller.footer} onChange={e => set({ seller: { ...draft.seller, footer: e.target.value } })} placeholder="e.g. Thank you. Plans are prepaid and don't renew automatically." /></label>
+        </div>
+        <p className="text-[10px] text-slate-500">Each approved payment gets a numbered receipt (FRL-2026-0001…), or a tax invoice showing the VAT included when you're VAT-registered. Receipts keep the details as they were when issued.</p>
         <div className="flex justify-end">
           <button type="button" disabled={!changed} onClick={save} className="px-4 py-2 rounded-xl bg-sky-500 text-slate-950 text-xs font-extrabold cursor-pointer disabled:opacity-40">Save billing settings</button>
         </div>
@@ -134,7 +148,7 @@ export default function AdminBillingView({ billing, onSave, showToast }: { billi
         {recent.length > 0 && (
           <details className="text-[11px] text-slate-400">
             <summary className="cursor-pointer font-semibold text-slate-300">Recent payments</summary>
-            {recent.map(p => <p key={p.id}>{p.createdAt.slice(0, 10)} · {p.email} · {p.planName} · {METHOD[p.method] || p.method} · {p.status === 'approved' ? fjd(p.amount) : p.status}</p>)}
+            {recent.map(p => <p key={p.id}>{p.createdAt.slice(0, 10)} · {p.email} · {p.planName} · {METHOD[p.method] || p.method} · {p.status === 'approved' ? fjd(p.amount) : p.status}{p.receipt && <> · <button type="button" onClick={() => openPlanReceipt(p.id, true)} className="underline text-sky-300 cursor-pointer">{p.receipt.number}</button></>}</p>)}
           </details>
         )}
       </section>

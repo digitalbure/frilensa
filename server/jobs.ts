@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { dailyWebhookSweep } from "./webhooks";
-import { dailyBillingSweep } from "./billing";
+import { dailyBillingSweep, serverFeatureProblem } from "./billing";
 import express, { type Response } from "express";
 import { getAdminDb, isEmail, requireUser, rateLimit, type AuthedRequest } from "./security";
 import { sendDocumentEmail, sendgridConfigured } from "./documentEmail";
@@ -8,7 +8,7 @@ import { appUrl, render } from "./notify";
 import { sendViaSendGrid } from "../src/lib/transactionalEmailServer";
 import { runDueRetainers, todayIn } from "../src/lib/retainers";
 import { planReminders, reminderMessage, type PlannedReminder } from "../src/lib/reminders";
-import { toData, loadWorkspace, writeWorkspace } from "./workspace";
+import { toData, loadWorkspace, writeWorkspace, readWorkspace } from "./workspace";
 import { buildFlatDocumentRow, flatDocumentId, sanitizeForFirestore } from "../src/lib/flatDocuments";
 import type { CRMData, CRMDocument } from "../src/types";
 
@@ -128,7 +128,10 @@ export async function runAutomationFor(uid: string, trigger: AutomationResult["t
   const result: AutomationResult = { ranAt: new Date().toISOString(), trigger, today, invoicesCreated: [], remindersSent: [], problems: [] };
   const db = getAdminDb();
   try {
-    const { raw, created } = await generateRetainerInvoices(uid, today);
+    // Recurring invoices are a plan feature (once paid plans are on): none are created without it.
+    const retainerProblem = await serverFeatureProblem(uid, "allowRecurringInvoices");
+    const { raw, created } = retainerProblem ? { raw: (await readWorkspace(uid))?.raw, created: [] as CRMDocument[] } : await generateRetainerInvoices(uid, today);
+    if (retainerProblem && raw && needsRun(raw)) result.problems.push(retainerProblem);
     if (!raw) {
       result.problems.push("No workspace found.");
       return result;

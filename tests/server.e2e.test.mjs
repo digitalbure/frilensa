@@ -1543,7 +1543,9 @@ try {
     const bpost = (who, path, body) => fetch(`${API}/api/billing${path}`, { method: 'POST', headers: auth(who), body: JSON.stringify(body || {}) });
     const adm = (who, path, method = 'GET', body) => fetch(`${API}/api/admin/billing${path}`, { method, headers: auth(who), ...(body ? { body: JSON.stringify(body) } : {}) });
     const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;
-    const setBilling = billing => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify({ ...cfg, billing }) });
+    // The Free plan without the client portal, to check features follow the plan.
+    const plansNoPortal = { ...cfg.plans, free: { ...cfg.plans.free, features: { ...cfg.plans.free.features, allowClientPortal: false } } };
+    const setBilling = billing => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: auth(A), body: JSON.stringify({ ...cfg, plans: plansNoPortal, billing }) });
 
     // Early access: switching is free and recorded on the server.
     assert.equal((await fetch(`${API}/api/billing`)).status, 401);
@@ -1555,7 +1557,10 @@ try {
 
     // Billing on: early-access plans end (no end date set) and the workspace copy can't fake a plan.
     assert.equal((await adm(B, '')).status, 403);
-    assert.equal((await setBilling({ enabled: true, graceDays: 7, paypal: true, paypalCurrency: 'AUD', paypalRate: 0.66, bankDetails: 'BSP 123456', mpaisa: '7771234', mycash: '', instructions: '', earlyAccessUntil: '' })).status, 200);
+    assert.equal((await fetch(`${API}/api/portal/admin/link`, { method: 'POST', headers: auth(F), body: JSON.stringify({ clientId: 'x', clientName: 'X' }) })).status === 402, false, 'features are open during early access');
+    assert.equal((await setBilling({ enabled: true, graceDays: 7, paypal: true, paypalCurrency: 'AUD', paypalRate: 0.66, bankDetails: 'BSP 123456', mpaisa: '7771234', mycash: '', instructions: '', earlyAccessUntil: '', seller: { legalName: 'Frilensa Pte Limited', tin: '50-12345-0-1', address: 'Suva', vatRegistered: true, vatRate: 12.5 } })).status, 200);
+    const portal = await j(await fetch(`${API}/api/portal/admin/link`, { method: 'POST', headers: auth(F), body: JSON.stringify({ clientId: 'x', clientName: 'X' }) }));
+    assert.equal(portal.status, 402); assert.equal(portal.body.upgrade, true); assert.match(portal.body.error, /client portal is not part of/i);
     b = await bill(E); assert.equal(b.plan, 'free'); assert.equal(b.billing.enabled, true); assert.equal(b.billing.paypalClientId, PP_ID);
     assert.equal((await bill(F)).plan, 'free');
     assert.equal((await bpost(E, '/early-access', { plan: 'pro' })).status, 400);
@@ -1576,6 +1581,14 @@ try {
     b = await bill(E); assert.equal(b.plan, 'pro'); assert.equal(b.subscription.method, 'bank'); assert.ok(b.subscription.paidUntil > b.today);
     await emailTo(E.email, /You're on/);
     const proUntil = b.subscription.paidUntil;
+    // A numbered tax invoice, with Frilensa's details as they were when issued.
+    const paid = b.payments.find(p => p.id === m.body.payment.id);
+    assert.match(paid.receipt.number, /^FRL-\d{4}-\d{4}$/); assert.equal(paid.receipt.taxInvoice, true);
+    assert.equal(paid.receipt.seller.tin, '50-12345-0-1'); assert.equal(paid.receipt.vat, Math.round(cfg.plans.pro.price * 12.5 / 112.5 * 100) / 100);
+    assert.equal((await fetch(`${API}/api/billing/receipts/${paid.id}`, { headers: auth(E) })).status, 200);
+    assert.equal((await fetch(`${API}/api/billing/receipts/${paid.id}`, { headers: auth(F) })).status, 404, "someone else's receipt");
+    assert.equal((await adm(A, `/receipts/${paid.id}`)).status, 200);
+    const firstNumber = Number(paid.receipt.number.slice(-4));
 
     // PayPal: priced and checked on the server, recorded once.
     const o = await j(await bpost(E, '/paypal/order', { plan: 'pro', cycle: 'monthly' }));
@@ -1587,6 +1600,7 @@ try {
     b = await bill(E); assert.equal(b.plan, 'pro'); assert.ok(b.subscription.paidUntil > proUntil, 'renewing the same plan adds to the paid time');
     assert.equal((await j(await bpost(E, '/paypal/capture', { orderId: o.body.orderId }))).body.already, true);
     assert.equal(b.payments.filter(p => p.status === 'approved').length, 2);
+    assert.equal(Number(b.payments.find(p => p.method === 'paypal').receipt.number.slice(-4)), firstNumber + 1, 'receipts are numbered in order');
 
     // AI scans: the Free plan's monthly scans run out.
     const month = b.today.slice(0, 7);

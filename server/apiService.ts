@@ -1,4 +1,4 @@
-import { serverLimitProblem } from "./billing";
+import { serverFeatureProblem, serverLimitProblem } from "./billing";
 import { usageOf } from "../src/lib/billing";
 import crypto from "crypto";
 import { z } from "zod";
@@ -436,6 +436,12 @@ export async function createClient(uid: string, keyName: string, input: unknown)
 export async function createDraftDocument(uid: string, keyName: string, input: unknown) {
   const q = parse(createDraftInput, input);
   if (q.type === "invoice") await checkLimit(uid, "invoices");
+  // A document in another currency is a plan feature (once paid plans are on).
+  if (q.currency) {
+    const home = (await readWorkspace(uid))?.data.userProfile.defaultCurrency || "FJD";
+    const problem = q.currency !== home ? await serverFeatureProblem(uid, "allowMultiCurrency") : null;
+    if (problem) throw new ApiError(402, problem);
+  }
   return updateWorkspace(uid, (raw, data) => {
     const client = data.clients.find(c => c.id === q.clientId);
     if (!client) throw new ApiError(404, "Client not found. Create the client first or check the id.");

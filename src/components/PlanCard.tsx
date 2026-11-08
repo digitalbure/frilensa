@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, Sparkles } from 'lucide-react';
 import type { CRMData } from '../types';
 import { usePlatformConfig } from '../lib/platformConfig';
-import { LIMIT_NAMES, openUpgrade, usageOf, useBilling, type LimitKind } from '../lib/billingClient';
+import { LIMIT_NAMES, openPlanReceipt, openUpgrade, usageOf, useBilling, type LimitKind } from '../lib/billingClient';
 
 const fjd = (n: number) => `FJD ${n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const KINDS: LimitKind[] = ['invoices', 'clients', 'businesses', 'services', 'projects', 'aiScans'];
@@ -76,7 +76,10 @@ export default function PlanCard({ data }: { data: CRMData }) {
             {billing!.payments.filter(p => p.status !== 'pending').slice(0, 10).map(p => (
               <li key={p.id} className="flex justify-between gap-2">
                 <span>{p.createdAt.slice(0, 10)} · {p.planName} ({p.cycle}) · {p.method === 'paypal' ? 'PayPal' : p.method === 'bank' ? 'Bank' : p.method === 'mpaisa' ? 'M-PAiSA' : 'MyCash'}</span>
-                <span className={p.status === 'approved' ? 'text-emerald-700' : 'text-rose-600'}>{p.status === 'approved' ? fjd(p.amount) : p.status === 'rejected' ? 'Not found' : 'Failed'}</span>
+                <span className="flex items-center gap-2">
+                  <span className={p.status === 'approved' ? 'text-emerald-700' : 'text-rose-600'}>{p.status === 'approved' ? fjd(p.amount) : p.status === 'rejected' ? 'Not found' : 'Failed'}</span>
+                  {p.receipt && <button type="button" onClick={() => openPlanReceipt(p.id)} className="text-sky-700 underline font-semibold cursor-pointer">{p.receipt.taxInvoice ? 'Tax invoice' : 'Receipt'}</button>}
+                </span>
               </li>
             ))}
           </ul>

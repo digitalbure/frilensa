@@ -1,3 +1,4 @@
+import { serverFeatureProblem } from "./billing";
 import { notifyConsultant, later } from "./notify";
 import { sendDocumentFile } from "./files";
 import { syncBookingStages } from "./webhooks";
@@ -172,6 +173,9 @@ export function createPortalRouter() {
   // ----- Consultant-managed access (Firebase-authenticated) -----
 
   router.post("/admin/link", requireUser, rateLimit({ name: "portal-admin", max: 60, windowMs: 60_000 }), async (req: AuthedRequest, res) => {
+    // The client portal is a plan feature (once paid plans are on). Existing links keep working.
+    const portalProblem = await serverFeatureProblem(req.user!.uid, "allowClientPortal");
+    if (portalProblem) return res.status(402).json({ error: portalProblem, upgrade: true });
     const email = normEmail(req.body?.email);
     const clientId = String(req.body?.clientId || "");
     if (!isEmail(email) || !clientId) return res.status(400).json({ error: "The client needs a valid email address." });

@@ -18,6 +18,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.15.0] - 2026-11-08
+
+### Added
+- **Plan features apply** once paid plans are on: recurring invoices and retainers, the client portal, quotes and invoices in other currencies, your own logo and brand colours, bank statement import, your own taxes and fees, AI receipt scanning and PDF downloads follow each plan's switches in Admin → Plans. Trying one that isn't in your plan opens the plan picker saying which plan has it. Nothing you've already made is removed: existing portal links, retainers and branding keep working, and the daily job just doesn't create new retainer invoices without the feature. The API refuses documents in another currency without it.
+- **Receipts for plan payments:** every approved payment gets a numbered receipt (FRL-2026-0001…), or a tax invoice showing the VAT included when Frilensa is VAT-registered, with Frilensa's legal name, TIN and address from Admin → Billing. Open, print or save them from Settings → Plan (admins from Admin → Billing).
+
+### Changed
+- **Terms of use:** a new "Plans and paying Frilensa" section (prepaid plans, no automatic renewal, how to pay, limits, what happens when a plan ends, refunds, and plans we give), and the privacy policy now mentions plan payment details. Please have these reviewed.
+
 ## [4.14.0] - 2026-11-08
 
 ### Added

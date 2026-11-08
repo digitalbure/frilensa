@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { allowFeature } from '../lib/billingClient';
 import PlanCard from './PlanCard';
 import { motion } from 'motion/react';
 import { 
@@ -196,6 +197,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
   };
 
   const handleBizLogoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!allowFeature('allowCustomBranding')) { e.target.value = ''; return; }
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -956,7 +958,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setShowBrandDesignerModal(true)}
+              onClick={() => { if (allowFeature('allowCustomBranding')) setShowBrandDesignerModal(true); }}
               className="bg-sky-50 text-sky-700 hover:bg-sky-100 text-[9px] font-bold px-2 py-1 rounded-lg border border-sky-200 uppercase tracking-wide flex items-center gap-1 cursor-pointer transition-colors"
             >
               <Wand2 className="w-3 h-3 text-sky-600" />
@@ -2149,6 +2151,7 @@ export default function SettingsView({ data, onUpdateData, onSignOut, onOpenAdmi
               description: newFeeDescription.trim() || undefined
             };
 
+            if (!allowFeature('allowCustomTaxRules')) return;
             const updatedFees = [...(data.businessFees || []), newFee];
             onUpdateData({ ...data, businessFees: updatedFees });
             setNewFeeName('');

@@ -28,7 +28,7 @@ import { createAccountRouter } from "./server/account";
 import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistrationRouter } from "./server/access";
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
 import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter } from "./server/platformConfig";
-import { createAdminBillingRouter, createBillingRouter, useAiScan } from "./server/billing";
+import { createAdminBillingRouter, createBillingRouter, serverFeatureProblem, useAiScan } from "./server/billing";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
 
@@ -274,6 +274,9 @@ async function startServer() {
 
   // API endpoint for AI bookkeeping categorization
   app.post("/api/bookkeeping/categorize", async (req, res) => {
+    // Importing bank statements is a plan feature (once paid plans are on).
+    const importProblem = await serverFeatureProblem((req as any).user.uid, "allowBankReconciliation");
+    if (importProblem) return res.status(402).json({ error: importProblem, upgrade: true });
     try {
       const { transactions, textStatement, vatRate = 12.5 } = req.body;
       const rateNum = Number(vatRate) || 12.5;
@@ -415,7 +418,9 @@ ${JSON.stringify(transactions)}`;
     if (!fileData) {
       return res.status(400).json({ error: "Choose a receipt or invoice file to upload." });
     }
-    // AI scans count towards the plan's monthly allowance (once paid plans are switched on).
+    // AI scanning is a plan feature, and scans count towards the plan's monthly allowance (once paid plans are on).
+    const scanFeature = await serverFeatureProblem((req as any).user.uid, "allowAiReceiptOcr");
+    if (scanFeature) return res.status(402).json({ error: scanFeature, upgrade: true });
     const scanProblem = await useAiScan((req as any).user.uid);
     if (scanProblem) return res.status(402).json({ error: scanProblem, upgrade: true });
 

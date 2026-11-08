@@ -67,7 +67,7 @@ export default function PlanPayment({ plan, cycle, onBack, onDone, onClose }: { 
         <h3 className="text-lg font-black text-slate-900">{done === 'paid' ? `You're on ${p.name}` : 'Thanks, we’ll check your payment'}</h3>
         <p className="text-sm text-slate-600">
           {done === 'paid'
-            ? `Paid until ${billing?.subscription?.paidUntil || 'the end of the period'}. A receipt is in your email.`
+            ? `Paid until ${billing?.subscription?.paidUntil || 'the end of the period'}. Your receipt is in Settings → Plan.`
             : `Frilensa will confirm your ${p.name} plan once the payment arrives, usually within one working day. We'll email you.`}
         </p>
         <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs font-bold cursor-pointer">Done</button>
