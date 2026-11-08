@@ -19,10 +19,12 @@ ${name} is invoicing, bookkeeping and booking software for freelancers and small
 - **Paying for a plan**: what you paid, when, how (bank, M-PAiSA, MyCash or PayPal) and your payment reference, to confirm payments and issue receipts. PayPal handles card and PayPal payments; we never see card numbers.
 - **Payments**: if you turn on Pay now, PayPal handles card and PayPal payments. We never see or store card numbers. We store your PayPal API keys encrypted, and the details of payments needed to mark invoices paid.
 - **Technical information**: IP addresses (to stop abuse and limit repeated requests), details of errors when a screen fails to load (so we can fix it), and usage statistics through Google Firebase Analytics.
+- **How you use ${name}**: which screens you open and which actions you take (for example "invoice created"), with the date, the kind of device and the app version, counted per day. Never what you type or the details of your records. We keep these for about 13 months and delete them with your account.
 
 ## How we use it
 - To run ${name} for you: store your records, make documents and PDFs, send the emails you ask us to send (invoices, quotes, reminders and receipts) and the notifications you choose.
 - To keep the service secure, stop abuse and fix problems.
+- To understand how ${name} is used and improve it: our team looks at totals and trends (such as how many people use bookings, or how many invoices are paid). For research and studies we only use exports where people are replaced by anonymous codes, without names, emails, your clients' details or anything you've typed.
 - To answer your questions and tell you about important changes.
 
 We don't sell your information, and we don't use your clients' information for our own marketing.

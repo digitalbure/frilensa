@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
+import { trackAction } from '../lib/analytics';
 import { BellRing, CheckCircle2, XCircle, FileCheck2, MessageSquare, CalendarClock, ChevronRight, ClipboardList } from 'lucide-react';
 import type { CRMData, CRMDocument, DirectoryBooking, SupportMessage } from '../types';
 import { paymentsToConfirm, newlyAcceptedQuotes } from '../lib/inbox';
@@ -175,6 +176,7 @@ export default function InboxPanel({ data, onUpdateData, onNavigateToTab }: Inbo
   };
 
   const createQuoteFromRequest = async (req: QuoteRequest) => {
+    trackAction(`booking_quoted_${req.channel || 'rate_card'}`);
     const { data: next, doc, client, newClient } = draftQuoteFromRequest(data, req);
     onUpdateData(next);
     setRequests(prev => prev.filter(r => r.id !== req.id));

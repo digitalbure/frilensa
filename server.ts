@@ -29,6 +29,7 @@ import { createAccountAccessRouter, createAdminAccessRouter, createPublicRegistr
 import { createAdminBrandingRouter, createPublicBrandingRouter, manifestHandler } from "./server/branding";
 import { createAdminPlatformConfigRouter, createPublicPlatformConfigRouter, moduleGate } from "./server/platformConfig";
 import { createAdminBillingRouter, createBillingRouter, serverFeatureProblem, useAiScan } from "./server/billing";
+import { createAdminAnalyticsRouter, createAnalyticsRouter } from "./server/analytics";
 import { createClientErrorsRouter } from "./server/clientErrors";
 import pkg from "./package.json";
 
@@ -245,6 +246,8 @@ async function startServer() {
   app.get("/manifest.webmanifest", manifestHandler);
   app.use("/api/admin/platform-config", express.json({ limit: "100kb" }), createAdminPlatformConfigRouter());
   app.use("/api/admin/billing", express.json({ limit: "10kb" }), createAdminBillingRouter());
+  app.use("/api/admin/analytics", createAdminAnalyticsRouter());
+  app.use("/api/analytics", express.json({ limit: "16kb" }), createAnalyticsRouter());
   app.use("/api/billing", express.json({ limit: "10kb" }), createBillingRouter());
   app.use("/api/public/platform-config", createPublicPlatformConfigRouter());
   app.use("/api/admin/access", express.json({ limit: "10kb" }), createAdminAccessRouter());

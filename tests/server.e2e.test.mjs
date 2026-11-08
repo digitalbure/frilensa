@@ -1306,6 +1306,7 @@ try {
     await put(`account_access/${z.uid}`, { via: 'open' });
     await put(`subscriptions/${z.uid}`, { uid: z.uid, plan: 'pro', status: 'active', method: 'admin', paidUntil: '' });
     await put(`ai_usage/${z.uid}_2026-11`, { uid: z.uid, month: '2026-11', scans: 2 });
+    await put(`app_activity/${z.uid}_2026-11-08`, { uid: z.uid, date: '2026-11-08', screens: { billing: 2 } });
     await put(`marketplace_bookings/zhold`, { id: 'zhold', listingId: 'zl', ownerUid: z.uid, kind: 'block', from: '2026-12-01', to: '2026-12-01', quantity: 1, status: 'confirmed' });
     const del = body => fetch(`${API}/api/account`, { method: 'DELETE', headers: auth(z), body: JSON.stringify(body) });
     assert.equal((await fetch(`${API}/api/account`, { method: 'DELETE', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
@@ -1319,6 +1320,7 @@ try {
     assert.equal(await get(`marketplace_bookings/zhold`), null, 'rental calendar left behind');
     assert.equal(await get(`subscriptions/${z.uid}`), null, 'plan left behind');
     assert.equal(await get(`ai_usage/${z.uid}_2026-11`), null, 'AI usage left behind');
+    assert.equal(await get(`app_activity/${z.uid}_2026-11-08`), null, 'usage stats left behind');
     const signIn = await (await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=x`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: z.email, password: 'secret123', returnSecureToken: true }) })).json();
     assert.ok(signIn.error, 'the sign-in still works');
     assert.ok((await get(`consultants/${A.uid}`)), "another user's workspace was touched");
@@ -1534,6 +1536,43 @@ try {
     assert.equal(await get(`directory_bookings/${bk.id}`), null);
     assert.equal(await get(`quote_requests/dirtest1`), null);
   });
+  // ---------- Analytics ----------
+  await check('analytics: usage events are counted per person per day, and admins get reports and anonymous exports', async () => {
+    const ev = body => fetch(`${API}/api/analytics/events`, { method: 'POST', headers: auth(C), body: JSON.stringify(body) });
+    assert.equal((await fetch(`${API}/api/analytics/events`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' })).status, 401);
+    const r1 = await j(await ev({ device: 'phone', version: '4.17.0', events: [{ type: 'screen', name: 'billing' }, { type: 'screen', name: 'billing' }, { type: 'action', name: 'invoice_created' }, { type: 'screen', name: 'Bad Name!' }, { type: 'other', name: 'x1' }] }));
+    assert.equal(r1.status, 200); assert.equal(r1.body.recorded, 3, 'bad names and types ignored');
+    await ev({ events: [{ type: 'screen', name: 'billing' }] });
+    const today = day0(0);
+    const doc = await get(`app_activity/${C.uid}_${today}`);
+    assert.equal(doc.screens.billing, 3); assert.equal(doc.actions.invoice_created, 1); assert.equal(doc.device, 'phone'); assert.equal(doc.events, 4);
+    assert.equal(JSON.stringify(doc).includes('Bad'), false);
+    // Reports: admins only.
+    assert.equal((await fetch(`${API}/api/admin/analytics`, { headers: auth(B) })).status, 403);
+    const rep = await j(await fetch(`${API}/api/admin/analytics?days=30&fresh=1`, { headers: auth(A) }));
+    assert.equal(rep.status, 200, JSON.stringify(rep.body).slice(0, 300));
+    const r = rep.body;
+    assert.ok(r.users.total >= 3); assert.ok(r.engagement.dau >= 1); assert.ok(r.engagement.screens.some(x => x.name === 'billing' && x.count >= 3));
+    assert.ok(r.engagement.actions.some(x => x.name === 'invoice_created'));
+    assert.equal(r.engagement.series.length, 30); assert.equal(r.retention.length, 8);
+    assert.ok(r.bookings.total >= 1); assert.ok(r.bookings.byChannel.length >= 1);
+    assert.ok(r.workspaces.total >= 2); assert.ok(r.marketplace.listings >= 1);
+    assert.equal(typeof r.plans.revenue, 'number'); assert.equal(typeof r.ai.scans, 'number');
+    // Exports: CSV with anonymous ids, never emails.
+    assert.equal((await fetch(`${API}/api/admin/analytics/export/users`, { headers: auth(B) })).status, 403);
+    assert.equal((await fetch(`${API}/api/admin/analytics/export/secrets`, { headers: auth(A) })).status, 400);
+    for (const ds of ['users', 'activity', 'documents', 'bookings', 'listings']) {
+      const res = await fetch(`${API}/api/admin/analytics/export/${ds}?days=30`, { headers: auth(A) });
+      assert.equal(res.status, 200, ds); assert.match(res.headers.get('content-type'), /text\/csv/);
+      const csv = await res.text();
+      assert.ok(csv.split('\n').length >= 2, `${ds} has rows`);
+      assert.equal(/@/.test(csv), false, `${ds} contains an email`);
+      assert.equal(csv.includes(C.uid), false, `${ds} contains a user id`);
+    }
+    const users = await (await fetch(`${API}/api/admin/analytics/export/users`, { headers: auth(A) })).text();
+    assert.match(users.split('\n')[0], /^user,signed_up,last_sign_in,verified,sign_in_with,plan,disabled$/);
+  });
+
   // ---------- Modules super admins switch on or off ----------
   await check('modules: switched-off modules are refused by the server, and module settings apply', async () => {
     const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;

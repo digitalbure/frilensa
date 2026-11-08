@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { trackAction } from '../lib/analytics';
 import { allowFeature } from '../lib/billingClient';
 import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
@@ -988,6 +989,7 @@ export default function BillingView({ data, onUpdateData, selectedDocId, onClear
     if (!editingDoc && docType === 'invoice' && !allowAnother(data, 'invoices')) return;
     // Documents in another currency are a plan feature.
     if ((docCurrency || 'FJD').toUpperCase() !== (data.userProfile.defaultCurrency || 'FJD').toUpperCase() && !allowFeature('allowMultiCurrency')) return;
+    if (!editingDoc) trackAction(`${docType}_created`);
 
     const docPayload: CRMDocument = {
       id: editingDoc ? editingDoc.id : `doc-${Date.now()}`,

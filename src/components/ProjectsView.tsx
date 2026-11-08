@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { trackAction } from '../lib/analytics';
 import { allowAnother } from '../lib/billingClient';
 import { 
   Briefcase, CheckSquare, Calendar, DollarSign, Plus, ArrowLeft, 
@@ -200,6 +201,7 @@ export default function ProjectsView({ data, onUpdateData, onNavigateToTab }: Pr
       });
     } else {
       if (!allowAnother(data, 'projects')) return;
+      trackAction('project_created');
       // Create - If an industry preset was chosen, pre-load its sample tasks and scope sections
       let initialTasks: Task[] = [];
       let initialScope: any[] = [];

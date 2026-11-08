@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { setAnalyticsEnabled, trackScreen } from './lib/analytics';
 import ModuleGuard from './components/ModuleGuard';
 import { motion, AnimatePresence } from 'motion/react';
 import { Clock, LogOut, CheckCircle2, CloudOff } from 'lucide-react';
@@ -127,6 +128,8 @@ export default function App() {
   const [originalCrmData, setOriginalCrmData] = useState<CRMData | null>(null);
   const canAdmin = isPlatformAdmin(authUser);
 
+  // Usage stats: which screens are opened (Admin → Analytics).
+  const activeTabRef = useRef<string>('dashboard');
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const tabParam = new URLSearchParams(window.location.search).get('tab') as Tab | null;
     if (window.location.pathname.replace(/\/$/, '') === '/marketplace') return 'marketplace';
@@ -175,6 +178,7 @@ export default function App() {
   useEffect(() => {
     if (billingState?.loaded && crmDataRef.current) applyData(crmDataRef.current);
   }, [billingState, applyData]);
+  useEffect(() => { activeTabRef.current = activeTab; trackScreen(activeTab); }, [activeTab]);
   // Any screen can ask for the plan picker, e.g. on reaching a limit.
   const [upgradeReason, setUpgradeReason] = useState<string | null>(null);
   useEffect(() => onUpgradeRequest(reason => setUpgradeReason(reason)), []);
@@ -213,6 +217,7 @@ export default function App() {
 
       if (!firebaseUser || !firebaseUser.emailVerified) {
         clearBilling();
+        setAnalyticsEnabled(false);
         activeUidRef.current = null;
         setLocalCacheOwner(null);
         applyData(INITIAL_CRM_DATA);
@@ -260,6 +265,8 @@ export default function App() {
         cloudReadyRef.current = true;
         setCloudReady(true);
         refreshBilling();
+        setAnalyticsEnabled(true);
+        trackScreen(activeTabRef.current);
         // Documents that just received a share token must be saved so their links keep working.
         const tokensAdded = (remote?.data.documents || []).some(d => d && !d.shareToken);
         if (!remote || remote.migratedFromLegacy || local || tokensAdded) {

@@ -13,13 +13,14 @@ import {
   Sliders, Lock, Unlock, Layers, FileText, Database, ShieldCheck,
   CheckCircle, Zap, Wallet, HandCoins, Scale, Palette, Globe, Mail, Phone, Image as ImageIcon,
   KeyRound, UserPlus, UserCheck, Copy, Send, Ban, Key, EyeOff, Calendar, Clock
-, Store, Power
+, Store, Power, BarChart3
 } from 'lucide-react';
 import { CRMData, TaxConfig, FeeConfig, PlanTier, PlanFeatureConfig, PlatformSettings, EscrowContract, UserInvite, RegistrationMode } from '../types';
 import { DEFAULT_PLATFORM_SETTINGS } from '../data/mockData';
 import AdminMarketplaceView from './marketplace/AdminMarketplaceView';
 import AdminBillingView from './AdminBillingView';
 import AdminModulesView from './AdminModulesView';
+import AdminAnalyticsView from './AdminAnalyticsView';
 import { auth } from '../lib/firebase';
 import { refreshBilling, useBilling } from '../lib/billingClient';
 import { cleanPlatformConfig, savePlatformConfig, usePlatformConfig, type PlatformConfig } from '../lib/platformConfig';
@@ -390,6 +391,18 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
           </button>
 
           <button
+            onClick={() => setActiveTab('analytics')}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
+              activeTab === 'analytics'
+                ? 'bg-sky-500 text-slate-950 shadow-md shadow-sky-500/20'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            <span>Analytics</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('modules')}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all whitespace-nowrap ${
               activeTab === 'modules'
@@ -491,6 +504,7 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
 
           {activeTab === 'errors' && <AdminErrorsView showToast={showToast} />}
           {activeTab === 'marketplace' && <AdminMarketplaceView showToast={showToast} />}
+          {activeTab === 'analytics' && <AdminAnalyticsView />}
           {activeTab === 'modules' && (
             <AdminModulesView
               modules={config.modules}

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { trackAction } from '../lib/analytics';
 import { allowFeature } from '../lib/billingClient';
 import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
@@ -274,6 +275,7 @@ export default function ClientsView({ data, onUpdateData, onNavigateToTab }: Cli
     } else {
       // Create new (if the plan has room for another client)
       if (!allowAnother(data, 'clients')) return;
+      trackAction('client_created');
       const newClient: Client = {
         id: `cli-${Date.now()}`,
         ...clientData

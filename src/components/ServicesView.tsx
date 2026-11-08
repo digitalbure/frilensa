@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from 'react';
+import { trackAction } from '../lib/analytics';
 import { allowAnother } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import {
@@ -301,6 +302,7 @@ export default function ServicesView({ data, onUpdateData }: ServicesViewProps) 
       });
     } else {
       if (!allowAnother(data, 'services')) return;
+      trackAction('service_created');
       const newService: ProductService = {
         id: `srv-${Date.now()}`,
         ...fields,

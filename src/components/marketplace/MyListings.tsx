@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { trackAction } from '../../lib/analytics';
 import { CalendarDays, Camera, Eye, EyeOff, Pencil, Plus, Trash2, Wrench } from 'lucide-react';
 import ListingCalendar from './ListingCalendar';
 import ListingForm, { bodyFrom, draftFrom, type ListingDraft } from './ListingForm';
@@ -35,6 +36,7 @@ export default function MyListings({ businesses }: { businesses: { id: string; n
     try {
       const body = bodyFrom(editing.draft, false);
       const { listing } = editing.listing ? await updateListing(editing.listing.id, body) : await createListing(body as any);
+      if (!editing.listing) trackAction(`listing_created_${listing.kind}`);
       replace(listing);
       // New listings stay open so photos can be added.
       setEditing({ draft: draftFrom(listing), listing });

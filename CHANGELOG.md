@@ -18,6 +18,23 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.17.0] - 2026-11-08
+
+### Added
+- **Admin → Analytics:** how Frilensa is used, for any period (7 days to a year):
+  - **People:** accounts, sign-ups, sign-in methods, verified emails, people active today, this week and this month, a daily chart of active people and sign-ups, and weekly retention (the share of each week's sign-ups who came back 1 to 4 weeks later).
+  - **App use:** the most used screens and actions, and phone or desktop.
+  - **Workspaces and plans:** how many, how full (clients, documents, projects), and who's on which plan.
+  - **Money flowing through Frilensa:** invoices issued, paid and owing by currency, invoice status, and the share of quotes won.
+  - **Bookings:** requests by day and by channel (booking page, widget, rate card, marketplace, API), and how many became quotes; directory listings and bookings.
+  - **Marketplace:** listings by status, top categories and towns, requests and confirmed rentals.
+  - **Plan revenue, AI scans, assistant use, API keys, webhooks and screen errors.**
+  - **Exports for studies:** users, app use by day, documents, booking requests and marketplace listings as CSV files, with anonymous ids instead of people, and no names, emails, client details or anything typed.
+- The app now records which screens and actions are used (names only, counted per person per day) to power these reports. These records are deleted with the account and after about 13 months.
+
+### Changed
+- The privacy policy explains the usage statistics and that research only uses anonymised exports.
+
 ## [4.16.0] - 2026-11-08
 
 ### Added
