@@ -47,7 +47,7 @@ service cloud.firestore {
       match /{list}/{recordId} {
         allow read, write: if isUid(docId) && approved(docId) && list in [
           'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
-          'transactions', 'activityLogs', 'aiConversations', 'aiMemories'
+          'transactions', 'activityLogs', 'aiConversations', 'aiMemories', 'payRuns'
         ];
       }
     }

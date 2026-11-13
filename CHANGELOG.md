@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.20.0] - 2026-11-13
+
+### Added
+- **Finance → Payroll: pay employees with PAYE and FNPF.**
+  - **Employees:** name, TIN, FNPF number, tax code, tax residence, how often they're paid (weekly, fortnightly or monthly), and a salary or an hourly rate, with start and finish dates.
+    - Tax codes: P for their main job, S for a second job, or no declaration yet.
+    - If you paid someone with another payroll earlier this tax year, enter their totals so far so PAYE stays right for the year.
+  - **Pay runs:** pick the period and pay date, and everyone due is added. Adjust hours, overtime and bonuses, untaxed reimbursements and other deductions, and see gross pay, PAYE, FNPF and net pay for each person, plus what to send, what goes to FRCS and FNPF, and what it costs you.
+    - **PAYE** follows the FRCS method (Regulation 6). For tax code P it works on the year to date with the FRCS tax tables, so bonuses and pay changes are taxed correctly and the year adds up. Tax code S and no declaration pay 20%. Non-residents use the non-resident tables.
+    - **FNPF:** 8% from the employee and the employer's share by pay date. That's 10%, or 8% from 1 August 2026 to 31 July 2027 under the 2026–2027 Budget. There's an optional extra employer top-up up to 10%.
+  - **Mark a run as paid:** the wages and your FNPF go into your expenses (a new "Wages & Salaries" category) and you get payslips to print or save as PDF. Reopen a run to change it.
+  - **Monthly PAYE and FNPF:** totals for each person, ready to download as CSV, with due dates. PAYE is due to FRCS by the end of the next month, and the FNPF contribution schedule by the 14th. Record what you've paid. A reminder shows anything still owing, and whether PAYE is overdue.
+  - **Tax withholding certificates** for each employee for the year.
+- **Admin:** FNPF rates (including the temporary employer rate and its dates) and the 20% secondary rate are in Admin → Taxes and fees.
+
 ## [4.19.0] - 2026-11-13
 
 ### Added

@@ -1035,6 +1035,46 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     Used by Finance → Contractors. Businesses withhold this rate from payments to resident contractors with a written agreement once a contractor's yearly total (excluding VAT) reaches the threshold, unless they hold a certificate of exemption. FRCS currently sets 5% and FJD 1,000. Payments to non-residents for services carry non-resident withholding tax instead (15% today, or less under a tax treaty).
                   </p>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-800">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mt-3 space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase block">Payroll: FNPF employee / employer (%)</label>
+                    <div className="flex items-center gap-1.5">
+                      <input type="number" step="0.5" min="0" max="50" aria-label="FNPF employee rate" value={config.payroll.fnpfEmployee}
+                        onChange={(e) => commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployee: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } }, { wait: true })}
+                        className="w-16 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400" />
+                      <span className="text-slate-500">/</span>
+                      <input type="number" step="0.5" min="0" max="50" aria-label="FNPF employer rate" value={config.payroll.fnpfEmployer}
+                        onChange={(e) => commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployer: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } }, { wait: true })}
+                        className="w-16 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400" />
+                    </div>
+                    <label className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 uppercase">
+                      <input type="checkbox" checked={!!config.payroll.fnpfEmployerTemporary}
+                        onChange={(e) => commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployerTemporary: e.target.checked ? { rate: 8, from: '2026-08-01', to: '2027-07-31' } : null } }, { wait: true })} />
+                      Temporary employer rate
+                    </label>
+                    {config.payroll.fnpfEmployerTemporary && (
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <input type="number" step="0.5" min="0" max="50" aria-label="Temporary FNPF employer rate" value={config.payroll.fnpfEmployerTemporary.rate}
+                          onChange={(e) => commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployerTemporary: { ...config.payroll.fnpfEmployerTemporary!, rate: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } } }, { wait: true })}
+                          className="w-14 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400" />
+                        <input type="date" aria-label="Temporary rate from" value={config.payroll.fnpfEmployerTemporary.from}
+                          onChange={(e) => e.target.value && commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployerTemporary: { ...config.payroll.fnpfEmployerTemporary!, from: e.target.value } } }, { wait: true })}
+                          className="bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-[10px] font-mono text-sky-400" />
+                        <input type="date" aria-label="Temporary rate to" value={config.payroll.fnpfEmployerTemporary.to}
+                          onChange={(e) => e.target.value && commitConfig({ ...config, payroll: { ...config.payroll, fnpfEmployerTemporary: { ...config.payroll.fnpfEmployerTemporary!, to: e.target.value } } }, { wait: true })}
+                          className="bg-slate-900 border border-slate-800 rounded-lg py-1 px-1 text-[10px] font-mono text-sky-400" />
+                      </div>
+                    )}
+                    <label className="text-[10px] font-bold text-slate-400 uppercase block">PAYE secondary job / no declaration (%)</label>
+                    <input type="number" step="0.5" min="0" max="50" aria-label="Secondary PAYE rate" value={config.payroll.secondaryRate}
+                      onChange={(e) => commitConfig({ ...config, payroll: { ...config.payroll, secondaryRate: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } }, { wait: true })}
+                      className="w-16 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400" />
+                  </div>
+                  <p className="sm:col-span-2 text-[10px] text-slate-400 leading-relaxed self-center mt-3">
+                    Used by Finance → Payroll. FNPF is 8% from employees and 10% from employers, with the employer rate cut to 8% from 1 August 2026 to 31 July 2027 (2026–2027 Budget). PAYE uses the FRCS tax tables and the year-to-date formula in Regulation 6; tax code S and employees without a tax code declaration pay this flat rate.
+                  </p>
+                </div>
               </div>
 
               {/* Platform Statutory Taxes CRUD */}

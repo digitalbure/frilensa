@@ -19,7 +19,7 @@ async function user(email) {
 
 // --- Firestore seeding through the emulator REST API (bypasses rules with "owner") ---
 const fsVal = v => v === null ? { nullValue: null } : typeof v === 'string' ? { stringValue: v } : typeof v === 'number' ? { doubleValue: v } : typeof v === 'boolean' ? { booleanValue: v } : Array.isArray(v) ? { arrayValue: { values: v.map(fsVal) } } : { mapValue: { fields: Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fsVal(x)])) } };
-const LISTS = ['businesses', 'clients', 'services', 'projects', 'documents', 'expenses', 'transactions', 'activityLogs', 'aiConversations', 'aiMemories'];
+const LISTS = ['businesses', 'clients', 'services', 'projects', 'documents', 'expenses', 'transactions', 'activityLogs', 'aiConversations', 'aiMemories', 'payRuns'];
 const isWorkspace = path => /^consultants\/[^/]+$/.test(path);
 async function listRecords(path, list) {
   const r = await (await fetch(`${FS}/v1/projects/${P}/databases/(default)/documents/${path}/${list}?pageSize=1000`, { headers: { Authorization: 'Bearer owner' } })).json();

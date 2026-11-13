@@ -294,7 +294,7 @@ export default function ProfitLossOverview({
   const allCategories = [
     'Office Supplies', 'Internet & Utilities', 'Software SaaS', 'Travel & Transport', 
     'Meals & Entertainment', 'Electricity & Utilities', 'Hardware & Equipment', 
-    'Tax & Licensing', 'Subcontractors', 'Marketing & Ads', 'Other Expense'
+    'Tax & Licensing', 'Subcontractors', 'Wages & Salaries', 'Marketing & Ads', 'Other Expense'
   ];
 
   return (

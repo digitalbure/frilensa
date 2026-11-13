@@ -134,6 +134,7 @@ export default function ExpenseLoggingModal({
     { name: 'Hardware & Equipment', icon: '🛠️', label: 'Hardware, computers & tools' },
     { name: 'Tax & Licensing', icon: '⚖️', label: 'Taxes, licences & legal' },
     { name: 'Subcontractors', icon: '👥', label: 'Subcontractors & freelancers' },
+    { name: 'Wages & Salaries', icon: '🧾', label: 'Wages, salaries & FNPF' },
     { name: 'Marketing & Ads', icon: '📣', label: 'Marketing, ads & domains' },
     { name: 'Other Expense', icon: '📦', label: 'Other expenses' }
   ];

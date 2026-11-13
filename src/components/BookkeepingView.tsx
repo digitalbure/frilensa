@@ -13,6 +13,7 @@ import DateInput from './DateInput';
 import ExpenseLoggingModal from './ExpenseLoggingModal';
 import VatReturnView from './VatReturnView';
 import ContractorsView from './ContractorsView';
+import PayrollView from './PayrollView';
 import ProfitLossOverview from './ProfitLossOverview';
 import AiFinancialAdvisorModal from './AiFinancialAdvisorModal';
 import AiExpenseCategorizationModal from './AiExpenseCategorizationModal';
@@ -32,7 +33,7 @@ interface BookkeepingViewProps {
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {
   // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'vat' | 'reconciler' | 'ledger' | 'rates' (working currencies and exchange rates). Services, rate cards, terms, bookings and rate rules are on the Services tab (CatalogueView).
-  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'contractors' | 'rates'>('pnl');
+  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'contractors' | 'payroll' | 'rates'>('pnl');
 
   // Expense Logging Modal State
   const [showExpenseModal, setShowExpenseModal] = useState<boolean>(false);
@@ -1059,6 +1060,16 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           }`}
         >
           Contractors
+        </button>
+        <button
+          onClick={() => setActiveSubTab('payroll')}
+          className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
+            activeSubTab === 'payroll'
+              ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/40'
+              : 'text-zinc-500 hover:text-zinc-900'
+          }`}
+        >
+          Payroll
         </button>
         <button
           onClick={() => setActiveSubTab('rates')}
@@ -2099,6 +2110,16 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 )}
               </div>
             </div>
+          </motion.div>
+        ) : activeSubTab === 'payroll' ? (
+          <motion.div
+            key="payroll-tab"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.15 }}
+          >
+            <PayrollView data={data} onUpdateData={onUpdateData} />
           </motion.div>
         ) : activeSubTab === 'contractors' ? (
           <motion.div

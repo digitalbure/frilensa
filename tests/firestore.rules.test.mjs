@@ -52,6 +52,8 @@ await check('owner writes own record', assertSucceeds(setDoc(doc(u1, 'consultant
 await check('other user cannot read records', assertFails(getDocs(collection(u2, 'consultants/u1/documents'))));
 await check('other user cannot write a record', assertFails(setDoc(doc(u2, 'consultants/u1/documents/inv2'), { id: 'inv2' })));
 await check('anon cannot read a record', assertFails(getDoc(doc(anon, 'consultants/u1/documents/inv1'))));
+await check('owner writes a pay run record', assertSucceeds(setDoc(doc(u1, 'consultants/u1/payRuns/run1'), { id: 'run1' })));
+await check('other user cannot read pay runs', assertFails(getDocs(collection(u2, 'consultants/u1/payRuns'))));
 await check('owner cannot write an unknown list', assertFails(setDoc(doc(u1, 'consultants/u1/secrets/x'), { a: 1 })));
 await check('verified email owner cannot write records under the email doc', assertFails(setDoc(doc(u1, 'consultants/one@x.co/documents/x'), { id: 'x' })));
 await check('owner creates own document', assertSucceeds(setDoc(doc(u1, 'documents/d2'), { consultantId: 'u1' })));

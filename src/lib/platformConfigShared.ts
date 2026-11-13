@@ -3,6 +3,7 @@ import { DEFAULT_PLATFORM_SETTINGS, INITIAL_CRM_DATA } from '../data/mockData';
 import { DEFAULT_BILLING, cleanBilling, type BillingSettings } from './billing';
 import { DEFAULT_MODULES, cleanModules, type ModuleSettings } from './modules';
 import { DEFAULT_WITHHOLDING, cleanWithholding, type WithholdingSettings } from './withholding';
+import { DEFAULT_PAYROLL, cleanPayroll, type PayrollSettings } from './payroll';
 
 // Platform-wide settings that admins set once for every account: the plans (names, prices, limits,
 // features), the taxes and fees every business can apply, and the VAT rate new accounts start with.
@@ -27,6 +28,8 @@ export interface PlatformConfig {
   modules: ModuleSettings;
   /** Provisional tax on payments to contractors (rate and yearly threshold). */
   withholding: WithholdingSettings;
+  /** Payroll: FNPF rates (with any temporary employer rate) and the secondary-employment PAYE rate. */
+  payroll: PayrollSettings;
 }
 
 export const PLAN_TIERS: PlanTier[] = ['free', 'pro', 'premium'];
@@ -44,7 +47,8 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   directory: { enabled: true, paidOnly: true },
   billing: DEFAULT_BILLING,
   modules: DEFAULT_MODULES,
-  withholding: DEFAULT_WITHHOLDING
+  withholding: DEFAULT_WITHHOLDING,
+  payroll: DEFAULT_PAYROLL
 };
 
 /** Whether a business on this plan can be listed in the directory. */
@@ -124,7 +128,8 @@ export function cleanPlatformConfig(raw: any): PlatformConfig {
     },
     billing: cleanBilling(r.billing),
     modules: cleanModules(r.modules),
-    withholding: cleanWithholding(r.withholding)
+    withholding: cleanWithholding(r.withholding),
+    payroll: cleanPayroll(r.payroll)
   };
 }
 

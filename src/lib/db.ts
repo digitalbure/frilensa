@@ -158,6 +158,9 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
   const mergedAiConversations = mergeEntityList(localData.aiConversations, remoteData.aiConversations);
   const mergedAiMemories = mergeEntityList(localData.aiMemories, remoteData.aiMemories);
   const mergedContractors = mergeEntityList(localData.contractors, remoteData.contractors);
+  const mergedEmployees = mergeEntityList(localData.employees, remoteData.employees);
+  const mergedPayRuns = mergeEntityList(localData.payRuns, remoteData.payRuns);
+  const mergedPayrollPayments = mergeEntityList(localData.payrollPayments, remoteData.payrollPayments);
   const mergedPtRemittances = mergeEntityList(localData.ptRemittances, remoteData.ptRemittances);
 
   // Determine activeBusinessId safely
@@ -201,6 +204,9 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
     aiConversations: mergedAiConversations,
     aiMemories: mergedAiMemories,
     contractors: mergedContractors,
+    employees: mergedEmployees,
+    payRuns: mergedPayRuns,
+    payrollPayments: mergedPayrollPayments,
     ptRemittances: mergedPtRemittances,
     activeBusinessId: activeBizId,
     onboardingCompleted: true
@@ -246,6 +252,9 @@ function toCRMData(raw: any): CRMData {
     aiConversations: raw.aiConversations || [],
     aiMemories: raw.aiMemories || [],
     contractors: raw.contractors || [],
+    employees: raw.employees || [],
+    payRuns: raw.payRuns || [],
+    payrollPayments: raw.payrollPayments || [],
     ptRemittances: raw.ptRemittances || [],
     activityLogs: raw.activityLogs || [],
     clientWallets: raw.clientWallets || undefined,
@@ -325,7 +334,8 @@ export async function saveConsultantData(data: CRMData) {
     transactions: data.transactions || [],
     activityLogs: (data.activityLogs || []).slice(0, 500),
     aiConversations: data.aiConversations || [],
-    aiMemories: data.aiMemories || []
+    aiMemories: data.aiMemories || [],
+    payRuns: data.payRuns || []
   };
 
   const consultantRef = doc(db, 'consultants', uid);
@@ -372,6 +382,8 @@ export async function saveConsultantData(data: CRMData) {
     directoryBookings: data.directoryBookings || [],
     clientWallets: data.clientWallets || null,
     contractors: data.contractors || [],
+    employees: data.employees || [],
+    payrollPayments: data.payrollPayments || [],
     ptRemittances: data.ptRemittances || [],
     ...(recordsSaved ? { [ORDER_FIELD]: order } : lists),
     activeBusinessId: data.activeBusinessId || '',

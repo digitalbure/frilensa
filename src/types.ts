@@ -673,6 +673,9 @@ export interface CRMData {
   aiMemories?: AiMemoryItem[]; // Persistent long-term business knowledge & memories
   contractors?: import('./lib/withholding').Contractor[]; // people the business pays for services (provisional tax)
   ptRemittances?: import('./lib/withholding').PtRemittance[]; // provisional tax paid to FRCS, by month
+  employees?: import('./lib/payroll').Employee[]; // people on the payroll (PAYE and FNPF)
+  payRuns?: import('./lib/payroll').PayRun[]; // pay runs with each employee's pay line
+  payrollPayments?: import('./lib/payroll').PayrollPayment[]; // PAYE and FNPF paid, by month
 }
 
 export interface AiAttachment {
