@@ -14,6 +14,7 @@ import { createPublicDocumentsRouter } from "./server/publicDocuments";
 import { createJobsRouter, createAutomationRouter } from "./server/jobs";
 import { createApiKeysRouter } from "./server/apiKeys";
 import { createApiV1Router } from "./server/apiV1";
+import { createGearRouter } from "./server/gearSync";
 import { createMcpRouter } from "./server/mcp";
 import { createOAuthRouter, createOAuthAppRouter } from "./server/oauth";
 import { createFilesRouter } from "./server/files";
@@ -223,7 +224,7 @@ async function startServer() {
   app.use(["/api/public/book", "/api/booking-page"], moduleGate("bookingPage"));
   app.use("/api/webhooks", moduleGate("webhooks"));
   app.use(["/api/public/marketplace", "/api/marketplace"], moduleGate("marketplace"));
-  app.use("/api/v1", moduleGate("api"));
+  app.use(["/api/v1", "/api/gear"], moduleGate("api"));
   app.use("/mcp", moduleGate("api"), moduleGate("api", "mcp"));
   app.use("/api/ai/assistant", moduleGate("assistant"));
   app.use(["/api/bookkeeping", "/api/projects/generate-scope", "/api/ai/email-transcript"], moduleGate("aiTools"));
@@ -267,7 +268,8 @@ async function startServer() {
   app.use("/api/keys", express.json({ limit: "10kb" }), createApiKeysRouter());
   // Receipt uploads (base64 in JSON, up to 8 MB per file) and downloads for the owner.
   app.use("/api/files", express.json({ limit: "12mb" }), createFilesRouter());
-  app.use("/api/v1", express.json({ limit: "200kb" }), createApiV1Router());
+  app.use("/api/v1", express.json({ limit: "400kb" }), createApiV1Router());
+  app.use("/api/gear", express.json({ limit: "2kb" }), createGearRouter());
   app.use("/mcp", express.json({ limit: "200kb" }), createMcpRouter());
   // OAuth sign-in for MCP clients such as claude.ai (discovery, registration, tokens), and the
   // consent page's approve call. The consent page itself (/oauth/authorize) is part of the web app.

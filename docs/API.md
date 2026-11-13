@@ -17,7 +17,7 @@ Authorization: Bearer frk_…
 | Access | Can | Can't |
 | --- | --- | --- |
 | **Read only** | Read the account, businesses, clients, quotes, invoices, receipts, credit notes, expenses, projects, tasks, summaries, booking forms and booking requests | Change anything |
-| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, add expenses, add tasks to projects, and create **booking requests** | Send anything to clients, mark anything paid, edit or delete existing records |
+| **Read and create drafts** | Everything above, plus add clients, create **draft** quotes and invoices, add expenses, add tasks to projects, create **booking requests**, and keep a synced copy of **gear** from an inventory app | Send anything to clients, mark anything paid, edit or delete existing records |
 
 Drafts aren't visible to clients until the user sends them from Frilensa. Everything a key creates
 appears in the activity log as "via API key "<name>"".
@@ -121,6 +121,52 @@ Example:
 
 ```
 curl -H "Authorization: Bearer frk_…" "https://frilensa.com/api/v1/documents?overdue=true"
+```
+
+## Gear sync (for inventory apps such as Packer Tools)
+
+An inventory or gear app can keep a copy of the user's gear in Frilensa. The user then turns items into
+services (for quotes, invoices and their rate card) or marketplace listings, in **Services → Synced
+gear**, and is told when an item changes. The gear app stays in charge of the gear: syncing only changes
+this copy, never the user's services, listings, documents or anything else, and nothing is sent to
+anyone. Changing the copy needs draft access; reading it needs read access.
+
+| Route | Access | Notes |
+| --- | --- | --- |
+| `GET /api/v1/gear?source=` | read | Items still in the gear app, by name |
+| `PUT /api/v1/gear/{externalId}` | drafts | Add or update one item. `externalId` is its id in your app |
+| `POST /api/v1/gear/batch` | drafts | `{ source, sourceName?, items: [ { externalId, …item } ] }`, up to 100 items. Returns `{ added, updated, errors }`; items with problems are listed in `errors` and the rest are saved |
+| `DELETE /api/v1/gear/{externalId}?source=` | drafts | The item is gone from your app. Frilensa keeps it, marked removed, so services made from it still make sense |
+
+An item:
+
+```json
+{
+  "source": "packer_tools", "sourceName": "Packer Tools",
+  "name": "FX6 Camera Kit", "brand": "Sony", "model": "ILME-FX6", "category": "cameras",
+  "description": "Full-frame cinema camera", "serialNumber": "5012345", "quantity": 1,
+  "dayRate": 450, "weekRate": 1800, "currency": "FJD", "replacementValue": 9000,
+  "condition": "excellent", "status": "available",
+  "kit": [{ "name": "24-70mm f/2.8 lens", "quantity": 1 }, { "name": "V-mount battery", "quantity": 4 }],
+  "unavailable": [{ "from": "2026-12-01", "to": "2026-12-03", "reason": "Booked" }],
+  "externalUrl": "https://packer.tools/gear/abc123",
+  "updatedAt": "2026-11-10T10:00:00Z"
+}
+```
+
+- Only `name` is required. `source` defaults to `packer_tools`; one user's items are kept apart by `source` and `externalId`, so sending the same id again updates it.
+- `condition`: `new`, `excellent`, `good`, `fair` or `worn`. `status`: `available`, `checked_out`, `maintenance` or `retired`.
+- `kit` items can also be plain strings. `unavailable` holds dates the gear is booked or away (`YYYY-MM-DD`).
+- `externalUrl` must be https; it's shown as "Open in Packer Tools".
+- Send `updatedAt` when the item changes in your app: Frilensa compares it with when the user last made a service or listing from it.
+- Up to 2,000 synced items per user. The usual per-key limit (120 requests a minute) applies, so use the batch route for a first full sync.
+
+Example:
+
+```
+curl -X PUT -H "Authorization: Bearer frk_…" -H "Content-Type: application/json" \
+  -d '{"source":"packer_tools","name":"FX6 Camera Kit","brand":"Sony","dayRate":450,"kit":["24-70mm lens"]}' \
+  "https://frilensa.com/api/v1/gear/abc123"
 ```
 
 ## Bookings

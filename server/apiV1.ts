@@ -4,6 +4,7 @@ import { requireApiKey, apiRateLimit, type ApiRequest } from "./apiKeys";
 import { WorkspaceMissing } from "./workspace";
 import * as api from "./apiService";
 import * as bookings from "./bookings";
+import { addGearApiRoutes } from "./gearSync";
 
 // Public REST API, authenticated with a personal API key. See docs/API.md.
 
@@ -39,6 +40,7 @@ export function createApiV1Router() {
   const read = [ipLimit, requireApiKey("read"), apiRateLimit];
   const draft = [ipLimit, requireApiKey("draft"), apiRateLimit];
   const uid = (req: ApiRequest) => req.apiKey!.uid;
+  addGearApiRoutes(router, read, draft);
 
   router.get("/me", ...read, handle(req => api.getAccount(uid(req))));
   router.get("/clients", ...read, handle(req => api.listClients(uid(req), query(req))));

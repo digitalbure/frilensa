@@ -5,10 +5,12 @@ import ServicesView from './ServicesView';
 import RateCardSettings from './RateCardSettings';
 import BookingSettingsCard from './BookingSettingsCard';
 import RateRulesCard from './RateRulesCard';
+import SyncedGearView from './SyncedGearView';
 
-type Section = 'catalogue' | 'ratecard' | 'bookings' | 'rules';
+type Section = 'catalogue' | 'gear' | 'ratecard' | 'bookings' | 'rules';
 const SECTIONS: { id: Section; label: string }[] = [
   { id: 'catalogue', label: 'Services' },
+  { id: 'gear', label: 'Synced gear' },
   { id: 'ratecard', label: 'Rate card & terms' },
   { id: 'bookings', label: 'Bookings' },
   { id: 'rules', label: 'Rate rules' }
@@ -36,6 +38,7 @@ export default function CatalogueView({ data, onUpdateData }: { data: CRMData; o
         ))}
       </div>
       {section === 'catalogue' && <ServicesView data={data} onUpdateData={onUpdateData} />}
+      {section === 'gear' && <ModuleGuard id="api"><SyncedGearView data={data} onUpdateData={onUpdateData} /></ModuleGuard>}
       {section === 'ratecard' && <ModuleGuard id="rateCards"><RateCardSettings data={data} onUpdateData={onUpdateData} /></ModuleGuard>}
       {section === 'bookings' && <BookingSettingsCard data={data} onUpdateData={onUpdateData} />}
       {section === 'rules' && <RateRulesCard data={data} onUpdateData={onUpdateData} />}

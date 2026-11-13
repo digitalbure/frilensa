@@ -330,6 +330,40 @@ try {
     assert.equal(r.status, 403);
     assert.equal((await fetch(`${API}/api/v1/summary`, { headers: keyAuth(aliceReadKey) })).status, 200);
   });
+  await check('gear sync: another app sends, updates and removes gear; only drafts keys can change it', async () => {
+    const camera = { name: 'FX6 Camera Kit', brand: 'Sony', model: 'ILME-FX6', category: 'cameras', serialNumber: 'S123', quantity: 2, dayRate: 450, weekRate: 1800,
+      condition: 'excellent', status: 'available', kit: [{ name: '24-70mm lens', quantity: 1 }, 'V-mount batteries'], unavailable: [{ from: '2026-12-01', to: '2026-12-03', reason: 'Booked' }, { from: 'bad', to: 'x' }],
+      externalUrl: 'https://packer.tools/gear/abc', updatedAt: '2026-11-10T00:00:00Z', source: 'packer_tools' };
+    assert.equal((await fetch(`${API}/api/v1/gear/abc`, { method: 'PUT', headers: keyAuth(aliceReadKey), body: JSON.stringify(camera) })).status, 403, 'read-only key changed gear');
+    const put1 = await j(await fetch(`${API}/api/v1/gear/abc`, { method: 'PUT', headers: keyAuth(aliceKey), body: JSON.stringify(camera) }));
+    assert.equal(put1.status, 200, JSON.stringify(put1.body)); assert.equal(put1.body.added, 1);
+    const put2 = await j(await fetch(`${API}/api/v1/gear/abc`, { method: 'PUT', headers: keyAuth(aliceKey), body: JSON.stringify({ ...camera, dayRate: 500 }) }));
+    assert.equal(put2.body.updated, 1, 'same id updates, not duplicates');
+    assert.equal((await fetch(`${API}/api/v1/gear/x1`, { method: 'PUT', headers: keyAuth(aliceKey), body: JSON.stringify({ quantity: 1 }) })).status, 400, 'a name is required');
+    const batch = await j(await fetch(`${API}/api/v1/gear/batch`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ source: 'packer_tools', items: [{ externalId: 'l1', name: 'Aputure 600d' }, { externalId: 'l2' }] }) }));
+    assert.equal(batch.status, 200); assert.equal(batch.body.added, 1); assert.equal(batch.body.errors.length, 1);
+    assert.equal((await fetch(`${API}/api/v1/gear/batch`, { method: 'POST', headers: keyAuth(aliceKey), body: JSON.stringify({ items: Array.from({ length: 101 }, (_, i) => ({ externalId: `m${i}`, name: 'x' })) }) })).status, 400, 'batch too big');
+    const list = await j(await fetch(`${API}/api/v1/gear`, { headers: keyAuth(aliceReadKey) }));
+    assert.equal(list.body.gear.length, 2);
+    const cam = list.body.gear.find(g => g.externalId === 'abc');
+    assert.equal(cam.dayRate, 500); assert.equal(cam.sourceName, 'Packer Tools'); assert.equal(cam.kit.length, 2); assert.equal(cam.unavailable.length, 1); assert.ok(!('uid' in cam), 'owner id exposed');
+    assert.equal((await j(await fetch(`${API}/api/v1/gear`, { headers: keyAuth(bobKey) }))).body.gear.length, 0, "Bob sees Alice's gear");
+    // In the app: list, link, and changes show up as updates
+    assert.equal((await fetch(`${API}/api/gear`)).status, 401);
+    const mine = await j(await fetch(`${API}/api/gear`, { headers: auth(A) }));
+    const id = mine.body.gear.find(g => g.externalId === 'abc').id;
+    assert.equal((await fetch(`${API}/api/gear/${id}/links`, { method: 'POST', headers: auth(B), body: JSON.stringify({ serviceId: 'svc1' }) })).status, 404, 'Bob linked Alice gear');
+    const linked = await j(await fetch(`${API}/api/gear/${id}/links`, { method: 'POST', headers: auth(A), body: JSON.stringify({ serviceId: 'svc1' }) }));
+    assert.equal(linked.body.gear.links.serviceId, 'svc1'); assert.equal(linked.body.gear.links.linkedVersion, '2026-11-10T00:00:00.000Z');
+    await fetch(`${API}/api/v1/gear/abc`, { method: 'PUT', headers: keyAuth(aliceKey), body: JSON.stringify({ ...camera, dayRate: 520, updatedAt: '2026-11-12T00:00:00Z' }) });
+    const after = (await j(await fetch(`${API}/api/gear`, { headers: auth(A) }))).body.gear.find(g => g.id === id);
+    assert.equal(after.links.serviceId, 'svc1', 'links kept on update'); assert.ok(after.updatedAt > after.links.linkedVersion, 'change detectable');
+    // Removed in the other app: kept but marked
+    assert.equal((await fetch(`${API}/api/v1/gear/l1?source=packer_tools`, { method: 'DELETE', headers: keyAuth(aliceKey) })).status, 200);
+    assert.equal((await j(await fetch(`${API}/api/v1/gear`, { headers: keyAuth(aliceKey) }))).body.gear.length, 1);
+    assert.equal((await j(await fetch(`${API}/api/gear`, { headers: auth(A) }))).body.gear.find(g => g.externalId === 'l1').removed, true);
+    assert.equal((await fetch(`${API}/api/gear/${id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+  });
   await check("each key only sees its own workspace", async () => {
     const r = await j(await fetch(`${API}/api/v1/clients/${newClientId}`, { headers: keyAuth(bobKey) }));
     assert.equal(r.status, 404);
@@ -419,6 +453,13 @@ try {
     assert.equal(noPkce.r.status, 400);
     const wrongResource = await authorize(A, { resource: 'https://other.example/mcp' });
     assert.equal(wrongResource.r.status, 400);
+  });
+  await check('an app such as Packer Tools can connect for the REST API and sync gear with its token', async () => {
+    const { code, verifier, r } = await authorize(A, { resource: `${API}/api/v1` });
+    assert.equal(r.status, 200, 'REST API resource accepted');
+    const t = await exchange(code, verifier);
+    const put = await fetch(`${API}/api/v1/gear/oauth1`, { method: 'PUT', headers: { Authorization: `Bearer ${t.body.access_token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: 'Zoom H6 recorder' }) });
+    assert.equal(put.status, 200);
   });
   let oauthTokens;
   await check('authorization code flow issues tokens', async () => {
@@ -1305,6 +1346,7 @@ try {
     await put(`consultants/${z.uid}/clients/zc1`, { id: 'zc1', name: 'Their client' });
     await put(`documents/${z.uid}_zd1`, { id: 'zd1', consultantId: z.uid, status: 'sent', total: 10 });
     await put(`api_keys/zkey`, { uid: z.uid, name: 'Old app' });
+    await put(`synced_gear/${z.uid}_packer_tools_x`, { uid: z.uid, source: 'packer_tools', externalId: 'x', name: 'Camera' });
     await put(`account_access/${z.uid}`, { via: 'open' });
     await put(`subscriptions/${z.uid}`, { uid: z.uid, plan: 'pro', status: 'active', method: 'admin', paidUntil: '' });
     await put(`ai_usage/${z.uid}_2026-11`, { uid: z.uid, month: '2026-11', scans: 2 });
@@ -1318,6 +1360,7 @@ try {
     assert.equal((await listRecords(`consultants/${z.uid}`, 'clients')).length, 0, 'records left behind');
     assert.equal(await get(`documents/${z.uid}_zd1`), null, 'online copy left behind');
     assert.equal(await get(`api_keys/zkey`), null, 'API key left behind');
+    assert.equal(await get(`synced_gear/${z.uid}_packer_tools_x`), null, 'synced gear left behind');
     assert.equal(await get(`account_access/${z.uid}`), null);
     assert.equal(await get(`marketplace_bookings/zhold`), null, 'rental calendar left behind');
     assert.equal(await get(`subscriptions/${z.uid}`), null, 'plan left behind');

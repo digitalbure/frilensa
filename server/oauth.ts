@@ -300,7 +300,8 @@ export function createOAuthAppRouter() {
       if (p.code_challenge_method !== "S256" || typeof p.code_challenge !== "string" || !/^[A-Za-z0-9_-]{43,128}$/.test(p.code_challenge)) {
         return res.status(400).json({ error: "This app didn't send a valid PKCE code challenge." });
       }
-      if (p.resource && p.resource !== mcpResourceUrl(req)) return res.status(400).json({ error: "This request is for a different server." });
+      // The MCP server or the REST API (apps such as Packer Tools); the same tokens work for both.
+      if (p.resource && ![mcpResourceUrl(req), `${publicOrigin(req)}/api/v1`].includes(p.resource)) return res.status(400).json({ error: "This request is for a different server." });
       const requested = parseScopes(p.scope);
       if (!requested) return res.status(400).json({ error: "This app asked for permissions Frilensa doesn't offer." });
       // The user may narrow the access on the consent page, never widen it.

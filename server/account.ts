@@ -31,6 +31,7 @@ const OWNED: [collection: string, field: string][] = [
   ["client_errors", "uid"],
   ["directory_bookings", "providerUid"],
   ["directory_bookings", "requesterUid"],
+  ["synced_gear", "uid"],
   ["marketplace_listings", "ownerUid"],
   ["marketplace_requests", "ownerUid"],
   ["marketplace_requests", "requesterUid"],

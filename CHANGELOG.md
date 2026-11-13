@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.21.0] - 2026-11-13
+
+### Added
+- **Services → Synced gear: gear from Packer Tools (and other inventory apps) in Frilensa.** Once your gear app is connected to Frilensa, your gear appears here and stays up to date: name, brand, model, serial number, quantity, day and week rates, kit contents, status and booked dates.
+  - **Add as service:** one item or all at once. Each becomes a service with its day rate, kit contents and serial number, ready for quotes, invoices and your rate card.
+  - **Change alerts:** when an item changes in your gear app, it's flagged so you can update its service. Your own name, unit and tax settings are kept.
+  - **List on marketplace:** starts a listing filled in from the gear, with the kit as included items.
+  - **Open in Packer Tools:** links straight to the item in your gear app. Gear removed there stays in Frilensa, marked as removed.
+- **For developers:** gear sync routes in the API (`/api/v1/gear`: add or update one item, a batch of up to 100, list, and remove). They work with a draft-access API key or an OAuth connection, which can now be made for the REST API as well as the MCP server. See the API docs.
+
 ## [4.20.0] - 2026-11-13
 
 ### Added
