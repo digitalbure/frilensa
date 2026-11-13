@@ -5,20 +5,29 @@ import type { CRMData, ExpenseRecord } from '../types';
 // FJD 1,000 or more in the year, deducts PT (5%) from the gross payment (excluding VAT) and pays it to
 // FRCS by the end of the next month. People with a certificate of exemption (COE) are exempt.
 // The rate and the yearly threshold come from the platform config so admins can follow changes.
+//
+// Non-resident withholding tax (NRWHT, Income Tax Act 2015 s.10, FRCS SIG 2021/29): a business that pays a
+// non-resident for professional or other independent services from Fiji withholds 15% of the invoice (or the
+// rate in a tax treaty) and pays it to FRCS when it applies for tax clearance to send the money overseas.
+// It's a final tax for the non-resident. People with a permanent establishment in Fiji aren't charged it.
 
 export interface WithholdingSettings {
   /** PT rate, percent. */
   rate: number;
   /** Yearly total (FJD, excluding VAT) at which PT applies. */
   threshold: number;
+  /** NRWHT on fees for services paid to non-residents, percent (when no tax treaty sets another rate). */
+  nonResidentRate: number;
 }
 
-export const DEFAULT_WITHHOLDING: WithholdingSettings = { rate: 5, threshold: 1000 };
+export const DEFAULT_WITHHOLDING: WithholdingSettings = { rate: 5, threshold: 1000, nonResidentRate: 15 };
 
 export function cleanWithholding(raw: any): WithholdingSettings {
   const rate = Number(raw?.rate);
   const threshold = Number(raw?.threshold);
+  const nr = Number(raw?.nonResidentRate);
   return {
+    nonResidentRate: Number.isFinite(nr) && nr >= 0 && nr <= 50 ? Math.round(nr * 100) / 100 : DEFAULT_WITHHOLDING.nonResidentRate,
     rate: Number.isFinite(rate) && rate >= 0 && rate <= 50 ? Math.round(rate * 100) / 100 : DEFAULT_WITHHOLDING.rate,
     threshold: Number.isFinite(threshold) && threshold >= 0 && threshold <= 1_000_000 ? Math.round(threshold * 100) / 100 : DEFAULT_WITHHOLDING.threshold
   };
@@ -41,9 +50,41 @@ export interface Contractor {
   coeNumber?: string;
   coeExpiry?: string;
   notes?: string;
+  /** Fiji resident (provisional tax) or non-resident (NRWHT). Missing means resident. */
+  residency?: 'resident' | 'non_resident';
+  /** Non-residents: the country they're resident in for tax (ISO code), or OTHER. */
+  country?: string;
+  countryName?: string;
+  /** Non-residents: a company or other enterprise, or a person working on their own. */
+  payeeType?: 'enterprise' | 'individual';
+  /** Non-residents: they have a permanent establishment (a fixed place of business) in Fiji. */
+  permanentEstablishment?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
+
+export const isNonResident = (c: Pick<Contractor, 'residency'>) => c.residency === 'non_resident';
+
+/**
+ * How Fiji's tax treaties treat fees for services (FRCS SIG 2021/29, paragraph 30). A number is the rate
+ * Fiji may withhold; null means the treaty doesn't let Fiji tax the fee (unless the person has a permanent
+ * establishment here or stays beyond the treaty's day limit, when other rules apply).
+ */
+export const TAX_TREATIES: Record<string, { name: string; enterprise: number | null; individual: number | null }> = {
+  AU: { name: 'Australia', enterprise: null, individual: null },
+  NZ: { name: 'New Zealand', enterprise: null, individual: null },
+  PG: { name: 'Papua New Guinea', enterprise: 15, individual: null },
+  GB: { name: 'United Kingdom', enterprise: null, individual: null },
+  KR: { name: 'South Korea', enterprise: null, individual: null },
+  JP: { name: 'Japan', enterprise: null, individual: null },
+  MY: { name: 'Malaysia', enterprise: 15, individual: null },
+  SG: { name: 'Singapore', enterprise: null, individual: null },
+  IN: { name: 'India', enterprise: 10, individual: null },
+  QA: { name: 'Qatar', enterprise: null, individual: null },
+  AE: { name: 'United Arab Emirates', enterprise: null, individual: null }
+};
+export const countryName = (c: Pick<Contractor, 'country' | 'countryName'>) =>
+  (c.country && TAX_TREATIES[c.country]?.name) || c.countryName?.trim() || 'another country';
 
 /** The PT details kept on the expense for a contractor payment. */
 export interface ContractorPayment {
@@ -72,7 +113,22 @@ export interface ContractorPayment {
   /** Withholding certificate number (one per deduction). */
   certificateNo: string;
   invoiceRef?: string;
+  /** 'nrwht' for a payment to a non-resident; missing means provisional tax. */
+  kind?: 'pt' | 'nrwht';
+  /** NRWHT: the invoice in its own currency and the rate used to convert it to FJD. */
+  currency?: string;
+  foreignAmount?: number;
+  exchangeRate?: number;
+  /** NRWHT: gross-up (you bear the tax and they get the full invoice) or net-off (the tax comes off the invoice). */
+  method?: 'gross_up' | 'net_off';
+  country?: string;
+  /** NRWHT: reverse-charge VAT on the imported service, for VAT-registered businesses. */
+  vatReverseCharge?: number;
+  /** NRWHT: paid to FRCS (at tax clearance). */
+  paidToFrcs?: { date: string; reference?: string };
 }
+
+export const isNrwht = (cp: Pick<ContractorPayment, 'kind'>) => cp.kind === 'nrwht';
 
 /** PT paid to FRCS for a month. */
 export interface PtRemittance {
@@ -97,7 +153,7 @@ export const coeValid = (c: Pick<Contractor, 'coeNumber' | 'coeExpiry'>, date: s
 /** Earlier payments to a contractor in the same calendar year (before `date`, or on it but saved earlier). */
 export function earlierThisYear(data: Pick<CRMData, 'expenses'>, contractorId: string, date: string, exceptExpenseId?: string) {
   const year = date.slice(0, 4);
-  const list = contractorPaymentsOf(data).filter(e => e.contractorPayment.contractorId === contractorId && e.id !== exceptExpenseId && e.date.slice(0, 4) === year && e.date <= date);
+  const list = contractorPaymentsOf(data).filter(e => !isNrwht(e.contractorPayment) && e.contractorPayment.contractorId === contractorId && e.id !== exceptExpenseId && e.date.slice(0, 4) === year && e.date <= date);
   return {
     base: round2(list.reduce((s, e) => s + e.contractorPayment.base, 0)),
     /** Paid without PT although PT would have applied had the yearly total been known. */
@@ -170,7 +226,7 @@ export interface PtSummary { month: string; due: string; rows: PtSummaryRow[]; g
 export function ptMonthSummary(data: Pick<CRMData, 'expenses'> & { ptRemittances?: PtRemittance[] }, businessId: string, month: string): PtSummary {
   const byId = new Map<string, PtSummaryRow>();
   for (const e of contractorPaymentsOf(data, businessId)) {
-    if (e.date.slice(0, 7) !== month) continue;
+    if (e.date.slice(0, 7) !== month || isNrwht(e.contractorPayment)) continue;
     const cp = e.contractorPayment;
     const row = byId.get(cp.contractorId) || { contractorId: cp.contractorId, name: cp.contractorName, tin: cp.tin, coeNumber: '', gross: 0, base: 0, withheld: 0, payments: 0 };
     row.gross = round2(row.gross + cp.gross);
@@ -213,6 +269,61 @@ export function contractorYear(data: Pick<CRMData, 'expenses'>, contractorId: st
     base: round2(list.reduce((s, e) => s + e.contractorPayment.base, 0)),
     withheld: round2(list.reduce((s, e) => s + e.contractorPayment.withheld, 0))
   };
+}
+
+// ---------- Non-resident withholding tax ----------
+
+export interface NrwhtDecision {
+  applies: boolean;
+  rate: number;
+  reason: string;
+  /** The amount the tax is worked out on (the grossed-up amount with gross-up). */
+  base: number;
+  tax: number;
+  /** What the non-resident receives (FJD). */
+  paidToThem: number;
+  /** What the payment costs the business (FJD): the invoice, plus the tax with gross-up. */
+  cost: number;
+}
+
+/** NRWHT on a payment to a non-resident. `invoice` is the invoice in FJD. */
+export function nrwhtFor(
+  contractor: Contractor,
+  p: { invoice: number; method: 'gross_up' | 'net_off' },
+  settings: WithholdingSettings = DEFAULT_WITHHOLDING
+): NrwhtDecision {
+  const invoice = round2(Math.max(0, p.invoice));
+  const none = (reason: string): NrwhtDecision => ({ applies: false, rate: 0, reason, base: invoice, tax: 0, paidToThem: invoice, cost: invoice });
+  const where = countryName(contractor);
+  if (contractor.permanentEstablishment) {
+    return none('They have a permanent establishment in Fiji, so non-resident withholding tax doesn\'t apply: the fee is part of their Fiji business income.');
+  }
+  const treaty = contractor.country ? TAX_TREATIES[contractor.country] : undefined;
+  let rate = settings.nonResidentRate;
+  let why = `${where} has no tax treaty with Fiji.`;
+  if (treaty) {
+    const t = contractor.payeeType === 'individual' ? treaty.individual : treaty.enterprise;
+    const who = contractor.payeeType === 'individual' ? 'a person working on their own' : 'a company or other enterprise';
+    if (t === null) {
+      return none(`Fiji's tax treaty with ${treaty.name}: fees for services to ${who} aren't taxed in Fiji, unless they have a permanent establishment here or stay longer than the treaty allows. Keep their certificate of tax residence with the payment.`);
+    }
+    rate = Math.min(t, settings.nonResidentRate);
+    why = `Fiji's tax treaty with ${treaty.name} allows ${t}% on fees to ${who}.`;
+  }
+  const r = rate / 100;
+  if (p.method === 'gross_up') {
+    const base = r < 1 ? round2(invoice / (1 - r)) : invoice;
+    const tax = round2(base * r);
+    return { applies: true, rate, reason: `${rate}% non-resident withholding tax. ${why} Grossed up: you pay the tax on top, and they get the full invoice.`, base, tax, paidToThem: invoice, cost: round2(invoice + tax) };
+  }
+  const tax = round2(invoice * r);
+  return { applies: true, rate, reason: `${rate}% non-resident withholding tax. ${why} Taken off the invoice: they get the invoice less the tax.`, base: invoice, tax, paidToThem: round2(invoice - tax), cost: invoice };
+}
+
+/** NRWHT withheld but not yet paid to FRCS (it's paid when you apply for tax clearance to send the money). */
+export function nrwhtUnpaid(data: Pick<CRMData, 'expenses'>, businessId: string) {
+  const list = contractorPaymentsOf(data, businessId).filter(e => isNrwht(e.contractorPayment) && e.contractorPayment.withheld > 0 && !e.contractorPayment.paidToFrcs).sort((a, b) => a.date.localeCompare(b.date));
+  return { payments: list, total: round2(list.reduce((s, e) => s + e.contractorPayment.withheld, 0)) };
 }
 
 // ---------- The other side: tax a client withheld from you ----------

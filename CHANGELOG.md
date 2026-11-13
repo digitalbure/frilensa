@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.19.0] - 2026-11-13
+
+### Added
+- **Finance → Contractors: non-resident withholding tax.** For paying people and companies who aren't resident in Fiji, such as an overseas colourist, a visiting crew member or a foreign post house:
+  - Mark a contractor as not resident in Fiji, with the country they're resident in, whether they're a company or a person working on their own, and whether they have a permanent establishment (a branch or office) in Fiji.
+  - **Pay** them in their own currency. Frilensa converts it to FJD and works out the tax: 15% of the invoice, or the rate in Fiji's tax treaty with their country. Treaty countries are Australia, New Zealand, the UK, Japan, South Korea, Singapore, India, Malaysia, Papua New Guinea, Qatar and the UAE. Under most of these treaties a fee for services isn't taxed in Fiji at all, and Frilensa tells you so. No tax applies when they have a permanent establishment here. You can change the result, with a reason.
+  - Choose **take it off the invoice** (they get the invoice less the tax) or **gross up** (you pay the tax on top and they get the full invoice), and see exactly what to send them.
+  - Optionally note the reverse-charge VAT on the imported service, for your VAT return.
+  - The payment is saved as an expense for what it costs you, with a **non-resident withholding tax statement** for the payee.
+  - A reminder shows tax still to pay FRCS. It's paid when you apply for tax clearance, before the bank sends the money overseas. Record the payment and clearance number when it's done.
+- **Admin:** the non-resident withholding tax rate is in Admin → Taxes and fees.
+
+### Changed
+- Payments to non-residents are kept out of the monthly provisional tax summary and the provisional tax totals.
+
 ## [4.18.0] - 2026-11-13
 
 ### Added

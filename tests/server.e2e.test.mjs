@@ -1219,8 +1219,8 @@ try {
     assert.equal(pub.status, 200); assert.equal(pub.body.saved, false); assert.equal(pub.body.config.defaultVatRate, 12.5);
     assert.equal(pub.body.config.plans.pro.price, 25); assert.ok(pub.body.config.platformTaxes.some(t => t.category === 'vat'));
     const put = (who, body) => fetch(`${API}/api/admin/platform-config`, { method: 'PUT', headers: who ? auth(who) : { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const next = { ...pub.body.config, defaultVatRate: 15, plans: { ...pub.body.config.plans, pro: { ...pub.body.config.plans.pro, name: 'Pro Studio', price: 29.5 } }, platformFees: [{ name: 'Card fee', rate: 3, rateType: 'percentage', isActive: true, category: 'processing' }], withholding: { rate: 6, threshold: 1500 } };
-    assert.deepEqual(pub.body.config.withholding, { rate: 5, threshold: 1000 }, 'provisional tax defaults');
+    const next = { ...pub.body.config, defaultVatRate: 15, plans: { ...pub.body.config.plans, pro: { ...pub.body.config.plans.pro, name: 'Pro Studio', price: 29.5 } }, platformFees: [{ name: 'Card fee', rate: 3, rateType: 'percentage', isActive: true, category: 'processing' }], withholding: { rate: 6, threshold: 1500, nonResidentRate: 12 } };
+    assert.deepEqual(pub.body.config.withholding, { rate: 5, threshold: 1000, nonResidentRate: 15 }, 'provisional tax defaults');
     assert.equal((await put(null, next)).status, 401);
     assert.equal((await put(B, next)).status, 403, 'non-admin changed the plans');
     assert.equal((await put(A, { ...next, defaultVatRate: 120 })).status, 400);
@@ -1234,7 +1234,7 @@ try {
     assert.equal(after.config.plans.pro.name, 'Pro Studio'); assert.equal(after.config.plans.pro.price, 29.5);
     assert.equal(after.config.platformFees.length, 1); assert.equal(after.config.platformFees[0].scope, 'platform'); assert.ok(after.config.platformFees[0].id);
     assert.ok(!('updatedBy' in after), 'admin email not exposed');
-    assert.deepEqual(after.config.withholding, { rate: 6, threshold: 1500 }, 'provisional tax rate and threshold saved');
+    assert.deepEqual(after.config.withholding, { rate: 6, threshold: 1500, nonResidentRate: 12 }, 'provisional tax rate and threshold saved');
   });
   await check('directory switches: paid plans only and closed are enforced by the server', async () => {
     const cfg = (await j(await fetch(`${API}/api/public/platform-config`))).body.config;

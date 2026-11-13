@@ -1020,9 +1020,19 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                       onChange={(e) => commitConfig({ ...config, withholding: { ...config.withholding, threshold: Math.max(0, Number(e.target.value) || 0) } }, { wait: true })}
                       className="w-28 mt-1 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400"
                     />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase block mt-2">Non-resident withholding tax</label>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number" step="0.5" min="0" max="50" aria-label="Non-resident withholding tax rate"
+                        value={config.withholding.nonResidentRate}
+                        onChange={(e) => commitConfig({ ...config, withholding: { ...config.withholding, nonResidentRate: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } }, { wait: true })}
+                        className="w-20 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400"
+                      />
+                      <span className="text-xs font-bold text-slate-400">%</span>
+                    </div>
                   </div>
                   <p className="sm:col-span-2 text-[10px] text-slate-400 leading-relaxed self-center mt-3">
-                    Used by Finance → Contractors. Businesses withhold this rate from payments to resident contractors with a written agreement once a contractor's yearly total (excluding VAT) reaches the threshold, unless they hold a certificate of exemption. FRCS currently sets 5% and FJD 1,000.
+                    Used by Finance → Contractors. Businesses withhold this rate from payments to resident contractors with a written agreement once a contractor's yearly total (excluding VAT) reaches the threshold, unless they hold a certificate of exemption. FRCS currently sets 5% and FJD 1,000. Payments to non-residents for services carry non-resident withholding tax instead (15% today, or less under a tax treaty).
                   </p>
                 </div>
               </div>

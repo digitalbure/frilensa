@@ -1,7 +1,7 @@
 // Unit tests for provisional tax on contractor payments. Run: npm run test:unit
 import assert from "node:assert/strict";
 import {
-  DEFAULT_WITHHOLDING, cleanWithholding, contractorYear, earlierThisYear, nextCertificateNo, ptDueDate, ptFor, ptMonthSummary, ptSummaryCsv, withheldFromYou, type Contractor
+  DEFAULT_WITHHOLDING, cleanWithholding, contractorYear, earlierThisYear, nextCertificateNo, ptDueDate, ptFor, ptMonthSummary, ptSummaryCsv, withheldFromYou, nrwhtFor, nrwhtUnpaid, type Contractor
 } from "../src/lib/withholding";
 import { applyConfirmedPayment } from "../src/lib/payments";
 import { cleanPlatformConfig } from "../src/lib/platformConfigShared";
@@ -12,7 +12,9 @@ const none = { base: 0, notWithheldBase: 0 };
 // Settings
 assert.deepEqual(cleanWithholding(undefined), DEFAULT_WITHHOLDING);
 assert.deepEqual(cleanWithholding({ rate: 99, threshold: -5 }), DEFAULT_WITHHOLDING, "out-of-range values fall back");
-assert.deepEqual(cleanWithholding({ rate: 7.5, threshold: 2000 }), { rate: 7.5, threshold: 2000 });
+assert.deepEqual(cleanWithholding({ rate: 7.5, threshold: 2000 }), { rate: 7.5, threshold: 2000, nonResidentRate: 15 });
+assert.equal(cleanWithholding({ nonResidentRate: 12 }).nonResidentRate, 12);
+assert.equal(cleanWithholding({ nonResidentRate: 80 }).nonResidentRate, 15, "out of range");
 assert.deepEqual(cleanPlatformConfig({}).withholding, DEFAULT_WITHHOLDING, "platform config carries the defaults");
 
 // No written agreement: no PT, whatever the amount.
@@ -44,7 +46,7 @@ d = ptFor({ ...base, expectedYearly: 5000 }, { date: "2026-05-01", gross: 1125, 
 assert.equal(d.base, 1125, "no VAT taken off when not VAT registered");
 
 // Settings from the platform
-d = ptFor({ ...base, expectedYearly: 5000 }, { date: "2026-05-01", gross: 1000, vat: 0 }, none, { rate: 10, threshold: 1000 });
+d = ptFor({ ...base, expectedYearly: 5000 }, { date: "2026-05-01", gross: 1000, vat: 0 }, none, { rate: 10, threshold: 1000, nonResidentRate: 15 });
 assert.equal(d.withheld, 100);
 
 // Due dates: end of the following month.
@@ -107,5 +109,35 @@ assert.equal(applyConfirmedPayment(ws, "inv1", { paymentMethod: "Cash", paymentD
 const fy = withheldFromYou(paid as any, "2026");
 assert.equal(fy.total, 50); assert.equal(fy.missing, 1); assert.equal(fy.rows[0].client, "Big Pictures");
 assert.equal(withheldFromYou(paid as any, "2025").rows.length, 0);
+
+// ---------- Non-resident withholding tax ----------
+const nr = (extra: Partial<Contractor> = {}): Contractor => ({ ...base, id: "n1", residency: "non_resident", country: "OTHER", countryName: "United States", payeeType: "enterprise", ...extra });
+// No treaty: 15%, net-off (FRCS brochure: FJ$2000 x 15% = $300).
+let n = nrwhtFor(nr(), { invoice: 2000, method: "net_off" });
+assert.equal(n.applies, true); assert.equal(n.rate, 15); assert.equal(n.tax, 300); assert.equal(n.paidToThem, 1700); assert.equal(n.cost, 2000);
+// Gross-up (FRCS brochure: $2000 / 0.85 = $2352.94 x 15% = $352.94).
+n = nrwhtFor(nr(), { invoice: 2000, method: "gross_up" });
+assert.equal(n.base, 2352.94); assert.equal(n.tax, 352.94); assert.equal(n.paidToThem, 2000); assert.equal(n.cost, 2352.94);
+// Permanent establishment in Fiji: none.
+assert.equal(nrwhtFor(nr({ permanentEstablishment: true }), { invoice: 2000, method: "net_off" }).applies, false);
+// Treaties: Australia none; Malaysia enterprise 15%, individual none; India enterprise 10%.
+n = nrwhtFor(nr({ country: "AU" }), { invoice: 2000, method: "net_off" });
+assert.equal(n.applies, false); assert.match(n.reason, /Australia/);
+assert.equal(nrwhtFor(nr({ country: "MY" }), { invoice: 1000, method: "net_off" }).tax, 150);
+assert.equal(nrwhtFor(nr({ country: "MY", payeeType: "individual" }), { invoice: 1000, method: "net_off" }).applies, false);
+n = nrwhtFor(nr({ country: "IN" }), { invoice: 1000, method: "net_off" });
+assert.equal(n.rate, 10); assert.equal(n.tax, 100);
+// The platform rate caps treaty rates and sets the no-treaty rate.
+assert.equal(nrwhtFor(nr(), { invoice: 1000, method: "net_off" }, { ...DEFAULT_WITHHOLDING, nonResidentRate: 12 }).tax, 120);
+assert.equal(nrwhtFor(nr({ country: "IN" }), { invoice: 1000, method: "net_off" }, { ...DEFAULT_WITHHOLDING, nonResidentRate: 8 }).rate, 8);
+
+// NRWHT payments stay out of the provisional tax summary and the PT yearly totals, and show as unpaid until recorded.
+const nrPay: any = { ...cp("e8", "n1", "LA Grade Co", "2026-10-15", 2000, 300, { kind: "nrwht", base: 2000, net: 1700 }) };
+const withNr: any = { ...data, expenses: [...data.expenses, nrPay] };
+assert.equal(ptMonthSummary(withNr, "b1", "2026-10").withheld, 30, "NRWHT not in the PT summary");
+assert.equal(earlierThisYear({ expenses: [...data.expenses, { ...nrPay, contractorPayment: { ...nrPay.contractorPayment, contractorId: "c1" } }] }, "c1", "2026-12-31").base, 1600, "NRWHT not in PT year totals");
+assert.equal(nrwhtUnpaid(withNr, "b1").total, 300);
+assert.equal(nrwhtUnpaid({ expenses: [{ ...nrPay, contractorPayment: { ...nrPay.contractorPayment, paidToFrcs: { date: "2026-10-16" } } }] }, "b1").total, 0);
+assert.equal(nrwhtUnpaid(withNr, "b2").total, 0, "other businesses left out");
 
 console.log("withholding checks passed");
