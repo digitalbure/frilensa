@@ -530,6 +530,7 @@ export interface CRMDocument {
   exchangeRate?: number; // Foreign exchange conversion rate (e.g. 1.485 FJD per AUD)
   bankFeesDeduction?: number; // Bank wire, transfer, or intermediary fees deducted (e.g. 15 FJD)
   netReceivedHome?: number; // Net amount banked in home currency (e.g. 1470 FJD)
+  withholdingTax?: import('./lib/withholding').WithheldFromYou; // provisional tax the client withheld from the payment
   paymentExchangeNotes?: string; // Reference details (e.g. "ANZ Overseas Telegraphic Transfer, fee FJD $15")
   paymentDate?: string; // Date payment was logged (YYYY-MM-DD)
   paymentAttachments?: PaymentAttachment[]; // Receipts, wire slips, M-Paisa screenshots attached to payment
@@ -670,6 +671,8 @@ export interface CRMData {
   activityLogs?: ActivityLog[]; // Secure audit activity logs for invoices, payments, clients & rates
   aiConversations?: AiConversationSession[]; // Past conversation records and transcripts
   aiMemories?: AiMemoryItem[]; // Persistent long-term business knowledge & memories
+  contractors?: import('./lib/withholding').Contractor[]; // people the business pays for services (provisional tax)
+  ptRemittances?: import('./lib/withholding').PtRemittance[]; // provisional tax paid to FRCS, by month
 }
 
 export interface AiAttachment {
@@ -770,6 +773,7 @@ export interface ExpenseRecord {
   billToClientId?: string;   // reimbursable: bill this expense to a client
   billedDocumentId?: string; // the invoice it was billed on
   receiptFile?: StoredFile;  // receipt kept in file storage (replaces receiptImage when uploaded)
+  contractorPayment?: import('./lib/withholding').ContractorPayment; // a payment to a contractor, with provisional tax
 }
 
 /** A file kept in server file storage (see server/files.ts). */

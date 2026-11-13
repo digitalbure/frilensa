@@ -2,6 +2,7 @@ import type { CRMData, FeeConfig, PlanFeatureConfig, PlanFeatures, PlanLimits, P
 import { DEFAULT_PLATFORM_SETTINGS, INITIAL_CRM_DATA } from '../data/mockData';
 import { DEFAULT_BILLING, cleanBilling, type BillingSettings } from './billing';
 import { DEFAULT_MODULES, cleanModules, type ModuleSettings } from './modules';
+import { DEFAULT_WITHHOLDING, cleanWithholding, type WithholdingSettings } from './withholding';
 
 // Platform-wide settings that admins set once for every account: the plans (names, prices, limits,
 // features), the taxes and fees every business can apply, and the VAT rate new accounts start with.
@@ -24,6 +25,8 @@ export interface PlatformConfig {
   billing: BillingSettings;
   /** Modules switched on or off for everyone, with their settings (Admin → Modules). */
   modules: ModuleSettings;
+  /** Provisional tax on payments to contractors (rate and yearly threshold). */
+  withholding: WithholdingSettings;
 }
 
 export const PLAN_TIERS: PlanTier[] = ['free', 'pro', 'premium'];
@@ -40,7 +43,8 @@ export const DEFAULT_PLATFORM_CONFIG: PlatformConfig = {
   defaultVatRate: DEFAULT_PLATFORM_SETTINGS.defaultVatRate,
   directory: { enabled: true, paidOnly: true },
   billing: DEFAULT_BILLING,
-  modules: DEFAULT_MODULES
+  modules: DEFAULT_MODULES,
+  withholding: DEFAULT_WITHHOLDING
 };
 
 /** Whether a business on this plan can be listed in the directory. */
@@ -119,7 +123,8 @@ export function cleanPlatformConfig(raw: any): PlatformConfig {
       paidOnly: typeof r.directory?.paidOnly === 'boolean' ? r.directory.paidOnly : DEFAULT_PLATFORM_CONFIG.directory.paidOnly
     },
     billing: cleanBilling(r.billing),
-    modules: cleanModules(r.modules)
+    modules: cleanModules(r.modules),
+    withholding: cleanWithholding(r.withholding)
   };
 }
 

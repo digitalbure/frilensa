@@ -8,6 +8,7 @@ import {
 import { CRMDocument, CRMData, Business, Client, PaymentAttachment } from '../types';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, computeFxConversion, formatCurrencyAmount } from '../lib/currencies';
 import PaymentAttachmentWidget from './PaymentAttachmentWidget';
+import { publishedPlatformConfig, DEFAULT_PLATFORM_CONFIG } from '../lib/platformConfig';
 
 interface RecordPaymentModalProps {
   isOpen: boolean;
@@ -28,18 +29,25 @@ interface RecordPaymentModalProps {
       paymentDate?: string;
       autoLogTransaction?: boolean;
       paymentAttachments?: PaymentAttachment[];
+      withholdingTax?: number;
+      withholdingRate?: number;
+      withholdingCertificate?: boolean;
     }
   ) => void;
 }
 
-export default function RecordPaymentModal({
-  isOpen,
+// The form only mounts while open, so its hooks always run in the same order.
+export default function RecordPaymentModal(props: RecordPaymentModalProps) {
+  if (!props.isOpen || !props.document) return null;
+  return <RecordPaymentForm key={props.document.id} {...props} document={props.document} />;
+}
+
+const RecordPaymentForm: React.FC<RecordPaymentModalProps & { document: CRMDocument }> = ({
   document,
   data,
   onClose,
   onConfirmPayment
-}: RecordPaymentModalProps) {
-  if (!isOpen || !document) return null;
+}) => {
 
   const homeCurrency = data.userProfile.defaultCurrency || 'FJD';
   const docCurrency = document.currency || homeCurrency;
@@ -79,6 +87,12 @@ export default function RecordPaymentModal({
   const [attachments, setAttachments] = useState<PaymentAttachment[]>(() => {
     return document.paymentAttachments || [];
   });
+  // Provisional tax the client withheld (local currency only: PT is for payments to Fiji residents).
+  const ptRate = (publishedPlatformConfig() || DEFAULT_PLATFORM_CONFIG).withholding.rate;
+  const ptBase = Math.max(0, document.total - (document.isTaxExempt ? 0 : (document.vatAmount || 0)));
+  const ptSuggestion = Math.round(ptBase * ptRate) / 100;
+  const [withheld, setWithheld] = useState<number>(document.withholdingTax?.amount || 0);
+  const [certificateReceived, setCertificateReceived] = useState<boolean>(!!document.withholdingTax?.certificateReceived);
 
   // Sync state if document changes
   useEffect(() => {
@@ -94,6 +108,8 @@ export default function RecordPaymentModal({
     setReferenceNotes(document.paymentExchangeNotes || '');
     setNotes(document.notes || '');
     setAttachments(document.paymentAttachments || []);
+    setWithheld(document.withholdingTax?.amount || 0);
+    setCertificateReceived(!!document.withholdingTax?.certificateReceived);
   }, [document?.id]);
 
   // Sync calculations whenever inputs change
@@ -152,7 +168,10 @@ export default function RecordPaymentModal({
       // Local currency payment
       const gross = foreignAmount;
       const deduction = bankDeduction;
-      const net = Math.max(0, gross - deduction);
+      const tax = Math.min(gross, Math.max(0, withheld));
+      const net = Math.max(0, Math.round((gross - deduction - tax) * 100) / 100);
+      const feeNote = deduction > 0 ? `Transaction fee: ${homeCurrency} $${deduction}.` : '';
+      const taxNote = tax > 0 ? `Provisional tax withheld: ${homeCurrency} $${tax.toFixed(2)}.` : '';
 
       onConfirmPayment(document.id, {
         paymentMethod,
@@ -161,11 +180,12 @@ export default function RecordPaymentModal({
         exchangeRate: 1.0,
         bankFeesDeduction: deduction,
         netReceivedHome: net,
-        paymentExchangeNotes: referenceNotes.trim() || (deduction > 0 ? `Transaction fee: ${homeCurrency} $${deduction}. Net banked: ${homeCurrency} $${net.toFixed(2)}.` : undefined),
+        paymentExchangeNotes: referenceNotes.trim() || (feeNote || taxNote ? [feeNote, taxNote, `Net banked: ${homeCurrency} $${net.toFixed(2)}.`].filter(Boolean).join(' ') : undefined),
         notes: notes.trim(),
         paymentDate,
         autoLogTransaction: autoLogTx,
-        paymentAttachments: attachments
+        paymentAttachments: attachments,
+        ...(tax > 0 ? { withholdingTax: tax, withholdingRate: ptRate, withholdingCertificate: certificateReceived } : {})
       });
     }
     onClose();
@@ -386,11 +406,41 @@ export default function RecordPaymentModal({
                   </div>
                 </div>
 
-                {bankDeduction > 0 && (
+                <div className="pt-2 border-t border-slate-200 space-y-1.5">
+                  <label htmlFor="pt-withheld" className="block text-[10px] font-extrabold uppercase tracking-wider text-slate-500">
+                    Tax withheld by the client ({homeCurrency}, provisional tax)
+                  </label>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <input
+                      id="pt-withheld"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={withheld || ''}
+                      onChange={(e) => setWithheld(parseFloat(e.target.value) || 0)}
+                      placeholder="0.00"
+                      className="w-32 bg-white border border-slate-300 rounded-xl py-2 px-3 text-xs font-mono font-bold text-slate-900 focus:outline-none focus:border-sky-600"
+                    />
+                    <button type="button" onClick={() => setWithheld(ptSuggestion)} className="text-[10px] font-bold text-sky-700 border border-sky-200 bg-sky-50 rounded-lg px-2 py-1.5 cursor-pointer">
+                      {ptRate}% of {homeCurrency} ${ptBase.toLocaleString(undefined, { minimumFractionDigits: 2 })} excl. VAT
+                    </button>
+                  </div>
+                  {withheld > 0 && (
+                    <>
+                      <label className="flex items-center gap-2 text-[11px] text-slate-700">
+                        <input type="checkbox" checked={certificateReceived} onChange={(e) => setCertificateReceived(e.target.checked)} className="rounded border-slate-300 w-3.5 h-3.5" />
+                        I have their withholding certificate
+                      </label>
+                      <p className="text-[10px] text-slate-500">The invoice counts as paid in full. The client pays this tax to FRCS for you and it counts towards your income tax: see Finance, Contractors.</p>
+                    </>
+                  )}
+                </div>
+
+                {(bankDeduction > 0 || withheld > 0) && (
                   <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200">
                     <span className="text-slate-500 font-bold">Net received:</span>
                     <span className="font-mono font-black text-emerald-700">
-                      {homeCurrency} ${(Math.max(0, foreignAmount - bankDeduction)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      {homeCurrency} ${(Math.max(0, foreignAmount - bankDeduction - withheld)).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                 )}
@@ -475,7 +525,7 @@ export default function RecordPaymentModal({
                 <div>
                   <span className="font-bold text-slate-800 block">Add to bookkeeping</span>
                   <span className="text-[10px] text-slate-500 block">
-                    Adds {homeCurrency} ${isForeignCurrency ? fxResult.netReceivedHome.toLocaleString(undefined, { minimumFractionDigits: 2 }) : (Math.max(0, foreignAmount - bankDeduction)).toLocaleString(undefined, { minimumFractionDigits: 2 })} to your income.
+                    Adds {homeCurrency} ${isForeignCurrency ? fxResult.netReceivedHome.toLocaleString(undefined, { minimumFractionDigits: 2 }) : (Math.max(0, foreignAmount - bankDeduction - withheld)).toLocaleString(undefined, { minimumFractionDigits: 2 })} to your income{withheld > 0 ? `, plus ${homeCurrency} $${withheld.toFixed(2)} tax withheld` : ''}.
                   </span>
                 </div>
               </label>

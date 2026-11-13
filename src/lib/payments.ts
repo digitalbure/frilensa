@@ -15,6 +15,10 @@ export interface ConfirmedPaymentDetails {
   paymentDate?: string;
   autoLogTransaction?: boolean;
   paymentAttachments?: PaymentAttachment[];
+  /** Provisional tax the client withheld (home currency). The invoice is still paid in full. */
+  withholdingTax?: number;
+  withholdingRate?: number;
+  withholdingCertificate?: boolean;
 }
 
 /**
@@ -30,6 +34,7 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
 
   // Combine existing and new attachments if any
   const finalAttachments = paymentDetails.paymentAttachments || targetDoc.paymentAttachments || [];
+  const withheld = Math.round(Math.max(0, Number(paymentDetails.withholdingTax) || 0) * 100) / 100;
 
   // Update document status and FX settlement metadata
   const updatedDocs = data.documents.map(d => {
@@ -47,6 +52,9 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
         paymentExchangeNotes: paymentDetails.paymentExchangeNotes,
         notes: paymentDetails.notes !== undefined && paymentDetails.notes !== '' ? paymentDetails.notes : d.notes,
         paymentAttachments: finalAttachments,
+        withholdingTax: withheld > 0
+          ? { amount: withheld, rate: paymentDetails.withholdingRate || 0, date: finalPaymentDate, certificateReceived: !!paymentDetails.withholdingCertificate }
+          : undefined,
         updatedAt: new Date().toISOString()
       };
     }
@@ -91,6 +99,23 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
       paymentAttachments: finalAttachments
     };
     newTransactions = [newTransaction, ...newTransactions];
+    if (withheld > 0) {
+      // Not money in the bank: tax the client paid to FRCS for you, which counts towards your income tax.
+      newTransactions = [{
+        id: `tx-${Date.now()}-pt`,
+        date: finalPaymentDate,
+        description: `Provisional tax withheld by the client on ${targetDoc.type.toUpperCase()} #${targetDoc.documentNumber} (claim in your income tax return)`,
+        amount: withheld,
+        category: 'Provisional Tax Withheld',
+        status: 'reconciled',
+        confidence: 100,
+        bankName: 'FRCS tax credit',
+        documentId: targetDoc.id,
+        businessId: targetDoc.businessId || data.activeBusinessId,
+        projectId: targetDoc.projectId,
+        clientId: targetDoc.clientId
+      } as Transaction, ...newTransactions];
+    }
   }
 
 

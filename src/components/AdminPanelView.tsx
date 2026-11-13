@@ -1000,6 +1000,31 @@ export default function AdminPanelView({ onClose, crmData, onUpdateCrmData, onIm
                     New accounts start with this rate when they set up. Each business can change its own rate in Settings, and that rate is what goes on its invoices.
                   </p>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-slate-800">
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 mt-3">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase">Provisional tax on contractors</label>
+                    <div className="flex items-center gap-1.5 mt-1">
+                      <input
+                        type="number" step="0.5" min="0" max="50" aria-label="Provisional tax rate"
+                        value={config.withholding.rate}
+                        onChange={(e) => commitConfig({ ...config, withholding: { ...config.withholding, rate: Math.min(50, Math.max(0, Number(e.target.value) || 0)) } }, { wait: true })}
+                        className="w-20 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400"
+                      />
+                      <span className="text-xs font-bold text-slate-400">%</span>
+                    </div>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase block mt-2">Yearly threshold (FJD)</label>
+                    <input
+                      type="number" step="100" min="0" aria-label="Provisional tax yearly threshold"
+                      value={config.withholding.threshold}
+                      onChange={(e) => commitConfig({ ...config, withholding: { ...config.withholding, threshold: Math.max(0, Number(e.target.value) || 0) } }, { wait: true })}
+                      className="w-28 mt-1 bg-slate-900 border border-slate-800 rounded-lg py-1 px-2 text-xs font-mono font-bold text-sky-400"
+                    />
+                  </div>
+                  <p className="sm:col-span-2 text-[10px] text-slate-400 leading-relaxed self-center mt-3">
+                    Used by Finance → Contractors. Businesses withhold this rate from payments to resident contractors with a written agreement once a contractor's yearly total (excluding VAT) reaches the threshold, unless they hold a certificate of exemption. FRCS currently sets 5% and FJD 1,000.
+                  </p>
+                </div>
               </div>
 
               {/* Platform Statutory Taxes CRUD */}

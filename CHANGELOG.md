@@ -18,6 +18,21 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.18.0] - 2026-11-13
+
+### Added
+- **Finance → Contractors: provisional tax on payments to contractors.** For businesses that pay crew, freelancers and other people for services in Fiji:
+  - Keep a list of contractors with their TIN, whether they're VAT registered, whether there's a written agreement, what you expect to pay them this year, and any certificate of exemption (with its expiry).
+  - **Pay** a contractor and Frilensa works out whether to withhold 5% provisional tax, following FRCS rules: a written agreement (invoices and purchase orders don't count), FJD 1,000 or more in the year, on the amount excluding VAT, and none for people with a valid certificate of exemption. It shows why, and what to pay them.
+  - When a contractor passes FJD 1,000 part way through the year, you can also withhold on their earlier payments. You can change the result, with a reason, which is kept with the payment.
+  - Each payment is saved as an expense (Subcontractors, with any VAT to claim) and gets a numbered **withholding certificate** to print or save as PDF. There's an **annual certificate** for each contractor too.
+  - A **monthly provisional tax summary** lists everyone you paid that month (people with a certificate of exemption included) with their TIN, COE number, gross paid and tax withheld, ready to download as CSV. It shows the due date (the end of the next month), and you can record what you paid FRCS. A reminder shows any month still to pay, and whether it's overdue.
+- **Tax a client withheld from you.** When you record a payment on an invoice, enter any provisional tax the client withheld (one tap works out 5% of the invoice excluding VAT). The invoice counts as paid in full, your books show the money banked and the tax credit separately, and Finance → Contractors totals the tax withheld from you for the year and which withholding certificates you still need to get.
+- **Admin:** the provisional tax rate and yearly threshold are in Admin → Taxes and fees, so they can follow FRCS changes.
+
+### Fixed
+- The Record payment window could throw a React error when it opened, because parts of it only ran while it was open.
+
 ## [4.17.0] - 2026-11-08
 
 ### Added

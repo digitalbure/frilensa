@@ -157,6 +157,8 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
   const mergedSupportMessages = mergeEntityList(localData.supportMessages, remoteData.supportMessages);
   const mergedAiConversations = mergeEntityList(localData.aiConversations, remoteData.aiConversations);
   const mergedAiMemories = mergeEntityList(localData.aiMemories, remoteData.aiMemories);
+  const mergedContractors = mergeEntityList(localData.contractors, remoteData.contractors);
+  const mergedPtRemittances = mergeEntityList(localData.ptRemittances, remoteData.ptRemittances);
 
   // Determine activeBusinessId safely
   let activeBizId = remoteData.activeBusinessId || localData.activeBusinessId;
@@ -198,6 +200,8 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
     supportMessages: mergedSupportMessages,
     aiConversations: mergedAiConversations,
     aiMemories: mergedAiMemories,
+    contractors: mergedContractors,
+    ptRemittances: mergedPtRemittances,
     activeBusinessId: activeBizId,
     onboardingCompleted: true
   };
@@ -241,6 +245,8 @@ function toCRMData(raw: any): CRMData {
     supportMessages: raw.supportMessages || [],
     aiConversations: raw.aiConversations || [],
     aiMemories: raw.aiMemories || [],
+    contractors: raw.contractors || [],
+    ptRemittances: raw.ptRemittances || [],
     activityLogs: raw.activityLogs || [],
     clientWallets: raw.clientWallets || undefined,
     activeBusinessId: raw.activeBusinessId || '',
@@ -365,6 +371,8 @@ export async function saveConsultantData(data: CRMData) {
     directoryBusinesses: data.directoryBusinesses || [],
     directoryBookings: data.directoryBookings || [],
     clientWallets: data.clientWallets || null,
+    contractors: data.contractors || [],
+    ptRemittances: data.ptRemittances || [],
     ...(recordsSaved ? { [ORDER_FIELD]: order } : lists),
     activeBusinessId: data.activeBusinessId || '',
     onboardingCompleted: data.onboardingCompleted ?? true,
