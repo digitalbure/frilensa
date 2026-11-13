@@ -29,7 +29,7 @@ export interface SyncedGear {
   currency: string;
   replacementValue: number;
   condition: 'new' | 'excellent' | 'good' | 'fair' | 'worn' | '';
-  status: 'available' | 'checked_out' | 'maintenance' | 'retired';
+  status: 'available' | 'checked_out' | 'maintenance' | 'missing' | 'retired';
   /** What comes in the kit (a camera kit's lens, batteries, cards…). */
   kit: KitItem[];
   /** Dates it's booked or away, from the other app. */
@@ -48,7 +48,7 @@ export const GEAR_SOURCES: Record<string, string> = { packer_tools: 'Packer Tool
 export const MAX_SYNCED_GEAR = 2000;
 export const MAX_BATCH = 100;
 const CONDITIONS = ['new', 'excellent', 'good', 'fair', 'worn'];
-const STATUSES = ['available', 'checked_out', 'maintenance', 'retired'];
+const STATUSES = ['available', 'checked_out', 'maintenance', 'missing', 'retired'];
 
 const str = (v: unknown, max: number) => typeof v === 'string' || typeof v === 'number' ? String(v).replace(/[\u0000-\u001f\u007f]/g, ' ').trim().slice(0, max) : '';
 const amt = (v: unknown) => { const n = Number(v); return Number.isFinite(n) && n >= 0 ? Math.round(Math.min(n, 10_000_000) * 100) / 100 : 0; };

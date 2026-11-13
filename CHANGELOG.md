@@ -18,6 +18,11 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.21.1] - 2026-11-13
+
+### Fixed
+- Synced gear marked missing in Packer Tools now shows as missing in Frilensa, instead of available.
+
 ## [4.21.0] - 2026-11-13
 
 ### Added

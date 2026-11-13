@@ -26,6 +26,7 @@ const STATUS: Record<SyncedGear['status'], { label: string; cls: string }> = {
   available: { label: 'Available', cls: 'bg-emerald-50 text-emerald-700' },
   checked_out: { label: 'Checked out', cls: 'bg-sky-50 text-sky-700' },
   maintenance: { label: 'In maintenance', cls: 'bg-amber-50 text-amber-800' },
+  missing: { label: 'Missing', cls: 'bg-rose-50 text-rose-700' },
   retired: { label: 'Retired', cls: 'bg-zinc-100 text-zinc-600' }
 };
 

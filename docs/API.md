@@ -155,7 +155,7 @@ An item:
 ```
 
 - Only `name` is required. `source` defaults to `packer_tools`; one user's items are kept apart by `source` and `externalId`, so sending the same id again updates it.
-- `condition`: `new`, `excellent`, `good`, `fair` or `worn`. `status`: `available`, `checked_out`, `maintenance` or `retired`.
+- `condition`: `new`, `excellent`, `good`, `fair` or `worn`. `status`: `available`, `checked_out`, `maintenance`, `missing` or `retired`.
 - `kit` items can also be plain strings. `unavailable` holds dates the gear is booked or away (`YYYY-MM-DD`).
 - `externalUrl` must be https; it's shown as "Open in Packer Tools".
 - Send `updatedAt` when the item changes in your app: Frilensa compares it with when the user last made a service or listing from it.

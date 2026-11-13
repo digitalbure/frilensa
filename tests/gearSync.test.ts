@@ -48,4 +48,6 @@ assert.equal(changedSinceLinked(g), false);
 assert.equal(changedSinceLinked({ ...g, links: { serviceId: "s", linkedVersion: "2026-11-01T00:00:00.000Z" } }), true);
 assert.equal(changedSinceLinked({ ...g, links: { serviceId: "s", linkedVersion: g.updatedAt } }), false);
 
+assert.equal((cleanGearItem({ name: "x", status: "missing" }, "m") as any).status, "missing");
+
 console.log("gear sync checks passed");
