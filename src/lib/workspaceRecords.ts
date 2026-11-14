@@ -14,6 +14,8 @@ export const SPLIT_LISTS = [
   'activityLogs', 'aiConversations', 'aiMemories', 'payRuns', 'suppliers'
 ] as const;
 export type SplitList = typeof SPLIT_LISTS[number];
+/** The lists a team member can open in someone else's books (not their AI assistant chats). Mirrored in firestore.rules. */
+export const SHARED_LISTS: readonly SplitList[] = ['businesses', 'clients', 'services', 'projects', 'documents', 'expenses', 'transactions', 'activityLogs', 'payRuns', 'suppliers'];
 
 /** Head field holding each split list's item order, as ids: { documents: ['d2', 'd1'], ... }. */
 export const ORDER_FIELD = 'recordOrder';

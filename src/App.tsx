@@ -33,8 +33,12 @@ import {
   mergeCRMData,
   saveLocalBackup,
   loadLocalBackup,
-  setLocalCacheOwner
+  setLocalCacheOwner,
+  setSharedWorkspace,
+  type SharedWorkspace
 } from './lib/db';
+import { acceptInvite, chosenBooks, loadTeam, openBooks, ownBooksChosen, sharedFor, ROLE_NAMES } from './lib/team';
+import TeamCard from './components/TeamCard';
 import {
   PortalSession,
   loadPortalSession,
@@ -121,6 +125,10 @@ export default function App() {
   const [syncError, setSyncError] = useState<string | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeUidRef = useRef<string | null>(null);
+  // Someone else's books opened by a team member (lib/team.ts); null for your own.
+  const [sharedBooks, setSharedBooks] = useState<SharedWorkspace | null>(null);
+  const sharedBooksRef = useRef<SharedWorkspace | null>(null);
+  const [teamNotice, setTeamNotice] = useState<string | null>(null);
 
   // SaaS Super Admin states
   const [showAdminPanel, setShowAdminPanel] = useState<boolean>(false);
@@ -214,6 +222,11 @@ export default function App() {
       cloudReadyRef.current = false;
       setCloudReady(false);
       setAuthUser(firebaseUser);
+      // An invitation to someone's books waits on this device through sign-up and email verification.
+      try {
+        const fromLink = new URLSearchParams(window.location.search).get('team-invite');
+        if (fromLink) localStorage.setItem('frilensa_team_invite', fromLink);
+      } catch {}
 
       if (!firebaseUser || !firebaseUser.emailVerified) {
         clearBilling();
@@ -228,6 +241,45 @@ export default function App() {
       activeUidRef.current = firebaseUser.uid;
       const email = (firebaseUser.email || '').toLowerCase();
       setLocalCacheOwner(firebaseUser.uid, email);
+
+      // Books shared with this user: accept an invitation link, then check with the server that the books
+      // chosen in this tab are still shared, and how. Without that answer, it's their own books.
+      let shared: SharedWorkspace | null = null;
+      const params = new URLSearchParams(window.location.search);
+      let inviteToken: string | null = null;
+      try { inviteToken = localStorage.getItem('frilensa_team_invite'); } catch {}
+      try {
+        if (inviteToken || chosenBooks()) await firebaseUser.getIdToken(true);
+        if (inviteToken) {
+          try {
+            const accepted = await acceptInvite(inviteToken);
+            try { sessionStorage.setItem('frilensa_shared_books', accepted.ownerUid); } catch {}
+            setTeamNotice(`You can now open ${accepted.ownerName}'s books.`);
+          } catch (err: any) {
+            setTeamNotice(err?.message || 'This invitation could not be accepted.');
+          } finally {
+            try { localStorage.removeItem('frilensa_team_invite'); } catch {}
+            params.delete('team-invite');
+            const qs = params.toString();
+            window.history.replaceState({}, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+          }
+        }
+        const chosen = chosenBooks();
+        if (chosen) {
+          shared = sharedFor(await loadTeam().catch(() => null), chosen);
+          if (!shared) {
+            try { sessionStorage.removeItem('frilensa_shared_books'); } catch {}
+            setTeamNotice('You no longer have access to those books, so your own are open.');
+          }
+        }
+      } catch (err) {
+        console.warn('Could not check shared books:', err);
+      }
+      if (activeUidRef.current !== firebaseUser.uid) return;
+      setSharedWorkspace(shared);
+      sharedBooksRef.current = shared;
+      setSharedBooks(shared);
+
       const local = loadLocalBackup();
       let working = local || freshWorkspaceFor(firebaseUser);
       applyData(working);
@@ -238,11 +290,26 @@ export default function App() {
         await firebaseUser.getIdToken(true);
         const remote = await loadConsultantData();
         if (activeUidRef.current !== firebaseUser.uid) return;
-        if (remote) {
+        if (shared && !remote) {
+          // The owner's books are gone (or access was removed between checks).
+          openBooks(null);
+          return;
+        }
+        if (remote && shared) {
+          // Someone else's books exactly as they are: nothing of this user's own is mixed in.
+          working = remote.data;
+          applyData(working);
+        } else if (remote) {
           working = local ? mergeCRMData(local, remote.data) : mergeCRMData(freshWorkspaceFor(firebaseUser), remote.data);
           working.userProfile = { ...working.userProfile, email, emailVerified: true };
           applyData(working);
           saveLocalBackup(working);
+        }
+        // No books of their own yet, but books shared with them (an accountant): open those.
+        if (!remote && !shared && !ownBooksChosen()) {
+          const team = await loadTeam().catch(() => null);
+          if (activeUidRef.current !== firebaseUser.uid) return;
+          if (team?.sharedWithMe.length) { openBooks(team.sharedWithMe[0].ownerUid); return; }
         }
         // A new account (or one moving over from an older build) needs the server's approval, under
         // the sign-up mode and invites, before its workspace can be saved (firestore.rules).
@@ -331,6 +398,11 @@ export default function App() {
   };
 
   const handleUpdateData = (newData: CRMData) => {
+    if (sharedBooksRef.current?.role === 'viewer') {
+      // An accountant with look-only access: nothing changes.
+      setTeamNotice(`You can look at ${sharedBooksRef.current.ownerName}'s books but not change them.`);
+      return;
+    }
     if (impersonationTenant) {
       // Sandbox edits stay in memory only.
       setCrmData(newData);
@@ -666,6 +738,19 @@ export default function App() {
           </div>
         )}
 
+        {sharedBooks && (
+          <div className="bg-sky-700 text-white px-4 py-2 text-[11px] font-semibold flex items-center justify-between gap-2 shrink-0 z-20" data-testid="shared-banner">
+            <span className="truncate">{sharedBooks.ownerName}'s books · {ROLE_NAMES[sharedBooks.role].name.toLowerCase()}. Sending to clients, online payments, AI and the marketplace stay with the owner.</span>
+            <button type="button" onClick={() => openBooks(null)} className="bg-white text-sky-800 font-bold rounded-lg px-2.5 py-1 shrink-0 cursor-pointer">My books</button>
+          </div>
+        )}
+        {teamNotice && (
+          <div className="bg-sky-50 text-sky-900 border-b border-sky-200 px-4 py-2 text-[11px] font-semibold flex items-center justify-between gap-2 shrink-0 z-20" role="status">
+            <span>{teamNotice}</span>
+            <button type="button" onClick={() => setTeamNotice(null)} className="underline font-bold shrink-0 cursor-pointer">OK</button>
+          </div>
+        )}
+
         {syncError && (
           <div className="bg-amber-100 text-amber-900 border-b border-amber-200 px-4 py-2 text-[11px] font-semibold flex items-center justify-between gap-2 shrink-0 z-20">
             <span className="flex items-center gap-1.5"><CloudOff className="w-3.5 h-3.5 shrink-0" />{syncError}</span>
@@ -750,7 +835,8 @@ export default function App() {
             </ModuleGuard>
           )}
 
-          {activeTab === 'settings' && (
+          {activeTab === 'settings' && <div className="p-3 sm:p-6 pb-0 max-w-5xl mx-auto w-full"><TeamCard /></div>}
+          {activeTab === 'settings' && !sharedBooks && (
             <SettingsView 
               data={crmData} 
               onUpdateData={handleUpdateData}

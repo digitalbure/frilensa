@@ -30,6 +30,17 @@ service cloud.firestore {
       return isUid(id) || isVerifiedEmail(id);
     }
 
+    // Team and accountant access (server/team.ts). Only the server writes workspace_members.
+    function membership(ownerId) {
+      return /databases/$(database)/documents/workspace_members/$(ownerId + '_' + request.auth.uid);
+    }
+    function isMember(ownerId) {
+      return signedIn() && ownerId is string && exists(membership(ownerId));
+    }
+    function isEditor(ownerId) {
+      return isMember(ownerId) && get(membership(ownerId)).data.role == 'editor';
+    }
+
     // A workspace can be created only by an account the server approved (account_access/{uid},
     // written by POST /api/account/register under the sign-up mode), or one that already has a
     // workspace (everyone who signed up before this check).
@@ -39,8 +50,10 @@ service cloud.firestore {
     }
 
     match /consultants/{docId} {
-      allow read: if ownsId(docId);
+      allow read: if ownsId(docId) || isMember(docId);
       allow update, delete: if isUid(docId);
+      // Someone the owner made an editor keeps the books, but can't change whose books they are.
+      allow update: if isEditor(docId) && request.resource.data.consultantEmail == resource.data.consultantEmail;
       allow create: if isUid(docId) && exists(/databases/$(database)/documents/account_access/$(docId));
 
       // Keep in step with SPLIT_LISTS in src/lib/workspaceRecords.ts.
@@ -48,6 +61,16 @@ service cloud.firestore {
         allow read, write: if isUid(docId) && approved(docId) && list in [
           'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
           'transactions', 'activityLogs', 'aiConversations', 'aiMemories', 'payRuns', 'suppliers'
+        ];
+        // Team members see and (editors) keep the books, but not the owner's AI assistant chats.
+        // Keep in step with SHARED_LISTS in src/lib/workspaceRecords.ts.
+        allow read: if isMember(docId) && list in [
+          'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
+          'transactions', 'activityLogs', 'payRuns', 'suppliers'
+        ];
+        allow write: if isEditor(docId) && list in [
+          'businesses', 'clients', 'services', 'projects', 'documents', 'expenses',
+          'transactions', 'activityLogs', 'payRuns', 'suppliers'
         ];
       }
     }
@@ -58,12 +81,19 @@ service cloud.firestore {
     }
 
     match /documents/{documentId} {
-      allow read: if signedIn() && ownsId(resource.data.consultantId);
-      allow create: if signedIn() && request.resource.data.consultantId == request.auth.uid;
-      allow update: if signedIn()
-        && ownsId(resource.data.consultantId)
-        && request.resource.data.consultantId == request.auth.uid;
-      allow delete: if signedIn() && ownsId(resource.data.consultantId);
+      allow read: if signedIn() && (ownsId(resource.data.consultantId) || isMember(resource.data.consultantId));
+      allow create: if signedIn() && (request.resource.data.consultantId == request.auth.uid || isEditor(request.resource.data.consultantId));
+      allow update: if signedIn() && (
+        (ownsId(resource.data.consultantId) && request.resource.data.consultantId == request.auth.uid)
+        || (isEditor(resource.data.consultantId) && request.resource.data.consultantId == resource.data.consultantId));
+      allow delete: if signedIn() && (ownsId(resource.data.consultantId) || isEditor(resource.data.consultantId));
+    }
+
+    match /workspace_members/{id} {
+      allow read, write: if false;
+    }
+    match /team_invites/{id} {
+      allow read, write: if false;
     }
 
     match /support_messages/{messageId} {

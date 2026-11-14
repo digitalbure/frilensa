@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useModules } from './ModuleGuard';
+import { sharedWorkspace } from '../lib/db';
 import { allowAnother } from '../lib/billingClient';
 import { inboxDocumentCount } from '../lib/inbox';
 import { motion, AnimatePresence } from 'motion/react';
@@ -38,7 +39,8 @@ export default function DesktopSidebar({
 }: DesktopSidebarProps) {
   // Modules super admins switched off for everyone are hidden.
   const modules = useModules();
-  const tabOn = (id: string) => id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
+  // In someone else's books (team access), the owner-only screens are hidden.
+  const tabOn = (id: string) => sharedWorkspace() && ['marketplace', 'directory', 'assistant'].includes(id) ? false : id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
   const brand = useBranding();
   const online = useOnlineStatus();
   const plan = crmData.platformSettings?.activePlan || 'free';

@@ -115,6 +115,45 @@ await check('after hearing about it, the device can delete it', async () => {
   assert.deepEqual(Object.keys(await records(uid, 'clients')).sort(), ['c1', 'c3']);
 });
 
+// ---------- Someone else's books (team access) ----------
+await put(`consultants/${uid}/aiConversations/chat1`, { id: 'chat1', title: 'Private chat' });
+const ownerHead = await head(uid);
+const orderBefore = JSON.stringify(ownerHead.recordOrder?.aiConversations || []);
+const accEmail = 'books@accountant.fj';
+const acc = await (await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=x`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: accEmail, password: 'secret123', returnSecureToken: true }) })).json();
+await fetch(`${AUTH}/identitytoolkit.googleapis.com/v1/projects/${P}/accounts:update`, { method: 'POST', headers: owner, body: JSON.stringify({ localId: acc.localId, emailVerified: true }) });
+await put(`workspace_members/${uid}_${acc.localId}`, { ownerUid: uid, memberUid: acc.localId, role: 'editor' });
+await lib.signInWithEmailAndPassword(lib.auth, accEmail, 'secret123');
+lib.setSharedWorkspace({ ownerUid: uid, ownerEmail: email, ownerName: 'Sync Studio', role: 'editor' });
+
+let sharedData;
+await check('an editor loads the owner books (without their AI chats)', async () => {
+  sharedData = (await lib.loadConsultantData()).data;
+  assert.equal(sharedData.businesses[0].name, 'Sync Studio');
+  assert.deepEqual(sharedData.aiConversations, []);
+});
+await check("an editor's save changes the books and leaves the owner's identity and AI chats alone", async () => {
+  await lib.saveConsultantData({ ...sharedData, clients: [...sharedData.clients, { id: 'c-acc', name: 'Added by the bookkeeper' }] });
+  assert.ok(Object.keys(await records(uid, 'clients')).includes('c-acc'));
+  const h = await head(uid);
+  assert.equal(h.consultantEmail, email, 'whose books they are');
+  assert.ok(Object.keys(await records(uid, 'aiConversations')).includes('chat1'), 'AI chat kept');
+  assert.equal(JSON.stringify(h.recordOrder?.aiConversations || []), orderBefore, 'AI chat order kept');
+});
+await check('a viewer never saves', async () => {
+  await put(`workspace_members/${uid}_${acc.localId}`, { ownerUid: uid, memberUid: acc.localId, role: 'viewer' });
+  lib.setSharedWorkspace({ ownerUid: uid, ownerEmail: email, ownerName: 'Sync Studio', role: 'viewer' });
+  const before = await records(uid, 'clients');
+  const loaded = (await lib.loadConsultantData()).data;
+  await lib.saveConsultantData({ ...loaded, clients: [] });
+  assert.deepEqual(await records(uid, 'clients'), before);
+});
+await check('nothing from shared books is kept on the device', async () => {
+  lib.saveLocalBackup(sharedData);
+  assert.equal(lib.loadLocalBackup(), null);
+});
+lib.setSharedWorkspace(null);
+
 for (const r of results) console.log(r.join('  '));
 const failed = results.filter(r => r[0] === 'FAIL').length;
 console.log(`\n${results.length - failed}/${results.length} sync checks passed`);

@@ -1,5 +1,5 @@
 import { initializeTestEnvironment, assertSucceeds, assertFails } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import fs from 'node:fs';
 
 const env = await initializeTestEnvironment({
@@ -75,6 +75,39 @@ await check('consultant posts reply', assertSucceeds(setDoc(doc(u1, 'support_mes
 await check('consultant cannot forge client message', assertFails(setDoc(doc(u1, 'support_messages/m3'), { consultantId: 'u1', sender: 'client' })));
 await check('consultant marks message read', assertSucceeds(updateDoc(doc(u1, 'support_messages/m1'), { status: 'read' })));
 await check('anon cannot post message', assertFails(setDoc(doc(anon, 'support_messages/m4'), { consultantId: 'u1', sender: 'client' })));
+
+// ---------- Team and accountant access ----------
+await env.withSecurityRulesDisabled(async ctx => {
+  const db = ctx.firestore();
+  await setDoc(doc(db, 'consultants/own1'), { consultantEmail: 'owner@x.co', userProfile: { email: 'owner@x.co' } });
+  await setDoc(doc(db, 'consultants/own1/clients/c1'), { id: 'c1', name: 'Client' });
+  await setDoc(doc(db, 'consultants/own1/aiConversations/a1'), { id: 'a1', title: 'private' });
+  await setDoc(doc(db, 'documents/own1_inv1'), { consultantId: 'own1', id: 'inv1' });
+  await setDoc(doc(db, 'workspace_members/own1_acc1'), { ownerUid: 'own1', memberUid: 'acc1', role: 'viewer' });
+  await setDoc(doc(db, 'workspace_members/own1_ed1'), { ownerUid: 'own1', memberUid: 'ed1', role: 'editor' });
+});
+const acc = env.authenticatedContext('acc1', { email: 'acc@x.co', email_verified: true }).firestore();
+const ed = env.authenticatedContext('ed1', { email: 'ed@x.co', email_verified: true }).firestore();
+await check('viewer reads the owner workspace', assertSucceeds(getDoc(doc(acc, 'consultants/own1'))));
+await check('viewer reads the owner records', assertSucceeds(getDocs(collection(acc, 'consultants/own1/clients'))));
+await check('viewer cannot read the owner AI chats', assertFails(getDocs(collection(acc, 'consultants/own1/aiConversations'))));
+await check('viewer cannot write the head', assertFails(setDoc(doc(acc, 'consultants/own1'), { consultantEmail: 'owner@x.co', x: 1 })));
+await check('viewer cannot write a record', assertFails(setDoc(doc(acc, 'consultants/own1/clients/c2'), { id: 'c2' })));
+await check('viewer queries the owner documents', assertSucceeds(getDocs(query(collection(acc, 'documents'), where('consultantId', '==', 'own1')))));
+await check('viewer cannot write a document', assertFails(setDoc(doc(acc, 'documents/own1_inv2'), { consultantId: 'own1', id: 'inv2' })));
+await check('editor writes a record', assertSucceeds(setDoc(doc(ed, 'consultants/own1/clients/c3'), { id: 'c3' })));
+await check('editor saves the head keeping the owner', assertSucceeds(setDoc(doc(ed, 'consultants/own1'), { consultantEmail: 'owner@x.co', userProfile: { email: 'owner@x.co' }, y: 2 })));
+await check('editor cannot change whose books they are', assertFails(setDoc(doc(ed, 'consultants/own1'), { consultantEmail: 'ed@x.co' })));
+await check('editor cannot write the owner AI chats', assertFails(setDoc(doc(ed, 'consultants/own1/aiConversations/a2'), { id: 'a2' })));
+await check('editor writes a document for the owner', assertSucceeds(setDoc(doc(ed, 'documents/own1_inv3'), { consultantId: 'own1', id: 'inv3' })));
+await check('editor cannot move a document to themselves', assertFails(setDoc(doc(ed, 'documents/own1_inv1'), { consultantId: 'ed1', id: 'inv1' })));
+await check('editor cannot delete the workspace', assertFails(deleteDoc(doc(ed, 'consultants/own1'))));
+await check('a stranger still cannot read it', assertFails(getDoc(doc(u2, 'consultants/own1'))));
+await check('nobody reads memberships from the browser', assertFails(getDoc(doc(acc, 'workspace_members/own1_acc1'))));
+await check('nobody makes themselves a member', assertFails(setDoc(doc(u2, 'workspace_members/own1_u2'), { ownerUid: 'own1', memberUid: 'u2', role: 'editor' })));
+await check('nobody reads invites', assertFails(getDocs(collection(acc, 'team_invites'))));
+await env.withSecurityRulesDisabled(async ctx => { await deleteDoc(doc(ctx.firestore(), 'workspace_members/own1_ed1')); });
+await check('access ends when the membership is removed', assertFails(getDoc(doc(ed, 'consultants/own1'))));
 
 await env.cleanup();
 for (const r of results) console.log(r.join('  '));

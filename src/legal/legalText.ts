@@ -2,7 +2,7 @@
 // Written to match what the app does. Have a lawyer review them; update LEGAL_UPDATED when they change,
 // and log the change in CHANGELOG.md.
 
-export const LEGAL_UPDATED = '8 November 2026';
+export const LEGAL_UPDATED = '14 November 2026';
 
 export function privacyPolicy(name: string, contact: string) {
   return `This policy explains what ${name} collects, why, who helps us run the service, and the choices you have. It applies to the ${name} app, its client portal and its public pages, such as online invoices, rate cards and booking pages.
@@ -29,6 +29,9 @@ ${name} is invoicing, bookkeeping and booking software for freelancers and small
 
 We don't sell your information, and we don't use your clients' information for our own marketing.
 
+## People you share your books with
+If you invite your accountant or a bookkeeper (Settings → Team and accountant), they can see your business records, and change them if you allow it, until you remove them or they leave. They don't see your AI assistant chats. We email the person you invite, and tell you when they accept. You're responsible for who you invite.
+
 ## Your clients' information
 You decide what you add about your clients, and you're responsible for having the right to use it, for example because you're doing business with them. We process it only to provide ${name} to you. Your clients can ask you to correct or remove their details.
 
@@ -53,7 +56,7 @@ Your information is stored on Google Cloud servers, which may be outside Fiji. W
 - **Emails**: turn notifications off in Settings. Emails you send to clients are yours to control.
 
 ## Security
-Your workspace can only be opened by your account. Client portals and public pages go through our server, which shows only what's meant to be seen. Connections are encrypted. Keep your password safe and tell us at ${contact} if you think your account has been used by someone else.
+Your workspace can only be opened by your account and by people you've invited to it. Client portals and public pages go through our server, which shows only what's meant to be seen. Connections are encrypted. Keep your password safe and tell us at ${contact} if you think your account has been used by someone else.
 
 ## Children
 ${name} is for people aged 18 and over running a business. We don't knowingly collect information from children.

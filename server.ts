@@ -15,6 +15,7 @@ import { createJobsRouter, createAutomationRouter } from "./server/jobs";
 import { createApiKeysRouter } from "./server/apiKeys";
 import { createApiV1Router } from "./server/apiV1";
 import { createGearRouter } from "./server/gearSync";
+import { createTeamRouter } from "./server/team";
 import { createMcpRouter } from "./server/mcp";
 import { createOAuthRouter, createOAuthAppRouter } from "./server/oauth";
 import { createFilesRouter } from "./server/files";
@@ -270,6 +271,7 @@ async function startServer() {
   app.use("/api/files", express.json({ limit: "12mb" }), createFilesRouter());
   app.use("/api/v1", express.json({ limit: "400kb" }), createApiV1Router());
   app.use("/api/gear", express.json({ limit: "2kb" }), createGearRouter());
+  app.use("/api/team", express.json({ limit: "4kb" }), createTeamRouter());
   app.use("/mcp", express.json({ limit: "200kb" }), createMcpRouter());
   // OAuth sign-in for MCP clients such as claude.ai (discovery, registration, tokens), and the
   // consent page's approve call. The consent page itself (/oauth/authorize) is part of the web app.

@@ -18,6 +18,20 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.25.0] - 2026-11-14
+
+### Added
+- **Settings → Team and accountant: share your books.** Invite your accountant or a bookkeeper by email, as:
+  - **Accountant (look only):** sees your invoices, expenses, bills, bank, payroll and reports, but can't change anything.
+  - **Bookkeeper (can change):** can also add and change records.
+
+  Up to 10 people. They sign in with their own free account; the invitation works once, only for the email you invited, for 14 days, and you get an email when they accept. Change what someone can do or remove them at any time.
+- **Opening books shared with you:** they're listed under Settings → Team and accountant. While you're in someone else's books a banner says whose they are, and "My books" takes you back. An accountant with no books of their own goes straight to the books they were invited to, and can sign up even when sign-ups are by invitation.
+
+### Security
+- People you share your books with never see your AI assistant chats, can't change whose books they are or delete them, and nothing from shared books is kept on their device. Sending to clients, online payments, AI and the marketplace stay with the owner's own login. The database rules enforce all of this, not just the app.
+- The privacy policy now explains sharing your books (updated 14 November 2026).
+
 ## [4.24.0] - 2026-11-14
 
 ### Added

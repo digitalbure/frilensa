@@ -1,5 +1,6 @@
 import React from 'react';
 import { useModules } from './ModuleGuard';
+import { sharedWorkspace } from '../lib/db';
 import { motion } from 'motion/react';
 import { LayoutDashboard, Layers, Users, Briefcase, Settings, FolderKanban, Globe, Sparkles, Tag, Store } from 'lucide-react';
 
@@ -13,7 +14,8 @@ interface BottomNavProps {
 export default function BottomNav({ activeTab, onChangeTab, dashboardBadge = 0 }: BottomNavProps) {
   // Modules super admins switched off for everyone are hidden.
   const modules = useModules();
-  const tabOn = (id: string) => id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
+  // In someone else's books (team access), the owner-only screens are hidden.
+  const tabOn = (id: string) => sharedWorkspace() && ['marketplace', 'directory', 'assistant'].includes(id) ? false : id === 'marketplace' ? modules.marketplace.enabled : id === 'projects' ? modules.projects.enabled : id === 'services' ? modules.bookkeeping.enabled : id === 'assistant' ? modules.assistant.enabled : id === 'directory' ? modules.directory.enabled : true;
   const navItems = ([
     { id: 'dashboard' as const, label: 'Home', icon: LayoutDashboard },
     { id: 'marketplace' as const, label: 'Market', icon: Store },

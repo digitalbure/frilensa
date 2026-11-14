@@ -16,7 +16,7 @@ import {
 import { CRMData, CRMDocument, SupportMessage } from '../types';
 import { sanitizeForFirestore, flatDocumentId, buildFlatDocumentRow, FLAT_ROW_META_KEYS } from './flatDocuments';
 import { documentsSaved } from './documentEvents';
-import { SPLIT_LISTS, ORDER_FIELD, assembleWorkspace, planListWrite, recordIds, stableJson, type SplitList } from './workspaceRecords';
+import { SPLIT_LISTS, SHARED_LISTS, ORDER_FIELD, assembleWorkspace, planListWrite, recordIds, stableJson, type SplitList } from './workspaceRecords';
 
 export { sanitizeForFirestore, flatDocumentId };
 
@@ -25,6 +25,15 @@ const LEGACY_STORAGE_KEYS = ['fiji_freelancer_crm_backup', 'fiji_freelancer_crm_
 
 // The on-device cache belongs to exactly one signed-in user; App sets it on auth changes.
 let cacheOwnerUid: string | null = null;
+
+// Someone else's books opened by a team member (server/team.ts). Reads and writes then go to the owner's
+// workspace, limited to the lists members may see; firestore.rules decide what's allowed. Nothing from
+// shared books is kept on this device, and a viewer never saves.
+export interface SharedWorkspace { ownerUid: string; ownerEmail: string; ownerName: string; role: 'viewer' | 'editor' }
+let shared: SharedWorkspace | null = null;
+export function setSharedWorkspace(s: SharedWorkspace | null) { shared = s; sync = null; }
+export const sharedWorkspace = () => shared;
+const listsInUse = (): readonly SplitList[] => shared ? SHARED_LISTS : SPLIT_LISTS;
 
 export function setLocalCacheOwner(uid: string | null, email?: string | null) {
   cacheOwnerUid = uid;
@@ -56,7 +65,7 @@ export function clearLocalBackup(uid: string) {
 }
 
 function backupKey(): string | null {
-  return cacheOwnerUid ? `${BACKUP_STORAGE_PREFIX}:${cacheOwnerUid}` : null;
+  return cacheOwnerUid && !shared ? `${BACKUP_STORAGE_PREFIX}:${cacheOwnerUid}` : null;
 }
 
 /**
@@ -220,6 +229,7 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
 function currentIdentity(): { uid: string; email: string } | null {
   const user = auth.currentUser;
   if (!user) return null;
+  if (shared) return { uid: shared.ownerUid, email: shared.ownerEmail };
   return { uid: user.uid, email: (user.email || '').trim().toLowerCase() };
 }
 
@@ -274,6 +284,8 @@ function toCRMData(raw: any): CRMData {
 // go missing locally), and the flat 'documents' rows it last wrote.
 interface SyncState {
   uid: string;
+  /** The head's record order when last read, for lists this session doesn't load (shared books). */
+  headOrder?: Record<string, string[]>;
   stored: Record<SplitList, Map<string, string>>;
   localIds: Record<SplitList, Set<string>>;
   flat: Map<string, string>;
@@ -310,7 +322,7 @@ async function commitInBatches(ops: ((batch: ReturnType<typeof writeBatch>) => v
  */
 export async function saveConsultantData(data: CRMData) {
   const identity = currentIdentity();
-  if (!identity || !data) return;
+  if (!identity || !data || shared?.role === 'viewer') return;
   const { uid, email } = identity;
   const state = syncFor(uid);
 
@@ -349,7 +361,9 @@ export async function saveConsultantData(data: CRMData) {
   const recordOps: ((batch: ReturnType<typeof writeBatch>) => void)[] = [];
   const applied: (() => void)[] = [];
   const order: Record<string, string[]> = {};
-  for (const list of SPLIT_LISTS) {
+  // Lists this session can't see (the owner's AI chats, in shared books) keep their order untouched.
+  for (const list of SPLIT_LISTS) if (!listsInUse().includes(list)) order[list] = state.headOrder?.[list] || [];
+  for (const list of listsInUse()) {
     const plan = planListWrite(lists[list], state.stored[list], state.localIds[list],
       id => console.warn(`${list} item ${id} is too large to save to the cloud; it stays on this device.`));
     order[list] = plan.order;
@@ -369,7 +383,8 @@ export async function saveConsultantData(data: CRMData) {
   } catch (err: any) {
     // Rules that don't allow records yet (the app went live a moment before its rules, or the rules
     // were rolled back): save the old single-document way until they do.
-    if (err?.code !== 'permission-denied') throw err;
+    // In someone else's books a refusal is real (access changed): never fall back to rewriting their head.
+    if (err?.code !== 'permission-denied' || shared) throw err;
     console.warn('Saving the workspace as one document: the database rules do not allow item records yet.');
     recordsSaved = false;
   }
@@ -400,7 +415,7 @@ export async function saveConsultantData(data: CRMData) {
     consultantEmail: email
   });
   await setDoc(consultantRef, head);
-  if (recordsSaved) SPLIT_LISTS.forEach(list => { state.localIds[list] = recordIds(lists[list]); });
+  if (recordsSaved) listsInUse().forEach(list => { state.localIds[list] = recordIds(lists[list]); });
 
   documentsSaved(documents);
 
@@ -447,9 +462,10 @@ export async function saveConsultantData(data: CRMData) {
 
 /** Reads every split list's records for a workspace. */
 async function loadRecords(uid: string, state: SyncState) {
-  const snaps = await Promise.all(SPLIT_LISTS.map(list => getDocs(collection(db, 'consultants', uid, list))));
+  const lists = listsInUse();
+  const snaps = await Promise.all(lists.map(list => getDocs(collection(db, 'consultants', uid, list))));
   const records: Partial<Record<SplitList, any[]>> = {};
-  SPLIT_LISTS.forEach((list, i) => {
+  lists.forEach((list, i) => {
     records[list] = snaps[i].docs.map(d => d.data());
     rememberStored(state, list, snaps[i].docs);
   });
@@ -472,8 +488,9 @@ export async function loadConsultantData(): Promise<{ data: CRMData; migratedFro
   const state = syncFor(uid);
   const snap = await getDoc(doc(db, 'consultants', uid));
   if (snap.exists()) {
+    state.headOrder = snap.data()?.[ORDER_FIELD];
     raw = assembleWorkspace(snap.data(), await loadRecords(uid, state));
-  } else if (email && auth.currentUser?.emailVerified) {
+  } else if (email && auth.currentUser?.emailVerified && !shared) {
     for (const path of ['consultants', 'consultants_by_email']) {
       try {
         const legacy = await getDoc(doc(db, path, email));
@@ -490,7 +507,7 @@ export async function loadConsultantData(): Promise<{ data: CRMData; migratedFro
 
   if (!raw) return null;
   const data = toCRMData(raw);
-  SPLIT_LISTS.forEach(list => { state.localIds[list] = recordIds((data as any)[list]); });
+  listsInUse().forEach(list => { state.localIds[list] = recordIds((data as any)[list]); });
 
   // The workspace document is authoritative for which documents exist; the flat copies carry
   // full PDFs and any status changes made from the client portal.
@@ -533,8 +550,9 @@ export function subscribeToConsultantData(onUpdate: (data: CRMData) => void) {
   let head: Record<string, any> | null = null;
   let headReady = false;
   const records: Partial<Record<SplitList, any[]>> = {};
+  const lists = listsInUse();
   const emit = () => {
-    if (!headReady || !head || SPLIT_LISTS.some(l => !records[l])) return;
+    if (!headReady || !head || lists.some(l => !records[l])) return;
     onUpdate(toCRMData(assembleWorkspace(head, records)));
   };
   const onError = (error: any) => console.warn('Workspace listener error:', error?.message || error);
@@ -542,10 +560,11 @@ export function subscribeToConsultantData(onUpdate: (data: CRMData) => void) {
     onSnapshot(doc(db, 'consultants', uid), snap => {
       if (snap.metadata.hasPendingWrites) return;
       head = snap.exists() ? snap.data() : null;
+      if (head) state.headOrder = head[ORDER_FIELD];
       headReady = true;
       emit();
     }, onError),
-    ...SPLIT_LISTS.map(list => onSnapshot(collection(db, 'consultants', uid, list), snap => {
+    ...lists.map(list => onSnapshot(collection(db, 'consultants', uid, list), snap => {
       if (snap.metadata.hasPendingWrites) return;
       records[list] = snap.docs.map(d => d.data());
       rememberStored(state, list, snap.docs);

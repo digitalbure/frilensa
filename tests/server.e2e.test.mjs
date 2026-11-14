@@ -330,6 +330,45 @@ try {
     assert.equal(r.status, 403);
     assert.equal((await fetch(`${API}/api/v1/summary`, { headers: keyAuth(aliceReadKey) })).status, 200);
   });
+  await check('team access: invite an accountant, accept only with the invited email, change and remove access', async () => {
+    const auth2 = u => ({ Authorization: `Bearer ${u.token}`, 'Content-Type': 'application/json' });
+    const acc = await user('accountant@numbers.fj');
+    const intruder = await user('intruder@numbers.fj');
+    assert.equal((await fetch(`${API}/api/team`)).status, 401);
+    assert.equal((await fetch(`${API}/api/team/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'nope' }) })).status, 400);
+    assert.equal((await fetch(`${API}/api/team/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: A.email }) })).status, 400, 'own email');
+    const inv = await j(await fetch(`${API}/api/team/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'Accountant@Numbers.fj', role: 'viewer' }) }));
+    assert.equal(inv.status, 200, JSON.stringify(inv.body)); assert.equal(inv.body.invite.email, 'accountant@numbers.fj'); assert.equal(inv.body.invite.role, 'viewer');
+    const token = new URL(inv.body.link, API).searchParams.get('team-invite');
+    assert.ok(token && token.length >= 20);
+    await emailTo('accountant@numbers.fj', /shared their books/);
+    const mine = await j(await fetch(`${API}/api/team`, { headers: auth(A) }));
+    assert.equal(mine.body.invites.length, 1); assert.ok(!JSON.stringify(mine.body).includes(token), 'the token is never listed');
+    // Only the invited email can accept, once.
+    const wrong = await j(await fetch(`${API}/api/team/accept`, { method: 'POST', headers: auth2(intruder), body: JSON.stringify({ token }) }));
+    assert.equal(wrong.status, 403); assert.match(wrong.body.error, /accountant@numbers.fj/);
+    const ok = await j(await fetch(`${API}/api/team/accept`, { method: 'POST', headers: auth2(acc), body: JSON.stringify({ token }) }));
+    assert.equal(ok.status, 200, JSON.stringify(ok.body)); assert.equal(ok.body.shared.ownerUid, A.uid); assert.equal(ok.body.shared.role, 'viewer');
+    assert.equal((await fetch(`${API}/api/team/accept`, { method: 'POST', headers: auth2(acc), body: JSON.stringify({ token }) })).status, 404, 'single use');
+    await emailTo(A.email, /can now open your books/);
+    assert.ok(await get(`workspace_members/${A.uid}_${acc.uid}`), 'membership written');
+    assert.ok(await get(`account_access/${acc.uid}`), 'the accountant can sign up even when sign-ups are invite-only');
+    const theirs = await j(await fetch(`${API}/api/team`, { headers: auth2(acc) }));
+    assert.equal(theirs.body.sharedWithMe.length, 1); assert.equal(theirs.body.sharedWithMe[0].ownerUid, A.uid);
+    const team = await j(await fetch(`${API}/api/team`, { headers: auth(A) }));
+    assert.equal(team.body.members.length, 1); assert.equal(team.body.members[0].email, 'accountant@numbers.fj'); assert.equal(team.body.invites.length, 0);
+    assert.equal((await fetch(`${API}/api/team/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'accountant@numbers.fj' }) })).status, 409, 'already has access');
+    // The owner changes and removes access; only the owner can.
+    assert.equal((await fetch(`${API}/api/team/members/${acc.uid}`, { method: 'PATCH', headers: auth(A), body: JSON.stringify({ role: 'editor' }) })).status, 200);
+    assert.equal((await get(`workspace_members/${A.uid}_${acc.uid}`)).role, 'editor');
+    assert.equal((await fetch(`${API}/api/team/members/${acc.uid}`, { method: 'PATCH', headers: auth(B), body: JSON.stringify({ role: 'editor' }) })).status, 404, "Bob can't change Alice's team");
+    assert.equal((await fetch(`${API}/api/team/members/${acc.uid}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal(await get(`workspace_members/${A.uid}_${acc.uid}`), null);
+    // A cancelled invite can't be used.
+    const inv2 = await j(await fetch(`${API}/api/team/invites`, { method: 'POST', headers: auth(A), body: JSON.stringify({ email: 'accountant@numbers.fj', role: 'editor' }) }));
+    assert.equal((await fetch(`${API}/api/team/invites/${inv2.body.invite.id}`, { method: 'DELETE', headers: auth(A) })).status, 200);
+    assert.equal((await fetch(`${API}/api/team/accept`, { method: 'POST', headers: auth2(acc), body: JSON.stringify({ token: new URL(inv2.body.link, API).searchParams.get('team-invite') }) })).status, 404);
+  });
   await check('gear sync: another app sends, updates and removes gear; only drafts keys can change it', async () => {
     const camera = { name: 'FX6 Camera Kit', brand: 'Sony', model: 'ILME-FX6', category: 'cameras', serialNumber: 'S123', quantity: 2, dayRate: 450, weekRate: 1800,
       condition: 'excellent', status: 'available', kit: [{ name: '24-70mm lens', quantity: 1 }, 'V-mount batteries'], unavailable: [{ from: '2026-12-01', to: '2026-12-03', reason: 'Booked' }, { from: 'bad', to: 'x' }],
@@ -1347,6 +1386,9 @@ try {
     await put(`documents/${z.uid}_zd1`, { id: 'zd1', consultantId: z.uid, status: 'sent', total: 10 });
     await put(`api_keys/zkey`, { uid: z.uid, name: 'Old app' });
     await put(`synced_gear/${z.uid}_packer_tools_x`, { uid: z.uid, source: 'packer_tools', externalId: 'x', name: 'Camera' });
+    await put(`workspace_members/${z.uid}_someone`, { ownerUid: z.uid, memberUid: 'someone', role: 'viewer' });
+    await put(`workspace_members/someone_${z.uid}`, { ownerUid: 'someone', memberUid: z.uid, role: 'viewer' });
+    await put(`team_invites/zinv`, { ownerUid: z.uid, email: 'x@y.fj' });
     await put(`account_access/${z.uid}`, { via: 'open' });
     await put(`subscriptions/${z.uid}`, { uid: z.uid, plan: 'pro', status: 'active', method: 'admin', paidUntil: '' });
     await put(`ai_usage/${z.uid}_2026-11`, { uid: z.uid, month: '2026-11', scans: 2 });
@@ -1361,6 +1403,9 @@ try {
     assert.equal(await get(`documents/${z.uid}_zd1`), null, 'online copy left behind');
     assert.equal(await get(`api_keys/zkey`), null, 'API key left behind');
     assert.equal(await get(`synced_gear/${z.uid}_packer_tools_x`), null, 'synced gear left behind');
+    assert.equal(await get(`workspace_members/${z.uid}_someone`), null, 'their team left behind');
+    assert.equal(await get(`workspace_members/someone_${z.uid}`), null, 'access to others left behind');
+    assert.equal(await get(`team_invites/zinv`), null, 'invites left behind');
     assert.equal(await get(`account_access/${z.uid}`), null);
     assert.equal(await get(`marketplace_bookings/zhold`), null, 'rental calendar left behind');
     assert.equal(await get(`subscriptions/${z.uid}`), null, 'plan left behind');
