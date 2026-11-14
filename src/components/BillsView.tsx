@@ -184,7 +184,7 @@ export default function BillsView({ data, onUpdateData }: Props) {
       {editingBill && <BillForm data={data} businessId={businessId} suppliers={suppliers} existing={editingBill === 'new' ? null : editingBill}
         onCancel={() => setEditingBill(null)}
         onSave={(e, s) => { saveBill(e, s); trackAction(editingBill === 'new' ? 'bill_added' : 'bill_edited'); setEditingBill(null); }} />}
-      {paying && <PayForm bill={paying} onCancel={() => setPaying(null)} onSave={e => { onSaveExpense(e); trackAction('bill_paid'); setPaying(null); }} />}
+      {paying && <PayForm bill={paying} accounts={(data.bankAccounts || []).filter(a => !a.archived && (!a.businessId || a.businessId === businessId))} onCancel={() => setPaying(null)} onSave={e => { onSaveExpense(e); trackAction('bill_paid'); setPaying(null); }} />}
     </div>
   );
 }
@@ -322,7 +322,8 @@ function BillForm({ data, businessId, suppliers, existing, onCancel, onSave }: {
   );
 }
 
-function PayForm({ bill, onCancel, onSave }: { bill: Bill; onCancel: () => void; onSave: (e: ExpenseRecord) => void }) {
+function PayForm({ bill, accounts, onCancel, onSave }: { bill: Bill; accounts: import('../lib/accounts').MoneyAccount[]; onCancel: () => void; onSave: (e: ExpenseRecord) => void }) {
+  const [accountId, setAccountId] = useState(accounts.find(a => a.isDefault)?.id || '');
   const owing = billOwing(bill);
   const [amount, setAmount] = useState(owing);
   const [date, setDate] = useState(today());
@@ -331,13 +332,18 @@ function PayForm({ bill, onCancel, onSave }: { bill: Bill; onCancel: () => void;
   const [problem, setProblem] = useState('');
   return (
     <Modal title={`Pay ${bill.vendor}${bill.bill.number ? ` (${bill.bill.number})` : ''}`} onClose={onCancel}>
-      <form onSubmit={e => { e.preventDefault(); const r = payBill(bill, { amount, date, method, ...(reference.trim() ? { reference: reference.trim() } : {}) }); if (typeof r === 'string') setProblem(r); else onSave(r); }} className="space-y-3">
+      <form onSubmit={e => { e.preventDefault(); const r = payBill(bill, { amount, date, method, ...(accountId ? { accountId } : {}), ...(reference.trim() ? { reference: reference.trim() } : {}) }); if (typeof r === 'string') setProblem(r); else onSave(r); }} className="space-y-3">
         <p className="text-xs text-zinc-600">Owing <strong className="font-mono">{fjd(owing)}</strong> of {fjd(bill.amount)}. Pay less to record a part payment.</p>
         <div className="grid grid-cols-2 gap-3">
           <div><label className={label} htmlFor="pay-amount">Amount (FJD)</label><input id="pay-amount" type="number" min="0" step="0.01" required className={input} value={amount || ''} onChange={e => setAmount(Number(e.target.value) || 0)} /></div>
           <div><label className={label} htmlFor="pay-date">Paid on</label><input id="pay-date" type="date" required className={input} value={date} onChange={e => setDate(e.target.value || today())} /></div>
           <div><label className={label} htmlFor="pay-method">Paid by</label><select id="pay-method" className={input} value={method} onChange={e => setMethod(e.target.value)}>{METHODS.map(m => <option key={m}>{m}</option>)}</select></div>
           <div><label className={label} htmlFor="pay-ref">Reference</label><input id="pay-ref" className={input} value={reference} onChange={e => setReference(e.target.value)} /></div>
+          {accounts.length > 0 && <div className="col-span-2"><label className={label} htmlFor="pay-account">From account</label>
+            <select id="pay-account" className={input} value={accountId} onChange={e => setAccountId(e.target.value)}>
+              <option value="">Match by payment method</option>
+              {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+            </select></div>}
         </div>
         {problem && <p className="text-xs text-rose-600 font-semibold flex items-center gap-1"><AlertTriangle className="w-3.5 h-3.5" /> {problem}</p>}
         <div className="flex justify-end gap-2">

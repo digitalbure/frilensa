@@ -18,6 +18,16 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.23.0] - 2026-11-14
+
+### Added
+- **Finance → Accounts: bank accounts, cash, credit cards and mobile money (M-PAiSA, MyCash) with their balances.**
+  - Add each account with its balance on a date, from your statement. From then on Frilensa keeps it up to date from everything you record: payments from clients, expenses, bill payments, contractor payments, pay runs, and PAYE, FNPF and provisional tax paid.
+  - Money goes to the right account by its payment method (an account's "payment methods", such as "BSP" or "M-PAiSA"), or to your main account. A credit card shows what you owe on it.
+  - Open an account to see its activity with a running balance, and **move** anything that landed in the wrong account. Anything Frilensa can't place waits under "Not assigned".
+  - See balances on any date, and the total money across your accounts. Close an account you no longer use; its history stays.
+- When you pay a supplier's bill you can choose the account it was paid from.
+
 ## [4.22.0] - 2026-11-14
 
 ### Added

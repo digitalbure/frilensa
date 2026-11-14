@@ -139,6 +139,7 @@ export interface PtRemittance {
   amount: number;
   date: string;
   reference?: string;
+  accountId?: string;
   updatedAt?: string;
 }
 

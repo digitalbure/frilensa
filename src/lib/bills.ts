@@ -159,7 +159,7 @@ export function cleanSupplier(raw: Partial<Supplier>, now = new Date().toISOStri
   if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return 'Check the email address.';
   const terms = Number(raw.paymentTermsDays);
   return {
-    id: raw.id || `sup-${Date.now().toString(36)}`,
+    id: raw.id || `sup-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
     ...(raw.businessId ? { businessId: raw.businessId } : {}),
     name, email, phone: str(raw.phone, 40), address: str(raw.address, 300), tin: str(raw.tin, 40), contactPerson: str(raw.contactPerson, 120),
     vatRegistered: !!raw.vatRegistered,

@@ -147,6 +147,8 @@ export interface PayRun {
   createdAt: string;
   updatedAt?: string;
   paidAt?: string;
+  /** The account the net pay was paid from. */
+  accountId?: string;
   /** Expenses recorded when the run was paid. */
   expenseIds?: string[];
 }
@@ -326,6 +328,7 @@ export interface PayrollPayment {
   amount: number;
   date: string;
   reference?: string;
+  accountId?: string;
   updatedAt?: string;
 }
 

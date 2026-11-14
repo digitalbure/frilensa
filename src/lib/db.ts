@@ -161,6 +161,7 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
   const mergedEmployees = mergeEntityList(localData.employees, remoteData.employees);
   const mergedPayRuns = mergeEntityList(localData.payRuns, remoteData.payRuns);
   const mergedSuppliers = mergeEntityList(localData.suppliers, remoteData.suppliers);
+  const mergedBankAccounts = mergeEntityList(localData.bankAccounts, remoteData.bankAccounts);
   const mergedPayrollPayments = mergeEntityList(localData.payrollPayments, remoteData.payrollPayments);
   const mergedPtRemittances = mergeEntityList(localData.ptRemittances, remoteData.ptRemittances);
 
@@ -208,6 +209,7 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
     employees: mergedEmployees,
     payRuns: mergedPayRuns,
     suppliers: mergedSuppliers,
+    bankAccounts: mergedBankAccounts,
     payrollPayments: mergedPayrollPayments,
     ptRemittances: mergedPtRemittances,
     activeBusinessId: activeBizId,
@@ -257,6 +259,7 @@ function toCRMData(raw: any): CRMData {
     employees: raw.employees || [],
     payRuns: raw.payRuns || [],
     suppliers: raw.suppliers || [],
+    bankAccounts: raw.bankAccounts || [],
     payrollPayments: raw.payrollPayments || [],
     ptRemittances: raw.ptRemittances || [],
     activityLogs: raw.activityLogs || [],
@@ -388,6 +391,7 @@ export async function saveConsultantData(data: CRMData) {
     contractors: data.contractors || [],
     employees: data.employees || [],
     payrollPayments: data.payrollPayments || [],
+    bankAccounts: data.bankAccounts || [],
     ptRemittances: data.ptRemittances || [],
     ...(recordsSaved ? { [ORDER_FIELD]: order } : lists),
     activeBusinessId: data.activeBusinessId || '',

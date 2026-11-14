@@ -677,6 +677,7 @@ export interface CRMData {
   payRuns?: import('./lib/payroll').PayRun[]; // pay runs with each employee's pay line
   payrollPayments?: import('./lib/payroll').PayrollPayment[]; // PAYE and FNPF paid, by month
   suppliers?: import('./lib/bills').Supplier[]; // people and businesses you buy from
+  bankAccounts?: import('./lib/accounts').MoneyAccount[]; // bank, cash, card and mobile money accounts, with opening balances
 }
 
 export interface AiAttachment {
