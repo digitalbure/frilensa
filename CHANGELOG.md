@@ -18,6 +18,22 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.22.0] - 2026-11-14
+
+### Added
+- **Finance → Bills: bills from suppliers that you pay later.**
+  - **Add a bill** with the supplier, their invoice number, the bill date and due date (worked out from the supplier's payment terms), category, project, and the VAT in it.
+  - **Pay a bill** in full or in parts, by bank, M-PAiSA, MyCash, cash, cheque or card. Each payment appears in your ledger on the day you pay; an unpaid bill doesn't touch your bank.
+  - **Status:** each bill shows unpaid, part paid, overdue or paid. **"You owe" and "Overdue"** totals, plus a table of **what you owe each supplier by how late it is** (not due yet, 1–30, 31–60, 61–90 and over 90 days).
+  - **Void a bill** entered by mistake, with a reason. It stays on record but counts for nothing. Paid bills can't be voided or deleted.
+- **Suppliers:** a supplier list with TIN, VAT registration, payment terms, usual category, contact details and their bank or M-PAiSA details for paying them. Add one from the bill form by typing a new name.
+- Bills can also use the **Rent** and **Materials** categories.
+- The Finance tabs scroll sideways on phones, so every tab stays readable.
+
+### Changed
+- **VAT return:** a bill's VAT counts on the bill date on the invoice basis, and as it's paid on the payments basis. Void bills are left out.
+- **Contractor payments** now show in your ledger as what you actually paid out (after the tax withheld), not the gross amount.
+
 ## [4.21.1] - 2026-11-13
 
 ### Fixed

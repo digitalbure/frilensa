@@ -160,6 +160,7 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
   const mergedContractors = mergeEntityList(localData.contractors, remoteData.contractors);
   const mergedEmployees = mergeEntityList(localData.employees, remoteData.employees);
   const mergedPayRuns = mergeEntityList(localData.payRuns, remoteData.payRuns);
+  const mergedSuppliers = mergeEntityList(localData.suppliers, remoteData.suppliers);
   const mergedPayrollPayments = mergeEntityList(localData.payrollPayments, remoteData.payrollPayments);
   const mergedPtRemittances = mergeEntityList(localData.ptRemittances, remoteData.ptRemittances);
 
@@ -206,6 +207,7 @@ export function mergeCRMData(localData: CRMData, remoteData: Partial<CRMData>): 
     contractors: mergedContractors,
     employees: mergedEmployees,
     payRuns: mergedPayRuns,
+    suppliers: mergedSuppliers,
     payrollPayments: mergedPayrollPayments,
     ptRemittances: mergedPtRemittances,
     activeBusinessId: activeBizId,
@@ -254,6 +256,7 @@ function toCRMData(raw: any): CRMData {
     contractors: raw.contractors || [],
     employees: raw.employees || [],
     payRuns: raw.payRuns || [],
+    suppliers: raw.suppliers || [],
     payrollPayments: raw.payrollPayments || [],
     ptRemittances: raw.ptRemittances || [],
     activityLogs: raw.activityLogs || [],
@@ -335,7 +338,8 @@ export async function saveConsultantData(data: CRMData) {
     activityLogs: (data.activityLogs || []).slice(0, 500),
     aiConversations: data.aiConversations || [],
     aiMemories: data.aiMemories || [],
-    payRuns: data.payRuns || []
+    payRuns: data.payRuns || [],
+    suppliers: data.suppliers || []
   };
 
   const consultantRef = doc(db, 'consultants', uid);

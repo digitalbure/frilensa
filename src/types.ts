@@ -676,6 +676,7 @@ export interface CRMData {
   employees?: import('./lib/payroll').Employee[]; // people on the payroll (PAYE and FNPF)
   payRuns?: import('./lib/payroll').PayRun[]; // pay runs with each employee's pay line
   payrollPayments?: import('./lib/payroll').PayrollPayment[]; // PAYE and FNPF paid, by month
+  suppliers?: import('./lib/bills').Supplier[]; // people and businesses you buy from
 }
 
 export interface AiAttachment {
@@ -777,6 +778,8 @@ export interface ExpenseRecord {
   billedDocumentId?: string; // the invoice it was billed on
   receiptFile?: StoredFile;  // receipt kept in file storage (replaces receiptImage when uploaded)
   contractorPayment?: import('./lib/withholding').ContractorPayment; // a payment to a contractor, with provisional tax
+  bill?: import('./lib/bills').BillDetails; // a supplier's bill: paid later, in one or more payments
+  supplierId?: string; // the supplier, when chosen from the supplier list
 }
 
 /** A file kept in server file storage (see server/files.ts). */
@@ -802,6 +805,8 @@ export interface Transaction {
   bankFee?: number; // Bank wire or intermediary deduction in home currency
   netReceived?: number; // Net amount after deductions in home currency
   documentId?: string; // Linked invoice/quote/receipt ID
+  expenseId?: string; // the bill this entry pays (bill payments)
+  accountId?: string; // the bank, cash or card account it went through
   referenceNumber?: string; // Bank telegraphic transfer / receipt reference
   vatAmount?: number; // Fiji standard VAT portion (e.g. 12.5%, 15% or 9%)
   balance?: number; // Account balance from bank statement (e.g. BSP running balance)

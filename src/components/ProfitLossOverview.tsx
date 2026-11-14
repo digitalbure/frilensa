@@ -46,6 +46,7 @@ export default function ProfitLossOverview({
     // 1. Explicit expenses in CRMData
     if (data.expenses && data.expenses.length > 0) {
       data.expenses.forEach(e => {
+        if (e.bill?.voided) { seenIds.add(e.id); return; }
         if (!data.activeBusinessId || e.businessId === data.activeBusinessId || !e.businessId) {
           list.push(e);
           seenIds.add(e.id);
@@ -56,7 +57,8 @@ export default function ProfitLossOverview({
     // 2. Map negative transactions that aren't already represented as explicit expenses
     if (data.transactions && data.transactions.length > 0) {
       data.transactions.forEach(tx => {
-        if (tx.amount < 0 && !seenIds.has(tx.id)) {
+        // Bill payments belong to their bill, which is already counted.
+        if (tx.amount < 0 && !seenIds.has(tx.id) && !tx.expenseId) {
           if (!data.activeBusinessId || tx.businessId === data.activeBusinessId || !tx.businessId) {
             const cost = Math.abs(tx.amount);
             const calculatedVat = tx.vatAmount !== undefined ? tx.vatAmount : (cost - (cost / (1 + currentVatRate / 100)));
@@ -276,13 +278,14 @@ export default function ProfitLossOverview({
 
   // Handle Delete Expense
   const handleDeleteExpense = (id: string) => {
-    if (!confirm('Delete this expense?')) return;
+    const target = (data.expenses || []).find(e => e.id === id);
+    if (!confirm(target?.bill?.payments?.length ? 'Delete this bill and the payments recorded against it?' : 'Delete this expense?')) return;
 
     // Update data.expenses
     const updatedExpenses = (data.expenses || []).filter(e => e.id !== id);
 
     // Also clean from data.transactions if present
-    const updatedTransactions = (data.transactions || []).filter(t => t.id !== id);
+    const updatedTransactions = (data.transactions || []).filter(t => t.id !== id && t.expenseId !== id);
 
     onUpdateData({
       ...data,

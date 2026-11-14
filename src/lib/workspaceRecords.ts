@@ -11,7 +11,7 @@ import { sanitizeForFirestore } from './flatDocuments';
 
 export const SPLIT_LISTS = [
   'businesses', 'clients', 'services', 'projects', 'documents', 'expenses', 'transactions',
-  'activityLogs', 'aiConversations', 'aiMemories', 'payRuns'
+  'activityLogs', 'aiConversations', 'aiMemories', 'payRuns', 'suppliers'
 ] as const;
 export type SplitList = typeof SPLIT_LISTS[number];
 

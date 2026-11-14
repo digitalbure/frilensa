@@ -13,7 +13,9 @@ import DateInput from './DateInput';
 import ExpenseLoggingModal from './ExpenseLoggingModal';
 import VatReturnView from './VatReturnView';
 import ContractorsView from './ContractorsView';
+import { ledgerFor } from '../lib/bills';
 import PayrollView from './PayrollView';
+import BillsView from './BillsView';
 import ProfitLossOverview from './ProfitLossOverview';
 import AiFinancialAdvisorModal from './AiFinancialAdvisorModal';
 import AiExpenseCategorizationModal from './AiExpenseCategorizationModal';
@@ -33,7 +35,7 @@ interface BookkeepingViewProps {
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {
   // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'vat' | 'reconciler' | 'ledger' | 'rates' (working currencies and exchange rates). Services, rate cards, terms, bookings and rate rules are on the Services tab (CatalogueView).
-  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'contractors' | 'payroll' | 'rates'>('pnl');
+  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'bills' | 'contractors' | 'payroll' | 'rates'>('pnl');
 
   // Expense Logging Modal State
   const [showExpenseModal, setShowExpenseModal] = useState<boolean>(false);
@@ -861,12 +863,13 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       clientId: expense.clientId
     };
 
+    // An expense paid now has one ledger entry; a supplier's bill has one per payment (lib/bills.ts).
     let updatedTxs: Transaction[];
-    if (txIdx >= 0) {
+    if (txIdx >= 0 && !expense.bill && !expense.contractorPayment) {
       updatedTxs = [...currentTxs];
       updatedTxs[txIdx] = correspondingTx;
     } else {
-      updatedTxs = [correspondingTx, ...currentTxs];
+      updatedTxs = ledgerFor(currentTxs, expense, correspondingTx);
     }
 
     onUpdateData({
@@ -1010,7 +1013,7 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       </div>
 
       {/* Main Mode Sub-Navigation Slider */}
-      <div className="flex bg-zinc-100 p-0.5 rounded-xl border border-zinc-200">
+      <div className="flex bg-zinc-100 p-0.5 rounded-xl border border-zinc-200 overflow-x-auto [&>button]:whitespace-nowrap [&>button]:px-2.5 [&>button]:shrink-0 sm:[&>button]:shrink">
         <button
           onClick={() => setActiveSubTab('pnl')}
           className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
@@ -1050,6 +1053,16 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           }`}
         >
           Ledger
+        </button>
+        <button
+          onClick={() => setActiveSubTab('bills')}
+          className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
+            activeSubTab === 'bills'
+              ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/40'
+              : 'text-zinc-500 hover:text-zinc-900'
+          }`}
+        >
+          Bills
         </button>
         <button
           onClick={() => setActiveSubTab('contractors')}
@@ -2110,6 +2123,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 )}
               </div>
             </div>
+          </motion.div>
+        ) : activeSubTab === 'bills' ? (
+          <motion.div key="bills-tab" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}>
+            <BillsView data={data} onUpdateData={onUpdateData} />
           </motion.div>
         ) : activeSubTab === 'payroll' ? (
           <motion.div

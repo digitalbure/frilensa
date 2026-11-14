@@ -12,7 +12,8 @@ import { lineTotals, isReimbursement } from './invoiceTotals';
 // Credit notes (invoice basis only) reduce the period they're issued in, when the invoice they cancel
 //   was issued in an earlier period. If the invoice is from the same period it's simply left out.
 // Purchases: expenses dated in the period marked "VAT claimable", and bank transactions marked
-//   claimable that aren't already expenses. Nothing is claimed without that flag.
+//   claimable that aren't already expenses. Nothing is claimed without that flag. Supplier bills count on
+//   their date (invoice basis) or as they're paid (payments basis); void bills don't count.
 
 export type VatBasis = 'invoice' | 'payments';
 
@@ -129,9 +130,24 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
   const purchases = { gross: 0, net: 0, inputVat: 0, count: 0, notClaimedGross: 0, notClaimedCount: 0 };
   let claimableWithoutVat = 0;
   const expenseIds = new Set<string>();
+  const addPurchase = (e: NonNullable<CRMData['expenses']>[number], date: string, share: number, note?: string) => {
+    const gross = (e.amount || 0) * share;
+    const vat = (e.vatAmount || 0) * share;
+    purchases.gross += gross;
+    purchases.inputVat += vat;
+    purchases.net += gross - vat;
+    purchases.count++;
+    lines.push({ kind: 'purchase', id: e.id, date, reference: e.description || e.vendor, party: e.vendor, currency: e.currency || home, gross: r2(gross), net: r2(gross - vat), vat: r2(vat), ...(note ? { note } : {}) });
+  };
   for (const e of data.expenses || []) {
     expenseIds.add(e.id);
-    if (!inBusiness(e.businessId) || !inRange(day(e.date), from, to)) continue;
+    if (e.bill?.voided || !inBusiness(e.businessId)) continue;
+    // A supplier's bill on the payments basis: its VAT is claimed as it's paid.
+    if (basis === 'payments' && e.bill && e.isVatClaimable && (e.amount || 0) > 0) {
+      for (const p of e.bill.payments) if (inRange(day(p.date), from, to)) addPurchase(e, day(p.date), Math.min(1, p.amount / e.amount), 'Bill payment');
+      continue;
+    }
+    if (!inRange(day(e.date), from, to)) continue;
     const gross = e.amount || 0;
     if (!e.isVatClaimable) {
       purchases.notClaimedGross += gross;
@@ -147,7 +163,7 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
     lines.push({ kind: 'purchase', id: e.id, date: day(e.date), reference: e.description || e.vendor, party: e.vendor, currency: e.currency || home, gross: r2(gross), net: r2(gross - vat), vat: r2(vat) });
   }
   for (const t of data.transactions || []) {
-    if (t.amount >= 0 || expenseIds.has(t.id) || !inBusiness(t.businessId) || !inRange(day(t.date), from, to)) continue;
+    if (t.amount >= 0 || expenseIds.has(t.id) || (t.expenseId && expenseIds.has(t.expenseId)) || !inBusiness(t.businessId) || !inRange(day(t.date), from, to)) continue;
     if (t.isVatClaimable !== true || !(t.vatAmount && t.vatAmount > 0)) continue;
     const gross = Math.abs(t.amount);
     purchases.gross += gross;
