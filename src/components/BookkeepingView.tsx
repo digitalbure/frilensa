@@ -17,6 +17,7 @@ import { ledgerFor } from '../lib/bills';
 import PayrollView from './PayrollView';
 import BillsView from './BillsView';
 import AccountsView from './AccountsView';
+import ReportsView from './ReportsView';
 import ProfitLossOverview from './ProfitLossOverview';
 import AiFinancialAdvisorModal from './AiFinancialAdvisorModal';
 import AiExpenseCategorizationModal from './AiExpenseCategorizationModal';
@@ -36,7 +37,7 @@ interface BookkeepingViewProps {
 
 export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }: BookkeepingViewProps) {
   // Navigation tabs inside Bookkeeping Center: 'pnl' (Default) | 'vat' | 'reconciler' | 'ledger' | 'rates' (working currencies and exchange rates). Services, rate cards, terms, bookings and rate rules are on the Services tab (CatalogueView).
-  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'accounts' | 'bills' | 'contractors' | 'payroll' | 'rates'>('pnl');
+  const [activeSubTab, setActiveSubTab] = useState<'pnl' | 'vat' | 'reconciler' | 'ledger' | 'reports' | 'accounts' | 'bills' | 'contractors' | 'payroll' | 'rates'>('pnl');
 
   // Expense Logging Modal State
   const [showExpenseModal, setShowExpenseModal] = useState<boolean>(false);
@@ -1054,6 +1055,16 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
           }`}
         >
           Ledger
+        </button>
+        <button
+          onClick={() => setActiveSubTab('reports')}
+          className={`flex-1 py-2 text-[10px] font-extrabold tracking-tight rounded-lg transition-all ${
+            activeSubTab === 'reports'
+              ? 'bg-white text-zinc-900 shadow-sm border border-zinc-200/40'
+              : 'text-zinc-500 hover:text-zinc-900'
+          }`}
+        >
+          Reports
         </button>
         <button
           onClick={() => setActiveSubTab('accounts')}
@@ -2134,6 +2145,10 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
                 )}
               </div>
             </div>
+          </motion.div>
+        ) : activeSubTab === 'reports' ? (
+          <motion.div key="reports-tab" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}>
+            <ReportsView data={data} />
           </motion.div>
         ) : activeSubTab === 'accounts' ? (
           <motion.div key="accounts-tab" initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -5 }} transition={{ duration: 0.15 }}>

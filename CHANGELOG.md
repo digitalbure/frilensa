@@ -18,6 +18,19 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.24.0] - 2026-11-14
+
+### Added
+- **Finance → Reports: the reports your accountant asks for**, each ready to download as CSV or print and save as PDF:
+  - **Balance sheet:** what the business owns and owes on any date (bank and cash, money clients owe you, tax withheld by clients, bills you owe, VAT, PAYE, provisional tax and FNPF owing, cards and overdrafts), with equity and profit to date. Assets always equal liabilities plus equity.
+  - **Cash flow:** money in and out of all your accounts between two dates, grouped into clients, other income, suppliers and expenses, wages and FNPF, tax paid to FRCS, owner, and transfers, from the opening to the closing figure.
+  - **Who owes you:** money owed by each client on any date, by how late it is (not due yet, 1–30, 31–60, 61–90, over 90 days), with the invoices.
+  - **What you owe:** unpaid supplier bills by how late they are.
+  - **Sales by client:** invoiced (less credit notes) and received, for any period.
+  - **Trial balance** and **general ledger** (every entry on every account, with balances brought forward and running balances).
+- Quick date ranges: this month, last month, this year and last year.
+- All the reports and the account balances come from one set of double-entry books that Frilensa works out from what you record, so the figures always agree with each other.
+
 ## [4.23.0] - 2026-11-14
 
 ### Added
