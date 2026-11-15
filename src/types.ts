@@ -808,6 +808,7 @@ export interface Transaction {
   netReceived?: number; // Net amount after deductions in home currency
   documentId?: string; // Linked invoice/quote/receipt ID
   expenseId?: string; // the bill this entry pays (bill payments)
+  takings?: boolean; // cash, card or mobile money sales recorded without an invoice (Record takings)
   accountId?: string; // the bank, cash or card account it went through
   referenceNumber?: string; // Bank telegraphic transfer / receipt reference
   vatAmount?: number; // Fiji standard VAT portion (e.g. 12.5%, 15% or 9%)

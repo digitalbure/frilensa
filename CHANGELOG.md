@@ -18,6 +18,15 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.27.0] - 2026-11-15
+
+### Added
+- **Record takings** on Home: log a day's cash, card, M-PAiSA or MyCash sales without making an invoice. Pick the account the money went into and whether it includes VAT, and see today's, this week's and this month's takings at a glance. Takings count as sales in your VAT return, your reports and your account balances.
+- **Customer statements**: a new Statement tab on each client shows everything invoiced, credited and paid between two dates, with the balance brought forward, a running balance, how late the amount owing is, and the invoices still to pay. Print it or save it as a PDF, or send a short summary with payment links by WhatsApp or SMS. It matches Who owes you and your reports.
+
+### Fixed
+- Credit notes now reduce the balance of the invoice they credit in the books, so a client's statement and aged receivables show the right invoice as owing.
+
 ## [4.26.0] - 2026-11-15
 
 ### Added

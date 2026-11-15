@@ -13,6 +13,7 @@ import {
   sendSupportMessage 
 } from '../../lib/db';
 import { getPortalAccessStatus, setPortalPin } from '../../lib/api';
+import ClientStatementTab from './ClientStatementTab';
 
 function generatePin(): string {
   const n = crypto.getRandomValues(new Uint32Array(1))[0] % 1_000_000;
@@ -48,7 +49,7 @@ export default function ClientDetailDrawer({
   copiedClientId,
   generatingLinkId
 }: ClientDetailDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'portal' | 'invoices' | 'messages'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'portal' | 'invoices' | 'statement' | 'messages'>('overview');
   
   // PIN states
   const [clientPin, setClientPin] = useState('');
@@ -243,6 +244,18 @@ export default function ClientDetailDrawer({
             >
               <FileText className="w-3.5 h-3.5 text-slate-400" />
               Documents ({clientDocs.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('statement')}
+              className={`px-3 py-2 text-xs font-semibold rounded-t-xl transition-all border-b-2 flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'statement'
+                  ? 'border-slate-900 text-slate-900 bg-slate-50'
+                  : 'border-transparent text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <Coins className="w-3.5 h-3.5 text-amber-500" />
+              Statement
             </button>
             <button
               type="button"
@@ -591,6 +604,8 @@ export default function ClientDetailDrawer({
               )}
             </div>
           )}
+
+          {activeTab === 'statement' && <ClientStatementTab data={data} client={client} />}
 
           {/* TAB 4: CLIENT INQUIRIES & CHAT */}
           {activeTab === 'messages' && (

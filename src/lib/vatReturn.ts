@@ -9,6 +9,7 @@ import { lineTotals, isReimbursement } from './invoiceTotals';
 // Sales
 //   invoice basis:  invoices issued in the period (not drafts or cancelled), plus stand-alone receipts
 //   payments basis: invoices paid in the period (part payments in proportion), plus stand-alone receipts
+// Takings (sales recorded without an invoice) count on the day the money came in, on either basis.
 // Credit notes (invoice basis only) reduce the period they're issued in, when the invoice they cancel
 //   was issued in an earlier period. If the invoice is from the same period it's simply left out.
 // Purchases: expenses dated in the period marked "VAT claimable", and bank transactions marked
@@ -125,6 +126,16 @@ export function computeVatReturn(data: CRMData, opts: VatReturnOptions): VatRetu
       creditNotes.count++;
       lines.push({ kind: 'credit_note', id: d.id, date: issued, reference: d.documentNumber, party: clientName(d.clientId), currency: d.currency || home, gross: r2(-c.homeTotal), net: r2(-(c.homeTotal - c.vatHome)), vat: r2(-c.vatHome), note: original ? `Cancels ${original.documentNumber}` : undefined });
     }
+  }
+
+  // Takings (sales recorded without an invoice) count on the day the money came in, on either basis.
+  for (const t of data.transactions || []) {
+    if (!t.takings || t.amount <= 0 || !inBusiness(t.businessId) || !inRange(day(t.date), from, to)) continue;
+    const vat = Math.min(t.amount, t.vatAmount || 0);
+    if (vat > 0) sales.standardRated += t.amount - vat; else sales.zeroRatedOrExempt += t.amount;
+    sales.outputVat += vat;
+    sales.count++;
+    lines.push({ kind: 'sale', id: t.id, date: day(t.date), reference: 'Takings', party: t.paymentMethod || t.bankName || '', currency: home, gross: r2(t.amount), net: r2(t.amount - vat), vat: r2(vat), note: t.notes || undefined });
   }
 
   const purchases = { gross: 0, net: 0, inputVat: 0, count: 0, notClaimedGross: 0, notClaimedCount: 0 };

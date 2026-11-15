@@ -124,7 +124,7 @@ export function buildJournal(data: CRMData, opts: { businessId?: string | null; 
         lines: [dr(cash({ method: d.paymentMethod, businessId: d.businessId }), total), cr('ar', total, d.id)] });
     } else if (d.type === 'credit_note') {
       push({ id: `cn:${d.id}`, date: day(d.issueDate), description: `Credit note ${d.documentNumber}`, source: { kind: 'credit_note', id: d.id, reference: d.documentNumber },
-        lines: [dr('sales', total - vat), dr('vat', vat), cr('ar', total, d.originalInvoiceId)] });
+        lines: [dr('sales', total - vat), dr('vat', vat), cr('ar', total, d.originalInvoiceId || d.id)] });
     }
   }
 
