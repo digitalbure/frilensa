@@ -862,7 +862,8 @@ export default function BookkeepingView({ data, onUpdateData, onNavigateToTab }:
       notes: expense.notes,
       businessId: expense.businessId,
       projectId: expense.projectId,
-      clientId: expense.clientId
+      clientId: expense.clientId,
+      ...(expense.accountId ? { accountId: expense.accountId } : {})
     };
 
     // An expense paid now has one ledger entry; a supplier's bill has one per payment (lib/bills.ts).

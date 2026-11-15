@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { allowAnother } from '../lib/billingClient';
 import InboxPanel from './InboxPanel';
+import WhoOwesCard from './WhoOwesCard';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Building2, Plus, ArrowUpRight, CheckCircle2, AlertCircle, FileText, 
@@ -458,6 +459,9 @@ export default function DashboardView({ data, onUpdateData, onNavigateToTab, onM
 
       {/* Client actions waiting on the consultant */}
       <InboxPanel data={data} onUpdateData={onUpdateData} onNavigateToTab={onNavigateToTab} />
+
+      {/* Who owes you, with WhatsApp and SMS reminders */}
+      <WhoOwesCard data={data} onOpenInvoice={docId => onNavigateToTab?.('billing', docId)} />
 
       {/* Global Universal Search Bar (Invoices, Clients, Projects) */}
       <div ref={searchContainerRef} className="relative z-30">

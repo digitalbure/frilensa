@@ -8,6 +8,7 @@ import {
 import { CRMDocument, CRMData, Business, Client, PaymentAttachment } from '../types';
 import { SUPPORTED_CURRENCIES, getCurrencyConfig, computeFxConversion, formatCurrencyAmount } from '../lib/currencies';
 import PaymentAttachmentWidget from './PaymentAttachmentWidget';
+import AccountSelect from './AccountSelect';
 import { publishedPlatformConfig, DEFAULT_PLATFORM_CONFIG } from '../lib/platformConfig';
 
 interface RecordPaymentModalProps {
@@ -32,6 +33,7 @@ interface RecordPaymentModalProps {
       withholdingTax?: number;
       withholdingRate?: number;
       withholdingCertificate?: boolean;
+      accountId?: string;
     }
   ) => void;
 }
@@ -84,6 +86,7 @@ const RecordPaymentForm: React.FC<RecordPaymentModalProps & { document: CRMDocum
     return document.notes || '';
   });
   const [autoLogTx, setAutoLogTx] = useState<boolean>(true);
+  const [accountId, setAccountId] = useState<string>('');
   const [attachments, setAttachments] = useState<PaymentAttachment[]>(() => {
     return document.paymentAttachments || [];
   });
@@ -162,7 +165,8 @@ const RecordPaymentForm: React.FC<RecordPaymentModalProps & { document: CRMDocum
         notes: notes.trim(),
         paymentDate,
         autoLogTransaction: autoLogTx,
-        paymentAttachments: attachments
+        paymentAttachments: attachments,
+        ...(accountId ? { accountId } : {})
       });
     } else {
       // Local currency payment
@@ -185,6 +189,7 @@ const RecordPaymentForm: React.FC<RecordPaymentModalProps & { document: CRMDocum
         paymentDate,
         autoLogTransaction: autoLogTx,
         paymentAttachments: attachments,
+        ...(accountId ? { accountId } : {}),
         ...(tax > 0 ? { withholdingTax: tax, withholdingRate: ptRate, withholdingCertificate: certificateReceived } : {})
       });
     }
@@ -498,6 +503,8 @@ const RecordPaymentForm: React.FC<RecordPaymentModalProps & { document: CRMDocum
                 />
               </div>
             </div>
+
+            <AccountSelect data={data} businessId={document.businessId} method={paymentMethod} value={accountId} onChange={setAccountId} label="Paid into account" id="payment-account" />
 
             {/* Reference Number & Bank Notes */}
             <div>

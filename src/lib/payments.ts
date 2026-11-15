@@ -19,6 +19,8 @@ export interface ConfirmedPaymentDetails {
   withholdingTax?: number;
   withholdingRate?: number;
   withholdingCertificate?: boolean;
+  /** The bank, cash or mobile money account the money went into. */
+  accountId?: string;
 }
 
 /**
@@ -96,7 +98,8 @@ export function applyConfirmedPayment(data: CRMData, docId: string, paymentDetai
       vatAmount: targetDoc.vatAmount,
       receiptImage: firstImgAtt?.dataUrl,
       receiptFileName: firstImgAtt?.name,
-      paymentAttachments: finalAttachments
+      paymentAttachments: finalAttachments,
+      ...(paymentDetails.accountId ? { accountId: paymentDetails.accountId } : {})
     };
     newTransactions = [newTransaction, ...newTransactions];
     if (withheld > 0) {

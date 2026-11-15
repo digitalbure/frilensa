@@ -150,12 +150,12 @@ export function buildJournal(data: CRMData, opts: { businessId?: string | null; 
       const cp = e.contractorPayment;
       const owed = cp.kind === 'nrwht' ? 'nrwht' : 'pt';
       push({ id: `ctr:${e.id}`, date: day(e.date), description: `Paid ${cp.contractorName}${cp.withheld ? `, tax withheld` : ''}`, source: { kind: 'contractor', id: e.id, reference: cp.certificateNo },
-        lines: [dr(expAcct, cost), dr('vat', vat), cr(owed, cp.withheld), cr(cash({ accountId: ownTx?.accountId, method: e.paymentMethod, businessId: e.businessId }), (e.amount || 0) - cp.withheld)] });
+        lines: [dr(expAcct, cost), dr('vat', vat), cr(owed, cp.withheld), cr(cash({ accountId: ownTx?.accountId || e.accountId, method: e.paymentMethod, businessId: e.businessId }), (e.amount || 0) - cp.withheld)] });
       if (cp.kind === 'nrwht' && cp.paidToFrcs && cp.withheld > 0) push({ id: `nrwhtpay:${e.id}`, date: day(cp.paidToFrcs.date), description: `Non-resident withholding tax paid (${cp.contractorName})`, source: { kind: 'tax_payment', id: e.id, reference: cp.paidToFrcs.reference },
         lines: [dr('nrwht', cp.withheld), cr(cash({ businessId: e.businessId }), cp.withheld)] });
     } else {
       push({ id: `exp:${e.id}`, date: day(e.date), description: `${e.vendor || 'Expense'}${e.description ? `: ${e.description}` : ''}`, source: { kind: 'expense', id: e.id },
-        lines: [dr(expAcct, cost), dr('vat', vat), cr(cash({ accountId: ownTx?.accountId, method: ownTx?.bankName || e.paymentMethod, businessId: e.businessId }), e.amount || 0)] });
+        lines: [dr(expAcct, cost), dr('vat', vat), cr(cash({ accountId: ownTx?.accountId || e.accountId, method: ownTx?.bankName || e.paymentMethod, businessId: e.businessId }), e.amount || 0)] });
     }
   }
 

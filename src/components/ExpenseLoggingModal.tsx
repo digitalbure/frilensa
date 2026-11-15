@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import AccountSelect from './AccountSelect';
 import { openUpgrade } from '../lib/billingClient';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
@@ -71,6 +72,7 @@ export default function ExpenseLoggingModal({
   const [paymentMethod, setPaymentMethod] = useState<string>(
     initialExpense?.paymentMethod || 'Vodafone M-PAiSA'
   );
+  const [accountId, setAccountId] = useState<string>(initialExpense?.accountId || '');
   const [isVatClaimable, setIsVatClaimable] = useState<boolean>(
     initialExpense?.isVatClaimable !== false
   );
@@ -559,6 +561,7 @@ export default function ExpenseLoggingModal({
       amount: Math.abs(parseFloat(amount)),
       category,
       paymentMethod,
+      ...(accountId ? { accountId } : {}),
       vatAmount: calculatedVat,
       isVatClaimable,
       isTaxDeductible,
@@ -1311,6 +1314,8 @@ export default function ExpenseLoggingModal({
                 <option value="Bank Transfer">Bank transfer</option>
               </select>
             </div>
+
+            <AccountSelect data={data} businessId={data.activeBusinessId} method={paymentMethod} value={accountId} onChange={setAccountId} label="Paid from account" id="expense-account" />
 
             <div className="space-y-1">
               <label className="text-[9px] font-black uppercase text-slate-500 block">

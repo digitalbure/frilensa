@@ -781,6 +781,7 @@ export interface ExpenseRecord {
   contractorPayment?: import('./lib/withholding').ContractorPayment; // a payment to a contractor, with provisional tax
   bill?: import('./lib/bills').BillDetails; // a supplier's bill: paid later, in one or more payments
   supplierId?: string; // the supplier, when chosen from the supplier list
+  accountId?: string; // the bank, cash, card or mobile money account it was paid from
 }
 
 /** A file kept in server file storage (see server/files.ts). */

@@ -18,6 +18,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ## [Unreleased]
 
+## [4.26.0] - 2026-11-15
+
+### Added
+- **Home → Who owes you:** invoices sent and not yet paid, most overdue first, with how many days overdue. **WhatsApp** and **SMS** buttons open a friendly reminder in your own WhatsApp or messages app, ready to send: the client's name, the invoice number, what's outstanding, the due date and the link to view and pay online. Fiji numbers without +679 are filled in; if a client has no phone number, WhatsApp asks who to send it to.
+- **Choose the account** when you record a payment from a client ("Paid into account") or an expense ("Paid from account"). Left as it is, the money goes where its payment method points, as before, and the form shows which account that is.
+
 ## [4.25.0] - 2026-11-14
 
 ### Added

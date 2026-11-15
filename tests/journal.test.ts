@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { cleanAccount, resolveAccount, suggestedMatchWords } from "../src/lib/accounts";
 import { accountActivity, accountBalances, balances, buildJournal } from "../src/lib/journal";
 import { sampleBooks } from "./fixtures/books";
+import { applyConfirmedPayment } from "../src/lib/payments";
 
 // ---------- Accounts ----------
 let anz = cleanAccount({ name: "ANZ Business", kind: "bank", institution: "ANZ Fiji", openingBalance: 5000, openingDate: "2026-01-01", matchWords: ["ANZ", "Bank Transfer"], isDefault: true, businessId: "b1" }) as any;
@@ -66,5 +67,20 @@ assert.equal(lb.accounts.find(a => a.account.id === anz.id)!.balance, 2000, "bal
 // Activity with a running balance
 const act = accountActivity(j, `cash:${mp.id}`);
 assert.equal(act[0].balance, -75); assert.equal(act[act.length - 1].amount, 225);
+
+// A chosen account wins over the payment method, for expenses and for client payments
+{
+  const chosen = { ...data,
+    expenses: [...data.expenses, { id: "e-ch", date: "2026-05-01", vendor: "Shop", amount: 40, category: "Office Supplies", paymentMethod: "ANZ", businessId: "b1", accountId: mp.id }],
+    transactions: [...data.transactions, { id: "e-ch", date: "2026-05-01", amount: -40, category: "Office Supplies", bankName: "ANZ", businessId: "b1", status: "reconciled", description: "Shop" }] };
+  const before = balances(buildJournal(data, { businessId: "b1" }));
+  const after = balances(buildJournal(chosen, { businessId: "b1" }));
+  near(after.get(`cash:${mp.id}`)!.balance, before.get(`cash:${mp.id}`)!.balance - 40, "expense paid from the chosen account");
+  near(after.get(`cash:${anz.id}`)!.balance, before.get(`cash:${anz.id}`)!.balance, "not from the account its method names");
+  const paid = applyConfirmedPayment(data, "inv2", { paymentMethod: "ANZ Fiji Bank Transfer", paymentDate: "2026-05-02", paidAmountForeign: 450, paidAmountHome: 450, netReceivedHome: 450, accountId: mp.id });
+  const pb = balances(buildJournal(paid, { businessId: "b1" }));
+  near(pb.get(`cash:${mp.id}`)!.balance, before.get(`cash:${mp.id}`)!.balance + 450, "client payment into the chosen account");
+  assert.equal(pb.get("ar")?.balance || 0, 0);
+}
 
 console.log("journal checks passed");
